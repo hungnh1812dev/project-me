@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { PermissionAction } from '@features/access';
 import { useCallerAccess } from '@features/access/useCallerAccess';
 import type { DocumentRecord } from '@features/content/Content.api';
@@ -17,8 +17,6 @@ import { toSaveError } from '@features/content/Content.errors';
 import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-const copy = COPY.content.actions;
 
 type ConfirmedAction = 'unpublish' | 'discard';
 
@@ -50,6 +48,8 @@ export function DocumentActions({
   onNotice,
   onFailure,
 }: DocumentActionsProps) {
+  const content = useScreenText('content');
+  const copy = content.content.actions;
   const api = useContentApi();
   const queryClient = useQueryClient();
   const access = useCallerAccess();
@@ -97,7 +97,7 @@ export function DocumentActions({
       setConfirming(null);
       onFailure(failure);
       // A refetch changes the version and would drop this notice with the form.
-      if (!toSaveError(failure).conflict) await refetch();
+      if (!toSaveError(failure, content).conflict) await refetch();
     },
   });
   const busy = lifecycle.isPending || isSaving;
@@ -135,7 +135,7 @@ export function DocumentActions({
         loading={isSaving}
         disabled={(record !== null && !isFormDirty) || lifecycle.isPending}
       >
-        {COPY.content.save}
+        {content.content.save}
       </Button>
       {hasLifecycle && holds('publish') ? (
         <Button
@@ -179,6 +179,7 @@ function ConfirmDialog({
   onCancel: () => void;
   onCloseFocus: () => void;
 }) {
+  const copy = useScreenText('content').content.actions;
   const cancelRef = useRef<HTMLButtonElement>(null);
   const text = action === 'discard' ? copy.discardDialog : copy.unpublishDialog;
   return (

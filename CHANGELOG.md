@@ -6,6 +6,56 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.1.0 (2026-11-05)
+
+Repo 0.1.0, cms-api, cms-admin and web 0.1.0, e2e 0.0.2: the web BFF, the content schema moves to component paths, admin labels and widths, and the fixes since 0.0.1.
+
+### Versions
+
+| Part               | Version | Changed in this release |
+| ------------------ | ------- | ----------------------- |
+| repo               | 0.1.0   | yes                     |
+| `@abyss/cms-api`   | 0.1.0   | yes                     |
+| `@abyss/cms-admin` | 0.1.0   | yes                     |
+| `@abyss/web`       | 0.1.0   | yes                     |
+| e2e                | 0.0.2   | yes                     |
+
+### New features
+
+- web: BFF sign-in with Turnstile and sealed session cookies; CV page on `/cv` ([ADR 0018](docs/adr/0018-web-bff.md)).
+- cms-api: content fields take `displayName` and `width`; component field names may be SQL reserved words.
+- cms-admin: document form shows title-case labels, text inputs and field widths.
+
+### Changes
+
+- cms-api: content fields take `component`, `displayName` and `width`; five schemas move to the new format ([content-schema](docs/modules/content-schema.md)).
+- cms-api: migration `0006_content.sql` renames two component tables and drops old cv-page columns and tables.
+- cms-api: `identifier.reserved` still applies to every field except a component field's name.
+- cms-api: cv-page field `referees` is renamed `references`; migration `0007_content.sql` holds comments only.
+- cms-api: cv-page `experiences.company` and `references.phone` are sensitive; migration `0008_content.sql` holds comments only.
+- cms-admin: field labels, widths and inputs follow the new content definitions (CPS-6, pending).
+- web: the browser no longer calls cms-api; a BFF in web holds sessions and checks Turnstile ([ADR 0018](docs/adr/0018-web-bff.md)).
+- web: the reviewer button and the `/status` page are removed; `NEXT_PUBLIC_API_BASE_URL` is gone.
+- cms-api, cms-admin: cms-api is served on `admin.<domain>` only; the dev server proxies `/api`.
+- root: smoke and dev stacks serve cms-api on the admin host only; CI no longer reads `NEXT_PUBLIC_API_BASE_URL`.
+- root: agent hooks `session-gate` and `read-guard` gate agent sessions and large reads ([global FLOW](docs/global/FLOW.md)).
+- root: the planner sizes each feature small, medium or large; medium and large break after the plan.
+- root: specs keep no change log; each fact is written once and referred to by id.
+- cms-admin: screen text is read through locales; copy files move to `configs/locales/en`.
+
+### Bug fixes
+
+- cms-api: `cv-page` `references.phone` and `experiences.company` are masked for `public` and `reviewer`.
+- cms-admin: a failed screen text load shows a retry state; the conditional-use warning is gone.
+- web: unmatched BFF paths get a static CSP; unlisted methods answer `405` with `Allow`.
+- root scripts: smoke and dev stacks route the admin `/api` path and set the web origin and secret.
+- e2e: specs follow cv-page names and routes; stale reviewer specs removed.
+
+### DevOps patches
+
+- web-bff-hardening: web secrets and env, and the API route moved to the admin host ([web](docs/apps/web/patch-web-0.1.0.md), [cms-api](docs/apps/cms-api/patch-cms-api-0.1.0.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.1.0.md)).
+- web-bff-hardening rollout: web first, then the route move and cms-admin.
+
 ## 0.0.2 (2026-11-04)
 
 Repo 0.0.2 and cms-api 0.0.2: tag-driven release CI and the cms-api integration tests on release tags.

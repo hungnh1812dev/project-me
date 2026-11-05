@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { BackupFile, BackupsList } from '@features/backups/Backups.api';
@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { BACKUPS, ROLES } = API_ENDPOINTS;
-const copy = COPY.backups;
+const copy = EN_TEXT.backups;
 const RETRY_WAIT_MS = 4_000;
 const RETRY_BACKOFF_MS = 1_500;
 
@@ -160,7 +160,7 @@ describe('BackupsPage', () => {
     });
     // A 5xx is retried once (one second back-off) before the error shows.
     expect(await screen.findByText(copy.loadFailed, {}, { timeout: RETRY_WAIT_MS })).toBeVisible();
-    expect(screen.getByRole('button', { name: COPY.common.retry })).toBeVisible();
+    expect(screen.getByRole('button', { name: EN_TEXT.common.retry })).toBeVisible();
   });
 
   it('shows a rate-limit message with retry on a 429, without a second request', async () => {
@@ -173,7 +173,7 @@ describe('BackupsPage', () => {
     });
     expect(await screen.findByText(copy.rateLimited)).toBeVisible();
     expect(screen.queryByText(copy.loadFailed)).toBeNull();
-    expect(screen.getByRole('button', { name: COPY.common.retry })).toBeVisible();
+    expect(screen.getByRole('button', { name: EN_TEXT.common.retry })).toBeVisible();
     await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
   });
@@ -191,7 +191,7 @@ describe('BackupsPage', () => {
 describe('Backups nav item', () => {
   it('shows for the owner without any request', async () => {
     const { api } = await open(TEST_USER, {}, APP_ROUTES.HOME);
-    expect(await screen.findByRole('link', { name: copy.nav })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: EN_TEXT.access.nav.backups })).toHaveAttribute(
       'href',
       APP_ROUTES.BACKUPS,
     );
@@ -200,7 +200,7 @@ describe('Backups nav item', () => {
 
   it('is hidden for an admin', async () => {
     await open(admin, {}, APP_ROUTES.HOME);
-    await screen.findByRole('navigation', { name: COPY.access.nav.label });
-    expect(screen.queryByRole('link', { name: copy.nav })).toBeNull();
+    await screen.findByRole('navigation', { name: EN_TEXT.access.nav.label });
+    expect(screen.queryByRole('link', { name: EN_TEXT.access.nav.backups })).toBeNull();
   });
 });

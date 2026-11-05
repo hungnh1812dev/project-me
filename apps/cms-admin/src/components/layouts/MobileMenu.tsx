@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import type { NavSource } from '@configs/NavSections.constants';
 
 import { SideMenu } from './SideMenu';
@@ -23,13 +23,13 @@ export function MobileMenu({ nav }: { nav: NavSource }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">{COPY.access.nav.menu}</Button>
+        <Button size="sm">{COMMON_TEXT.nav.menu}</Button>
       </DialogTrigger>
       <DialogContent className={SHEET_CLASS} aria-describedby={undefined}>
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
-          <DialogTitle className="text-sm">{COPY.app.name}</DialogTitle>
+          <DialogTitle className="text-sm">{COMMON_TEXT.app.name}</DialogTitle>
           <DialogClose asChild>
-            <Button size="sm">{COPY.access.nav.closeMenu}</Button>
+            <Button size="sm">{COMMON_TEXT.nav.closeMenu}</Button>
           </DialogClose>
         </div>
         <SideMenu nav={nav} onNavigate={close} />

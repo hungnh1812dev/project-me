@@ -1,4 +1,4 @@
-import type { ContentTypeField } from '../content-types';
+import type { ContentTypeField, FieldWidth } from '../content-types';
 
 /** A content field arranged as a tree (components hold their fields). */
 export interface FieldNode {
@@ -8,16 +8,21 @@ export interface FieldNode {
   path: string;
   type: string;
   label: string;
+  width: FieldWidth;
   repeatable: boolean;
   children: FieldNode[];
 }
 
+const DEFAULT_FIELD_WIDTH: FieldWidth = 'full';
 const PATH_SEPARATOR = '.';
 
-/** `techStack` -> `Tech stack`. */
+/** `techStack` -> `Tech Stack`: split before capitals, capitalise each word. */
 export function labelOf(name: string): string {
-  const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 /**
@@ -36,7 +41,8 @@ export function buildFieldTree(fields: readonly ContentTypeField[]): FieldNode[]
       name,
       path: field.path,
       type: field.type,
-      label: labelOf(name),
+      label: field.displayName ?? labelOf(name),
+      width: field.width ?? DEFAULT_FIELD_WIDTH,
       repeatable: field.repeatable,
       children: [],
     };

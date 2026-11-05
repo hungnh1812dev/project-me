@@ -78,7 +78,6 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           TURBO_VERSION: ${{ inputs.turbo_version }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_ADMIN_URL: ${{ vars.NEXT_PUBLIC_ADMIN_URL }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
         run: bash .github/scripts/build-args.sh "$APP"

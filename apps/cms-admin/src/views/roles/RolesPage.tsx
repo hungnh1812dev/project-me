@@ -1,16 +1,17 @@
 import { FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { rolePermissionsPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import type { Role } from '@features/access/Access.api';
 import { isForbidden } from '@features/access/Access.errors';
 import { useRolesQuery } from '@features/access/Access.queries';
 import { Link } from 'react-router';
 
-const copy = COPY.access.roles;
+type RolesCopy = ScreenText<'access'>['access']['roles'];
 
 /** `/roles`: every role, highest rank first; opens a role's matrix. */
 export function RolesPage() {
+  const copy = useScreenText('access').access.roles;
   const roles = useRolesQuery();
 
   return (
@@ -33,7 +34,7 @@ export function RolesPage() {
       ) : (
         <SortableSheet
           caption={copy.tableLabel}
-          columns={ROLE_COLUMNS}
+          columns={roleColumnsOf(copy)}
           rows={roles.data}
           getRowId={(role) => role.id}
           getRowLabel={(role) => role.name}
@@ -43,7 +44,7 @@ export function RolesPage() {
   );
 }
 
-const ROLE_COLUMNS: readonly SheetColumn<Role>[] = [
+const roleColumnsOf = (copy: RolesCopy): readonly SheetColumn<Role>[] => [
   {
     key: 'name',
     header: copy.columns.name,

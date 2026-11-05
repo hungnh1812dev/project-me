@@ -1,13 +1,13 @@
-import { focusManager } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { apiClient } from '../../apis/client/Api.client';
+import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
 import { COPY } from '../../configs/Copy.constants';
 import { type CvPageData } from '../../features/cv/Cv.graphql';
 import { useWebSession } from '../../features/session';
 import type { AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, Wrapper } from '../../features/session/Session.fixture';
+import { fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { CvView } from './CvView';
 
 const resume = (name: string) => ({
@@ -32,17 +32,15 @@ const OWNER_DATA: CvPageData = {
   cvContact: null,
 };
 
-function StartReviewerButton() {
-  const { startReviewerSession } = useWebSession();
-  return <button onClick={() => void startReviewerSession('rev-tok')}>start review</button>;
-}
-
 const MASKED_DATA: CvPageData = {
   resumeList: {
     data: [{ ...resume('Mai Server'), summary: '***', _maskedFields: ['summary'] }],
   },
   cvContact: null,
 };
+
+const signedInApi = () =>
+  fakeApi({ readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER) });
 
 function SignOutButton() {
   const { signOut } = useWebSession();
@@ -53,7 +51,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('CvView', () => {
   it('shows the server data to an anonymous visitor without a request', async () => {
-    const post = vi.spyOn(apiClient, 'post');
+    const get = vi.spyOn(apiClient, 'get');
     render(
       <Wrapper api={fakeApi()}>
         <CvView initialData={SERVER_DATA} />
@@ -64,7 +62,7 @@ describe('CvView', () => {
       await screen.findByRole('heading', { level: 1, name: 'Mai Server' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Platform engineer')).toBeInTheDocument();
-    expect(post).not.toHaveBeenCalled();
+    expect(get).not.toHaveBeenCalled();
   });
 
   it('shows the empty state when no main resume exists', () => {
@@ -76,15 +74,10 @@ describe('CvView', () => {
     expect(screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle })).toBeInTheDocument();
   });
 
-  it('refetches with the Bearer token once signed in', async () => {
-    const post = vi
-      .spyOn(apiClient, 'post')
-      .mockResolvedValue({ status: 200, data: { data: OWNER_DATA } });
-    const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('reader-token'),
-    });
+  it('refetches through the BFF once signed in', async () => {
+    const get = vi.spyOn(apiClient, 'get').mockResolvedValue({ status: 200, data: OWNER_DATA });
     render(
-      <Wrapper api={api}>
+      <Wrapper api={signedInApi()}>
         <CvView initialData={SERVER_DATA} />
       </Wrapper>,
     );
@@ -92,26 +85,13 @@ describe('CvView', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Mai Private' }),
     ).toBeInTheDocument();
-    const [, , config] = post.mock.calls[0] as [
-      string,
-      unknown,
-      { headers: Record<string, string> },
-    ];
-    expect(config.headers.Authorization).toBe('Bearer reader-token');
-    expect(api.me).toHaveBeenCalledWith('reader-token');
+    expect(get).toHaveBeenCalledWith(BFF_ENDPOINTS.CV);
   });
 
   it('shows an error, not the public data, when the refetch fails', async () => {
-    vi.spyOn(apiClient, 'post').mockResolvedValue({
-      status: 200,
-      data: { errors: [{ extensions: { code: 'FORBIDDEN' } }] },
-    });
+    vi.spyOn(apiClient, 'get').mockRejectedValue(new Error('401'));
     render(
-      <Wrapper
-        api={fakeApi({
-          refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('t'),
-        })}
-      >
+      <Wrapper api={signedInApi()}>
         <CvView initialData={SERVER_DATA} />
       </Wrapper>,
     );
@@ -120,16 +100,9 @@ describe('CvView', () => {
   });
 
   it('falls back to the server data after sign-out', async () => {
-    vi.spyOn(apiClient, 'post').mockResolvedValue({
-      status: 200,
-      data: { data: OWNER_DATA },
-    });
+    vi.spyOn(apiClient, 'get').mockResolvedValue({ status: 200, data: OWNER_DATA });
     render(
-      <Wrapper
-        api={fakeApi({
-          refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('t'),
-        })}
-      >
+      <Wrapper api={signedInApi()}>
         <SignOutButton />
         <CvView initialData={SERVER_DATA} />
       </Wrapper>,
@@ -148,105 +121,5 @@ describe('CvView', () => {
       </Wrapper>,
     );
     expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
-    expect(screen.queryByText(COPY.cv.maskedValueForReviewer)).not.toBeInTheDocument();
-  });
-
-  it('says hidden for reviewers once a reviewer session starts', async () => {
-    vi.spyOn(apiClient, 'post').mockResolvedValue({
-      status: 200,
-      data: { data: MASKED_DATA },
-    });
-    render(
-      <Wrapper api={fakeApi()}>
-        <StartReviewerButton />
-        <CvView initialData={MASKED_DATA} />
-      </Wrapper>,
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'start review' }));
-
-    expect(await screen.findByText(COPY.cv.maskedValueForReviewer)).toBeInTheDocument();
-    expect(screen.queryByText(COPY.cv.maskedValue)).not.toBeInTheDocument();
-  });
-
-  describe('when the API no longer accepts the token', () => {
-    const REFUSED = { status: 401, data: { errors: [{ extensions: {} }] } };
-    const REFUSED_BY_CODE = {
-      status: 200,
-      data: { errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] },
-    };
-
-    function SessionKind() {
-      const { kind } = useWebSession();
-      return <p data-testid="kind">{kind ?? 'anonymous'}</p>;
-    }
-
-    async function renderAndStartReviewer() {
-      render(
-        <Wrapper api={fakeApi()}>
-          <StartReviewerButton />
-          <SessionKind />
-          <CvView initialData={MASKED_DATA} />
-        </Wrapper>,
-      );
-      await userEvent.click(screen.getByRole('button', { name: 'start review' }));
-    }
-
-    it('ends a reviewer session on the first refetch and shows the public CV', async () => {
-      vi.spyOn(apiClient, 'post').mockResolvedValue(REFUSED);
-      await renderAndStartReviewer();
-
-      await waitFor(() => expect(screen.getByTestId('kind')).toHaveTextContent('anonymous'));
-      expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    });
-
-    it('ends a reviewer session that is refused on a later refetch', async () => {
-      vi.spyOn(apiClient, 'post')
-        .mockResolvedValueOnce({ status: 200, data: { data: MASKED_DATA } })
-        .mockResolvedValue(REFUSED_BY_CODE);
-      await renderAndStartReviewer();
-      await screen.findByText(COPY.cv.maskedValueForReviewer);
-
-      act(() => {
-        focusManager.setFocused(false);
-        focusManager.setFocused(true);
-      });
-
-      await waitFor(() => expect(screen.getByTestId('kind')).toHaveTextContent('anonymous'));
-      expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    });
-
-    it('keeps the error state when a reviewer refetch fails with a 500', async () => {
-      vi.spyOn(apiClient, 'post').mockResolvedValue({
-        status: 500,
-        data: {},
-      });
-      await renderAndStartReviewer();
-
-      await waitFor(() =>
-        expect(screen.getByRole('alert')).toHaveTextContent(COPY.cv.refetchFailed),
-      );
-      expect(screen.getByTestId('kind')).toHaveTextContent('reviewer');
-    });
-
-    it('keeps the error state when an account session gets a 401', async () => {
-      vi.spyOn(apiClient, 'post').mockResolvedValue(REFUSED);
-      render(
-        <Wrapper
-          api={fakeApi({
-            refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('t'),
-          })}
-        >
-          <SessionKind />
-          <CvView initialData={SERVER_DATA} />
-        </Wrapper>,
-      );
-
-      await waitFor(() =>
-        expect(screen.getByRole('alert')).toHaveTextContent(COPY.cv.refetchFailed),
-      );
-      expect(screen.getByTestId('kind')).toHaveTextContent('account');
-    });
   });
 });

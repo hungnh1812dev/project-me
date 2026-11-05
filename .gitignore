@@ -40,3 +40,6 @@ graphify-out
 
 # rollup-plugin-visualizer output
 apps/cms-admin/stats.html
+
+# session-gate hook state
+.agent-state/.session-gate.json

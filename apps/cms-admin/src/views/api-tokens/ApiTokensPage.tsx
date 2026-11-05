@@ -4,7 +4,7 @@ import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
 import { useRestoreFocus } from '@components/useRestoreFocus';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { ApiToken } from '@features/access/Access.api';
 import { isForbidden } from '@features/access/Access.errors';
 import { useApiTokensQuery } from '@features/access/Access.queries';
@@ -19,8 +19,6 @@ import {
   type TokenDialogTarget,
 } from './TokenFormDialog';
 
-const copy = COPY.access.apiTokens;
-
 interface Notice {
   tone: FormAlertTone;
   message: string;
@@ -28,6 +26,8 @@ interface Notice {
 
 /** `/api-tokens`: who may call the API with a key, and what each key may do. */
 export function ApiTokensPage() {
+  const text = useScreenText('access');
+  const copy = text.access.apiTokens;
   const [page, setPage] = useState(1);
   const tokens = useApiTokensQuery(page);
   const caller = useCallerAccess();
@@ -90,6 +90,7 @@ export function ApiTokensPage() {
     currentUserId: me?.id,
     showCreator,
     canChange,
+    text,
     onEdit: (token, opener) => open(opener, () => setDialog({ mode: 'edit', token })),
     onRevoke: (token, opener) => open(opener, () => setRevoking(token)),
   });

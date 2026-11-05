@@ -1,65 +1,97 @@
-import { apiClient, createApiClient } from '../../apis/client/Api.client';
-import { createAuthApi, isPrivileged, type CurrentUser } from './Auth.api';
-import { TEST_USER } from './Session.fixture';
+import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 
-function userWith(permissions: string[]): CurrentUser {
-  return { ...TEST_USER, permissions };
+import { apiClient, createApiClient } from '../../apis/client/Api.client';
+import { BFF_BASE_PATH } from '../../configs/Api.endpoints';
+import { createAuthApi, PrivilegedAccessError } from './Auth.api';
+import { httpError, TEST_USER } from './Session.fixture';
+
+function clientAnswering(respond: (config: InternalAxiosRequestConfig) => unknown) {
+  const seen: InternalAxiosRequestConfig[] = [];
+  const adapter: AxiosAdapter = (config) => {
+    seen.push(config);
+    const result = respond(config);
+    return result instanceof Error
+      ? Promise.reject(result)
+      : Promise.resolve({ data: result, status: 200, statusText: 'OK', headers: {}, config });
+  };
+  return { api: createAuthApi(createApiClient(BFF_BASE_PATH, { adapter })), seen };
 }
 
-describe('isPrivileged', () => {
-  it('is false for a reader: only read permissions', () => {
-    expect(isPrivileged(userWith(['article:read', 'profile:read']))).toBe(false);
+describe('createAuthApi', () => {
+  it('reads the session from the BFF', async () => {
+    const { api, seen } = clientAnswering(() => ({ user: TEST_USER }));
+    await expect(api.readSession()).resolves.toEqual(TEST_USER);
+    expect(seen[0]).toMatchObject({ method: 'get', url: '/session', baseURL: '/bff/v1' });
   });
 
-  it('is false for an account with no permissions', () => {
-    expect(isPrivileged(userWith([]))).toBe(false);
+  it('reads no session as null', async () => {
+    const { api } = clientAnswering(() => ({ user: null }));
+    await expect(api.readSession()).resolves.toBeNull();
   });
 
-  it.each(['article:update', 'article:publish', 'roles:create'])(
-    'is true when %s is held (editor, admin)',
-    (permission) => {
-      expect(isPrivileged(userWith(['article:read', permission]))).toBe(true);
-    },
-  );
-
-  it('fails closed when the list is missing', () => {
-    const user = { ...TEST_USER } as Partial<CurrentUser>;
-    delete user.permissions;
-    expect(isPrivileged(user as CurrentUser)).toBe(true);
+  it('maps a finished login to the visitor and posts the human check token', async () => {
+    const { api, seen } = clientAnswering(() => ({ status: 'signed-in', user: TEST_USER }));
+    const credentials = { email: 'a@b.co', password: 'pw', humanCheckToken: 'hc' };
+    await expect(api.login(credentials)).resolves.toEqual({ kind: 'signed-in', user: TEST_USER });
+    expect(seen[0]?.url).toBe('/auth/login');
+    expect(JSON.parse(seen[0]?.data as string)).toEqual(credentials);
   });
-});
 
-describe('isPrivileged fails closed (I1)', () => {
-  it.each([null, 'article:read', { 0: 'article:read' }])(
-    'is true when permissions is %j, not an array',
-    (permissions) => {
-      const user = { ...TEST_USER, permissions } as unknown as CurrentUser;
-      expect(isPrivileged(user)).toBe(true);
-    },
-  );
-});
-
-describe('me', () => {
-  it('sends the exact Bearer header on that call only', async () => {
-    const seen: unknown[] = [];
-    const client = createApiClient('/api/v1', {
-      adapter: (config) => {
-        seen.push(config.headers.get('Authorization'));
-        return Promise.resolve({
-          data: TEST_USER,
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-          config,
-        });
-      },
+  it('maps a 2FA login to its methods only', async () => {
+    const { api } = clientAnswering(() => ({ status: 'two-factor-required', methods: ['email'] }));
+    await expect(api.login({ email: 'a@b.co', password: 'pw' })).resolves.toEqual({
+      kind: 'two-factor-required',
+      methods: ['email'],
     });
-    await createAuthApi(client).me('tok');
-    await createAuthApi(client).refresh();
-    expect(seen).toEqual(['Bearer tok', undefined]);
   });
 
-  it('leaves no Authorization default on the shared apiClient', () => {
+  it('returns the visitor after the code check', async () => {
+    const { api, seen } = clientAnswering(() => ({ user: TEST_USER }));
+    await expect(api.verifyTwoFactor({ code: '123456' })).resolves.toEqual(TEST_USER);
+    expect(seen[0]?.url).toBe('/auth/two-factor/verify');
+  });
+
+  it('sends a JSON body with the email code request, even without a token', async () => {
+    const { api, seen } = clientAnswering(() => null);
+    await api.sendLoginEmailCode();
+    expect(seen[0]?.url).toBe('/auth/two-factor/email-code');
+    expect(seen[0]?.data).toBe('{}');
+    expect(seen[0]?.headers.get('Content-Type')).toContain('application/json');
+  });
+
+  it('sends a JSON body on logout', async () => {
+    const { api, seen } = clientAnswering(() => null);
+    await api.logout();
+    expect(seen[0]?.url).toBe('/auth/logout');
+    expect(seen[0]?.data).toBe('{}');
+    expect(seen[0]?.headers.get('Content-Type')).toContain('application/json');
+  });
+
+  it.each(['login', 'verifyTwoFactor'] as const)(
+    '%s turns BFF_PRIVILEGED_ACCOUNT into PrivilegedAccessError',
+    async (method) => {
+      const { api } = clientAnswering(() =>
+        httpError(403, { errorCode: 'BFF_PRIVILEGED_ACCOUNT' }),
+      );
+      const call =
+        method === 'login'
+          ? api.login({ email: 'a@b.co', password: 'pw' })
+          : api.verifyTwoFactor({ code: '123456' });
+      await expect(call).rejects.toBeInstanceOf(PrivilegedAccessError);
+    },
+  );
+
+  it('lets any other failure through unchanged', async () => {
+    const failure = httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' });
+    const { api } = clientAnswering(() => failure);
+    await expect(api.login({ email: 'a@b.co', password: 'pw' })).rejects.toBe(failure);
+  });
+});
+
+describe('apiClient', () => {
+  it('is based on the BFF path, sends no cookie flag and holds no Authorization default', () => {
+    expect(apiClient.defaults.baseURL).toBe(BFF_BASE_PATH);
+    expect(apiClient.defaults.withCredentials).toBeUndefined();
     const headers = apiClient.defaults.headers as unknown as Record<string, unknown>;
     const sections = [headers, ...Object.values(headers)];
     expect(

@@ -273,6 +273,12 @@ test.describe.serial('richtext toolbar: formatting survives save and reload', ()
       await blockTypeButton.click();
       await page.getByRole('menuitem', { name: richtext[`heading${level}`], exact: true }).click();
       await expect(editor.locator(`h${level}`)).toHaveText(`Heading line ${level}`);
+      await expect(
+        page.getByRole('menuitem', { name: richtext[`heading${level}`], exact: true }),
+      ).toBeHidden();
+      await expect(blockTypeButton).toHaveAccessibleName(
+        `${richtext.blockType}: ${richtext[`heading${level}`]}`,
+      );
     }
     const before = await saveAndReload();
     for (const level of HEADING_LEVELS) {

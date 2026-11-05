@@ -1,11 +1,9 @@
 import { useCallback, useState } from 'react';
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useCurrentUser, useSession } from '@features/auth';
 
 import { DisableTwoFactorDialog, EmailTwoFactorDialog, TotpSetupDialog } from './TwoFactorDialogs';
-
-const copy = COPY.security.twoFactor;
 
 type OpenDialog = 'totp' | 'email' | 'disable' | null;
 
@@ -16,6 +14,8 @@ interface Notice {
 
 /** Status of 2FA plus the actions that change it; each opens a dialog. */
 export function TwoFactorSection() {
+  const security = useScreenText('security').security;
+  const copy = security.twoFactor;
   const user = useCurrentUser();
   const session = useSession();
   const [dialog, setDialog] = useState<OpenDialog>(null);
@@ -38,8 +38,8 @@ export function TwoFactorSection() {
   );
 
   const onStateChanged = useCallback(
-    () => void settle({ tone: 'info', message: COPY.security.errors.stateChanged }),
-    [settle],
+    () => void settle({ tone: 'info', message: security.errors.stateChanged }),
+    [settle, security.errors.stateChanged],
   );
 
   if (user === null) return null;

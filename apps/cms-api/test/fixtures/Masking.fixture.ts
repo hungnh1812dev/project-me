@@ -48,6 +48,7 @@ export const PROFILE_DEFINITION = {
     {
       name: 'contact',
       type: 'component',
+      component: 'contact',
       fields: [
         { name: 'email', type: 'string' },
         { name: 'phone', type: 'string' },
@@ -56,6 +57,7 @@ export const PROFILE_DEFINITION = {
     {
       name: 'experience',
       type: 'component',
+      component: 'experience',
       repeatable: true,
       fields: [
         { name: 'company', type: 'string' },
@@ -63,6 +65,7 @@ export const PROFILE_DEFINITION = {
         {
           name: 'roles',
           type: 'component',
+          component: 'roles',
           repeatable: true,
           fields: [
             { name: 'title', type: 'string' },

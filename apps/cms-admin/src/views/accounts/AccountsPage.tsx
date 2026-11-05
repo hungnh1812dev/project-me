@@ -4,7 +4,7 @@ import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
 import { useRestoreFocus } from '@components/useRestoreFocus';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { Account, InvitedAccount } from '@features/access/Access.api';
 import { isForbidden } from '@features/access/Access.errors';
 import { useAccountsQuery, useRolesQuery } from '@features/access/Access.queries';
@@ -15,8 +15,6 @@ import { accountColumns } from './Account.columns';
 import { DisableAccountDialog, type DisableOutcome } from './DisableAccountDialog';
 import { InviteDialog } from './InviteDialog';
 
-const copy = COPY.access.accounts;
-
 interface Notice {
   tone: FormAlertTone;
   message: string;
@@ -24,6 +22,8 @@ interface Notice {
 
 /** `/accounts`: who can sign in; invite and disable. */
 export function AccountsPage() {
+  const text = useScreenText('access');
+  const copy = text.access.accounts;
   const [page, setPage] = useState(1);
   const accounts = useAccountsQuery(page);
   const roles = useRolesQuery();
@@ -47,6 +47,7 @@ export function AccountsPage() {
     showActions,
     canEnable: canDisable,
     canResend: canInvite,
+    text,
     onNotice: setNotice,
     onDisable: (account, opener) => {
       rememberOpener(opener);

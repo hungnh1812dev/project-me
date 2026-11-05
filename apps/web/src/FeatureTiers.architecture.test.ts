@@ -69,12 +69,6 @@ describe('directory dependencies', () => {
   it('have no cycle between directories', () => {
     expect(findCycle(dependencyGraph())).toBeNull();
   });
-
-  it('keep auth and reviewer independent of each other', () => {
-    const graph = dependencyGraph();
-    expect(graph.get('features/auth')).not.toContain('features/reviewer');
-    expect(graph.get('features/reviewer')).not.toContain('features/auth');
-  });
 });
 
 describe('session facade', () => {

@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES } from '@configs/Http.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
 import { screen, waitFor } from '@testing-library/react';
@@ -29,21 +29,21 @@ async function openSetup(handlers: Record<string, FakeHandler>, statusHandler: F
 
 const field = (label: string) =>
   screen.getByLabelText(new RegExp(`^${label.replace(/[()]/g, '\\$&')}`));
-const submit = () => screen.getByRole('button', { name: COPY.setup.submit });
+const submit = () => screen.getByRole('button', { name: EN_TEXT.setup.submit });
 
 async function waitForForm() {
-  await screen.findByRole('heading', { level: 1, name: COPY.setup.title });
+  await screen.findByRole('heading', { level: 1, name: EN_TEXT.setup.title });
 }
 
 async function fillAndSubmit(repeat = PASSWORD) {
-  await userEvent.type(field(COPY.setup.tokenLabel), TOKEN);
-  await userEvent.type(field(COPY.setup.emailLabel), EMAIL);
-  await userEvent.type(field(COPY.setup.passwordLabel), PASSWORD);
-  await userEvent.type(field(COPY.setup.confirmPasswordLabel), repeat);
+  await userEvent.type(field(EN_TEXT.setup.tokenLabel), TOKEN);
+  await userEvent.type(field(EN_TEXT.setup.emailLabel), EMAIL);
+  await userEvent.type(field(EN_TEXT.setup.passwordLabel), PASSWORD);
+  await userEvent.type(field(EN_TEXT.setup.confirmPasswordLabel), repeat);
   await userEvent.click(submit());
 }
 
-const signInHeading = () => screen.findByRole('heading', { level: 1, name: COPY.login.title });
+const signInHeading = () => screen.findByRole('heading', { level: 1, name: EN_TEXT.login.title });
 
 describe('OwnerSetupPage', () => {
   it('redirects to sign in when the setup is closed', async () => {
@@ -53,16 +53,16 @@ describe('OwnerSetupPage', () => {
 
   it('shows the checking state, then an error with a retry when the status fails', async () => {
     await openSetup({}, () => ({ status: 500 }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.setup.statusFailed);
-    expect(screen.getByRole('button', { name: COPY.setup.retry })).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.setup.statusFailed);
+    expect(screen.getByRole('button', { name: EN_TEXT.setup.retry })).toBeInTheDocument();
   });
 
   it('hides the token and passwords, and tells the browser not to store the token', async () => {
     await openSetup({});
     await waitForForm();
-    expect(field(COPY.setup.tokenLabel)).toHaveAttribute('type', 'password');
-    expect(field(COPY.setup.tokenLabel)).toHaveAttribute('autocomplete', 'off');
-    expect(field(COPY.setup.passwordLabel)).toHaveAttribute('type', 'password');
+    expect(field(EN_TEXT.setup.tokenLabel)).toHaveAttribute('type', 'password');
+    expect(field(EN_TEXT.setup.tokenLabel)).toHaveAttribute('autocomplete', 'off');
+    expect(field(EN_TEXT.setup.passwordLabel)).toHaveAttribute('type', 'password');
   });
 
   it('blocks the submit when the repeated password differs', async () => {
@@ -72,8 +72,8 @@ describe('OwnerSetupPage', () => {
     await waitForForm();
     await fillAndSubmit('another passphrase entirely');
 
-    expect(field(COPY.setup.confirmPasswordLabel)).toHaveAccessibleDescription(
-      COPY.setup.validation.passwordsDiffer,
+    expect(field(EN_TEXT.setup.confirmPasswordLabel)).toHaveAccessibleDescription(
+      EN_TEXT.setup.validation.passwordsDiffer,
     );
     expect(api.callsTo(`POST ${OWNER}`)).toHaveLength(0);
   });
@@ -86,7 +86,7 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     expect(await signInHeading()).toBeInTheDocument();
-    expect(screen.getByText(COPY.login.notices.ownerCreated)).toBeInTheDocument();
+    expect(screen.getByText(EN_TEXT.login.notices.ownerCreated)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Email/)).toHaveValue(EMAIL);
     const body = JSON.parse(String(api.callsTo(`POST ${OWNER}`)[0]?.data)) as Record<
       string,
@@ -109,7 +109,7 @@ describe('OwnerSetupPage', () => {
       [`POST ${OWNER}`]: () => ({ status: 201 }),
     });
     await waitForForm();
-    await userEvent.type(field(COPY.setup.displayNameLabel), '  Mai Tran ');
+    await userEvent.type(field(EN_TEXT.setup.displayNameLabel), '  Mai Tran ');
     await fillAndSubmit();
     await signInHeading();
     const body = JSON.parse(String(api.callsTo(`POST ${OWNER}`)[0]?.data)) as {
@@ -124,11 +124,11 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     await waitFor(() => {
-      expect(field(COPY.setup.tokenLabel)).toHaveAccessibleDescription(
-        COPY.setup.errors.tokenInvalid,
+      expect(field(EN_TEXT.setup.tokenLabel)).toHaveAccessibleDescription(
+        EN_TEXT.setup.errors.tokenInvalid,
       );
     });
-    expect(field(COPY.setup.emailLabel)).toHaveValue(EMAIL);
+    expect(field(EN_TEXT.setup.emailLabel)).toHaveValue(EMAIL);
   });
 
   it('shows server field errors on their fields', async () => {
@@ -146,7 +146,7 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     await waitFor(() => {
-      expect(field(COPY.setup.emailLabel)).toHaveAccessibleDescription(
+      expect(field(EN_TEXT.setup.emailLabel)).toHaveAccessibleDescription(
         'Must be a valid email address.',
       );
     });
@@ -163,8 +163,8 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     await waitFor(() => {
-      expect(field(COPY.setup.emailLabel)).toHaveAccessibleDescription(
-        COPY.setup.errors.emailTaken,
+      expect(field(EN_TEXT.setup.emailLabel)).toHaveAccessibleDescription(
+        EN_TEXT.setup.errors.emailTaken,
       );
     });
   });
@@ -175,7 +175,7 @@ describe('OwnerSetupPage', () => {
     await fillAndSubmit();
 
     expect(await signInHeading()).toBeInTheDocument();
-    expect(screen.getByText(COPY.login.notices.setupComplete)).toBeInTheDocument();
+    expect(screen.getByText(EN_TEXT.login.notices.setupComplete)).toBeInTheDocument();
   });
 
   it('shows the wait time in an alert when rate limited', async () => {
@@ -196,6 +196,6 @@ describe('OwnerSetupPage', () => {
     await waitForForm();
     await fillAndSubmit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.setup.errors.unexpected);
+    expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.setup.errors.unexpected);
   });
 });

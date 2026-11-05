@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import type { ContentTypeDefinition } from './DefinitionSchema.rules';
+import type {
+  ComponentFieldDefinition,
+  ContentTypeDefinition,
+  FieldDefinition,
+} from './DefinitionSchema.rules';
 import {
   componentTableName,
   planTables,
@@ -10,10 +11,41 @@ import {
   toSqlIdentifier,
 } from './Naming.rules';
 
-const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
+function text(name: string): FieldDefinition {
+  return { name, type: 'text' };
+}
 
-function loadCvPage(): ContentTypeDefinition {
-  return JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8')) as ContentTypeDefinition;
+function component(
+  name: string,
+  value: string,
+  fields: FieldDefinition[],
+): ComponentFieldDefinition {
+  return { name, type: 'component', component: value, repeatable: true, fields };
+}
+
+/** The component layout of the cv-page content type (names differ from component values). */
+function cvPage(): ContentTypeDefinition {
+  return {
+    slug: 'cv-page',
+    displayName: 'CV page',
+    kind: 'single',
+    draftAndPublish: true,
+    fields: [
+      text('position'),
+      { name: 'isMain', type: 'boolean' },
+      component('skills', 'skill', [text('level')]),
+      component('experiences', 'experience', [
+        text('company'),
+        component('roles', 'role', [
+          text('position'),
+          component('projects', 'project', [{ name: 'repositoryLink', type: 'text' }]),
+        ]),
+      ]),
+      component('educations', 'education', [text('degree')]),
+      component('languages', 'language', [text('language')]),
+      component('references', 'referee', [text('phone')]),
+    ],
+  };
 }
 
 describe('naming', () => {
@@ -36,7 +68,7 @@ describe('naming', () => {
     expect(componentTableName(componentTableName('cv_page', 'experience'), 'role')).toBe(
       'cv_page__experience__role',
     );
-    expect(componentTableName('cv_page', 'workHistory')).toBe('cv_page__work_history');
+    expect(componentTableName('cv_page', 'subNavigation')).toBe('cv_page__sub_navigation');
   });
 
   it('composes relation names from the table name', () => {
@@ -50,18 +82,31 @@ describe('naming', () => {
   });
 
   describe('planTables(cv-page)', () => {
-    const tables = planTables(loadCvPage());
+    const tables = planTables(cvPage());
 
-    it('produces the 8 tables of SPEC §8.2', () => {
+    it('names the root and the 7 component tables after the component values', () => {
       expect(tables.map((table) => table.name)).toEqual([
         'cv_page',
         'cv_page__skill',
         'cv_page__experience',
         'cv_page__experience__role',
-        'cv_page__project',
+        'cv_page__experience__role__project',
         'cv_page__education',
         'cv_page__language',
-        'cv_page__reference',
+        'cv_page__referee',
+      ]);
+    });
+
+    it('records the dotted API path of each table', () => {
+      expect(tables.map((table) => table.apiPath)).toEqual([
+        '',
+        'skills',
+        'experiences',
+        'experiences.roles',
+        'experiences.roles.projects',
+        'educations',
+        'languages',
+        'references',
       ]);
     });
 
@@ -71,7 +116,7 @@ describe('naming', () => {
         kind: 'component',
         depth: 2,
         parentTable: 'cv_page__experience',
-        namePath: ['fields', 5, 'fields', 2, 'name'],
+        namePath: ['fields', 3, 'fields', 1, 'component'],
       });
       expect(role?.systemColumns).toEqual(['id', 'component_uid', 'parent_id', 'order_index']);
     });
@@ -80,23 +125,13 @@ describe('naming', () => {
       const root = tables[0];
       expect(root?.kind).toBe('root');
       expect(root?.namePath).toEqual(['slug']);
-      expect(root?.columns.map((column) => column.name)).toEqual([
-        'position',
-        'is_main',
-        'company',
-        'summary',
-      ]);
+      expect(root?.columns.map((column) => column.name)).toEqual(['position', 'is_main']);
       expect(root?.relationNames.map((relation) => relation.name)).toEqual([
         'cv_page_pk',
         'cv_page_draft_uq',
         'cv_page_published_uq',
         'cv_page_published_idx',
       ]);
-    });
-
-    it('uses the fixed repositoryLink spelling', () => {
-      const project = tables.find((table) => table.name === 'cv_page__project');
-      expect(project?.columns.map((column) => column.name)).toContain('repository_link');
     });
   });
 

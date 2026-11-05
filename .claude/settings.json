@@ -7,5 +7,22 @@
     "allow": [
       "Bash(rm .agent-state/features/*/findings/*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|SendMessage",
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/session-gate" }]
+      },
+      {
+        "matcher": "Read|Bash",
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/read-guard" }]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/session-gate" }]
+      }
+    ]
   }
 }

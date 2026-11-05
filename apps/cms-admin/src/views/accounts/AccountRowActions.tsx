@@ -1,13 +1,11 @@
 import { Button, type FormAlertTone } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES } from '@configs/Http.constants';
+import { useScreenText } from '@configs/locales';
 import type { Account } from '@features/access/Access.api';
 import { toAccessError } from '@features/access/Access.errors';
 import { ACCESS_QUERY_KEYS } from '@features/access/Access.queries';
 import { useAccessApi } from '@features/access/AccessApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-const copy = COPY.access.accounts;
 
 export interface RowNotice {
   tone: FormAlertTone;
@@ -30,6 +28,8 @@ export function AccountRowActions({
   canResend: boolean;
   onNotice: (notice: RowNotice) => void;
 }) {
+  const access = useScreenText('access');
+  const copy = access.access.accounts;
   const api = useAccessApi();
   const queryClient = useQueryClient();
   const refresh = () => queryClient.invalidateQueries({ queryKey: ACCESS_QUERY_KEYS.accounts });
@@ -41,7 +41,7 @@ export function AccountRowActions({
       onNotice({ tone: 'success', message: copy.enabled(account.displayName) });
     },
     onError: (cause) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, access);
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_NOT_DISABLED) {
         void refresh();
         onNotice({ tone: 'info', message: copy.alreadyEnabled });
@@ -64,7 +64,7 @@ export function AccountRowActions({
       );
     },
     onError: (cause) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, access);
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_NOT_INVITED) {
         void refresh();
         onNotice({ tone: 'info', message: copy.notInvited });

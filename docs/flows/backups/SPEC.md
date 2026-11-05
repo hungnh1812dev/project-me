@@ -6,7 +6,7 @@ summary: Owner-only list of nightly database dumps and 60-second download links 
 
 # Backups: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `backups`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `backups`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -39,8 +39,3 @@ On-demand dumps and streaming dump bytes through cms-api (D20).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-10-27 Backup download (D20, ADR 0013, Q-BK1..Q-BK7).
-- 2026-11-04 Flow folder created from the old SPEC.

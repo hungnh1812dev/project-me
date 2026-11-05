@@ -44,17 +44,19 @@ passes silently.
 
 Every field has a `name` and a `type`. Optional on every field:
 
-| Key         | Type    | Meaning                                                                                                                                                                                                                                         |
-| ----------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `required`  | boolean | A value must be present on save. Default `false`.                                                                                                                                                                                               |
-| `sensitive` | boolean | The field is masked for `public` and `reviewer` unless their type-specific `read` row lists it; the wildcard `*` grant does not cover it (SPEC D2, [access control](access-control.md#sensitive-fields-spec-d2-task-rv-mask)). Default `false`. |
+| Key           | Type                       | Meaning                                                                                                                                                                                                                                         |
+| ------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `required`    | boolean                    | A value must be present on save. Default `false`.                                                                                                                                                                                               |
+| `displayName` | string                     | Admin label of the field (1-60 characters, same rules as the type's `displayName`; error path `fields[i].displayName`). Metadata only. Without it the admin derives a label from `name`.                                                        |
+| `width`       | `"1/3"`, `"1/2"`, `"full"` | Share of the admin form row. Not allowed on a `component` (`schema.invalid`). Metadata only. `GET /content-types` always reports it, `full` when unset.                                                                                         |
+| `sensitive`   | boolean                    | The field is masked for `public` and `reviewer` unless their type-specific `read` row lists it; the wildcard `*` grant does not cover it (SPEC D2, [access control](access-control.md#sensitive-fields-spec-d2-task-rv-mask)). Default `false`. |
 
 ### Field types
 
 | `type`      | Stores                                              | Masked value (SPEC §6) |
 | ----------- | --------------------------------------------------- | ---------------------- |
-| `string`    | short text (one line)                               | `"***"`                |
-| `text`      | long plain text                                     | `"***"`                |
+| `text`      | short text (one line)                               | `"***"`                |
+| `string`    | long plain text                                     | `"***"`                |
 | `richtext`  | sanitized HTML (SPEC D13)                           | `"***"`                |
 | `integer`   | whole number                                        | `null`                 |
 | `decimal`   | exact decimal number                                | `null`                 |
@@ -83,12 +85,19 @@ A component is a field of type `component` with its own `fields`:
 
 ```json
 {
-  "name": "experience",
+  "name": "experiences",
+  "component": "experience",
   "type": "component",
   "repeatable": true,
-  "fields": [{ "name": "company", "type": "string" }]
+  "fields": [{ "name": "company", "type": "text" }]
 }
 ```
+
+- `name` is the API key and the column source (`experiences`). `component`
+  (required on a component, rejected on any other field) names the table:
+  its snake_case form must pass the field identifier rules (error path
+  `fields[i].component`). Two sibling components with the same value are
+  `identifier.collision`.
 
 - `repeatable: true` makes it an ordered list (stored with `order_index`).
   Omitted or `false` means at most one entry.
@@ -100,6 +109,11 @@ A component is a field of type `component` with its own `fields`:
 
 ## Naming
 
+A `snapshot.json` written before `component` existed is read with
+`component = name` on every component field, so it plans to the table names it
+was generated with (the migration planner then pairs them with the new names).
+Source schemas never get this fallback.
+
 Field names are what the API uses as property names. Write them in
 camelCase (`teamSize`); snake_case is accepted too. The SQL name is the
 snake_case form.
@@ -108,7 +122,7 @@ snake_case form.
 | ---------------------- | ------------------------------------------------- | -------------------------------- |
 | Column                 | field name, each capital becomes `_` + lowercase  | `teamSize` → `team_size`         |
 | Root table             | slug with `-` → `_`                               | `cv-page` → `cv_page`            |
-| Component table        | parent table + `__` + component field column      | `cv_page__experience__role`      |
+| Component table        | parent table + `__` + `component` value column    | `cv_page__experience__role`      |
 | Primary key            | `<table>_pk`                                      | `cv_page_pk`                     |
 | Draft / published uniq | `<root>_draft_uq`, `<root>_published_uq`          | `cv_page_published_uq`           |
 | Published list index   | `<root>_published_idx`                            | `cv_page_published_idx`          |
@@ -142,15 +156,15 @@ error has this shape, ready for the admin UI and the CLI:
 When several files are validated together (`validateDefinitions`), the path
 starts with the file's index in the list.
 
-| `rule`                     | Rejected when                                                                                                                                                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema.invalid`           | The shape is wrong: missing or unknown key, wrong value type, unknown `type`, a component without `fields`, `fields`/`repeatable` on a non-component, an empty field list.                                                                  |
-| `identifier.invalid`       | The slug is not kebab-case, or a field's SQL name fails `^[a-z][a-z0-9_]*$`, contains `__` or ends with `_` (so: no capital first letter, digit first, `-`, spaces, non-ASCII).                                                             |
-| `display_name.invalid`     | `displayName` is empty, has leading or trailing whitespace, holds a line break or another control character, or is longer than 60 Unicode code points (an emoji counts once). The path is `displayName`. A missing key is `schema.invalid`. |
-| `identifier.reserved`      | A field's SQL name is an engine-owned column (above, plus `status`) or a Postgres reserved word (`order`, `user`, `select`, ...). A slug may not map to a reserved word.                                                                    |
-| `identifier.too_long`      | A composed table, column, index or constraint name is longer than **63 bytes** (Postgres would silently truncate it). The generator never truncates.                                                                                        |
-| `identifier.collision`     | Two fields at the same level map to the same SQL name (`teamSize` and `team_size`), or two generated table/index/constraint names are equal in the `content` schema.                                                                        |
-| `component.depth_exceeded` | A component sits deeper than level 3.                                                                                                                                                                                                       |
+| `rule`                     | Rejected when                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema.invalid`           | The shape is wrong: missing or unknown key, wrong value type, unknown `type`, a component without `fields` or `component`, `fields`/`repeatable`/`component` on a non-component, `width` on a component or outside `1/3`, `1/2`, `full`, an empty field list.                                                                                           |
+| `identifier.invalid`       | The slug is not kebab-case, or a field's SQL name fails `^[a-z][a-z0-9_]*$`, contains `__` or ends with `_` (so: no capital first letter, digit first, `-`, spaces, non-ASCII).                                                                                                                                                                         |
+| `display_name.invalid`     | `displayName` is empty, has leading or trailing whitespace, holds a line break or another control character, or is longer than 60 Unicode code points (an emoji counts once). The path is `displayName`, or `fields[i].displayName` for a field. A missing type-level key is `schema.invalid`.                                                          |
+| `identifier.reserved`      | A field's SQL name is an engine-owned column (above, plus `status`) or a Postgres reserved word (`order`, `user`, `select`, ...); a component field's `name` is exempt from the reserved-word check only (it is an API key with no column; its table segment is the `component` value, which keeps every check). A slug may not map to a reserved word. |
+| `identifier.too_long`      | A composed table, column, index or constraint name is longer than **63 bytes** (Postgres would silently truncate it). The generator never truncates.                                                                                                                                                                                                    |
+| `identifier.collision`     | Two fields at the same level map to the same SQL name (`teamSize` and `team_size`), or two generated table/index/constraint names are equal in the `content` schema.                                                                                                                                                                                    |
+| `component.depth_exceeded` | A component sits deeper than level 3.                                                                                                                                                                                                                                                                                                                   |
 
 Length budget: the longest suffix decides. A root table may be at most 49
 bytes (`_published_idx` adds 14), a component table at most 52 bytes
@@ -161,7 +175,8 @@ collision checks run only once every name is well formed.
 
 `apps/cms-api/content/schemas/cv-page.json` (ported from the old ERD; the
 old `responsitoryLink` is spelled `repositoryLink`, and the old
-`reviewerSessionId` column is gone, SPEC D2):
+`reviewerSessionId` column is gone, SPEC D2). A component field carries its
+`component` value, which names its table; `width` is `1/3`, `1/2` or `full`:
 
 ```json
 {
@@ -169,26 +184,25 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [
-    { "name": "position", "type": "string" },
-    { "name": "isMain", "type": "boolean" },
-    { "name": "company", "type": "string" },
+    { "name": "position", "type": "text", "width": "1/2" },
+    { "name": "isMain", "type": "boolean", "width": "1/2" },
+    { "name": "name", "type": "text" },
     { "name": "summary", "type": "richtext" },
     {
-      "name": "experience",
+      "name": "experiences",
       "type": "component",
+      "component": "experience",
       "repeatable": true,
       "fields": [
-        { "name": "company", "type": "string" },
-        { "name": "location", "type": "string" },
+        { "name": "company", "type": "text", "width": "1/2" },
         {
-          "name": "role",
+          "name": "roles",
           "type": "component",
+          "component": "role",
           "repeatable": true,
           "fields": [
-            { "name": "position", "type": "string" },
-            { "name": "teamSize", "type": "integer" },
-            { "name": "techStack", "type": "json" },
-            { "name": "responsibilities", "type": "richtext" }
+            { "name": "teamSize", "type": "integer", "width": "1/2" },
+            { "name": "techStack", "type": "json" }
           ]
         }
       ]
@@ -197,23 +211,61 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
 }
 ```
 
-(Shortened: the real file also has `skill`, `project`, `education`,
-`language` and `reference`.) It produces the 8 tables of SPEC §8.2:
+(Shortened: the real file also has `skills`, `educations`, `languages`,
+`references` (component `reference`) and, inside a role, `projects`.) It
+produces 8 tables:
 
 ```
-cv_page                     root: position, is_main, company, summary
-cv_page__skill              level, skill
-cv_page__experience         company, location
-cv_page__experience__role   position, period, team_size, projects, tech_stack, responsibilities
-cv_page__project            name, team_size, role, live_link, repository_link, tech_stack, responsibilities
-cv_page__education          degree, institution, period, location, description
-cv_page__language           language, level
-cv_page__reference          name, phone, role
+cv_page                                root: position, is_main, name, summary
+cv_page__skill                         level, skill
+cv_page__experience                    company, location, period
+cv_page__experience__role              position, period, team_size, tech_stack, responsibilities
+cv_page__experience__role__project     name, team_size, role, live_link, repository_link, tech_stack, responsibilities
+cv_page__education                     degree, institution, period, location, description
+cv_page__language                      language, level
+cv_page__reference                     name, phone, role
 ```
+
+`resume` and `header` use the same table naming (`resume__experience__role__project`,
+`header__nav__sub_navigation`); their tables were renamed with their data by
+migration `0006_content.sql`.
 
 Sensitive fields: `cv-contact` `address`, `phone`, `email`, `github`, and
 `resume` `experiences.company`, `referees.phone` (migration
-`0004_sensitive_site_fields.sql`, no DDL).
+`0004_sensitive_site_fields.sql`, no DDL); `cv-page` `experiences.company`,
+`references.phone` (migration `0008_content.sql`, no DDL).
+
+## Data-migration notes
+
+Generated migration files are never edited; what a migration does not carry
+over is written here.
+
+### `0006_content.sql` (cv-page schema format)
+
+- Resume and header: component tables renamed to the component path
+  (`ALTER TABLE ... RENAME`, constraints and indexes included); rows are kept.
+- `cv_page.company` dropped: its values are not carried over (the root field
+  is now `name`, added empty).
+- `cv_page__experience__role.projects` (a text column) dropped: its values are
+  not carried over; projects are now rows of the new table
+  `cv_page__experience__role__project`, created empty.
+- Table `cv_page__project` (the old top-level `project` component) dropped with
+  its rows: they are not carried over to the new nested table.
+- `cv_page__experience.period` added empty. The cv-page `skill`, `experience`,
+  `education`, `language` and `reference` tables keep their names and rows (the
+  API field names are now plural: `skills`, `experiences`, `educations`,
+  `languages`, `references`).
+- Applied with `content:generate --allow-destructive` (accepted by the user,
+  2026-11-05).
+
+### `0007_content.sql` (cv-page `referees` renamed `references`)
+
+- Comments only, no DDL: the field keeps its component `reference`, so the
+  table `cv_page__reference` and its rows stay. Component rows are keyed by
+  table and parent, not by field name (drafts and published copies are rows of
+  the same tables), so existing rows are read under `references` with no data
+  loss and no re-save needed. Clients that send or query `referees` for
+  `cv-page` must use `references`; `resume` keeps `referees`.
 
 ## Migrations
 

@@ -15,10 +15,13 @@ import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import type { Alert } from '../../apis/client/ApiFailure.errors';
+import { appEnv } from '../../configs/Browser.env';
 import { COPY } from '../../configs/Copy.constants';
+import { TURNSTILE } from '../../configs/Security.constants';
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 import { TwoFactorStep } from './TwoFactorStep';
+import { useHumanCheck } from './useHumanCheck';
 
 const copy = COPY.login;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,9 +32,8 @@ interface LoginValues {
 }
 
 /**
- * Sign-in dialog with the 2FA step. Credentials go from the browser straight
- * to cms-api, which sets the refresh cookie; nothing passes through the Next
- * server. Its content unmounts on close, so each opening starts clean.
+ * Sign-in dialog with the 2FA step. Credentials go to the BFF of this site,
+ * which keeps the tokens in a sealed HttpOnly cookie; the browser never holds one. Its content unmounts on close, so each opening starts clean.
  */
 export function WebLoginDialog({
   open,
@@ -40,17 +42,32 @@ export function WebLoginDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const siteKey = appEnv.turnstileSiteKey;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <LoginFlow onClose={() => onOpenChange(false)} />
+        {siteKey === undefined ? (
+          <HumanCheckUnavailable />
+        ) : (
+          <LoginFlow siteKey={siteKey} onClose={() => onOpenChange(false)} />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function LoginFlow({ onClose }: { onClose: () => void }) {
+function HumanCheckUnavailable() {
+  return (
+    <DialogHeader>
+      <DialogTitle>{copy.title}</DialogTitle>
+      <DialogDescription>{copy.humanCheck.unavailable}</DialogDescription>
+    </DialogHeader>
+  );
+}
+
+function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void }) {
   const session = useWebSession();
+  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.LOGIN);
   const [alert, setAlert] = useState<Alert | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [hasExpired, setHasExpired] = useState(false);
@@ -68,7 +85,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
         return;
       }
       form.resetField('password');
-      setChallenge({ tempToken: outcome.tempToken, methods: outcome.methods });
+      setChallenge({ methods: outcome.methods });
     },
     onError: (cause) => {
       setAlert(loginErrorAlertOf(cause, credentialAlertOf));
@@ -89,7 +106,13 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
     setHasExpired(false);
-    signIn.mutate({ email: values.email.trim(), password: values.password });
+    const humanCheckToken = humanCheck.requireToken();
+    if (humanCheckToken === null) return;
+    signIn.mutate({
+      email: values.email.trim(),
+      password: values.password,
+      humanCheckToken,
+    });
   });
 
   if (challenge !== null) {
@@ -101,6 +124,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         <TwoFactorStep
           challenge={challenge}
+          siteKey={siteKey}
           onCancel={closeChallenge}
           onExpired={expireChallenge}
           onDone={onClose}
@@ -138,6 +162,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
             autoComplete="current-password"
             rules={{ required: copy.validation.passwordRequired }}
           />
+          {humanCheck.field}
           <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" onClick={onClose}>
               {copy.cancel}

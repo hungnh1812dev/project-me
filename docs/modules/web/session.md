@@ -14,15 +14,15 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md), [`sign-in`](../../flows
 
 ## Purpose
 
-Holds the visitor's session (anonymous, a reader account, or a reviewer session) for the whole site, and the auth calls behind it ([sign-in flow](../../flows/sign-in/FLOW.md)). Today's web calls cms-api from the browser (D14); D21 (feature web-bff-hardening, not built yet) moves every browser call to the BFF under `/bff/v1`, so this module changes then ([web rules](../../apps/web/RULES.md)).
+Holds the visitor's session (anonymous or a signed-in reader account) for the whole site, and the auth calls behind it ([sign-in flow](../../flows/sign-in/FLOW.md)). The browser calls only the BFF under `/bff/v1` (D21) and holds no token: the BFF keeps the tokens in a sealed HttpOnly cookie ([web rules](../../apps/web/RULES.md)).
 
 ## Techniques
 
-A client context: one silent refresh on mount settles `unknown` into `anonymous` or `authenticated`; an account session refreshes through the refresh cookie, a reviewer session holds only an access token. Accounts with any permission other than `read` are refused (`PrivilegedAccessError`).
+A client context: one `GET /bff/v1/session` on mount settles `unknown` into `anonymous` or `authenticated`; sign-in, 2FA and sign-out go through the BFF login, verify, email-code and logout routes (the last two send a JSON body). The BFF refuses accounts with any permission other than `read` (`BFF_PRIVILEGED_ACCOUNT`); `Auth.api.ts` turns that into `PrivilegedAccessError`. The sign-in calls take an optional `humanCheckToken` for the dialog's Turnstile widget.
 
 ## Technologies
 
-React context, Axios.
+React context, Axios (base `/bff/v1`).
 
 ## Entry points
 
@@ -30,7 +30,7 @@ Facade `index.ts`: `WebSessionProvider`, `useWebSession`, `PrivilegedAccessError
 
 ## Where to change what
 
-A new auth call: `Auth.api.ts`; session state: `WebSession.context.tsx`. Other features import only the facade.
+Server side (BFF, D21, ADR 0018 section 4): `SealedCookie.server.ts` is the only place that seals cookies and sets their attributes; `WebSession.server.ts` reads the session (`readWebSession(request)` returns `setCookies` the answer must carry; a privileged account throws `BFF_PRIVILEGED_ACCOUNT` with both cookies cleared). `SignIn.server.ts` holds one handler per sign-in route (`logInVisitor`, `sendTwoFactorEmailCode`, `verifyTwoFactorCode`, `logOutVisitor`) and their body schemas; the route files under `app/bff/v1/` only bind them with `defineBffRoute`; a new route adds a handler here and a route file. Server files are not in `index.ts`. A new auth call: `Auth.api.ts` plus its entry in `BFF_ENDPOINTS`; session state: `WebSession.context.tsx`. Other features import only the facade.
 
 ## Files
 
@@ -38,16 +38,19 @@ A new auth call: `Auth.api.ts`; session state: `WebSession.context.tsx`. Other f
 <!-- prettier-ignore-start -->
 
 ```
-session/ (4 files)
+session/ (7 files)
 ```
 
-Tests: 2 files (not listed).
+Tests: 5 files (not listed).
 
 | File | Description |
 |---|---|
-| `Auth.api.ts` | Login, 2FA, refresh, logout and `/auth/me` calls with their types (exports `LoginCredentials`, `CurrentUser`, `TwoFactorChallenge`, `TwoFactorVerification` +5) |
-| `Session.fixture.tsx` | Test users and a fake auth API for tests (exports `TEST_USER`, `PRIVILEGED_USER`, `FakeApi`, `fakeApi` +2) |
-| `WebSession.context.tsx` | The session context and its provider (exports `SessionStatus`, `SessionKind`, `WebSession`, `WebSessionProvider` +1) |
+| `Auth.api.ts` | Session read, login, 2FA verify, email code and logout calls to the BFF with their types (exports `LoginCredentials`, `CurrentUser`, `TwoFactorChallenge`, `TwoFactorVerification` +5) |
+| `SealedCookie.server.ts` | AES-256-GCM sealing of the two `__Host-` cookies, their one writer and clearer, and the request readers (exports `SealedWebSession`, `SealedTwoFactorChallenge`, `sealCookieValue`, `openCookieValue` +6) |
+| `Session.fixture.tsx` | Test user and a fake auth API for tests (exports `TEST_USER`, `FakeApi`, `fakeApi` +2) |
+| `SignIn.server.ts` | The sign-in, 2FA, email-code and sign-out handlers of the BFF routes with their body schemas; seals the session and refuses privileged accounts (exports `loginBodySchema`, `emailCodeBodySchema`, `verifyBodySchema`, `logInVisitor` +3) |
+| `WebSession.context.tsx` | The session context and its provider (exports `SessionStatus`, `WebSession`, `WebSessionProvider` +1) |
+| `WebSession.server.ts` | Server session read: refresh 30 s before expiry shared per refresh token, current account, privileged-account refusal (exports `WebSessionRead`, `accessExpiryOf`, `isPrivilegedAccount`, `readWebSession` +2); also `publicUserOf` and the `GET /bff/v1/session` handler |
 | `index.ts` | Public facade of the feature (exports `PrivilegedAccessError`, `CurrentUser`, `LoginCredentials`, `LoginOutcome` +5) |
 
 <!-- prettier-ignore-end -->

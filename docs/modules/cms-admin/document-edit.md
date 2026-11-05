@@ -22,7 +22,7 @@ The form comes from `features/content` (`DynamicFormRenderer`, `Document.form`).
 
 ## Technologies
 
-React 19, TanStack Query, react-hook-form, `@abyss/form-commons`; text from `configs/Copy.constants.ts`.
+React 19, TanStack Query, react-hook-form, `@abyss/form-commons`; text from `configs/locales` (`useScreenText`).
 
 ## Entry points
 

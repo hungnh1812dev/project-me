@@ -1,26 +1,28 @@
 import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
+import type { ScreenText } from '@configs/locales';
 import type { BulkItemError, BulkResponse } from '@features/content/Content.api';
 import { BULK_ITEM_STATUS } from '@features/content/Content.constants';
 import { serverMessage } from '@features/content/Content.errors';
 import { isAxiosError } from 'axios';
 
-const copy = COPY.content.bulk;
-
 /** Why one item failed, in words the user can act on. */
 export function itemReason(
   errorCode: string | undefined,
   message: string | undefined,
-  fallback: string = copy.itemErrors.fallback,
+  fallback: string | undefined,
+  text: ScreenText<'content'>,
 ): string {
+  const copy = text.content.bulk;
   switch (errorCode) {
     case API_ERROR_CODES.DOCUMENT_VERSION_CONFLICT:
       return copy.itemErrors.conflict;
     case API_ERROR_CODES.DOCUMENT_NOT_FOUND:
       return copy.itemErrors.notFound;
     default:
-      return message !== undefined && message !== '' ? message : fallback;
+      return message !== undefined && message !== ''
+        ? message
+        : (fallback ?? copy.itemErrors.fallback);
   }
 }
 
@@ -41,7 +43,8 @@ function atomicIndexOf(error: unknown): number | undefined {
 }
 
 /** A bulk request that failed as a whole, reduced to what the UI shows. */
-export function toBulkFailure(error: unknown): BulkFailure {
+export function toBulkFailure(error: unknown, text: ScreenText<'content'>): BulkFailure {
+  const copy = text.content.bulk;
   const failure = apiFailureOf(error);
   switch (failure.kind) {
     case 'rate-limited':
@@ -56,7 +59,7 @@ export function toBulkFailure(error: unknown): BulkFailure {
         return {
           message: copy.errors.unexpected,
           index,
-          reason: itemReason(failure.errorCode, serverMessage(error)),
+          reason: itemReason(failure.errorCode, serverMessage(error), undefined, text),
         };
       }
       switch (failure.errorCode) {

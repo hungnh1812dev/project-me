@@ -9,19 +9,20 @@ Status: **not run** against a cluster. The `sops` and `age` commands follow thei
 | App       | Secret keys                                                                                                                                                                                                                                                                                                                           | Not secret                                                                                     |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | cms-api   | `DB_USERNAME`, `DB_PASSWORD`, `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY`, `CLOUDINARY_API_SECRET`, `TURNSTILE_SECRET_KEY`, `SMTP_USER`, `SMTP_PASSWORD`, `BACKUP_STORAGE_ACCESS_KEY_ID`, `BACKUP_STORAGE_SECRET_ACCESS_KEY`, `TOTP_ENC_PREVIOUS_KEY` (only during a rotation), `OWNER_SETUP_TOKEN` (only during first install) | everything else in `apps/cms-api/.env.example`: the ConfigMap ([configmaps.md](configmaps.md)) |
-| web       | none                                                                                                                                                                                                                                                                                                                                  | all of `apps/web/.env.example` (`NEXT_PUBLIC_*` are public by design)                          |
+| web       | `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`                                                                                                                                                                                                                                                                                          | all of `apps/web/.env.example` (`NEXT_PUBLIC_*` are public by design)                          |
 | cms-admin | none                                                                                                                                                                                                                                                                                                                                  | `VITE_API_BASE_URL` (build arg), `CSP_CONNECT_SRC`                                             |
 
 The database credentials are split by consumer (D19). A pod gets only the login it needs:
 
-| Secret               | Keys                                                                                                | Mounted into                                      |
-| -------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `cms-api-secrets`    | `DB_USERNAME` = the API role, `DB_PASSWORD`, and every cms-api app secret above                     | main container `cms-api` only                     |
-| `cms-api-migrate-db` | `DB_USERNAME` = the migration role, `DB_PASSWORD`                                                   | init container `migrate` only                     |
-| `postgres-backup`    | `DB_USERNAME` = the backup role, `DB_PASSWORD`, the rclone remote `offsite`, `BACKUP_AGE_RECIPIENT` | backup CronJob only ([backups.md](backups.md))    |
-| `postgres-superuser` | `POSTGRES_USER`, `POSTGRES_PASSWORD`                                                                | a self-managed Postgres StatefulSet only          |
-| `ghcr-pull`          | registry login (`read:packages`)                                                                    | all Deployments, as `imagePullSecrets`            |
-| `sops-age`           | the cluster's age private key; created by hand, never in git (section 3)                            | the GitOps tool that decrypts (its own namespace) |
+| Secret               | Keys                                                                                                                                                     | Mounted into                                      |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `cms-api-secrets`    | `DB_USERNAME` = the API role, `DB_PASSWORD`, and every cms-api app secret above                                                                          | main container `cms-api` only                     |
+| `web-secrets`        | `WEB_SESSION_SECRET` (at least 32 bytes, e.g. `openssl rand -base64 48`; it seals the session cookies), `TURNSTILE_SECRET_KEY` (the real Cloudflare key) | container `web` only                              |
+| `cms-api-migrate-db` | `DB_USERNAME` = the migration role, `DB_PASSWORD`                                                                                                        | init container `migrate` only                     |
+| `postgres-backup`    | `DB_USERNAME` = the backup role, `DB_PASSWORD`, the rclone remote `offsite`, `BACKUP_AGE_RECIPIENT`                                                      | backup CronJob only ([backups.md](backups.md))    |
+| `postgres-superuser` | `POSTGRES_USER`, `POSTGRES_PASSWORD`                                                                                                                     | a self-managed Postgres StatefulSet only          |
+| `ghcr-pull`          | registry login (`read:packages`)                                                                                                                         | all Deployments, as `imagePullSecrets`            |
+| `sops-age`           | the cluster's age private key; created by hand, never in git (section 3)                                                                                 | the GitOps tool that decrypts (its own namespace) |
 
 Notes:
 
@@ -140,7 +141,8 @@ Or fill a template and run `sops --encrypt --in-place <file>`. Before committing
 ## 6. How the apps consume them
 
 - **cms-api:** each container reads its own database Secret: the init container `envFrom` `cms-api-config` + `cms-api-migrate-db`, the main container `cms-api-config` + `cms-api-secrets` ([kubernetes.md](kubernetes.md) section 3). Containers in one pod do not share process environments, and the init container has exited before the main one starts, so the main container never sees the migration password. Because each Secret holds its own `DB_USERNAME`, `envFrom` never has two sources for one key. A missing or short secret stops the main container with the failing key names; a wrong database login stops the init container (`Init:Error`).
-- **web** and **cms-admin:** no Secret.
+- **web:** the container `envFrom` `web-secrets`; the other web values are plain `env` entries ([configmaps.md](configmaps.md) section 4). `TURNSTILE_SECRET_KEY` must be the real key: in production web refuses to start with Cloudflare's always-pass test secret, and `ALLOW_TURNSTILE_TEST_SECRET` is never set in deploy config (ADR 0018 section 2.6). Changing `WEB_SESSION_SECRET` signs every visitor out. Restart after any change.
+- **cms-admin:** no Secret.
 - Manual one-time commands (`owner:bootstrap`, `owner:reset-2fa`) run with `kubectl exec` inside the running main container, so they already have the Secret; their password is typed at a prompt and never stored in a file.
 
 `envFrom` of a Secret does not update a running container: after any change, restart.

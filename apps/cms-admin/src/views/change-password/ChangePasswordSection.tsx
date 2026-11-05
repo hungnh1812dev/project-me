@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { PASSWORD_LENGTH } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT, useScreenText, type ScreenText } from '@configs/locales';
 import {
   newPasswordShape,
   PASSWORDS_MATCH_ISSUE,
@@ -16,24 +16,26 @@ import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const copy = COPY.security;
+type SecurityCopy = ScreenText<'security'>['security'];
 
-const changeSchema = z
-  .object({
-    currentPassword: z
-      .string()
-      .min(1, copy.validation.passwordRequired)
-      .max(PASSWORD_LENGTH.MAX, copy.errors.wrongPassword),
-    ...newPasswordShape,
-  })
-  .refine(passwordsMatch, PASSWORDS_MATCH_ISSUE);
-type ChangeValues = z.input<typeof changeSchema>;
+const changeSchemaOf = (copy: SecurityCopy) =>
+  z
+    .object({
+      currentPassword: z
+        .string()
+        .min(1, copy.validation.passwordRequired)
+        .max(PASSWORD_LENGTH.MAX, copy.errors.wrongPassword),
+      ...newPasswordShape,
+    })
+    .refine(passwordsMatch, PASSWORDS_MATCH_ISSUE);
+type ChangeValues = z.input<ReturnType<typeof changeSchemaOf>>;
 
 /**
  * Change password. Success ends every session, this one
  * included, so the user lands on sign-in with a notice.
  */
 export function ChangePasswordSection() {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const session = useSession();
   const user = useCurrentUser();
@@ -43,7 +45,7 @@ export function ChangePasswordSection() {
   } | null>(null);
 
   const form = useForm<ChangeValues>({
-    resolver: zodResolver(changeSchema),
+    resolver: zodResolver(changeSchemaOf(copy)),
     defaultValues: {
       currentPassword: '',
       newPassword: '',
@@ -69,13 +71,13 @@ export function ChangePasswordSection() {
       } else if (error.kind === 'weak-password') {
         form.setError(
           'newPassword',
-          { message: COPY.password.errors.weakPassword },
+          { message: COMMON_TEXT.password.errors.weakPassword },
           { shouldFocus: true },
         );
       } else if (error.kind === 'alert') {
         setAlert({ tone: error.tone, message: error.message });
       } else {
-        setAlert({ tone: 'error', message: COPY.password.errors.unexpected });
+        setAlert({ tone: 'error', message: COMMON_TEXT.password.errors.unexpected });
       }
     },
   });
@@ -120,15 +122,15 @@ export function ChangePasswordSection() {
           />
           <TextInput<ChangeValues>
             name="newPassword"
-            label={COPY.password.newPasswordLabel}
-            description={COPY.password.newPasswordHint}
+            label={COMMON_TEXT.password.newPasswordLabel}
+            description={COMMON_TEXT.password.newPasswordHint}
             type="password"
             autoComplete="new-password"
             required
           />
           <TextInput<ChangeValues>
             name="confirmPassword"
-            label={COPY.password.confirmPasswordLabel}
+            label={COMMON_TEXT.password.confirmPasswordLabel}
             type="password"
             autoComplete="new-password"
             required

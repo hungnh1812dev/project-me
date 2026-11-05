@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { IconButton } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
@@ -8,8 +8,6 @@ import { MAX_COMPONENT_DEPTH, SINGLE_COMPONENT_MAX_ITEMS } from './Content.const
 import { emptyItem } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import type { FieldNode } from './FieldTree.rules';
-
-const copy = COPY.content.list;
 
 type MoveDirection = 'up' | 'down';
 
@@ -28,6 +26,7 @@ export interface ComponentListProps {
  * non-repeatable component holds one item at most.
  */
 export function ComponentList({ node, name, masked, depth }: ComponentListProps) {
+  const copy = useScreenText('content').content.list;
   const { control } = useFormContext();
   const { fields, append, remove, move } = useFieldArray({ control, name });
   const listRef = useRef<HTMLOListElement>(null);

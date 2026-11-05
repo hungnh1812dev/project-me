@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { MediaFile } from '@features/media/Media.api';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
@@ -10,7 +10,7 @@ import { beforeEach, vi } from 'vitest';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { MEDIA } = API_ENDPOINTS;
-const copy = COPY.media;
+const copy = EN_TEXT.media;
 
 function file(overrides: Partial<MediaFile> = {}): MediaFile {
   return {

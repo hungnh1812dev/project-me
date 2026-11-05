@@ -6,7 +6,7 @@ summary: Login with password and the 2FA step, remember me, refresh, sign-out; c
 
 # Sign-in: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -94,18 +94,3 @@ Remembering the email, a trusted device that skips 2FA, a "signed-in devices" li
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-03 Remember me (old SPEC §16, RM-1..RM-6, Q-RM1..Q-RM8, D22, feature `remember-me`):
-
-Status: **approved 2026-11-03** (user). The one-line updates of §16.6 are applied to §6, §7 (D21, new D22), §8.1, §9 and §12 (criteria 26, 27). Planned as feature `remember-me` in `tasks/plan.md`.
-
-### Spec updates on approval (applied 2026-11-03)
-
-- §6 `Access / refresh TTL`: "15 min / 7 days when 'Keep me signed in' is ticked, else 12 hours with a session cookie (rotated on every refresh, §16)". `Refresh cookie`: add "persistent (`Max-Age` 7 days) only for a remembered session, else a session cookie (§16)".
-- §7: new **D22 Remember me** pointing to §16 (choice per session family, carried in the 2FA temp token, cookie mode per family, lifetime enforced by cms-api).
-- §7 D21 "Session" (Q-RM7, user): the sealed session also holds `rememberMe`; `__Host-abyss_web_session` is a browser-session cookie (no `Max-Age`, no `Expires`) unless remembered, then `Max-Age` 7 days, set again on each refresh; `POST /bff/v1/auth/login` takes `rememberMe?` and the sealed 2FA cookie carries it to verify (§16 RM-6). D21 also gains the note: "ADR 0017 is to be rewritten when web-bff-hardening is re-planned (the file is missing from `docs/adr/`); the rewrite includes §16 RM-6."
-- §8.1 `refresh_tokens`: add `remember_me`.
-- §9 Auth: `POST /auth/login` body `{ email, password, rememberMe? }`; Web BFF: `POST /bff/v1/auth/login` body gains `rememberMe?`.
-- §12: one criterion for acceptance 4 and 5, one for acceptance 10.

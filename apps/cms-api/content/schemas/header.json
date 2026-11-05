@@ -6,41 +6,43 @@
   "fields": [
     {
       "name": "name",
-      "type": "string"
+      "type": "text"
     },
     {
       "name": "nav",
       "type": "component",
+      "component": "nav",
       "repeatable": true,
       "fields": [
         {
           "name": "title",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "requiresRole",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "link",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "subNavigations",
           "type": "component",
+          "component": "subNavigation",
           "repeatable": true,
           "fields": [
             {
               "name": "title",
-              "type": "string"
+              "type": "text"
             },
             {
               "name": "requiresRole",
-              "type": "string"
+              "type": "text"
             },
             {
               "name": "link",
-              "type": "string"
+              "type": "text"
             }
           ]
         }
@@ -49,14 +51,15 @@
     {
       "name": "author",
       "type": "component",
+      "component": "author",
       "fields": [
         {
           "name": "btnLoginText",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "btnLogoutText",
-          "type": "string"
+          "type": "text"
         }
       ]
     }

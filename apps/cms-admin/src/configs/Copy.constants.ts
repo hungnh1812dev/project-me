@@ -1,1 +1,0 @@
-export { COPY } from './copy';

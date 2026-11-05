@@ -5,7 +5,7 @@ modules: apps/cms-api/src/modules/backups, apps/cms-api/src/modules/identity, ap
 
 # Backups: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `backups`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `backups`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Actors
 

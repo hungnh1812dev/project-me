@@ -68,7 +68,7 @@ export SMOKE_ADMIN_ORIGIN="$ADMIN_ORIGIN"
 export SMOKE_WEB_ORIGIN="$WEB_ORIGIN"
 export SMOKE_JWT_ACCESS_KID="$JWT_ACCESS_KID"
 export SMOKE_TOTP_ENC_KID="$TOTP_ENC_KID"
-export SMOKE_API_BASE_URL="$WEB_ORIGIN$API_PREFIX"
+export SMOKE_API_BASE_URL="$ADMIN_ORIGIN$API_PREFIX"
 
 # Throwaway values for this run only (production mode needs them).
 export SMOKE_DB_PASSWORD="$(stack_random_secret)"
@@ -77,6 +77,7 @@ export SMOKE_DB_API_PASSWORD="$(stack_random_secret)"
 export SMOKE_JWT_ACCESS_SECRET="$(stack_random_secret)"
 export SMOKE_OTP_PEPPER="$(stack_random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(stack_random_secret)"
+export SMOKE_WEB_SESSION_SECRET="$(stack_random_secret)"
 stack_generate_credentials "$SMOKE_DOMAIN"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
@@ -201,9 +202,9 @@ compose up ${BUILD_FLAG[@]+"${BUILD_FLAG[@]}"} --detach --wait --wait-timeout "$
 echo "Waiting for the API behind the proxy..."
 deadline=$((SECONDS + TIMEOUT_SECONDS))
 # Traefik only routes a container once it reports healthy; until then /api
-# falls through to the web SPA (200 + HTML), so wait for the JSON body.
+# falls through to the admin SPA (200 + HTML), so wait for the JSON body.
 api_ready() {
-  request GET "$WEB_ORIGIN$API_PREFIX/health/ready"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/health/ready"
   [[ "$STATUS" == "200" ]] && grep -q "$HEALTH_OK_BODY" "$BODY"
 }
 web_home_ready() {
@@ -220,7 +221,7 @@ wait_until_ready() {
     sleep "$POLL_INTERVAL_SECONDS"
   done
 }
-wait_until_ready api_ready "$WEB_ORIGIN$API_PREFIX/health/ready"
+wait_until_ready api_ready "$ADMIN_ORIGIN$API_PREFIX/health/ready"
 # The web route can lag the API: Traefik may not route it yet, and the first
 # render of / is GraphQL-backed. Assert routing only once / answers 200.
 echo "Waiting for the web home page behind the proxy..."
@@ -229,6 +230,7 @@ wait_until_ready web_home_ready "$WEB_ORIGIN/"
 check_routing
 check_security_headers
 check_health
+check_api_absent_on_web_host
 check_trailing_slashes
 check_cors
 
@@ -241,7 +243,7 @@ check_two_factor
 check_mail
 
 stack_resolve_db_identity
-stack_export_e2e_env "$ADMIN_ORIGIN" "$SMOKE_API_BASE_URL" "$MAILPIT_URL"
+stack_export_e2e_env "$ADMIN_ORIGIN" "$SMOKE_API_BASE_URL" "$MAILPIT_URL" "$WEB_ORIGIN"
 
 if [[ "${SMOKE_KEEP:-}" == "1" ]]; then
   mkdir -p "$(dirname "$E2E_VARS_FILE")"

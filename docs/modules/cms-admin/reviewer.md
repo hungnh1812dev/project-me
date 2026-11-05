@@ -41,7 +41,7 @@ Page size of the log: `Reviewer.constants.ts` (API default 20, max 100). New rev
 reviewer/ (6 files)
 ```
 
-Tests: 0 files (not listed).
+Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
@@ -50,7 +50,7 @@ Tests: 0 files (not listed).
 | `Reviewer.feature.ts` | Feature entry: registers the API service (exports `reviewerFeature`) |
 | `Reviewer.queries.ts` | Query keys, the switch and log hooks, the feature-off check (exports `REVIEWER_QUERY_KEYS`, `isReviewerFeatureOff`, `useReviewerEnabledQuery`, `useReviewerSessionsQuery`) |
 | `ReviewerApi.context.tsx` | React context that provides the Reviewer API |
-| `ReviewerBanner.tsx` | Informational banner for a reviewer session (exports `ReviewerBanner`) |
+| `ReviewerBanner.tsx` | Informational banner for a reviewer session; loads the `reviewer` text in its own `ScreenTextBoundary` with no fallback (exports `ReviewerBanner`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

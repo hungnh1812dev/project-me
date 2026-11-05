@@ -7,15 +7,17 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import type { Alert, ApiFailure } from '../../apis/client/ApiFailure.errors';
 import {
-  API_ERROR_CODES,
+  BFF_ERROR_CODES,
   LOGIN_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
 } from '../../configs/Auth.constants';
 import { COPY } from '../../configs/Copy.constants';
+import { TURNSTILE } from '../../configs/Security.constants';
 import { useWebSession, type TwoFactorChallenge } from '../session';
-import { loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
+import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
 import { useEmailCode } from './useEmailCode';
+import { useHumanCheck } from './useHumanCheck';
 
 const copy = COPY.login.twoFactor;
 const CODE_PATTERN = new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`);
@@ -28,27 +30,17 @@ function methodOf(methods: readonly string[]): TwoFactorMethod | undefined {
   return TWO_FACTOR_METHODS.find((method) => methods.includes(method));
 }
 
-/** Failure -> alert, or 'expired' when the temp token is dead. */
+/** Failure -> alert, or 'expired' when the challenge is gone. */
 function alertOf(failure: ApiFailure): Alert | 'expired' {
-  switch (failure.kind) {
-    case 'rate-limited':
-      return {
-        tone: 'warning',
-        message: rateLimitedMessage(failure.retryAfterSeconds),
-      };
-    case 'network':
-      return { tone: 'warning', message: COPY.login.errors.network };
-    case 'http':
-      if (failure.errorCode === API_ERROR_CODES.INVALID_TEMP_TOKEN) {
-        return 'expired';
-      }
-      if (failure.errorCode === API_ERROR_CODES.INVALID_2FA_CODE) {
-        return { tone: 'error', message: copy.errors.invalidCode };
-      }
-      return { tone: 'error', message: COPY.login.errors.unexpected };
-    case 'unexpected':
-      return { tone: 'error', message: COPY.login.errors.unexpected };
+  const shared = sharedFailureAlertOf(failure);
+  if (shared !== null) return shared;
+  if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.TWO_FACTOR_EXPIRED) {
+    return 'expired';
   }
+  if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.INVALID_TWO_FACTOR_CODE) {
+    return { tone: 'error', message: copy.errors.invalidCode };
+  }
+  return { tone: 'error', message: COPY.login.errors.unexpected };
 }
 
 /**
@@ -58,11 +50,13 @@ function alertOf(failure: ApiFailure): Alert | 'expired' {
  */
 export function TwoFactorStep({
   challenge,
+  siteKey,
   onCancel,
   onExpired,
   onDone,
 }: {
   challenge: TwoFactorChallenge;
+  siteKey: string;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
@@ -83,7 +77,7 @@ export function TwoFactorStep({
   return (
     <CodeForm
       method={method}
-      tempToken={challenge.tempToken}
+      siteKey={siteKey}
       onCancel={onCancel}
       onExpired={onExpired}
       onDone={onDone}
@@ -93,24 +87,33 @@ export function TwoFactorStep({
 
 function CodeForm({
   method,
-  tempToken,
+  siteKey,
   onCancel,
   onExpired,
   onDone,
 }: {
   method: TwoFactorMethod;
-  tempToken: string;
+  siteKey: string;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
 }) {
   const session = useWebSession();
   const [alert, setAlert] = useState<Alert | null>(null);
+  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.TWO_FACTOR);
+  // The emailed code goes out as soon as the first check passes; the next
+  // check (a fresh token) is for the verify call.
   const email = useEmailCode(
-    method === 'email' ? () => session.sendLoginEmailCode(tempToken) : () => Promise.resolve(),
+    method === 'email'
+      ? () => {
+          const humanCheckToken = humanCheck.takeToken();
+          return session.sendLoginEmailCode(humanCheckToken === null ? {} : { humanCheckToken });
+        }
+      : () => Promise.resolve(),
     (failure) => {
       if (alertOf(failure) === 'expired') onExpired();
     },
+    method !== 'email' || humanCheck.hasToken,
   );
   const form = useForm<CodeValues>({
     defaultValues: { code: '' },
@@ -138,7 +141,9 @@ function CodeForm({
 
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
-    verify.mutate({ tempToken, code: values.code.trim() });
+    const humanCheckToken = humanCheck.requireToken();
+    if (humanCheckToken === null) return;
+    verify.mutate({ code: values.code.trim(), humanCheckToken });
   });
 
   const sendAlert = method === 'email' && email.failure !== null ? alertOf(email.failure) : null;
@@ -176,12 +181,16 @@ function CodeForm({
               className="h-auto px-0"
               loading={email.isSending}
               disabled={email.isCoolingDown}
-              onClick={email.resend}
+              onClick={() => {
+                if (humanCheck.hasToken) email.resend();
+                else humanCheck.requireToken();
+              }}
             >
               {copy.resend}
             </Button>
           </p>
         ) : null}
+        {humanCheck.field}
         <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onCancel}>
             {copy.cancel}

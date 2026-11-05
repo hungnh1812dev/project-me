@@ -6,7 +6,7 @@
   "fields": [
     {
       "name": "position",
-      "type": "string"
+      "type": "text"
     },
     {
       "name": "isMain",
@@ -14,7 +14,7 @@
     },
     {
       "name": "name",
-      "type": "string"
+      "type": "text"
     },
     {
       "name": "summary",
@@ -23,48 +23,51 @@
     {
       "name": "skills",
       "type": "component",
+      "component": "skill",
       "repeatable": true,
       "fields": [
         {
           "name": "level",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "skill",
-          "type": "string"
+          "type": "text"
         }
       ]
     },
     {
       "name": "experiences",
       "type": "component",
+      "component": "experience",
       "repeatable": true,
       "fields": [
         {
           "name": "company",
-          "type": "string",
+          "type": "text",
           "sensitive": true
         },
         {
           "name": "location",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "period",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "roles",
           "type": "component",
+          "component": "role",
           "repeatable": true,
           "fields": [
             {
               "name": "position",
-              "type": "string"
+              "type": "text"
             },
             {
               "name": "period",
-              "type": "string"
+              "type": "text"
             },
             {
               "name": "teamSize",
@@ -73,11 +76,12 @@
             {
               "name": "projects",
               "type": "component",
+              "component": "project",
               "repeatable": true,
               "fields": [
                 {
                   "name": "name",
-                  "type": "string"
+                  "type": "text"
                 },
                 {
                   "name": "teamSize",
@@ -85,15 +89,15 @@
                 },
                 {
                   "name": "role",
-                  "type": "string"
+                  "type": "text"
                 },
                 {
                   "name": "liveLink",
-                  "type": "string"
+                  "type": "text"
                 },
                 {
                   "name": "repositoryLink",
-                  "type": "string"
+                  "type": "text"
                 },
                 {
                   "name": "techStack",
@@ -120,23 +124,24 @@
     {
       "name": "educations",
       "type": "component",
+      "component": "education",
       "repeatable": true,
       "fields": [
         {
           "name": "degree",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "institution",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "period",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "location",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "description",
@@ -147,35 +152,37 @@
     {
       "name": "languages",
       "type": "component",
+      "component": "language",
       "repeatable": true,
       "fields": [
         {
           "name": "language",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "level",
-          "type": "string"
+          "type": "text"
         }
       ]
     },
     {
       "name": "referees",
       "type": "component",
+      "component": "referee",
       "repeatable": true,
       "fields": [
         {
           "name": "name",
-          "type": "string"
+          "type": "text"
         },
         {
           "name": "phone",
-          "type": "string",
+          "type": "text",
           "sensitive": true
         },
         {
           "name": "role",
-          "type": "string"
+          "type": "text"
         }
       ]
     }

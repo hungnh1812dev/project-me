@@ -7,12 +7,13 @@ import {
   reviewerActor,
   SubjectCatalog,
 } from '../../access';
-import { ContentTypeRegistry } from '../../content-engine';
-import { contentTypeView } from './ContentTypeView.rules';
+import { ContentTypeRegistry, DEFAULT_FIELD_WIDTH } from '../../content-engine';
+import { contentTypeView, type ViewVocabulary } from './ContentTypeView.rules';
 
-const VOCABULARY = {
+const VOCABULARY: ViewVocabulary = {
   systemConditionFields: CONDITION_SYSTEM_FIELDS,
   joinFieldPath,
+  defaultFieldWidth: DEFAULT_FIELD_WIDTH,
 };
 
 /**
@@ -39,9 +40,11 @@ const PROFILE = {
   draftAndPublish: false,
   fields: [
     { name: 'email', type: 'string' },
+    { name: 'phone', type: 'string', width: '1/2', displayName: 'Phone number' },
     {
       name: 'experience',
       type: 'component',
+      component: 'experience',
       repeatable: true,
       fields: [{ name: 'company', type: 'string' }],
     },
@@ -57,6 +60,11 @@ const view = contentTypeView(
 );
 
 describe('GET /content-types contract', () => {
+  it('adds displayName and width on content fields and nothing else', () => {
+    const phone = view.fields.find((f) => f.path === 'phone')!;
+    expect(Object.keys(phone).sort()).toEqual([...FIELD_KEYS, 'displayName', 'width'].sort());
+  });
+
   it('keeps the keys of a content type', () => {
     expect(Object.keys(view).sort()).toEqual(CONTENT_TYPE_KEYS);
   });
@@ -66,7 +74,7 @@ describe('GET /content-types contract', () => {
     const system = view.fields.find((f) => f.system);
     expect(content).toBeDefined();
     expect(system).toBeDefined();
-    expect(Object.keys(content!).sort()).toEqual(FIELD_KEYS);
+    expect(Object.keys(content!).sort()).toEqual([...FIELD_KEYS, 'width'].sort());
     expect(Object.keys(system!).sort()).toEqual(FIELD_KEYS);
   });
 });

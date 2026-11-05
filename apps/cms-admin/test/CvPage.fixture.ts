@@ -1,12 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type { ContentType, ContentTypeField } from '../src/features/content-types';
+import type { ContentType, ContentTypeField, FieldWidth } from '../src/features/content-types';
 
 interface Definition {
   name: string;
   type: string;
   repeatable?: boolean;
+  displayName?: string;
+  width?: FieldWidth;
   fields?: Definition[];
 }
 
@@ -31,6 +33,8 @@ function flatten(fields: Definition[], prefix: string): ContentTypeField[] {
       type: field.type,
       system: false,
       component: isComponent,
+      ...(field.displayName === undefined ? {} : { displayName: field.displayName }),
+      ...(isComponent ? {} : { width: field.width ?? 'full' }),
       repeatable: isComponent && field.repeatable === true,
       rootScalar: prefix === '' && !isComponent,
       conditionKind: null,

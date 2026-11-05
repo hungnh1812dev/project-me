@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Button, Checkbox } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 
 import type { ContentType } from '../content-types';
 import {
@@ -18,7 +18,7 @@ import {
   type MatrixState,
 } from './PermissionMatrix.rules';
 
-const copy = COPY.access.matrix;
+type MatrixCopy = ScreenText<'access'>['access']['matrix'];
 
 export interface PermissionMatrixProps {
   state: MatrixState;
@@ -41,7 +41,7 @@ export interface PermissionMatrixProps {
   invalidConditions: ReadonlySet<string>;
 }
 
-export function subjectLabel(subject: string, known: boolean): string {
+export function subjectLabel(copy: MatrixCopy, subject: string, known: boolean): string {
   if (subject === CONTENT_WILDCARD_SUBJECT) return copy.wildcard;
   if (isSystemSubject(subject)) {
     return copy.subjects[subject as keyof typeof copy.subjects];
@@ -54,6 +54,7 @@ export function subjectLabel(subject: string, known: boolean): string {
  * rows open a details row with field pickers and the row conditions.
  */
 export function PermissionMatrix(props: PermissionMatrixProps) {
+  const copy = useScreenText('access').access.matrix;
   const { order, contentTypes } = props;
   const known = new Set(contentTypes.map((type) => type.slug));
   const anyNotGrantable = order.system.some((subject) =>
@@ -99,6 +100,7 @@ function MatrixSection({
   showsDetails: boolean;
   footnote?: string | undefined;
 }) {
+  const copy = useScreenText('access').access.matrix;
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const headingId = `matrix-${title}`;
   const toggleOpen = (subject: string) =>
@@ -139,6 +141,7 @@ function MatrixSection({
           <tbody>
             {subjects.map((subject) => {
               const label = subjectLabel(
+                copy,
                 subject,
                 isSystemSubject(subject) ||
                   subject === CONTENT_WILDCARD_SUBJECT ||
@@ -269,11 +272,12 @@ function SystemErrors({
   subjects: readonly string[];
   known: ReadonlySet<string>;
 }) {
+  const copy = useScreenText('access').access.matrix;
   const lines = subjects.flatMap((subject) =>
     actionsFor(subject).flatMap((action) =>
       (errors.get(cellKey({ subject, action })) ?? []).map(
         (message) =>
-          `${copy.cellLabel(copy.actions[action], subjectLabel(subject, known.has(subject) || isSystemSubject(subject)))}: ${message}`,
+          `${copy.cellLabel(copy.actions[action], subjectLabel(copy, subject, known.has(subject) || isSystemSubject(subject)))}: ${message}`,
       ),
     ),
   );

@@ -22,7 +22,7 @@ STACK_SECRET_BYTES="32"
 SEED_ACCOUNT_OPT_IN_ENV="ALLOW_ACCOUNT_SEED=smoke"
 
 # The variables the Playwright suite reads (apps/e2e/src/E2e.env.ts).
-E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
+E2E_VARS=(E2E_ADMIN_URL E2E_API_BASE_URL E2E_WEB_URL E2E_OWNER_EMAIL E2E_OWNER_PASSWORD E2E_MAILPIT_URL
   E2E_READER_EMAIL E2E_READER_PASSWORD E2E_READER_2FA_EMAIL E2E_READER_2FA_PASSWORD
   E2E_2FA_EMAIL E2E_2FA_PASSWORD E2E_DB_CONTAINER E2E_DB_USER E2E_DB_NAME)
 DB_SERVICE="db"
@@ -88,10 +88,10 @@ stack_resolve_db_identity() {
   STACK_DB_NAME="$(compose exec -T "$DB_SERVICE" printenv POSTGRES_DB)"
 }
 
-# stack_export_e2e_env <admin origin> <api base url> <mailpit url>: exports every
+# stack_export_e2e_env <admin origin> <api base url> <mailpit url> <web origin>: exports every
 # name in E2E_VARS from the STACK_* variable of the same name (E2E_X <- STACK_X).
 stack_export_e2e_env() {
-  STACK_ADMIN_URL="$1" STACK_API_BASE_URL="$2" STACK_MAILPIT_URL="$3"
+  STACK_ADMIN_URL="$1" STACK_API_BASE_URL="$2" STACK_MAILPIT_URL="$3" STACK_WEB_URL="$4"
   local name source
   for name in "${E2E_VARS[@]}"; do
     source="STACK_${name#E2E_}"

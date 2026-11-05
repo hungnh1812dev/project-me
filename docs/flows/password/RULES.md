@@ -1,6 +1,6 @@
 # Password: rules
 
-Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 Rules of this flow only. Rules it shares with other flows are in the files under "Also follows"; read them too. A decision id (`D..`) is indexed in [DECISIONS.md](../../global/DECISIONS.md).
 

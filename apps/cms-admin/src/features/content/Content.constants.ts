@@ -1,5 +1,7 @@
 import type { NavSectionId } from '@configs/NavSections.constants';
 
+import type { FieldWidth } from '../content-types';
+
 /** Form-state key holding a component item's `componentUid` ('' = new item). */
 export const ITEM_UID_KEY = '__uid';
 
@@ -44,6 +46,13 @@ export const FIELD_TYPE = {
   MEDIA: 'media',
   COMPONENT: 'component',
 } as const;
+
+/** Grid columns per field level; `FIELD_COLUMN_SPAN` maps a field width onto them. */
+export const FIELD_COLUMN_SPAN: Readonly<Record<FieldWidth, string>> = {
+  '1/3': 'sm:col-span-2',
+  '1/2': 'sm:col-span-3',
+  full: 'sm:col-span-6',
+};
 
 /** Placeholder cms-api sends for a value the caller's role cannot read. */
 export const MASKED_VALUE = '***';

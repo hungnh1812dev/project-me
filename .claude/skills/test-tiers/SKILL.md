@@ -1,6 +1,6 @@
 ---
 name: test-tiers
-description: How much runtime testing a unit or checklist needs - tier 0 unit tests of one small checkpoint's changes, tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs, who starts which stack, the checklist format, and the agent-local env file `.localEnv.agent`. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc.
+description: How much runtime testing a unit or checklist needs - tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs, who starts which stack, the checklist format, and the agent-local env file `.localEnv.agent`. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc.
 ---
 
 # Test Tiers
@@ -11,7 +11,6 @@ The full stack is slow to build and start. Use the lowest tier that can show the
 
 | Tier | What runs | Enough for |
 |---|---|---|
-| **0** | Only the unit tests covering the files one small checkpoint's tasks changed (`unit test` narrowed to those packages and test files). No integration tests, no stack | A small checkpoint, nothing else |
 | **1** | The `unit test` and `integration test` commands. No stack | A behavior-preserving change (refactor, move, internal logic) with no change to a user flow, page or API response |
 | **2** | e2e single specs against the apps in dev mode (`dev stack`: backing services from ready images, no image build). For UI, qc also walks the changed screens with Chrome DevTools MCP | A changed user flow, page, endpoint or API response |
 | **3** | The `full stack` (built images, proxy, production build and settings) and the full e2e suite | What dev mode cannot show (below); every phase checkpoint and feature checklist |
@@ -24,8 +23,7 @@ Tiers 2 and 3 start from a green tier 1.
 
 | Check | Tiers |
 |---|---|
-| Small checkpoint (any but the last checkpoint of a phase with several) | 0 only |
-| Phase checkpoint (the last or only checkpoint of a phase) | the tiers its rows hold, lowest first |
+| Phase checkpoint (one per phase, at its end) | the tiers its rows hold, lowest first |
 | Feature checklist | the tiers its rows hold, lowest first |
 | One unit (builder's checks, per-unit security-qc review) | the lowest that can show it, 1 to 3 |
 
@@ -35,7 +33,7 @@ Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint
 
 - **Builder:** writes the unit's tier and reason in `Checks needed` (`worker-flow`).
 - **qc:** starts and stops the stack for its checklist runs. It may add a higher-tier row when the diff touches a tier 3 area; it never lowers a row's tier.
-- **security-qc:** never starts or stops a stack. Tier 0/1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
+- **security-qc:** never starts or stops a stack. Tier 1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
 - **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both, and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
 
 ## Progress file
@@ -60,9 +58,9 @@ Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHEC
 | CLG-1 | Init container uses DB keys only | LG-db-1 | `docker compose ... config api-init` lists only `NODE_ENV`, `DB_*` | qc | T3 cli | planner | pass | - |
 ```
 
-- `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<0-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).
-- **Small checkpoint:** only `T0` rows, from the planner and qc. **Phase checkpoint:** its own rows plus the phase's small-checkpoint rows (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows, the full e2e suite at tier 3 and the feature diff review; with one phase, a copy of its phase checklist.
-- Order: planner writes → qc copies, merges, adds its rows → security-qc adds its rows (not for small checkpoints) → tier runs.
+- `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<1-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).
+- **Phase checkpoint:** its own rows plus the rows of the phase's older checkpoints in an old plan (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows, the full e2e suite at tier 3 and the feature diff review; with one phase, a copy of its phase checklist.
+- Order: planner writes → qc copies, merges, adds its rows → security-qc adds its rows → tier runs.
 - Each checker writes `Status` and `Note` of its own rows only (both parts of a `both` row; it passes only when both do). No row is ever deleted; one that no longer applies keeps a `Note` saying why and still needs `pass`.
 - Done = every row `pass`.
 
@@ -82,6 +80,7 @@ No agent reads or writes `.env*` files (except `.env.example`). Local dev values
 - never `git add` it, copy it into an image, or print its values;
 - key names only go in the matching `.env.example`;
 - builders, qc and security-qc create, read and edit it, and add missing dev-only values there without asking the user (qc and security-qc note who, when and why on each change); security-qc reports a finding if it is tracked or holds a value that looks real.
+- qc and security-qc have full read and write permission on it (user decision); they work from it only (the e2e owner login values live there); any edit carries a note so other agents do not overwrite it.
 
 ## Git in scratch copies
 

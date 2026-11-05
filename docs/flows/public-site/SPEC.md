@@ -6,11 +6,11 @@ summary: The public CV site: CV page from published content over GraphQL, the se
 
 # Public site: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
-The public site (`domain.com`, Next.js) shows the CV from published content and a "Service status" card on the homepage. The Next server reads content anonymously over the read-only GraphQL API (D18) on `API_INTERNAL_URL`; the browser calls only the web BFF under `/bff/v1` (D21). Sensitive fields stay masked for anonymous visitors through the `public` role's field profile (D2 mechanism, [reviewer](../reviewer/RULES.md)). The full GraphQL decision is D18 in Decisions below.
+The public site (`domain.com`, Next.js) shows only a "Service status" view on the homepage `/` and the CV from published content on `/cv` (D21, Q-BFF2, user 2026-10-31), reached by a "CV" link in the site header (Q-WBH1, user 2026-11-05). The Next server reads content anonymously over the read-only GraphQL API (D18) on `API_INTERNAL_URL`; the browser calls only the web BFF under `/bff/v1` (D21). Sensitive fields stay masked for anonymous visitors through the `public` role's field profile (D2 mechanism, [reviewer](../reviewer/RULES.md)). The full GraphQL decision is D18 in Decisions below.
 
 Endpoints: [api-contract.md](../../global/reference/api-contract.md) rows "GraphQL (D18)" and "Web BFF". Web rules: [apps/web/RULES.md](../../apps/web/RULES.md) "Web rules".
 
@@ -51,9 +51,3 @@ GraphQL mutations, subscriptions and non-document reads ([out of scope](../../..
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-10-21 Web on Next.js, GraphQL read API (D18, Q-G1..Q-G7).
-- 2026-10-31 Web BFF, homepage status card, reviewer mode removed from web (D21).
-- 2026-11-04 Flow folder created from the old SPEC.

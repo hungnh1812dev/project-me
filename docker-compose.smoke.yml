@@ -1,6 +1,6 @@
 # Proxy smoke stack. Mirrors production routing (SPEC §1, §6):
-#   <SMOKE_DOMAIN>          -> web, and /api/* -> cms-api (no StripPrefix)
-#   admin.<SMOKE_DOMAIN>    -> cms-admin
+#   <SMOKE_DOMAIN>          -> web (no cms-api route: its /api/* is a web 404)
+#   admin.<SMOKE_DOMAIN>    -> cms-admin, and /api/* -> cms-api (no StripPrefix)
 #   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (catches every email)
 # Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
 # below, generates throwaway secrets, runs the assertions and tears down.
@@ -80,7 +80,7 @@ services:
       OTP_PEPPER: ${SMOKE_OTP_PEPPER:?set by scripts/smoke.sh}
       TOTP_ENC_KEY: ${SMOKE_TOTP_ENC_KEY:?set by scripts/smoke.sh}
       TOTP_ENC_KID: ${SMOKE_TOTP_ENC_KID:?set by scripts/smoke.sh}
-      MEDIA_LOCAL_PUBLIC_URL: ${SMOKE_WEB_ORIGIN}/api/v1/media-files
+      MEDIA_LOCAL_PUBLIC_URL: ${SMOKE_API_BASE_URL:?set by scripts/smoke.sh}/media-files
     # Uploaded media (MEDIA_LOCAL_DIR in scripts/stack/cms-api.env). 512m holds the
     # 100 MB video limit several times; memory-backed and gone with the container.
     # The image runs as uid/gid 1000, so the mount is owned by it.
@@ -100,8 +100,9 @@ services:
       retries: 30
     labels:
       traefik.enable: 'true'
+      # Whole segment, not PathPrefix: /api-tokens is an admin SPA route and must reach cms-admin.
       traefik.http.routers.api.entrypoints: web
-      traefik.http.routers.api.rule: Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
+      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathRegexp(`^/api(/|$$)`)
       traefik.http.routers.api.priority: '100'
       traefik.http.routers.api.middlewares: api-inflight
       # Upload and replace answer with Connection: close, so a rejected request
@@ -109,7 +110,7 @@ services:
       # Case-insensitive with optional trailing slash: Express serves /Media and /media/ too.
       traefik.http.routers.api-upload.entrypoints: web
       traefik.http.routers.api-upload.service: api
-      traefik.http.routers.api-upload.rule: Host(`${SMOKE_DOMAIN}`) && ((Method(`POST`) && PathRegexp(`(?i)^/api/v1/media/?$$`)) || (Method(`PUT`) && PathRegexp(`(?i)^/api/v1/media/[^/]+/file/?$$`)))
+      traefik.http.routers.api-upload.rule: Host(`admin.${SMOKE_DOMAIN}`) && ((Method(`POST`) && PathRegexp(`(?i)^/api/v1/media/?$$`)) || (Method(`PUT`) && PathRegexp(`(?i)^/api/v1/media/[^/]+/file/?$$`)))
       traefik.http.routers.api-upload.priority: '200'
       traefik.http.routers.api-upload.middlewares: api-inflight,upload-close
       # Caps open requests per client IP on api and api-upload (each router counts its own 100): with the 5m readTimeout a slow request holds a socket that long.
@@ -138,24 +139,30 @@ services:
       db:
         condition: service_healthy
 
-  # Next.js standalone server. Server env is read at run time;
-  # NEXT_PUBLIC_API_BASE_URL is baked into the browser bundle at build time.
+  # Next.js standalone server. Server env is read at run time; the browser
+  # bundle holds no cms-api URL (the BFF is the only caller, D21).
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_BASE_URL: /api/v1
         # Cloudflare's public always-pass Turnstile test site key (smoke
         # build only; production builds use the real key).
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
     environment:
       API_INTERNAL_URL: http://cms-api:3000/api/v1
+      WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
+      WEB_SESSION_SECRET: ${SMOKE_WEB_SESSION_SECRET:?set by scripts/smoke.sh}
       # Smoke runs with no data cache; production uses 60.
       WEB_REVALIDATE_SECONDS: '0'
-      # /status stays on in the smoke stack (ADR 0014).
-      WEB_STATUS_PAGE_ENABLED: 'true'
       WEB_PORT: ${WEB_PORT:-8080}
+      # Cloudflare's always-pass test secret. Smoke only, never in deploy config:
+      # production web refuses to start with it unless this opt-in is set (ADR 0018
+      # section 2.6), and TURNSTILE_EXPECTED_HOSTNAME stays unset with it.
+      TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
+      ALLOW_TURNSTILE_TEST_SECRET: smoke
+      # One proxy (Traefik) in front of web.
+      TRUST_PROXY_HOPS: '1'
     depends_on:
       cms-api:
         condition: service_healthy
@@ -164,8 +171,7 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
-    # The /api router (cms-api) has the longer rule, so it wins over this
-    # catch-all by Traefik's default rule-length priority; no StripPrefix.
+    # No cms-api route on this host: /api/* reaches web, which answers 404.
     labels:
       traefik.enable: 'true'
       traefik.http.routers.web.entrypoints: web
@@ -178,9 +184,6 @@ services:
       dockerfile: apps/cms-admin/Dockerfile
       args:
         VITE_API_BASE_URL: ${SMOKE_API_BASE_URL:?set by scripts/smoke.sh}
-    environment:
-      # Admin img-src also allows the files cms-api serves from the web origin.
-      CSP_EXTRA_IMG_SRC: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
     labels:
       traefik.enable: 'true'
       traefik.http.routers.admin.entrypoints: web

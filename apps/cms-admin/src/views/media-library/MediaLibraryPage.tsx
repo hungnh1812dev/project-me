@@ -3,7 +3,7 @@ import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { LoadError, PageHeader } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useRestoreFocus } from '@components/useRestoreFocus';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { isForbidden, useCallerAccess } from '@features/access';
 import type { MediaFile } from '@features/media/Media.api';
 import {
@@ -25,8 +25,6 @@ import { useSearchParams } from 'react-router';
 
 import { DeleteMediaDialog } from './DeleteMediaDialog';
 import { EditAltDialog } from './EditAltDialog';
-
-const copy = COPY.media;
 
 const QUERY_KEYS = {
   page: 'page',
@@ -81,6 +79,7 @@ function replacementTypes(file: MediaFile): readonly string[] {
 
 /** `/media`: the file library grid with upload, replace, alt text edit and delete; filters live in the URL. */
 export function MediaLibraryPage() {
+  const copy = useScreenText('media').media;
   const [searchParams, setSearchParams] = useSearchParams();
   const query = useMemo(() => readQuery(searchParams), [searchParams]);
   const { page, pageSize, search, mimeType } = query;

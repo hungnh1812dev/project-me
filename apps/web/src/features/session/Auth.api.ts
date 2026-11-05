@@ -1,56 +1,45 @@
 import type { AxiosInstance } from 'axios';
 
-import { API_ENDPOINTS } from '../../configs/Api.endpoints';
-import {
-  BEARER_PREFIX,
-  PERMISSION_STRING_SEPARATOR,
-  READ_ACTION,
-} from '../../configs/Auth.constants';
+import { apiFailureOf } from '../../apis/client/ApiFailure.errors';
+import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
+import { BFF_ERROR_CODES } from '../../configs/Auth.constants';
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-/** The signed-in account as `/auth/me` returns it. */
+/** The signed-in account as the BFF returns it: no token, no permission list. */
 export interface CurrentUser {
   id: string;
   email: string;
   displayName: string;
   role: string;
-  /** `subject:action` strings, e.g. `article:update`. */
-  permissions: string[];
 }
 
-interface AccessTokenResponse {
-  accessToken: string;
+/** Carried by every sign-in step; the Turnstile token is supplied by the dialog. */
+export interface HumanCheckInput {
+  humanCheckToken?: string;
 }
 
-interface TwoFactorRequiredResponse {
-  requires2FA: true;
-  tempToken: string;
-  methods: string[];
+export interface LoginCredentials extends HumanCheckInput {
+  email: string;
+  password: string;
 }
 
-/** A password-checked login waiting for its second step. */
+/** A password-checked login waiting for its second step; the BFF keeps the temp token. */
 export interface TwoFactorChallenge {
-  /** Short-lived, kept in memory only, never stored. */
-  tempToken: string;
   methods: string[];
 }
 
-export interface TwoFactorVerification {
-  tempToken: string;
+export interface TwoFactorVerification extends HumanCheckInput {
   code: string;
 }
 
 export type LoginOutcome =
-  | { kind: 'signed-in'; accessToken: string }
-  | ({ kind: 'two-factor-required' } & TwoFactorChallenge);
+  { kind: 'signed-in'; user: CurrentUser } | ({ kind: 'two-factor-required' } & TwoFactorChallenge);
+
+type LoginResponse =
+  { status: 'signed-in'; user: CurrentUser } | { status: 'two-factor-required'; methods: string[] };
 
 /**
  * The account can manage the CMS (admin or write access), so it signs in on
- * the admin console only. The web holds no session for it (D14).
+ * the admin console only. The BFF refuses it and the web holds no session (D14).
  */
 export class PrivilegedAccessError extends Error {
   constructor() {
@@ -59,67 +48,55 @@ export class PrivilegedAccessError extends Error {
   }
 }
 
-/**
- * Privileged = holds any permission other than `read` (write or management).
- * Fails closed: a missing or malformed list counts as privileged.
- */
-export function isPrivileged(user: CurrentUser): boolean {
-  if (!Array.isArray(user.permissions)) return true;
-  return user.permissions.some(
-    (permission) => permission.split(PERMISSION_STRING_SEPARATOR).pop() !== READ_ACTION,
-  );
+async function rethrowPrivilegedRefusal<T>(call: Promise<T>): Promise<T> {
+  try {
+    return await call;
+  } catch (cause) {
+    const failure = apiFailureOf(cause);
+    if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.PRIVILEGED_ACCOUNT) {
+      throw new PrivilegedAccessError();
+    }
+    throw cause;
+  }
 }
 
 /**
- * Auth calls, made from the browser to cms-api (D14). The Next server never
- * sees a credential, a token or the refresh cookie.
+ * Auth calls, made from the browser to the BFF of this site (ADR 0018). No
+ * token or refresh cookie is readable here: the BFF keeps them in a sealed
+ * HttpOnly cookie and sets it on its own responses.
  */
 export function createAuthApi(client: AxiosInstance) {
   return {
+    /** The signed-in visitor, or null. */
+    async readSession(): Promise<CurrentUser | null> {
+      const { data } = await client.get<{ user: CurrentUser | null }>(BFF_ENDPOINTS.SESSION);
+      return data.user;
+    },
+
     async login(credentials: LoginCredentials): Promise<LoginOutcome> {
-      const { data } = await client.post<AccessTokenResponse | TwoFactorRequiredResponse>(
-        API_ENDPOINTS.AUTH.LOGIN,
-        credentials,
+      const { data } = await rethrowPrivilegedRefusal(
+        client.post<LoginResponse>(BFF_ENDPOINTS.LOGIN, credentials),
       );
-      return 'requires2FA' in data
-        ? {
-            kind: 'two-factor-required',
-            tempToken: data.tempToken,
-            methods: data.methods,
-          }
-        : { kind: 'signed-in', accessToken: data.accessToken };
+      return data.status === 'signed-in'
+        ? { kind: 'signed-in', user: data.user }
+        : { kind: 'two-factor-required', methods: data.methods };
     },
 
-    async verifyTwoFactor(input: TwoFactorVerification): Promise<string> {
-      const { data } = await client.post<AccessTokenResponse>(
-        API_ENDPOINTS.TWO_FACTOR.VERIFY,
-        input,
+    async verifyTwoFactor(input: TwoFactorVerification): Promise<CurrentUser> {
+      const { data } = await rethrowPrivilegedRefusal(
+        client.post<{ user: CurrentUser }>(BFF_ENDPOINTS.VERIFY_TWO_FACTOR, input),
       );
-      return data.accessToken;
+      return data.user;
     },
 
-    /** Emails the login code of an email-2FA account (202). */
-    async sendLoginEmailCode(tempToken: string): Promise<void> {
-      await client.post(API_ENDPOINTS.TWO_FACTOR.EMAIL_CHALLENGE, {
-        tempToken,
-      });
+    /** Emails the login code of an email-2FA account (202). The BFF requires a JSON body. */
+    async sendLoginEmailCode(input: HumanCheckInput = {}): Promise<void> {
+      await client.post(BFF_ENDPOINTS.EMAIL_CODE, input);
     },
 
-    /** Rotates the refresh cookie and returns a new access token. */
-    async refresh(): Promise<string> {
-      const { data } = await client.post<AccessTokenResponse>(API_ENDPOINTS.AUTH.REFRESH);
-      return data.accessToken;
-    },
-
+    /** Clears the session at the BFF; it requires a JSON body. */
     async logout(): Promise<void> {
-      await client.post(API_ENDPOINTS.AUTH.LOGOUT);
-    },
-
-    async me(accessToken: string): Promise<CurrentUser> {
-      const { data } = await client.get<CurrentUser>(API_ENDPOINTS.AUTH.ME, {
-        headers: { Authorization: `${BEARER_PREFIX}${accessToken}` },
-      });
-      return data;
+      await client.post(BFF_ENDPOINTS.LOGOUT, {});
     },
   };
 }

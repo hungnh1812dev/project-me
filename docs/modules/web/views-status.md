@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/views/status
 app: web
-summary: Web service status card (the `/status` page; to move to the homepage by D21)
+summary: Web status view shown on the homepage (heading, description, API health card)
 ---
 
 # Status (web)
@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Shows whether cms-api answers its liveness probe. Today it is the `/status` page behind `WEB_STATUS_PAGE_ENABLED`; D21 removes that page and shows the card on the homepage.
+Shows whether cms-api answers its liveness probe, read through `GET /bff/v1/health`. It is the homepage (`/`); the CV lives on `/cv`.
 
 ## Techniques
 
@@ -26,11 +26,11 @@ React, TanStack Query.
 
 ## Entry points
 
-`StatusCard` (rendered by `app/status/page.tsx`).
+`StatusView` (rendered by `app/page.tsx`).
 
 ## Where to change what
 
-Card text and states: `StatusCard.tsx`; the check: `useLiveHealth.ts`; the call: `features/status`.
+Heading, card text and states: `StatusView.tsx`; the check: `useLiveHealth.ts`; the call: `features/status`.
 
 ## Files
 
@@ -41,11 +41,11 @@ Card text and states: `StatusCard.tsx`; the check: `useLiveHealth.ts`; the call:
 status/ (2 files)
 ```
 
-Tests: 0 files (not listed).
+Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
-| `StatusCard.tsx` | The service status card (exports `StatusCard`) |
+| `StatusView.tsx` | The status view: heading, description and the health card (exports `StatusView`) |
 | `useLiveHealth.ts` | Liveness state of cms-api for the card (exports `LiveHealthState`, `useLiveHealth`) |
 
 <!-- prettier-ignore-end -->

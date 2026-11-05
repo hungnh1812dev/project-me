@@ -1,11 +1,9 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import type { ScreenText } from '@configs/locales';
 import type { Account } from '@features/access/Access.api';
 import { formatDate } from '@utils/DateFormat.rules';
 
 import { AccountRowActions, type RowNotice } from './AccountRowActions';
-
-const copy = COPY.access.accounts;
 
 const STATUS_CLASS: Record<Account['status'], string> = {
   invited: 'bg-info-soft text-info-strong',
@@ -18,6 +16,7 @@ interface AccountColumnsOptions {
   showActions: boolean;
   canEnable: boolean;
   canResend: boolean;
+  text: ScreenText<'access'>;
   onNotice: (notice: RowNotice) => void;
   onDisable: (account: Account, opener: HTMLElement) => void;
 }
@@ -28,9 +27,11 @@ export function accountColumns({
   showActions,
   canEnable,
   canResend,
+  text,
   onNotice,
   onDisable,
 }: AccountColumnsOptions): SheetColumn<Account>[] {
+  const copy = text.access.accounts;
   const actionsColumn: SheetColumn<Account> = {
     key: 'actions',
     header: <span className="sr-only">{copy.columns.actions}</span>,

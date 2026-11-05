@@ -7,11 +7,15 @@ import { apiFailureOf, type ApiFailure } from '../../apis/client/ApiFailure.erro
 import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../configs/Http.constants';
 
 /**
- * Sends emailed 2FA codes: once on mount (the ref survives the StrictMode
- * effect replay, so still once), then on demand. After a 429 the resend stays
- * blocked for the server's Retry-After.
+ * Sends emailed 2FA codes: once as soon as `isReady` (the ref survives the
+ * StrictMode effect replay, so still once), then on demand. After a 429 the
+ * resend stays blocked for the server's Retry-After.
  */
-export function useEmailCode(send: () => Promise<void>, onFailure?: (failure: ApiFailure) => void) {
+export function useEmailCode(
+  send: () => Promise<void>,
+  onFailure?: (failure: ApiFailure) => void,
+  isReady = true,
+) {
   const [sentCount, setSentCount] = useState(0);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [isCoolingDown, setIsCoolingDown] = useState(false);
@@ -39,10 +43,10 @@ export function useEmailCode(send: () => Promise<void>, onFailure?: (failure: Ap
   const { mutate } = mutation;
 
   useEffect(() => {
-    if (autoSent.current) return;
+    if (!isReady || autoSent.current) return;
     autoSent.current = true;
     mutate();
-  }, [mutate]);
+  }, [isReady, mutate]);
 
   useEffect(() => () => clearTimeout(cooldownTimer.current), []);
 

@@ -6,7 +6,7 @@ replaces: D3, D4, D5, D8, D9, D19
 
 # cms-api: spec
 
-Part of the [project spec](../../../SPEC.md). App `cms-api`: [SPEC.md](SPEC.md) (app-wide requirements and decisions) · [FLOW.md](FLOW.md) (processes every flow of the app goes through) · [RULES.md](RULES.md) (rules every flow of the app must keep). In these files `Applies to: all flows.` means every flow that touches this app.
+Part of the [project spec](../../../SPEC.md). App `cms-api`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md). In these files a section without an `Applies to:` line covers every flow that touches this app.
 
 ## Behaviour
 
@@ -34,7 +34,3 @@ The decisions below, plus the requirements of the flows that use cms-api (Docs t
 - One idempotent, self-checking script, `scripts/db/database-roles.sql`, sets roles and grants; default privileges cover later objects. Each workload gets only its own credential Secret; migration commands load only `DB_*` keys (`loadDatabaseConfig`), so the init container holds no app secret. The tier 3 smoke stack uses the same split.
 - In production cms-api logs one boot warning (names only, no values) when its role is superuser, can `CREATE` in the database or the `public` / `content` schemas, or owns objects there, and still starts. Until the split is applied on an environment, its shared DDL-capable DB account is a user-accepted risk (ADR 0012 §8). Every environment starts from a fresh database (user answers Q-DB1, Q-DB2 "warn only", 2026-10-27).
 - Production on a managed PostgreSQL service (amended 2026-10-27, user decision, ADR 0012 §9): the service's admin role = migrator and operator, `abyss_api` = API role, `abyss_backup` reads with explicit `SELECT`. Every connection (API, init container, backup, roles script) is a session-mode connection (the login name the service expects), never a transaction-mode pooler. Roles script in its managed-service mode (no ownership change, no `PUBLIC` revoke, all grants removed from the service's data API roles); the data API off. TLS via `DB_SSL_MODE` / `DB_SSL_ROOT_CERT_PATH` (default `disable` for local stacks; production: `verify-full` with the service's CA, TLS enforced by the server). A plan that pauses an idle database is accepted for launch. Postgres 17 is the target major for production, tests, smoke, dev and backup images (user answers Q-DB3..Q-DB7, 2026-10-27).
-
-## Change log
-
-- 2026-11-04 Created from the old SPEC (D3, D4, D5, D8, D9, D19).

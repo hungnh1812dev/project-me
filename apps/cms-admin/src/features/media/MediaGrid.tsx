@@ -1,14 +1,12 @@
 import type { ReactNode } from 'react';
 import { Button, IconButton, MediaDetails, MediaPreview } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { ExternalLink, ImageIcon, Pencil, Replace, Trash2 } from 'lucide-react';
 
 import type { MediaFile } from './Media.api';
 
-const copy = COPY.media;
 const IMAGE_PREFIX = 'image/';
 const SKELETON_CARD_COUNT = 6;
-const CARD_LABELS = { previewFallback: copy.previewFallback, videoBadge: copy.videoBadge };
 const GRID_CLASSES = 'm-0 grid list-none grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-4 p-0';
 
 /** Library actions of manage mode; an action left out is not shown. */
@@ -32,6 +30,7 @@ interface MediaGridProps {
 }
 
 function CardActions({ file, actions }: { file: MediaFile; actions: MediaGridActions }) {
+  const copy = useScreenText('media').media;
   const { onEditAlt, onReplace, onDelete } = actions;
   const isImage = file.mimeType.startsWith(IMAGE_PREFIX);
   return (
@@ -84,6 +83,7 @@ function CardActions({ file, actions }: { file: MediaFile; actions: MediaGridAct
 }
 
 function GridSkeleton() {
+  const copy = useScreenText('media').media;
   return (
     <div aria-busy="true" aria-live="polite">
       <span className="sr-only">{copy.loading}</span>
@@ -124,6 +124,8 @@ export function MediaGrid({
   emptyTitle,
   emptyHint,
 }: MediaGridProps) {
+  const copy = useScreenText('media').media;
+  const cardLabels = { previewFallback: copy.previewFallback, videoBadge: copy.videoBadge };
   if (error !== undefined && error !== null) return <>{error}</>;
   if (isLoading) return <GridSkeleton />;
   if (files.length === 0) return <EmptyState title={emptyTitle} hint={emptyHint} />;
@@ -135,11 +137,11 @@ export function MediaGrid({
           {mode === 'pick' ? (
             <button
               type="button"
-              aria-label={COPY.media.picker.select(file.fileName)}
+              aria-label={copy.picker.select(file.fileName)}
               onClick={() => onSelect?.(file)}
               className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
             >
-              <MediaPreview file={file} height="card" labels={CARD_LABELS} />
+              <MediaPreview file={file} height="card" labels={cardLabels} />
               <MediaDetails file={file} />
             </button>
           ) : (
@@ -147,7 +149,7 @@ export function MediaGrid({
               <MediaPreview
                 file={file}
                 height="card"
-                labels={CARD_LABELS}
+                labels={cardLabels}
                 actions={<CardActions file={file} actions={actions} />}
               />
               <MediaDetails file={file} />

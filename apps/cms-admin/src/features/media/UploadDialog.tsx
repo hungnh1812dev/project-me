@@ -11,7 +11,7 @@ import {
   FormAlert,
   formatFileSize,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { FileText, X } from 'lucide-react';
 
 import type { MediaFile } from './Media.api';
@@ -20,7 +20,8 @@ import { useMediaApi } from './MediaApi.context';
 import { hasDeterminateProgress, sentPercentOf, type UploadItem } from './UploadQueue.rules';
 import { useUploadQueue, type SendFile } from './useUploadQueue';
 
-const copy = COPY.media.uploadDialog;
+type UploadCopy = ScreenText<'media'>['media']['uploadDialog'];
+
 const IMAGE_PREFIX = 'image/';
 const PERCENT = 100;
 
@@ -38,6 +39,7 @@ function ProgressBar({ label, percent }: { label: string; percent?: number | und
 
 /** The object URL lives as long as the row, so removing the row or closing the dialog revokes it. */
 function Preview({ file }: { file: File }) {
+  const copy = useScreenText('media').media.uploadDialog;
   const imageRef = useRef<HTMLImageElement>(null);
   const isImage = file.type.startsWith(IMAGE_PREFIX);
   useEffect(() => {
@@ -58,7 +60,7 @@ function Preview({ file }: { file: File }) {
   );
 }
 
-function statusText(item: UploadItem): string {
+function statusText(item: UploadItem, copy: UploadCopy): string {
   switch (item.status) {
     case 'uploading':
       return hasDeterminateProgress(item)
@@ -101,6 +103,7 @@ function UploadRow({
   onRemove: () => void;
   onRetry: () => void;
 }) {
+  const copy = useScreenText('media').media.uploadDialog;
   const isSending = item.status === 'uploading' || item.status === 'processing';
   const isProblem = item.status === 'failed' || item.status === 'rejected';
   const canRemove = canEdit && !isSending && item.status !== 'done';
@@ -119,7 +122,7 @@ function UploadRow({
           className={`text-xs ${isProblem ? 'text-destructive' : 'text-muted-foreground'}`}
           role={isProblem ? 'alert' : undefined}
         >
-          {statusText(item)}
+          {statusText(item, copy)}
         </span>
       </div>
       {item.status === 'failed' ? (
@@ -185,6 +188,7 @@ export function UploadDialog({
   onClose: () => void;
   onCloseAutoFocus?: (event: Event) => void;
 }) {
+  const copy = useScreenText('media').media.uploadDialog;
   const api = useMediaApi();
   const defaultSend: SendFile = (file, onProgress, signal) =>
     api.upload(file, { onProgress, signal });

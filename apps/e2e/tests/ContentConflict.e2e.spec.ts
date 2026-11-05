@@ -26,9 +26,9 @@ const SKILLS = ['Alpha', 'Beta', 'Gamma'].map((name) => `${name} ${RUN_ID}`);
 
 const mergeDialog = (page: Page) => page.getByRole('dialog', { name: merge.title });
 const skillName = (page: Page, index: number) =>
-  fieldByLabel(listItem(page, 'Skill', index), 'Skill');
+  fieldByLabel(listItem(page, 'Skills', index), 'Skill');
 const skillLevel = (page: Page, index: number) =>
-  fieldByLabel(listItem(page, 'Skill', index), 'Level');
+  fieldByLabel(listItem(page, 'Skills', index), 'Level');
 /** One difference card: a fieldset named after what differs. */
 const card = (dialog: Locator, title: string) =>
   dialog.getByRole('group', { name: title, exact: true });
@@ -91,7 +91,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     await a.goto(contentNewPath(CV_PAGE_SLUG));
     await fieldByLabel(a, 'Position').fill(`Base ${RUN_ID}`);
     for (const [index, name] of SKILLS.entries()) {
-      await a.getByRole('button', { name: list.addSlot('Skill') }).click();
+      await a.getByRole('button', { name: list.addSlot('Skills') }).click();
       await skillName(a, index).fill(name);
       await skillLevel(a, index).fill('Basic');
     }
@@ -144,7 +144,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
   const skillNames = async (page: Page) =>
     page
-      .getByRole('region', { name: 'Skill', exact: true })
+      .getByRole('region', { name: 'Skills', exact: true })
       .getByLabel('Skill', { exact: true })
       .evaluateAll((inputs) => inputs.map((input) => (input as HTMLInputElement).value));
 
@@ -163,10 +163,10 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     });
     await fieldByLabel(a, 'Position').fill(`A2 ${RUN_ID}`);
     await skillLevel(a, 0).fill('A-level');
-    await a.getByRole('button', { name: list.remove('Skill', 1) }).click();
-    await a.getByRole('button', { name: list.addSlot('Skill') }).click();
+    await a.getByRole('button', { name: list.remove('Skills', 1) }).click();
+    await a.getByRole('button', { name: list.addSlot('Skills') }).click();
     await skillName(a, 2).fill(`Delta ${RUN_ID}`);
-    await a.getByRole('button', { name: list.moveUp('Skill', 1) }).click();
+    await a.getByRole('button', { name: list.moveUp('Skills', 1) }).click();
     expect((await save(a)).status()).toBe(HTTP.CONFLICT);
 
     const dialog = mergeDialog(a);
@@ -197,10 +197,10 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
   test('item cases, other side: own removal, saved add, own order', async () => {
     await staleA((page) => skillLevel(page, 2).fill('B-gamma'));
-    await a.getByRole('button', { name: list.remove('Skill', 2) }).click();
-    await a.getByRole('button', { name: list.addSlot('Skill') }).click();
+    await a.getByRole('button', { name: list.remove('Skills', 2) }).click();
+    await a.getByRole('button', { name: list.addSlot('Skills') }).click();
     await skillName(a, 3).fill(`Eps ${RUN_ID}`);
-    await a.getByRole('button', { name: list.moveUp('Skill', 1) }).click();
+    await a.getByRole('button', { name: list.moveUp('Skills', 1) }).click();
     expect((await save(a)).status()).toBe(HTTP.CONFLICT);
 
     const dialog = mergeDialog(a);
@@ -240,7 +240,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     const firstVersion = ((await first.json()) as { details: { currentVersion: number } }).details
       .currentVersion;
     const dialog = mergeDialog(a);
-    await choose(dialog, 'Skill 1 > Level', merge.saved);
+    await choose(dialog, 'Skills 1 > Level', merge.saved);
 
     // Someone saves again while the modal is open.
     await open(b, editUrl);
@@ -323,7 +323,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     const EDITOR_EMAIL = `e2e-masked-${RUN_ID}@domain.localhost`;
     const EDITOR_NAME = `Masked ${RUN_ID}`;
     const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-masked`;
-    const SECRET = `Secret company ${RUN_ID}`;
+    const SECRET = `Secret name ${RUN_ID}`;
     const SECRET_NEWER = `Newer secret ${RUN_ID}`;
     let editorContext: BrowserContext;
     let editor: Page;
@@ -355,15 +355,15 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
       await signInAs(editor, EDITOR_EMAIL, EDITOR_PASSWORD);
       await open(editor, editUrl);
-      await expect(fieldByLabel(editor, 'Company')).toHaveCount(0);
+      await expect(fieldByLabel(editor, 'Name')).toHaveCount(0);
     });
 
     test('a masked field never shows in the modal or the PUT, and keeps its value', async () => {
       await open(editor, editUrl);
-      // The owner changes both Position and the masked Company.
+      // The owner changes both Position and the masked Name.
       await open(b, editUrl);
       await fieldByLabel(b, 'Position').fill(`Owner ${RUN_ID}`);
-      await fieldByLabel(b, 'Company').fill(SECRET);
+      await fieldByLabel(b, 'Name').fill(SECRET);
       expect((await save(b)).ok()).toBe(true);
 
       await fieldByLabel(editor, 'Position').fill(`Editor ${RUN_ID}`);
@@ -373,7 +373,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       await expect(dialog).toBeVisible();
       await expect(dialog).toContainText(merge.summary(1));
       await expect(card(dialog, 'Position')).toContainText(`Owner ${RUN_ID}`);
-      await expect(dialog).not.toContainText('Company');
+      await expect(dialog).not.toContainText('Name');
       await expect(dialog).not.toContainText(SECRET);
       expect(await editor.content()).not.toContain(SECRET);
 
@@ -384,14 +384,16 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       recorder.stop();
       const sent = JSON.stringify(bodyOf(recorder.puts[0] as Request));
       expect(sent).toContain(`Editor ${RUN_ID}`);
-      expect(sent).not.toContain('company');
+      expect(Object.keys(bodyOf(recorder.puts[0] as Request)['values'] as object)).not.toContain(
+        'name',
+      );
       expect(sent).not.toContain(SECRET);
       expect(sent).not.toContain('***');
       await expect(fieldByLabel(editor, 'Position')).toHaveValue(`Editor ${RUN_ID}`);
 
-      // The owner still sees the untouched company.
+      // The owner still sees the untouched name.
       await open(b, editUrl);
-      await expect(fieldByLabel(b, 'Company')).toHaveValue(SECRET);
+      await expect(fieldByLabel(b, 'Name')).toHaveValue(SECRET);
       await expect(fieldByLabel(b, 'Position')).toHaveValue(`Editor ${RUN_ID}`);
     });
 
@@ -399,10 +401,10 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       await open(editor, editUrl);
       await open(b, editUrl);
       // Save stays disabled until the form changes, so the Editor types the very value the owner saved:
-      // the only remaining difference is the masked Company.
+      // the only remaining difference is the masked Name.
       const sharedPosition = `Shared ${RUN_ID}`;
       await fieldByLabel(b, 'Position').fill(sharedPosition);
-      await fieldByLabel(b, 'Company').fill(SECRET_NEWER);
+      await fieldByLabel(b, 'Name').fill(SECRET_NEWER);
       expect((await save(b)).ok()).toBe(true);
 
       await fieldByLabel(editor, 'Position').fill(sharedPosition);

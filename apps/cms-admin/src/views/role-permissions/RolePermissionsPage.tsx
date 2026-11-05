@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
+import { useScreenText } from '@configs/locales';
 import type { Role } from '@features/access/Access.api';
 import { OWNER_ROLE_SLUG } from '@features/access/Access.constants';
 import { toAccessError } from '@features/access/Access.errors';
@@ -29,10 +29,10 @@ import type { ContentType } from '@features/content-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
 
-const copy = COPY.access;
-
 /** `/roles/:roleId`: one role's permission matrix. */
 export function RolePermissionsPage() {
+  const access = useScreenText('access');
+  const copy = access.access;
   const { roleId } = useParams();
   const roles = useRolesQuery();
   const contentTypes = useContentTypesQuery();
@@ -59,7 +59,7 @@ export function RolePermissionsPage() {
         <LoadError
           message={
             failedRoles
-              ? toAccessError(roles.error).status === HTTP_STATUS.FORBIDDEN
+              ? toAccessError(roles.error, access).status === HTTP_STATUS.FORBIDDEN
                 ? copy.roles.forbidden
                 : copy.roles.loadFailed
               : copy.role.contentTypesFailed
@@ -106,6 +106,8 @@ interface SaveFeedback {
 }
 
 function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly ContentType[] }) {
+  const access = useScreenText('access');
+  const copy = access.access;
   const api = useAccessApi();
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
@@ -141,7 +143,7 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
       setFeedback({ tone: 'success', message: copy.role.saved });
     },
     onError: (cause, sent) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, access);
       setErrors(cellIssues(error.issues, sent.cells));
       setNotHeld(cellsAt(error.indexes, sent.cells));
       const invalid = error.status === HTTP_STATUS.BAD_REQUEST && error.errorCode !== undefined;

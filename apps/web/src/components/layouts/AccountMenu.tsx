@@ -6,16 +6,12 @@ import { Button } from '@abyss/form-commons';
 import { appEnv } from '../../configs/Browser.env';
 import { COPY } from '../../configs/Copy.constants';
 import { WebLoginDialog } from '../../features/auth';
-import { ReviewerAccessDialog, useReviewerEnabled } from '../../features/reviewer';
 import { useWebSession } from '../../features/session';
 
 /** Header controls: sign in, or the account name with Open CMS and sign out. */
 export function AccountMenu() {
-  const { status, user, kind, signOut } = useWebSession();
+  const { status, user, signOut } = useWebSession();
   const [loginOpen, setLoginOpen] = useState(false);
-  const [reviewerOpen, setReviewerOpen] = useState(false);
-  const siteKey = appEnv.turnstileSiteKey;
-  const isReviewerEnabled = useReviewerEnabled();
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
 
@@ -30,31 +26,17 @@ export function AccountMenu() {
         <Button size="sm" variant="secondary" onClick={() => setLoginOpen(true)}>
           {COPY.session.signIn}
         </Button>
-        {siteKey !== undefined && isReviewerEnabled ? (
-          <>
-            <Button size="sm" variant="ghost" onClick={() => setReviewerOpen(true)}>
-              {COPY.reviewer.open}
-            </Button>
-            <ReviewerAccessDialog
-              open={reviewerOpen}
-              onOpenChange={setReviewerOpen}
-              siteKey={siteKey}
-            />
-          </>
-        ) : null}
         <WebLoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
       </div>
     );
   }
 
-  const reviewing = kind === 'reviewer';
-
   return (
     <div className="flex items-center gap-2">
       <span className="text-muted-foreground hidden max-w-48 truncate text-sm sm:inline">
-        {reviewing ? COPY.session.reviewing : COPY.session.signedInAs(user.displayName)}
+        {COPY.session.signedInAs(user.displayName)}
       </span>
-      {appEnv.adminUrl !== undefined && !reviewing ? (
+      {appEnv.adminUrl !== undefined ? (
         <Button asChild size="sm" variant="secondary">
           <a href={appEnv.adminUrl}>{COPY.session.openCms}</a>
         </Button>
@@ -71,7 +53,7 @@ export function AccountMenu() {
             .finally(() => setSigningOut(false));
         }}
       >
-        {reviewing ? COPY.session.endReview : COPY.session.signOut}
+        {COPY.session.signOut}
       </Button>
       {signOutFailed ? (
         <p role="alert" className="text-destructive-strong text-sm">

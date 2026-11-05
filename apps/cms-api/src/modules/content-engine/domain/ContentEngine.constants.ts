@@ -13,11 +13,17 @@ export const SQL_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_]*$/;
 /** Content type slug as written in the definition (kebab-case, used in URLs). */
 export const SLUG_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
-/** Joins the slug and component field names into a component table name. */
+/** Joins the slug and component values into a component table name. */
 export const TABLE_PATH_SEPARATOR = '__';
 
 /** Max length of a content type `displayName`, counted in Unicode code points. */
 export const DISPLAY_NAME_MAX_LENGTH = 60;
+
+/** Widths a non-component field may take in the admin form grid (ADR 0019 decision 8). */
+export const FIELD_WIDTHS = ['1/3', '1/2', 'full'] as const;
+
+/** Width the content types API reports for a field that sets none. */
+export const DEFAULT_FIELD_WIDTH = 'full' satisfies (typeof FIELD_WIDTHS)[number];
 
 export const CONTENT_TYPE_KINDS = ['single', 'collection'] as const;
 
@@ -98,7 +104,7 @@ export const DEFINITION_RULES = {
   IDENTIFIER_COLLISION: 'identifier.collision',
   /** A component is nested deeper than MAX_COMPONENT_DEPTH. */
   COMPONENT_DEPTH_EXCEEDED: 'component.depth_exceeded',
-  /** `displayName` is empty, untrimmed, holds a control character or is too long. */
+  /** A `displayName`, on the content type or on a field, is empty, untrimmed, holds a control character or is too long. */
   DISPLAY_NAME_INVALID: 'display_name.invalid',
 } as const;
 

@@ -73,6 +73,7 @@ const POST_DEFINITION = {
     {
       name: 'rows',
       type: 'component',
+      component: 'rows',
       repeatable: true,
       fields: [{ name: 'label', type: 'string' }],
     },

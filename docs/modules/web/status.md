@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). D21 moves the card to the homepage behind `GET /bff/v1/health`.
+Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /bff/v1/health` of this site, never cms-api.
 
 ## Techniques
 
@@ -30,7 +30,7 @@ Axios, TanStack Query.
 
 ## Where to change what
 
-Another health call: `Health.api.ts`; the card is in `views/status`.
+Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route); the card is in `views/status`.
 
 ## Files
 
@@ -38,14 +38,15 @@ Another health call: `Health.api.ts`; the card is in `views/status`.
 <!-- prettier-ignore-start -->
 
 ```
-status/ (1 file)
+status/ (2 files)
 ```
 
-Tests: 0 files (not listed).
+Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
 | `Health.api.ts` | Liveness call, response type and query keys (exports `HealthResponse`, `HEALTH_QUERY_KEYS`, `fetchLiveHealth`) |
+| `Health.server.ts` | Handler of `GET /bff/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

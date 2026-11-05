@@ -28,7 +28,16 @@ export const RICHTEXT_TEXT_ALIGNMENTS = ['left', 'center', 'right', 'justify'] a
 export const TURNSTILE = {
   SCRIPT_ORIGIN: 'https://challenges.cloudflare.com',
   SCRIPT_URL: 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit',
+  SITEVERIFY_URL: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+  /** Widget actions; the server checks the one its route expects. */
+  ACTIONS: { LOGIN: 'login', TWO_FACTOR: 'two-factor' },
+  /** Cloudflare's published always-pass test secret: its answers carry no real action. */
+  ALWAYS_PASS_TEST_SECRET: '1x0000000000000000000000000000000AA',
+  /** Longest token Cloudflare documents (2048 characters). */
+  TOKEN_MAX_LENGTH: 2048,
 } as const;
+
+export type TurnstileAction = (typeof TURNSTILE.ACTIONS)[keyof typeof TURNSTILE.ACTIONS];
 
 /** Third-party origin Turnstile loads its script and challenge frame from. */
 export const TURNSTILE_ORIGIN = TURNSTILE.SCRIPT_ORIGIN;

@@ -10,6 +10,7 @@ import {
   isComponentField,
   type ContentTypeKind,
   type FieldDefinition,
+  type FieldWidth,
   type RegisteredContentType,
 } from '../../content-engine';
 
@@ -23,6 +24,10 @@ export interface ContentFieldView {
   readonly type: FieldDefinition['type'];
   readonly system: false;
   readonly component: boolean;
+  /** Admin label from the definition; absent when the definition sets none. */
+  readonly displayName?: string;
+  /** Share of the admin form row; the schema value or the default. Absent on components. */
+  readonly width?: FieldWidth;
   /** Only components can be repeatable. */
   readonly repeatable: boolean;
   /** A scalar field at the root (not inside a component). */
@@ -77,6 +82,7 @@ export interface FieldVisibility {
 export interface ViewVocabulary {
   readonly systemConditionFields: ConditionSystemFields;
   readonly joinFieldPath: (prefix: string, name: string) => string;
+  readonly defaultFieldWidth: FieldWidth;
 }
 
 /**
@@ -88,7 +94,7 @@ export function contentTypeView(
   type: RegisteredContentType,
   catalog: SubjectCatalog,
   visible: FieldVisibility,
-  { systemConditionFields, joinFieldPath }: ViewVocabulary,
+  { systemConditionFields, joinFieldPath, defaultFieldWidth }: ViewVocabulary,
 ): ContentTypeView {
   const systemFieldNames = Object.keys(systemConditionFields) as SystemConditionField[];
   const conditionField = catalog.conditionFields(type.slug, null);
@@ -105,6 +111,8 @@ export function contentTypeView(
         type: field.type,
         system: false,
         component,
+        ...(field.displayName === undefined ? {} : { displayName: field.displayName }),
+        ...(isComponentField(field) ? {} : { width: field.width ?? defaultFieldWidth }),
         repeatable: component && field.repeatable === true,
         rootScalar,
         conditionKind: rootScalar ? (conditionField(field.name)?.kind ?? null) : null,

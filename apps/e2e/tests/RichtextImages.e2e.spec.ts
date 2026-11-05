@@ -54,6 +54,8 @@ async function mediaUrlOf(
 /** Handed from the editor walk to the web check, so the file signs in once. */
 let ownerToken = '';
 
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 test.describe.serial('owner: images in the richtext editor', () => {
   let page: Page;
   let api: APIRequestContext;
@@ -140,7 +142,11 @@ test.describe.serial('owner: images in the richtext editor', () => {
     await dialog().getByRole('button', { name: uploadCopy.close }).click();
     await expect(dialog()).toBeHidden();
     await expect(images()).toHaveCount(1);
-    await expect(images().first()).toHaveAttribute('src', new RegExp(`^${e2eEnv.webUrl}/`));
+    // Media files are served by cms-api on the admin host (MEDIA_LOCAL_PUBLIC_URL), not on the web host.
+    await expect(images().first()).toHaveAttribute(
+      'src',
+      new RegExp(`^${escapeRegExp(e2eEnv.apiBaseUrl)}/media-files/`),
+    );
   });
 
   test('picking from the library inserts a second image', async () => {
@@ -256,10 +262,11 @@ test.describe.serial('web CV: richtext images', () => {
   });
 
   test('the CV shows the summary text and never a foreign image', async ({ page, request }) => {
-    const html = await (await request.get(e2eEnv.webUrl)).text();
+    const cvUrl = `${e2eEnv.webUrl}/cv`;
+    const html = await (await request.get(cvUrl)).text();
     expect(html).not.toContain('evil.example');
 
-    await page.goto(e2eEnv.webUrl);
+    await page.goto(cvUrl);
     await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
     await expect(page.getByText('With pictures')).toBeVisible();
     await expect(page.locator('img[src*="evil.example"]')).toHaveCount(0);

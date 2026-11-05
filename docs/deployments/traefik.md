@@ -8,55 +8,21 @@ Traefik v3.6 (3.6.x) or a later v3 release; no router-level timeouts are used.
 
 | Host             | Path            | Goes to                  |
 | ---------------- | --------------- | ------------------------ |
-| `<domain>`       | `/api/*`        | cms-api Service (3000)   |
-| `<domain>`       | everything else | web Service (8080)       |
-| `admin.<domain>` | all             | cms-admin Service (8080) |
+| `<domain>`       | all             | web Service (8080)       |
+| `admin.<domain>` | `/api/*`        | cms-api Service (3000)   |
+| `admin.<domain>` | everything else | cms-admin Service (8080) |
 
 Rules that matter:
 
 - **Never StripPrefix.** cms-api serves under `/api/v1`; the router passes the path through untouched.
-- **`/api` must win over the web catch-all.** Set explicit `priority` values (below) instead of relying on rule length.
-- Web and API share the origin `https://<domain>` (the refresh cookie `__Secure-abyss_rt` is host-only, `Path=/api/v1/auth`). The admin is a different origin and is the only CORS origin.
+- **`/api` must win over the cms-admin catch-all on the admin host, and match the whole path segment** (`PathRegexp`, not `PathPrefix`, because `/api-tokens` is an admin SPA route). Set explicit `priority` values (below) instead of relying on rule length.
+- **No cms-api route on `<domain>`** (ADR 0018): web has no browser-side API calls; its Node server reaches cms-api through `API_INTERNAL_URL` inside the cluster. `<domain>/api/*` answers 404 from web.
+- cms-admin and cms-api share the origin `https://admin.<domain>` (the refresh cookie `__Secure-abyss_rt` is host-only, `Path=/api/v1/auth`), and that origin is the only CORS origin. Web is a different origin and holds its own sealed session cookies set by its BFF.
 - TLS terminates at Traefik (`websecure`); nothing in the apps speaks TLS. Add a `web` entrypoint redirect to HTTPS.
 - **No redirect on `/api/v1/*`** (section 4).
-- If the deployment also serves cms-api on a host of its own (for example `api.<domain>`, used by cms-admin), keep that route **and** the `/api` route on `<domain>`: the web bundle calls the API on its own origin, and cms-api's CORS allows only the admin origin. `VITE_API_BASE_URL` must name the host cms-admin really uses. When web-bff-hardening moves the API to `admin.<domain>/api` (Q-BFF1), the `/api` and `api-upload` routes move together.
+- `VITE_API_BASE_URL` (cms-admin build arg) is `https://admin.<domain>/api/v1`. Moving the route from `<domain>` to the admin host and rebuilding cms-admin with that value are one step ([patch-cms-admin-0.1.0.md](../apps/cms-admin/patch-cms-admin-0.1.0.md) gives the order). The `/api` and `api-upload` routes move together.
 
 ```yaml
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
-metadata:
-  name: abyss-public
-  namespace: <ns>
-spec:
-  entryPoints: [websecure]
-  routes:
-    - kind: Rule
-      match: Host(`<domain>`) && PathPrefix(`/api`)
-      priority: 20
-      middlewares:
-        - name: api-inflight
-      services:
-        - name: cms-api
-          port: 3000
-    - kind: Rule
-      # api-upload: upload and replace only, in every path form cms-api accepts
-      match: Host(`<domain>`) && ((Method(`POST`) && PathRegexp(`(?i)^/api/v1/media/?$`)) || (Method(`PUT`) && PathRegexp(`(?i)^/api/v1/media/[^/]+/file/?$`)))
-      priority: 200
-      middlewares:
-        - name: api-inflight
-        - name: upload-close
-      services:
-        - name: cms-api
-          port: 3000
-    - kind: Rule
-      match: Host(`<domain>`)
-      priority: 10
-      services:
-        - name: web
-          port: 8080
-  tls:
-    secretName: <domain-tls> # or certResolver: <resolver>
----
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -66,12 +32,47 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
+      match: Host(`admin.<domain>`) && PathRegexp(`^/api(/|$)`)
+      priority: 20
+      middlewares:
+        - name: api-inflight
+      services:
+        - name: cms-api
+          port: 3000
+    - kind: Rule
+      # api-upload: upload and replace only, in every path form cms-api accepts
+      match: Host(`admin.<domain>`) && ((Method(`POST`) && PathRegexp(`(?i)^/api/v1/media/?$`)) || (Method(`PUT`) && PathRegexp(`(?i)^/api/v1/media/[^/]+/file/?$`)))
+      priority: 200
+      middlewares:
+        - name: api-inflight
+        - name: upload-close
+      services:
+        - name: cms-api
+          port: 3000
+    - kind: Rule
       match: Host(`admin.<domain>`)
+      priority: 10
       services:
         - name: cms-admin
           port: 8080
   tls:
     secretName: <admin-domain-tls>
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: abyss-public
+  namespace: <ns>
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: Host(`<domain>`)
+      services:
+        - name: web
+          port: 8080
+  tls:
+    secretName: <domain-tls> # or certResolver: <resolver>
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
@@ -132,7 +133,7 @@ Origins cms-api must allow ([configmaps.md](configmaps.md)): `ADMIN_ORIGIN` = `h
 Check, for each origin (expect a 2xx status and no `Location` header):
 
 ```bash
-curl -i -X OPTIONS "https://<domain>/api/v1/<path>" \
+curl -i -X OPTIONS "https://admin.<domain>/api/v1/<path>" \
   -H "Origin: https://admin.<domain>" \
   -H "Access-Control-Request-Method: POST"
 ```

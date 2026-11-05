@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { ReviewerSession } from '@features/reviewer/Reviewer.api';
@@ -11,7 +11,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { ROLES, REVIEWER } = API_ENDPOINTS;
-const copy = COPY.reviewer;
+const copy = EN_TEXT.reviewer;
 
 const adminRole: Role = {
   id: 'role_admin',
@@ -112,7 +112,7 @@ describe('ReviewerSessionsPage', () => {
     });
     // A 5xx retries once (HEALTH_QUERY_RETRY) before the error shows.
     expect(await screen.findByText(copy.loadFailed)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.access.errors.retry })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: EN_TEXT.access.errors.retry })).toBeInTheDocument();
   });
 
   it('says so when the role may not view the log', async () => {
@@ -220,13 +220,15 @@ describe('reviewer mode in the shell', () => {
       [`GET ${ROLES.LIST}`]: () => ({ status: 403, data: {} }),
     });
     expect(await screen.findByText(copy.banner.message)).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: COPY.access.nav.reviewer })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: EN_TEXT.access.nav.reviewer }),
+    ).not.toBeInTheDocument();
   });
 
   it('does not show the banner to an owner', async () => {
     await open(TEST_USER, { [`GET ${REVIEWER.SESSIONS}`]: () => listOf([]) });
     await screen.findByText(copy.empty);
     expect(screen.queryByText(copy.banner.message)).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: COPY.access.nav.reviewer })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: EN_TEXT.access.nav.reviewer })).toBeInTheDocument();
   });
 });

@@ -17,7 +17,7 @@ import {
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, toAccessError, useCallerAccess } from '@features/access';
 import type { ReviewerSession } from '@features/reviewer/Reviewer.api';
 import { REVIEWER_SETTINGS_SUBJECT } from '@features/reviewer/Reviewer.constants';
@@ -31,7 +31,7 @@ import { useReviewerApi } from '@features/reviewer/ReviewerApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDateTime } from '@utils/DateFormat.rules';
 
-const copy = COPY.reviewer;
+type ReviewerCopy = ScreenText<'reviewer'>['reviewer'];
 
 const STATUS_CLASS = {
   active: 'bg-success-soft text-success-strong',
@@ -40,6 +40,7 @@ const STATUS_CLASS = {
 
 /** `/reviewer` (owner): the on/off switch and who asked for access. */
 export function ReviewerSessionsPage() {
+  const copy = useScreenText('reviewer').reviewer;
   const [page, setPage] = useState(1);
   const sessions = useReviewerSessionsQuery(page);
   const enabled = useReviewerEnabledQuery();
@@ -86,7 +87,7 @@ export function ReviewerSessionsPage() {
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}
-            columns={SESSION_COLUMNS}
+            columns={sessionColumnsOf(copy)}
             rows={rows}
             getRowId={(session) => session.id}
             getRowLabel={(session) => session.visitorRole}
@@ -106,7 +107,7 @@ export function ReviewerSessionsPage() {
 }
 
 /** Notes and the browser string come from a visitor: shown as text, never HTML. */
-const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
+const sessionColumnsOf = (copy: ReviewerCopy): readonly SheetColumn<ReviewerSession>[] => [
   {
     key: 'visitor',
     header: copy.columns.visitor,
@@ -172,6 +173,8 @@ const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
 
 /** The owner's toggle. Switching off asks first: it ends live sessions. */
 function AccessSwitch() {
+  const copy = useScreenText('reviewer').reviewer;
+  const access = useScreenText('access');
   const api = useReviewerApi();
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
@@ -195,7 +198,7 @@ function AccessSwitch() {
     },
     onError: (cause) => {
       setConfirmOff(false);
-      setFailed(isForbidden(cause) ? copy.forbidden : toAccessError(cause).message);
+      setFailed(isForbidden(cause) ? copy.forbidden : toAccessError(cause, access).message);
     },
   });
 

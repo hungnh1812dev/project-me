@@ -22,7 +22,7 @@ Auth state from `Auth.slice` and `Session.context`; mutations through `Auth.api`
 
 ## Technologies
 
-React 19, TanStack Query (`@tanstack/react-query`), react-hook-form + zod where there is a form, `@abyss/form-commons` components; text from `configs/Copy.constants.ts`.
+React 19, TanStack Query (`@tanstack/react-query`), react-hook-form + zod where there is a form, `@abyss/form-commons` components; text from `configs/locales` (`useScreenText`).
 
 ## Entry points
 
@@ -30,7 +30,7 @@ Route `APP_ROUTES.LOGIN` (`/login`); `ProtectedRoute` sends signed-out users her
 
 ## Where to change what
 
-The route is in `configs/App.routes.ts` and the page is registered in `views/Views.registry.ts`. Text goes in `configs/Copy.constants.ts`, never inline. A component a second page needs moves to `features/` or `components/` (code-standards §4.6). Auth rules live in `features/auth` (high-risk path: security review before commit).
+The route is in `configs/App.routes.ts` and the page is registered in `views/Views.registry.ts`. Text goes in `configs/locales/en/<Screen>.ts`, never inline; the page lists the screens it reads in `textScreens` of its `Views.registry.ts` entry. A component a second page needs moves to `features/` or `components/` (code-standards §4.6). Auth rules live in `features/auth` (high-risk path: security review before commit).
 
 ## Files
 

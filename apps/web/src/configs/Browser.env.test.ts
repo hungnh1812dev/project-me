@@ -4,26 +4,25 @@ describe('appEnv', () => {
     vi.resetModules();
   });
 
-  it('strips the trailing slash from NEXT_PUBLIC_API_BASE_URL', async () => {
-    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1/');
+  it('exposes no cms-api URL', async () => {
     const { appEnv } = await import('./Browser.env');
-    expect(appEnv.apiBaseUrl).toBe('/api/v1');
+    expect(Object.keys(appEnv)).not.toContain('apiBaseUrl');
   });
 
-  it('throws when NEXT_PUBLIC_API_BASE_URL is unset', async () => {
-    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '');
-    await expect(import('./Browser.env')).rejects.toThrow(/NEXT_PUBLIC_API_BASE_URL is not set/);
+  it('throws when NEXT_PUBLIC_TURNSTILE_SITE_KEY is unset', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', '');
+    await expect(import('./Browser.env')).rejects.toThrow(
+      /NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set/,
+    );
   });
 
   it('leaves the admin URL undefined when blank', async () => {
-    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
     vi.stubEnv('NEXT_PUBLIC_ADMIN_URL', ' ');
     const { appEnv } = await import('./Browser.env');
     expect(appEnv.adminUrl).toBeUndefined();
   });
 
   it('accepts an http(s) URL or a path and strips trailing slashes', async () => {
-    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
     vi.stubEnv('NEXT_PUBLIC_ADMIN_URL', 'https://admin.example.com/');
     expect((await import('./Browser.env')).appEnv.adminUrl).toBe('https://admin.example.com');
     vi.resetModules();
@@ -38,7 +37,6 @@ describe('appEnv', () => {
     '/\\evil.example',
     '/\t/evil.example',
   ])('rejects %s as the admin URL', async (value) => {
-    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', '/api/v1');
     vi.stubEnv('NEXT_PUBLIC_ADMIN_URL', value);
     await expect(import('./Browser.env')).rejects.toThrow(/NEXT_PUBLIC_ADMIN_URL must be/);
   });

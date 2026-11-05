@@ -12,6 +12,7 @@ import {
   type ActorContext,
   type SystemSubject,
 } from '../../access';
+import { DEFAULT_FIELD_WIDTH } from '../../content-engine';
 import {
   contentTypeNotFound,
   contentTypeView,
@@ -34,6 +35,7 @@ const FULL_CATALOG_PERMISSION = {
 const VIEW_VOCABULARY: ViewVocabulary = {
   systemConditionFields: CONDITION_SYSTEM_FIELDS,
   joinFieldPath,
+  defaultFieldWidth: DEFAULT_FIELD_WIDTH,
 };
 
 const FULL_VISIBILITY: FieldVisibility = {

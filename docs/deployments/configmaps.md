@@ -98,21 +98,26 @@ data:
 
 ## 4. web
 
-Web has no Secret. `NEXT_PUBLIC_*` values are build args (GitHub Environment variables, [ci-cd.md](ci-cd.md)); changing one means a new image. The runtime values are plain `env` entries on the Deployment ([kubernetes.md](kubernetes.md) section 4), read at start.
+Web has a Secret, `web-secrets` ([secrets.md](secrets.md) section 1), and plain `env` entries on the Deployment ([kubernetes.md](kubernetes.md) section 4), read at start. `NEXT_PUBLIC_*` values are build args (GitHub Environment variables, [ci-cd.md](ci-cd.md)); changing one means a new image. The browser calls only web's own BFF routes; web has no `NEXT_PUBLIC_API_BASE_URL` and no `/status` page switch (ADR 0018). An invalid or missing required value fails the start.
 
-| Kind        | Name                             | Value in production                                                                                                |
-| ----------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| build arg   | `NEXT_PUBLIC_API_BASE_URL`       | `/api/v1` (same origin)                                                                                            |
-| build arg   | `NEXT_PUBLIC_ADMIN_URL`          | `https://admin.<domain>` (optional; hides the "Open CMS" link when empty)                                          |
-| build arg   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public Cloudflare site key (optional; hides "Reviewer access" when empty; unused while the reviewer switch is off) |
-| runtime env | `API_INTERNAL_URL`               | `http://cms-api.<ns>.svc.cluster.local:3000/api/v1` (server-only; the server calls cms-api anonymously)            |
-| runtime env | `WEB_REVALIDATE_SECONDS`         | `60` (data cache for server-side fetches; `0` disables it)                                                         |
-| runtime env | `WEB_PORT`                       | `8080` (image default)                                                                                             |
-| runtime env | `WEB_STATUS_PAGE_ENABLED`        | `false` (`/status` answers 404; `true` shows the card)                                                             |
+| Kind        | Name                             | Value in production                                                                                                  |
+| ----------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| build arg   | `NEXT_PUBLIC_ADMIN_URL`          | `https://admin.<domain>` (optional; hides the "Open CMS" link when empty)                                            |
+| build arg   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public Cloudflare site key (required: the web Dockerfile fails without it)                                           |
+| runtime env | `API_INTERNAL_URL`               | `http://cms-api.<ns>.svc.cluster.local:3000/api/v1` (server-only; the web server reaches cms-api inside the cluster) |
+| runtime env | `WEB_ORIGIN`                     | `https://<domain>` (exact origin; the BFF accepts state-changing requests only from it)                              |
+| runtime env | `TURNSTILE_EXPECTED_HOSTNAME`    | `<domain>` (bare host; **required** in production: web refuses to start without it)                                  |
+| runtime env | `TRUST_PROXY_HOPS`               | `1` (Traefik is the one proxy in front of web)                                                                       |
+| runtime env | `CLIENT_IP_HEADER`               | optional; a header a trusted CDN sets to the visitor IP                                                              |
+| runtime env | `WEB_REVALIDATE_SECONDS`         | `60` (data cache for server-side fetches; `0` disables it)                                                           |
+| runtime env | `WEB_PORT`                       | `8080` (image default)                                                                                               |
+| never set   | `ALLOW_TURNSTILE_TEST_SECRET`    | never in deploy config; it exists only for the smoke stack (ADR 0018 section 2.6)                                    |
+
+Removed: `NEXT_PUBLIC_API_BASE_URL` (build arg) and `WEB_STATUS_PAGE_ENABLED` (runtime env). Delete both from the deploy repo.
 
 ## 5. cms-admin
 
-No Secret and no ConfigMap. `VITE_API_BASE_URL` is a **build arg**: the full API base, for example `https://<domain>/api/v1`. The CSP `connect-src` is derived from it at container start; the optional env `CSP_CONNECT_SRC` (space-separated origins) overrides it if the API origin ever differs.
+No Secret and no ConfigMap. `VITE_API_BASE_URL` is a **build arg**: the full API base on the admin host, `https://admin.<domain>/api/v1`. The CSP `connect-src` is derived from it at container start; the optional env `CSP_CONNECT_SRC` (space-separated origins) overrides it if the API origin ever differs.
 
 ## 6. ConfigMap `postgres-backup-config`
 

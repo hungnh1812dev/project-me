@@ -16,7 +16,7 @@ The dispatch is only `TASK <ID>` (or `BATCH: ...`) plus optional notes. Read onl
 2. `features.md`: the `in-progress` row. `<F>/board.md`: grep the task's row and the decision lines at the top.
 3. The task's entry in the task source (`section <file> --id <ID>`, `lean-reading`): acceptance, verify, files, deps, spec refs. A direct request `DR<n>`: its `### DR<n>` brief in `<F>/handoff.md` (no spec refs).
 4. `<F>/handoff.md` in full: user answers, provisional decisions, follow-ups naming this task.
-5. Only the spec sections the entry cites.
+5. Only the spec sections the entry cites, and the rule sections of its `Rules:` line (`section <file> "<heading>"`); with no `Rules:` line, the `RULES.md` of `docs/global/`, of your app and of the flow. This replaces the full rule reading of the root `CLAUDE.md` "Spec layout".
 6. Conventions, when needed: grep `conventions.md` (cross-cutting) and the `conventions-<area>.md` its header names for your app; history of a finished area: grep `.agent-state/archive/`.
 7. Where the code lives: `docs/modules/MODULES.md` (the module index), then the doc of each module the task touches, then the code and docs of the listed files (`lean-reading`).
 
@@ -48,7 +48,7 @@ Exit: all slices done; build and type-check pass.
 
 ## 4. Unit test
 
-Cover acceptance criteria, edge cases and error paths (bugs: failing test first). Run the whole affected package's suite.
+Cover acceptance criteria, edge cases and error paths (bugs: failing test first). Run the whole affected package's suite; with `qc-cli tier 1` in `Checks needed`, also the module's integration tests.
 
 Exit: all pass; note the count.
 

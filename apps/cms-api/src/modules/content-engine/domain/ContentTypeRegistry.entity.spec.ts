@@ -18,7 +18,6 @@ describe('ContentTypeRegistry', () => {
     expect(type.root.components.map((c) => c.table.plan.name)).toEqual([
       'cv_page__skill',
       'cv_page__experience',
-      'cv_page__project',
       'cv_page__education',
       'cv_page__language',
       'cv_page__reference',

@@ -10,7 +10,7 @@ import {
 } from '@abyss/form-commons';
 import { LoadError } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 
 import { isForbidden } from '../access';
 import type { MediaFile } from './Media.api';
@@ -19,7 +19,6 @@ import { useMediaQuery } from './Media.queries';
 import { MediaFilters, type MediaFiltersValue } from './MediaFilters';
 import { MediaGrid } from './MediaGrid';
 
-const copy = COPY.media.picker;
 const IMAGES_ONLY_MIME_TYPE = 'image/*';
 
 /** Pick one library file for a media field. */
@@ -34,6 +33,8 @@ export function MediaPickerDialog({
   onSelect: (file: MediaFile) => void;
   onlyImages?: boolean;
 }) {
+  const mediaCopy = useScreenText('media').media;
+  const copy = mediaCopy.picker;
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<MediaFiltersValue>({
     search: '',
@@ -46,10 +47,10 @@ export function MediaPickerDialog({
 
   const loadError = media.isError ? (
     isForbidden(media.error) ? (
-      <FormAlert tone="info">{COPY.media.forbidden}</FormAlert>
+      <FormAlert tone="info">{mediaCopy.forbidden}</FormAlert>
     ) : (
       <LoadError
-        message={COPY.media.loadFailed}
+        message={mediaCopy.loadFailed}
         isRetrying={media.isFetching}
         onRetry={() => void media.refetch()}
       />
@@ -77,15 +78,15 @@ export function MediaPickerDialog({
           isLoading={media.isPending}
           error={loadError}
           onSelect={onSelect}
-          emptyTitle={isFiltered ? COPY.media.grid.noResults : copy.empty}
-          {...(isFiltered ? { emptyHint: COPY.media.grid.noResultsHint } : {})}
+          emptyTitle={isFiltered ? mediaCopy.grid.noResults : copy.empty}
+          {...(isFiltered ? { emptyHint: mediaCopy.grid.noResultsHint } : {})}
         />
         {media.data === undefined || rows.length === 0 ? null : (
           <Pagination
             meta={media.data.meta}
             count={rows.length}
             onPage={setPage}
-            copy={COPY.media.pagination}
+            copy={mediaCopy.pagination}
           />
         )}
         <div className="flex justify-end">

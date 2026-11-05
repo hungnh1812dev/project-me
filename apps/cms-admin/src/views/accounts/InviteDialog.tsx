@@ -12,8 +12,8 @@ import {
   SelectInput,
   TextInput,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
 import { ACCOUNT_LIMITS, API_ERROR_CODES } from '@configs/Http.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import type { InvitedAccount, Role } from '@features/access/Access.api';
 import { OWNER_ROLE_SLUG, UNASSIGNABLE_ROLE_SLUGS } from '@features/access/Access.constants';
 import { toAccessError } from '@features/access/Access.errors';
@@ -24,23 +24,24 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const copy = COPY.access.invite;
+type InviteCopy = ScreenText<'access'>['access']['invite'];
 
-const inviteSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, copy.validation.emailRequired)
-    .max(ACCOUNT_LIMITS.EMAIL_MAX_LENGTH, copy.validation.emailTooLong)
-    .pipe(z.email(copy.validation.emailInvalid)),
-  displayName: z
-    .string()
-    .trim()
-    .min(1, copy.validation.displayNameRequired)
-    .max(ACCOUNT_LIMITS.DISPLAY_NAME_MAX_LENGTH, copy.validation.displayNameTooLong),
-  roleId: z.string().min(1, copy.validation.roleRequired),
-});
-type InviteValues = z.input<typeof inviteSchema>;
+const inviteSchemaOf = (copy: InviteCopy) =>
+  z.object({
+    email: z
+      .string()
+      .trim()
+      .min(1, copy.validation.emailRequired)
+      .max(ACCOUNT_LIMITS.EMAIL_MAX_LENGTH, copy.validation.emailTooLong)
+      .pipe(z.email(copy.validation.emailInvalid)),
+    displayName: z
+      .string()
+      .trim()
+      .min(1, copy.validation.displayNameRequired)
+      .max(ACCOUNT_LIMITS.DISPLAY_NAME_MAX_LENGTH, copy.validation.displayNameTooLong),
+    roleId: z.string().min(1, copy.validation.roleRequired),
+  });
+type InviteValues = z.input<ReturnType<typeof inviteSchemaOf>>;
 
 /** Roles the caller may give to a new account (rank rule, not public/reviewer/owner). */
 export function assignableRoles(roles: readonly Role[]): Role[] {
@@ -69,12 +70,14 @@ export function InviteDialog({
   onInvited: (account: InvitedAccount) => void;
   onCloseAutoFocus: (event: Event) => void;
 }) {
+  const access = useScreenText('access');
+  const copy = access.access.invite;
   const api = useAccessApi();
   const queryClient = useQueryClient();
   const [alert, setAlert] = useState<string | null>(null);
 
   const form = useForm<InviteValues>({
-    resolver: zodResolver(inviteSchema),
+    resolver: zodResolver(inviteSchemaOf(copy)),
     defaultValues: { email: '', displayName: '', roleId: '' },
     mode: 'onTouched',
   });
@@ -91,7 +94,7 @@ export function InviteDialog({
       onInvited(account);
     },
     onError: (cause) => {
-      const error = toAccessError(cause);
+      const error = toAccessError(cause, access);
       if (error.errorCode === API_ERROR_CODES.ACCOUNT_EMAIL_TAKEN) {
         form.setError('email', { message: copy.errors.emailTaken });
         form.setFocus('email');

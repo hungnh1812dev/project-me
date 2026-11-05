@@ -1,15 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Input, NativeSelect } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 
 import {
   MEDIA_MIME_FILTER_VALUES,
   MEDIA_PAGE_SIZES,
   MEDIA_SEARCH_DEBOUNCE_MS,
 } from './Media.constants';
-
-const copy = COPY.media.filters;
-const mimeLabels: Readonly<Record<string, string>> = copy.mimeOptions;
 
 export interface MediaFiltersValue {
   search: string;
@@ -26,6 +23,8 @@ interface MediaFiltersProps {
 
 /** Search (debounced), type and page-size controls; the parent owns the value. */
 export function MediaFilters({ value, onChange, hideMimeType = false }: MediaFiltersProps) {
+  const copy = useScreenText('media').media.filters;
+  const mimeLabels: Readonly<Record<string, string>> = copy.mimeOptions;
   const [searchText, setSearchText] = useState(value.search);
   const latest = useRef({ value, onChange });
   const lastSentSearch = useRef(value.search);

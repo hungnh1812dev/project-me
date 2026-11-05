@@ -4,6 +4,7 @@ import {
   COMPONENT_SYSTEM_COLUMNS,
   CONTENT_DB_SCHEMA,
   HASH_ALGORITHM,
+  MEDIA_FIELD_TYPE,
   ROOT_SYSTEM_COLUMNS,
   SNAPSHOT_FORMAT_VERSION,
 } from './ContentEngine.constants';
@@ -34,6 +35,8 @@ export interface MigrationPlan {
   statements: string[];
   /** Human-readable list of changes that can lose data. */
   destructiveChanges: string[];
+  /** `<old> -> <new>` per table renamed with its data (not destructive). */
+  renamedTables: string[];
   /** Slugs whose definition hash changed, appeared or disappeared. */
   changedSlugs: string[];
   /** The snapshot to store once this plan is written. */
@@ -154,6 +157,90 @@ function tablesOf(snapshot: DefinitionSnapshot): TablePlan[] {
   return Object.values(snapshot.contentTypes).flatMap((entry) => planTables(entry.definition));
 }
 
+export interface RenamedTable {
+  from: TablePlan;
+  to: TablePlan;
+}
+
+function rootTableNameOf(table: TablePlan, byName: ReadonlyMap<string, TablePlan>): string {
+  let current = table;
+  while (current.parentTable !== null) {
+    const parent = byName.get(current.parentTable);
+    if (parent === undefined) break;
+    current = parent;
+  }
+  return current.name;
+}
+
+/**
+ * Component tables whose name changed but whose place in the content type did
+ * not (same root table and `apiPath`): the migration renames them and keeps
+ * their rows. Root tables are named by slug and never renamed. Parents come
+ * before children.
+ */
+export function pairRenamedTables(
+  previousTables: readonly TablePlan[],
+  nextTables: readonly TablePlan[],
+): RenamedTable[] {
+  const previousByName = new Map(previousTables.map((table) => [table.name, table]));
+  const nextByName = new Map(nextTables.map((table) => [table.name, table]));
+  const keyOf = (table: TablePlan, byName: ReadonlyMap<string, TablePlan>) =>
+    `${rootTableNameOf(table, byName)}\u0000${table.apiPath}`;
+
+  const goneByPlace = new Map<string, TablePlan>();
+  for (const table of previousTables) {
+    if (table.kind !== 'component' || nextByName.has(table.name)) continue;
+    const key = keyOf(table, previousByName);
+    if (goneByPlace.has(key)) {
+      throw new Error(`Two removed tables share the place "${table.apiPath}" (${table.name})`);
+    }
+    goneByPlace.set(key, table);
+  }
+
+  const pairs: RenamedTable[] = [];
+  for (const table of nextTables) {
+    if (table.kind !== 'component' || previousByName.has(table.name)) continue;
+    const from = goneByPlace.get(keyOf(table, nextByName));
+    if (from !== undefined) pairs.push({ from, to: table });
+  }
+  return pairs;
+}
+
+function renameTableSql({ from, to }: RenamedTable): string[] {
+  const rename = (kind: 'CONSTRAINT' | 'INDEX', oldName: string, newName: string) =>
+    kind === 'CONSTRAINT'
+      ? `ALTER TABLE ${qualified(to.name)} RENAME CONSTRAINT ${quoteIdentifier(oldName)} TO ${quoteIdentifier(newName)};`
+      : `ALTER INDEX ${qualified(oldName)} RENAME TO ${quoteIdentifier(newName)};`;
+  const newColumnNames = new Set(to.columns.map((column) => column.name));
+  const mediaColumns = from.columns.filter(
+    (column) =>
+      !isComponentField(column.field) &&
+      column.field.type === MEDIA_FIELD_TYPE &&
+      newColumnNames.has(column.name),
+  );
+  return [
+    `ALTER TABLE ${qualified(from.name)} RENAME TO ${quoteIdentifier(to.name)};`,
+    rename('CONSTRAINT', relationNames.primaryKey(from.name), relationNames.primaryKey(to.name)),
+    rename(
+      'CONSTRAINT',
+      relationNames.parentForeignKey(from.name),
+      relationNames.parentForeignKey(to.name),
+    ),
+    ...mediaColumns.map((column) =>
+      rename(
+        'CONSTRAINT',
+        relationNames.mediaForeignKey(from.name, column.name),
+        relationNames.mediaForeignKey(to.name, column.name),
+      ),
+    ),
+    rename(
+      'INDEX',
+      relationNames.parentOrderIndex(from.name),
+      relationNames.parentOrderIndex(to.name),
+    ),
+  ];
+}
+
 /**
  * Diffs the previous snapshot against the current (already validated)
  * definitions. Additions come first in parent-before-child order; drops of
@@ -167,16 +254,22 @@ export function planMigration(
   const previousTables = new Map(tablesOf(previous).map((table) => [table.name, table]));
   const nextTables = tablesOf(nextSnapshot);
   const nextNames = new Set(nextTables.map((table) => table.name));
+  const renames = pairRenamedTables([...previousTables.values()], nextTables);
+  const oldNameOf = new Map(renames.map(({ from, to }) => [to.name, from.name]));
+  const renamedFromNames = new Set(renames.map(({ from }) => from.name));
 
   const statements: string[] = [];
   const destructiveChanges: string[] = [];
+  const renamedComments = renames.map(({ from, to }) => `${from.name} -> ${to.name}`);
 
   if (Object.keys(previous.contentTypes).length === 0 && nextTables.length) {
     statements.push(`CREATE SCHEMA IF NOT EXISTS ${quoteIdentifier(CONTENT_DB_SCHEMA)};`);
   }
 
+  for (const rename of renames) statements.push(...renameTableSql(rename));
+
   for (const table of nextTables) {
-    const before = previousTables.get(table.name);
+    const before = previousTables.get(oldNameOf.get(table.name) ?? table.name);
     if (before === undefined) {
       statements.push(...createTableSql(table));
       continue;
@@ -211,7 +304,7 @@ export function planMigration(
   }
 
   const dropped = [...previousTables.values()]
-    .filter((table) => !nextNames.has(table.name))
+    .filter((table) => !nextNames.has(table.name) && !renamedFromNames.has(table.name))
     .reverse();
   for (const table of dropped) {
     statements.push(`DROP TABLE ${qualified(table.name)};`);
@@ -226,7 +319,13 @@ export function planMigration(
     .filter((slug) => previous.contentTypes[slug]?.hash !== nextSnapshot.contentTypes[slug]?.hash)
     .sort();
 
-  return { statements, destructiveChanges, changedSlugs, nextSnapshot };
+  return {
+    statements,
+    destructiveChanges,
+    renamedTables: renamedComments,
+    changedSlugs,
+    nextSnapshot,
+  };
 }
 
 /** File body of a migration. Metadata-only changes produce a comment-only file. */
@@ -238,5 +337,6 @@ export function renderMigrationSql(plan: MigrationPlan): string {
   if (plan.statements.length === 0) {
     header.push('-- Definition metadata only: no DDL needed.');
   }
-  return `${[...header, '', ...plan.statements].join('\n')}\n`;
+  const renamed = plan.renamedTables.map((rename) => `-- Renamed ${rename}`);
+  return `${[...header, ...renamed, '', ...plan.statements].join('\n')}\n`;
 }

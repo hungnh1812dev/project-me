@@ -149,8 +149,8 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       'cv_page__education',
       'cv_page__experience',
       'cv_page__experience__role',
+      'cv_page__experience__role__project',
       'cv_page__language',
-      'cv_page__project',
       'cv_page__reference',
       'cv_page__skill',
     ]);
@@ -323,6 +323,103 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       'SELECT is_main FROM content.cv_page',
     );
     expect(row?.is_main).toBe('true');
+  });
+
+  it('renames component tables with their rows, constraints and indexes', async () => {
+    const ws = await workspace();
+    await rm(join(ws.schemasDir, CV_PAGE_FILE));
+    const definition = (parent: string, child: string) => ({
+      slug: 'rename-demo',
+      displayName: 'Rename demo',
+      kind: 'collection',
+      draftAndPublish: false,
+      fields: [
+        { name: 'title', type: 'text' },
+        {
+          name: 'parts',
+          type: 'component',
+          component: parent,
+          repeatable: true,
+          fields: [
+            { name: 'label', type: 'text' },
+            {
+              name: 'items',
+              type: 'component',
+              component: child,
+              repeatable: true,
+              fields: [{ name: 'value', type: 'text' }],
+            },
+          ],
+        },
+      ],
+    });
+    const write = (parent: string, child: string) =>
+      writeFile(join(ws.schemasDir, 'rename-demo.json'), JSON.stringify(definition(parent, child)));
+
+    await write('parts', 'entries');
+    await generate(ws);
+    await migrate(ws);
+    expect(await contentTables(ws)).toEqual([
+      'rename_demo',
+      'rename_demo__parts',
+      'rename_demo__parts__entries',
+    ]);
+
+    const [root] = await query<{ id: number }>(
+      ws.databaseUrl,
+      `INSERT INTO content.rename_demo (document_id, title) VALUES (gen_random_uuid(), 'a') RETURNING id`,
+    );
+    const [group] = await query<{ id: number }>(
+      ws.databaseUrl,
+      `INSERT INTO content.rename_demo__parts (component_uid, parent_id, label)
+       VALUES (gen_random_uuid(), $1, 'g') RETURNING id`,
+      [root?.id],
+    );
+    await query(
+      ws.databaseUrl,
+      `INSERT INTO content.rename_demo__parts__entries (component_uid, parent_id, value)
+       VALUES (gen_random_uuid(), $1, 'v')`,
+      [group?.id],
+    );
+
+    await write('part', 'entry');
+    const written = await generate(ws);
+    expect(written).toMatchObject({ status: 'written' });
+    await migrate(ws);
+
+    expect(await contentTables(ws)).toEqual([
+      'rename_demo',
+      'rename_demo__part',
+      'rename_demo__part__entry',
+    ]);
+    const labels = await query<{ label: string; value: string }>(
+      ws.databaseUrl,
+      `SELECT g.label, i.value FROM content.rename_demo__part g
+       JOIN content.rename_demo__part__entry i ON i.parent_id = g.id`,
+    );
+    expect(labels).toEqual([{ label: 'g', value: 'v' }]);
+
+    const names = await query<{ name: string }>(
+      ws.databaseUrl,
+      `SELECT conname AS name FROM pg_constraint
+       WHERE connamespace = 'content'::regnamespace AND conrelid::regclass::text LIKE '%rename_demo__part%'
+       UNION ALL SELECT indexname FROM pg_indexes
+       WHERE schemaname = 'content' AND tablename LIKE 'rename_demo__part%'`,
+    );
+    expect(names.map((row) => row.name).filter((name) => name.includes('parts'))).toEqual([]);
+    expect(names.map((row) => row.name)).toEqual(
+      expect.arrayContaining([
+        'rename_demo__part_pk',
+        'rename_demo__part_parent_fk',
+        'rename_demo__part__entry_parent_fk',
+        'rename_demo__part__entry_parent_idx',
+      ]),
+    );
+
+    await query(ws.databaseUrl, 'DELETE FROM content.rename_demo WHERE id = $1', [root?.id]);
+    expect(
+      await query(ws.databaseUrl, 'SELECT 1 FROM content.rename_demo__part__entry'),
+    ).toHaveLength(0);
   });
 
   it('serialises concurrent migrate runs with the advisory lock', async () => {

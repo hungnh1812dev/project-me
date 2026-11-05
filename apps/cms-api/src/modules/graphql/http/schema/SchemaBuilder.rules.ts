@@ -166,7 +166,7 @@ function componentTypeOf(
   describe: string,
   claims: NameClaims,
 ): GraphQLObjectType {
-  const name = componentTypeName(parentName, field.name);
+  const name = componentTypeName(parentName, field.component);
   const source = `${describe} component "${field.name}"`;
   claims.claim(name, source);
   return new GraphQLObjectType({

@@ -61,9 +61,9 @@ check_admin_security_headers() {
   expect_common_security_headers "admin /"
   local admin_csp admin_img_src admin_style_nonce
   admin_csp="$(header Content-Security-Policy)"
-  if [[ "$admin_csp" == *"script-src 'self';"* && "$admin_csp" == *"connect-src 'self' $WEB_ORIGIN;"* && "$admin_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP: script-src self, connect-src is the API origin (no path), Cloudinary img-src"; else fail "admin CSP: '$admin_csp'"; fi
+  if [[ "$admin_csp" == *"script-src 'self';"* && "$admin_csp" == *"connect-src 'self' $ADMIN_ORIGIN;"* && "$admin_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP: script-src self, connect-src is the API origin (no path), Cloudinary img-src"; else fail "admin CSP: '$admin_csp'"; fi
   admin_img_src="$(printf '%s' "$admin_csp" | tr ';' '\n' | grep -E '^ *img-src ' || true)"
-  if [[ "$admin_img_src" == *" $WEB_ORIGIN"* && "$admin_img_src" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP img-src holds the web origin (local media) and Cloudinary"; else fail "admin CSP img-src: '$admin_img_src'"; fi
+  if [[ "$admin_img_src" != *" $WEB_ORIGIN"* && "$admin_img_src" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP img-src holds Cloudinary and no web origin (local media is same-origin)"; else fail "admin CSP img-src: '$admin_img_src'"; fi
   # style-src carries a per-request nonce (Radix scroll-lock style); the HTML
   # shell exposes the same value in a meta tag, and it changes per response.
   admin_style_nonce="$(nonce_of)"
@@ -77,11 +77,11 @@ check_admin_security_headers() {
 }
 
 check_api_security_headers() {
-  request GET "$WEB_ORIGIN$API_PREFIX/health/live"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/health/live"
   expect_header "API sends default-src 'none'" Content-Security-Policy "$API_CSP_VALUE"
   if [[ "$(header_count Content-Security-Policy)" == "1" ]]; then pass "API has exactly one CSP header (Traefik adds none)"; else fail "API CSP header count: $(header_count Content-Security-Policy)"; fi
   expect_header "API sends no X-Powered-By" X-Powered-By ""
-  request POST "$WEB_ORIGIN$API_PREFIX/graphql" -H 'Content-Type: application/json' --data '{"query":"{__typename}"}'
+  request POST "$ADMIN_ORIGIN$API_PREFIX/graphql" -H 'Content-Type: application/json' --data '{"query":"{__typename}"}'
   expect_header "POST /graphql sends default-src 'none'" Content-Security-Policy "$API_CSP_VALUE"
   expect_header "POST /graphql sends no X-Powered-By" X-Powered-By ""
 }

@@ -30,7 +30,7 @@ NestJS; the content-engine registry and the access module.
 
 ## Where to change what
 
-A new view key: `ContentTypeView.rules.ts` and the key list in `ContentTypeView.contract.spec.ts`; changes stay additive (frontends read these keys).
+A new view key: `ContentTypeView.rules.ts` and the key list in `ContentTypeView.contract.spec.ts`; changes stay additive (frontends read these keys). Content field views carry `width` (the schema value or the default; absent on components and system fields) and `displayName` only when the definition sets it (ADR 0019).
 
 ## Files
 

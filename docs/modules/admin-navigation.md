@@ -23,7 +23,7 @@ A section or sub-heading with no visible item is not rendered (today both conten
 - Groups and icons (admin-ui-refresh, UIS-2): Content, Utilities and System settings are three groups, each heading with a `lucide-react` icon and a divider between groups. Single types and Collection types are sub-groups with their own icon; their items sit indented on a guide line. Every `NAV_SECTIONS` entry and sub-section carries an `icon` (a new section = one entry with label and icon, plus one copy label). Items stay text links.
 - Sub-groups collapse with a button (`aria-expanded`, `aria-controls`, named by the group label), open by default. The open state is `{ [sectionId]: boolean }` in `localStorage` under `NAV_GROUP_OPEN_STORAGE_KEY` (`NavSections.constants.ts`), read and written by `components/layouts/useNavGroupOpenState.ts`; a storage error falls back to open. The active link uses `NavLink` active state with `aria-current="page"`, a muted primary tint and a left accent, from semantic tokens only. Section headings are small, muted, not links.
 - Content menu items are labelled with the content type's `displayName` (never the slug; the path keeps the slug); the link carries a `title` with the full name and long names wrap (DPN-3).
-- The landmark stays `<nav aria-label={COPY.access.nav.label}>` so existing e2e locators keep working; the user block is a second landmark (`COPY.session.mainNav`), as today.
+- The landmark stays `<nav aria-label={COMMON_TEXT.access.nav.label}>` so existing e2e locators keep working; the user block is a second landmark (`COMMON_TEXT.session.mainNav`), as today.
 - Loading: while the caller's permissions or the content-types catalog load, the menu shows skeleton rows of the same height; on a catalog error the Content section shows one line with a Retry button. Static sections render as soon as permissions are ready.
 - Width, spacing and colors come from Tailwind theme / kit tokens; no raw values.
 
@@ -32,11 +32,11 @@ A section or sub-heading with no visible item is not rendered (today both conten
 - `lib/feature-definition.tsx` (shared, feature-free) owns the nav contract. Additive changes:
   - `FeatureNavItem` gains `section: NavSectionId`.
   - `Feature` gains optional `useNavItems?: () => NavItemsState` (`{ items, isLoading, hasFailed, retry }`) for items that depend on data; the menu shows its loading and error rows under `DATA_BACKED_SECTION_ID`. Static items stay in `navItems`.
-- `lib/NavSections.constants.ts` (new, feature-free) owns the section list `NAV_SECTIONS` (id, label from `COPY`, order, optional sub-sections). Ids: `singleTypes`, `collectionTypes`, `utilities`, `systemSettings`; `singleTypes` and `collectionTypes` are sub-sections of `content`.
+- `lib/NavSections.constants.ts` (new, feature-free) owns the section list `NAV_SECTIONS` (id, label from `COMMON_TEXT`, order, optional sub-sections). Ids: `singleTypes`, `collectionTypes`, `utilities`, `systemSettings`; `singleTypes` and `collectionTypes` are sub-sections of `content`.
 - `features/content` owns the content-type links (`useContentNavItems`, exposed through `contentFeature.useNavItems`), because it owns the `/content/:slug` routes; it reads the catalog through the `content-types` facade (allowed by the tier order).
 - `features/access`, `features/media`, `features/reviewer` only add `section` to their existing nav items.
 - `app/` owns the layout: `AppShell.tsx` (frame), `SideMenu.tsx` (renders sections from `NAV_SECTIONS` plus every feature's items, filtered by `caller.can`), `MobileMenu.tsx` (sheet). `app/` is the composition root, so it may import features.
-- Copy: `config/copy/common.copy.ts` `NAV_COPY` gains the section labels and `users`, `mediaLibrary`, `menu`, `closeMenu`.
+- Copy: `configs/locales/en/Common.ts` (`COMMON_TEXT`) gains the section labels and `users`, `mediaLibrary`, `menu`, `closeMenu`.
 
 ## Extension path
 

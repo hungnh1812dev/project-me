@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Resolves the Docker build args of one app for _publish.yml.
 # Usage: build-args.sh <app>        (cms-api | cms-admin | web)
-# Reads ENVIRONMENT, TURBO_VERSION, VITE_API_BASE_URL, NEXT_PUBLIC_API_BASE_URL,
-# NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY from the environment.
+# Reads ENVIRONMENT, TURBO_VERSION, VITE_API_BASE_URL (the admin-host API base,
+# https://admin.<domain>/api/v1), NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY
+# from the environment.
 # Appends `api_url` (cms-admin only) and a `build_args` block to $GITHUB_OUTPUT
 # (stdout when it is unset). Every check runs before anything is written, so a
 # failure leaves the output empty; it prints one `::error::<KEY> ...` line naming
@@ -18,7 +19,6 @@ app="${1}"
 environment="${ENVIRONMENT:-}"
 turbo_version="${TURBO_VERSION:-}"
 vite_api_base_url="${VITE_API_BASE_URL:-}"
-web_api_base_url="${NEXT_PUBLIC_API_BASE_URL:-}"
 web_admin_url="${NEXT_PUBLIC_ADMIN_URL:-}"
 web_turnstile_site_key="${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}"
 
@@ -46,7 +46,6 @@ validate() {
       require_value VITE_API_BASE_URL "${vite_api_base_url}"
       ;;
     web)
-      require_value NEXT_PUBLIC_API_BASE_URL "${web_api_base_url}"
       require_single_line NEXT_PUBLIC_ADMIN_URL "${web_admin_url}"
       require_single_line NEXT_PUBLIC_TURNSTILE_SITE_KEY "${web_turnstile_site_key}"
       ;;
@@ -65,7 +64,6 @@ emit() {
       echo "VITE_API_BASE_URL=${vite_api_base_url}"
       ;;
     web)
-      echo "NEXT_PUBLIC_API_BASE_URL=${web_api_base_url}"
       echo "NEXT_PUBLIC_ADMIN_URL=${web_admin_url}"
       echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY=${web_turnstile_site_key}"
       ;;
