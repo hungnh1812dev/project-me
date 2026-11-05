@@ -19,6 +19,7 @@ describe('content-types facade', () => {
     expect(namesExportedBy(INDEX_FILE)).toEqual([
       'ContentType',
       'ContentTypeField',
+      'FieldWidth',
       'getContentTypes',
     ]);
     expect(Object.keys(contentTypesFacade)).toEqual(['getContentTypes']);

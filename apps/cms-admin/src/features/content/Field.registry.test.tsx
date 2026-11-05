@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { EN_TEXT } from '@configs/locales/en';
+import { render, screen } from '@testing-library/react';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import {
@@ -80,5 +82,26 @@ describe('list display', () => {
       'utf8',
     );
     expect(page).not.toContain('FIELD_TYPE');
+  });
+});
+
+describe('adapterFor text and string', () => {
+  function Field({ type }: { type: string }) {
+    const form = useForm();
+    return (
+      <FormProvider {...form}>
+        {adapterFor(type).render({ name: 'value', label: 'Value', copy: EN_TEXT.content })}
+      </FormProvider>
+    );
+  }
+
+  it('shows text as a one-line input', () => {
+    render(<Field type={FIELD_TYPE.TEXT} />);
+    expect(screen.getByLabelText('Value').tagName).toBe('INPUT');
+  });
+
+  it('shows string as a multi-line text area', () => {
+    render(<Field type={FIELD_TYPE.STRING} />);
+    expect(screen.getByLabelText('Value').tagName).toBe('TEXTAREA');
   });
 });

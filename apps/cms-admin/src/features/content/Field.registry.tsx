@@ -86,8 +86,8 @@ function plainForList(value: unknown): string | null {
 
 /** The single map from field type to its input (SPEC: registry, not a switch). */
 export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
-  [FIELD_TYPE.STRING]: text,
-  [FIELD_TYPE.TEXT]: longText,
+  [FIELD_TYPE.TEXT]: text,
+  [FIELD_TYPE.STRING]: longText,
   [FIELD_TYPE.INTEGER]: {
     editable: true,
     isSortable: true,

@@ -24,7 +24,7 @@ function draftOf(publishState: PublishState | undefined, version = 3) {
   return {
     documentId: DOC_ID,
     version,
-    values: { position: 'Engineer', isMain: false, company: 'Acme', summary: '<p>Hi</p>' },
+    values: { position: 'Engineer', isMain: false, name: 'Acme', summary: '<p>Hi</p>' },
     components: {},
     _maskedFields: [] as string[],
     ...(publishState === undefined ? {} : { publishState }),

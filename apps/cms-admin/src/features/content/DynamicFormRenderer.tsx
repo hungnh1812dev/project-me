@@ -3,6 +3,7 @@ import { useScreenText } from '@configs/locales';
 import { useFormContext, useWatch } from 'react-hook-form';
 
 import { ComponentList } from './ComponentList';
+import { FIELD_COLUMN_SPAN } from './Content.constants';
 import { adapterFor } from './Field.registry';
 import type { FieldNode } from './FieldTree.rules';
 
@@ -29,27 +30,43 @@ export function DynamicFormRenderer({
 }: DynamicFormRendererProps) {
   const copy = useScreenText('content').content;
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-6">
       {fields.map((node) => {
         const name = prefix === '' ? node.name : `${prefix}.${node.name}`;
         if (masked.has(node.path)) {
           return (
-            <ProtectedField key={node.path} label={node.label} group={node.children.length > 0} />
+            <div key={node.path} className={spanOf(node)}>
+              <ProtectedField label={node.label} group={node.children.length > 0} />
+            </div>
           );
         }
         if (node.children.length > 0) {
           return (
-            <ComponentList key={node.path} node={node} name={name} masked={masked} depth={depth} />
+            <div key={node.path} className={FIELD_COLUMN_SPAN.full}>
+              <ComponentList node={node} name={name} masked={masked} depth={depth} />
+            </div>
           );
         }
         const adapter = adapterFor(node.type);
         if (!adapter.editable) {
-          return <ReadOnlyField key={node.path} name={name} label={node.label} />;
+          return (
+            <div key={node.path} className={spanOf(node)}>
+              <ReadOnlyField name={name} label={node.label} />
+            </div>
+          );
         }
-        return <div key={node.path}>{adapter.render({ name, label: node.label, copy })}</div>;
+        return (
+          <div key={node.path} className={spanOf(node)}>
+            {adapter.render({ name, label: node.label, copy })}
+          </div>
+        );
       })}
     </div>
   );
+}
+
+function spanOf(node: FieldNode): string {
+  return FIELD_COLUMN_SPAN[node.width];
 }
 
 /** A field the role cannot read: fixed text, nothing to edit or send. */
