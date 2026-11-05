@@ -1,6 +1,6 @@
 {
   "name": "@abyss/cms-admin",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Abyss CMS admin console (React 19 + Vite)",
   "type": "module",
