@@ -113,7 +113,7 @@ load_local_env() {
   export DEV_STACK_MAILPIT_SMTP_PORT="${DEV_STACK_MAILPIT_SMTP_PORT:-$DEFAULT_MAILPIT_SMTP_PORT}"
   ADMIN_ORIGIN="http://admin.$DOMAIN:$ADMIN_PORT"
   WEB_ORIGIN="http://$DOMAIN:$WEB_PORT_DEV"
-  API_BASE_URL="$WEB_ORIGIN$API_PREFIX"
+  API_BASE_URL="$ADMIN_ORIGIN$API_PREFIX"
   MAILPIT_URL="http://mail.$DOMAIN:$DEV_STACK_MAILPIT_HTTP_PORT"
 }
 
@@ -225,8 +225,9 @@ start_apps() {
   echo "Starting cms-api, cms-admin and web in dev mode..."
   start_app cms-api pnpm --dir "$ROOT_DIR" --filter @abyss/cms-api start:dev
   VITE_API_BASE_URL="$API_BASE_URL" DEV_SERVER_PORT="$ADMIN_PORT" \
+    DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
-  DEV_SERVER_PORT="$WEB_PORT_DEV" DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
+  DEV_SERVER_PORT="$WEB_PORT_DEV" \
     API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
     NEXT_PUBLIC_API_BASE_URL="$API_PREFIX" NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
     WEB_STATUS_PAGE_ENABLED=true \
