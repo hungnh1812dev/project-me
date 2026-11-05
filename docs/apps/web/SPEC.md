@@ -6,7 +6,7 @@ replaces: D21
 
 # web: spec
 
-Part of the [project spec](../../../SPEC.md). App `web`: [SPEC.md](SPEC.md) (app-wide requirements and decisions) · [FLOW.md](FLOW.md) (processes every flow of the app goes through) · [RULES.md](RULES.md) (rules every flow of the app must keep). In these files `Applies to: all flows.` means every flow that touches this app.
+Part of the [project spec](../../../SPEC.md). App `web`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md). In these files a section without an `Applies to:` line covers every flow that touches this app.
 
 ## Behaviour
 
@@ -29,8 +29,3 @@ The decision below, plus the requirements of the flows that use the web app (Doc
 - **Homepage.** `/` shows the CV and a "Service status" card like cms-admin's home, polling `GET /bff/v1/health` and showing only that path; it renders even when the CV fails to load. Always on; `/status` and `WEB_STATUS_PAGE_ENABLED` removed (Q-BFF2).
 - **Web env** (server, runtime): adds `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME` (optional), `TRUST_PROXY_HOPS` (default 1), `CLIENT_IP_HEADER` (optional); removes `WEB_STATUS_PAGE_ENABLED`, `NEXT_PUBLIC_API_BASE_URL`, `DEV_API_PROXY_TARGET`. Invalid values fail start (instrumentation), as today.
 - **Note (2026-11-03, Q-RM7):** ADR 0017 is to be rewritten when web-bff-hardening is re-planned (the file is missing from `docs/adr/`); the rewrite includes §16 RM-6.
-
-## Change log
-
-- 2026-10-31 Web BFF and web hardening (D21, ADR 0017).
-- 2026-11-04 Created from the old SPEC.

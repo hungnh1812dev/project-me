@@ -6,7 +6,7 @@ summary: The public CV site: CV page from published content over GraphQL, the se
 
 # Public site: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -51,9 +51,3 @@ GraphQL mutations, subscriptions and non-document reads ([out of scope](../../..
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-10-21 Web on Next.js, GraphQL read API (D18, Q-G1..Q-G7).
-- 2026-10-31 Web BFF, homepage status card, reviewer mode removed from web (D21).
-- 2026-11-04 Flow folder created from the old SPEC.

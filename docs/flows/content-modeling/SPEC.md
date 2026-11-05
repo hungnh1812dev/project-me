@@ -6,7 +6,7 @@ summary: Content type JSON schemas to generated SQL migrations in the content sc
 
 # Content modeling: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -35,7 +35,3 @@ Group 2 owner-private runtime DDL ([out of scope](../../../SPEC.md)).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-04 Flow folder created from the old SPEC (D10, §8.2).

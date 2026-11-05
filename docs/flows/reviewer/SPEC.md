@@ -6,7 +6,7 @@ summary: Self-service read-only reviewer sessions, the owner toggle and deploy s
 
 # Reviewer: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `reviewer`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `reviewer`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -39,10 +39,3 @@ Reviewer write sandbox (v2, separate PG schema, D2).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-10-27 Masking mechanism for sensitive fields (D2, ADR 0011).
-- 2026-10-28 Reviewer feature switch (D2a, ADR 0014).
-- 2026-10-31 Reviewer mode removed from apps/web (D21, ADR 0017).
-- 2026-11-04 Flow folder created from the old SPEC.

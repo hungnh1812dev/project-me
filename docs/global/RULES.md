@@ -5,19 +5,15 @@ replaces: §5 Naming rules, §5 Constants placement, §10 no literals and shared
 
 # Global rules
 
-Part of the [project spec](../../SPEC.md). Rules for one app: `docs/apps/<app>/RULES.md`; rules for one flow: `docs/flows/<flow>/RULES.md`. Each section says where it applies: `Applies to: all flows.`, or the flows it covers. A decision id (`D..`) is listed in [DECISIONS.md](DECISIONS.md) with the file that holds it.
+Part of the [project spec](../../SPEC.md). Rules for one app: `docs/apps/<app>/RULES.md`; rules for one flow: `docs/flows/<flow>/RULES.md`. A section that covers only some flows names them in an `Applies to:` line; no line means all flows. A decision id (`D..`) is listed in [DECISIONS.md](DECISIONS.md) with the file that holds it.
 
 ## Boundaries
-
-Applies to: all flows.
 
 - **Always:** write tests with each task · run Prettier, lint and typecheck before committing · use constants/config, not literals · route every record payload through the serializer · use parameterized SQL · keep `.env.example` in step with config.
 - **Ask first:** adding any dependency not listed in §3 · DB schema changes outside the current task · changing a canonical value in §6 · changing a decision in §7 · CI/deploy changes · deleting files.
 - **Never:** make the site public (public DNS record, public ingress or announced URL) before the launch gate (phase LG, above) has passed and the user has approved the launch in writing · read or edit `.env*` (except `.env.example`) · commit secrets · interpolate identifiers or slugs into SQL · build v2 backlog items · trust client-supplied permissions/`_maskedFields` · log OTPs, tokens or passwords in production · add AI attribution to commits.
 
 ## Naming
-
-Applies to: all flows.
 
 Naming rules (ADR 0008, user decisions 2026-10-25/26, revision 3 accepted 2026-10-26 with Q-FN12..Q-FN16): one format in every TypeScript package (cms-api, cms-admin, web, form-commons, e2e, base-config), for `.ts`, `.tsx`, `.js`, `.jsx`, `.mjs` only; other file types (CSS, JSON, Markdown, shell scripts, images) keep their conventions (Q-FN13). The general rule is `code-standards` §4.5 "File and folder names" (agent layer, project-agnostic; each project has its own copy, naming nothing from this repo, Q-FN15): folders `kebab-case`; files `<use><PascalCase>.<feature>.<ext>`, `<use>` only when the main export is one React hook, `<feature>` one optional word only when needed, never by habit. Repo specifics:
 
@@ -34,21 +30,15 @@ The word vocabulary and the project tree: [reference/project-structure.md](refer
 
 ## Constants and literals
 
-Applies to: all flows.
-
 Constants placement (Q-A1): a constant lives next to its one owning module or feature, in `<Module>.constants.ts` (cms-api) or `features/<feature>/<Feature>.constants.ts` (frontends; lower-case names until phase FN renames them); others read it through the owner's `index.ts`. cms-api `common/constants/` and frontend `config/` hold only values shared by several modules or the app shell (env, endpoints, routes, HTTP, auth, copy).
 
 - No literals for routes, limits, headers, cookie names or URLs: they live in the owning module's `*.constants.ts`, in `common/constants/*.constants.ts` when shared, or in config (§5 constants placement; project `code-standards` skill).
 
 ## Shared tooling
 
-Applies to: all flows.
-
 - Prettier, ESLint and Oxlint from `@abyss/base-config` (`/prettier`, `/eslint`, `/oxlint`): the base holds the shared rules; each project extends it locally with its own plugins and rules (React, Next, Nest, Playwright). Built with `tsc` to `dist/` (ESM + `.d.ts`), exports point at `dist/`; turbo builds it before any consumer task (D3).
 
 ## Production config and security headers (D17)
-
-Applies to: all flows.
 
 1. With `NODE_ENV=production`, config fails fast on `MAIL_PROVIDER=console`, a missing secret, or a secret under 32 bytes; the boot config summary redacts secrets (D17, criterion 15).
 2. Every app sends HSTS, CSP, `X-Content-Type-Options: nosniff` and `Referrer-Policy`, and no `X-Powered-By` (D17). Each app's CSP: `docs/apps/<app>/RULES.md`.
@@ -77,8 +67,6 @@ Applies to flows: `content-editing`, `public-site`.
 2. No global "XSS pipe" that rewrites all input (D13).
 
 ## Versions, change log, DevOps patches
-
-Applies to: all flows.
 
 1. Every release has a [CHANGELOG.md](../../CHANGELOG.md) entry with the repo version, the version of each app and package, and its features, changes, fixes and DevOps patches ([FLOW.md](FLOW.md) "Versions and change log").
 2. An app's version changes only in a release that changes that app; `base-config` and `form-commons` change only when they are released themselves.

@@ -6,7 +6,7 @@ summary: List, create and edit documents with version conflicts and merge, publi
 
 # Content editing: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `content-editing`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `content-editing`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -37,7 +37,3 @@ Reviewer write sandbox ([out of scope](../../../SPEC.md)).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-04 Flow folder created from the old SPEC (D11, D16, §9 documents).

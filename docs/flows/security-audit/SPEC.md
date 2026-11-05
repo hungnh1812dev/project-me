@@ -6,7 +6,7 @@ summary: The always-on security audit log: which events are written, how, and wh
 
 # Security audit: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `security-audit`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `security-audit`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -32,7 +32,3 @@ None recorded.
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-04 Flow folder created from the old SPEC (D15).

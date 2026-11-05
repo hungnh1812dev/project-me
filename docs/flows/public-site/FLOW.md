@@ -5,7 +5,7 @@ modules: apps/cms-api/src/modules/graphql, apps/cms-api/src/modules/documents, a
 
 # Public site: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Actors
 

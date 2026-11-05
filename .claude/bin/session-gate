@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Hook: make the manager break its session (/clear) around checklist runs and when its context grows.
+
+  PreToolUse (Agent|SendMessage)   check a dispatch against the session's state; deny with a reason
+  SessionStart                     forget the session's state (fresh session, /clear or /compact)
+
+Only dispatches in the manager's format are checked (first word TASK, BATCH, REQUEST, CHECKLIST, CHECK,
+RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Rules, per session:
+- Growth: the context at the first checked dispatch is the baseline; a dispatch when the context has
+  grown more than GROWTH_LIMIT tokens past it is denied. A fresh session starts at +0, so it never loops.
+- Before a checklist: a qc / security-qc CHECKLIST or CHECK (checklist mode) is denied when the session
+  already ran other jobs.
+- During and after: in checklist mode only CHECKLIST, CHECK, RECHECK and FIX of the same target pass.
+State: .agent-state/.session-gate.json (git-ignored). Any error lets the call through.
+"""
+import json, os, re, sys, time
+
+GROWTH_LIMIT = 100_000
+STATE_FILE = ".agent-state/.session-gate.json"
+STATE_TTL_S = 2 * 24 * 3600
+JOBS = re.compile(r"^\s*(TASK|BATCH|REQUEST|CHECKLIST|CHECK|RECHECK|FIX|REPLAN|SPEC|PLAN|ADR-STATUS)\b:?\s*([^\s:]*)")
+CHECKERS = ("qc", "security-qc")
+CHECKLIST_JOBS = ("CHECKLIST", "CHECK")
+TARGET_JOBS = ("CHECKLIST", "CHECK", "RECHECK", "FIX")
+BREAK = 'tell the user: "Session break: run /clear, then say continue" and dispatch nothing more'
+
+
+def context_tokens(transcript):
+    size = 0
+    with open(transcript, "rb") as f:
+        f.seek(0, 2)
+        f.seek(max(0, f.tell() - 400_000))
+        lines = f.read().decode("utf-8", "ignore").splitlines()
+    for line in lines:
+        try:
+            usage = (json.loads(line).get("message") or {}).get("usage")
+        except ValueError:
+            continue
+        if usage:
+            size = (usage.get("input_tokens", 0) + usage.get("cache_read_input_tokens", 0)
+                    + usage.get("cache_creation_input_tokens", 0))
+    return size
+
+
+def load_state():
+    try:
+        state = json.load(open(STATE_FILE))
+    except (OSError, ValueError):
+        state = {}
+    now = time.time()
+    return {k: v for k, v in state.items() if now - v.get("at", now) < STATE_TTL_S}
+
+
+def save_state(state):
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=1)
+
+
+def deny(reason):
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                             "permissionDecisionReason": f"session-gate: {reason}; {BREAK}."}}))
+
+
+def job_of(tool_input):
+    text = tool_input.get("prompt") or tool_input.get("message") or ""
+    if not isinstance(text, str):
+        text = json.dumps(text)
+    m = JOBS.match(text)
+    return (m.group(1), m.group(2).rstrip(":")) if m else (None, None)
+
+
+def pre_tool_use(event, state):
+    job, target = job_of(event.get("tool_input") or {})
+    if not job:
+        return
+    agent = (event.get("tool_input") or {}).get("subagent_type", "")
+    session = state.setdefault(event["session_id"], {"jobs": 0, "mode": None})
+    size = context_tokens(event["transcript_path"])
+    session.setdefault("baseline", size)
+    session["at"] = time.time()
+    growth = size - session["baseline"]
+    if session["jobs"] and growth > GROWTH_LIMIT:
+        return deny(f"context grew {growth // 1000}k tokens this session (limit {GROWTH_LIMIT // 1000}k)")
+    mode = session["mode"]
+    if mode:
+        if job not in TARGET_JOBS or target != mode:
+            return deny(f"this session ran the checklist of {mode}; {job} {target} needs a fresh session")
+    elif job in CHECKLIST_JOBS and agent in CHECKERS:
+        if session["jobs"]:
+            return deny(f"the checklist of {target} must start in a fresh session (this one already ran other jobs)")
+        session["mode"] = target
+    session["jobs"] += 1
+
+
+def main():
+    try:
+        event = json.load(sys.stdin)
+        os.chdir(event.get("cwd") or ".")
+        state = load_state()
+        if event.get("hook_event_name") == "SessionStart":
+            state.pop(event.get("session_id"), None)
+        else:
+            pre_tool_use(event, state)
+        save_state(state)
+    except Exception:
+        pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
