@@ -65,8 +65,14 @@ describe('validateDefinition', () => {
       });
     });
 
-    it('has no sensitive flag until Q5 is answered', () => {
-      expect(JSON.stringify(cvPage)).not.toContain('sensitive');
+    it('flags only experiences.company and references.phone as sensitive', () => {
+      expect(JSON.stringify(cvPage).match(/"sensitive":true/g)).toHaveLength(2);
+      expect(JSON.stringify(cvPage)).toContain(
+        '"name":"company","type":"text","width":"1/2","sensitive":true',
+      );
+      expect(JSON.stringify(cvPage)).toContain(
+        '"name":"phone","type":"text","width":"1/2","sensitive":true',
+      );
     });
   });
 

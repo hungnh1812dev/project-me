@@ -232,7 +232,8 @@ migration `0006_content.sql`.
 
 Sensitive fields: `cv-contact` `address`, `phone`, `email`, `github`, and
 `resume` `experiences.company`, `referees.phone` (migration
-`0004_sensitive_site_fields.sql`, no DDL).
+`0004_sensitive_site_fields.sql`, no DDL); `cv-page` `experiences.company`,
+`references.phone` (migration `0008_content.sql`, no DDL).
 
 ## Data-migration notes
 

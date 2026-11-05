@@ -24,7 +24,7 @@
       "component": "experience",
       "repeatable": true,
       "fields": [
-        { "name": "company", "type": "text", "width": "1/2" },
+        { "name": "company", "type": "text", "width": "1/2", "sensitive": true },
         { "name": "location", "type": "text", "width": "1/2" },
         { "name": "period", "type": "text", "width": "1/2" },
         {
@@ -87,7 +87,7 @@
       "repeatable": true,
       "fields": [
         { "name": "name", "type": "text" },
-        { "name": "phone", "type": "text", "width": "1/2" },
+        { "name": "phone", "type": "text", "width": "1/2", "sensitive": true },
         { "name": "role", "type": "text", "width": "1/2" }
       ]
     }

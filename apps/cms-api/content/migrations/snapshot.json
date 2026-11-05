@@ -60,7 +60,7 @@
       }
     },
     "cv-page": {
-      "hash": "25af9b08b649776f074e2ff5266e3df311316456cf83433c13d5a5d3f98ea1db",
+      "hash": "2cdfb33003fe0fd237cf191c2c8a9fbbf0d113010d00b3d78f566fc156b3771c",
       "definition": {
         "slug": "cv-page",
         "displayName": "CV Page",
@@ -109,6 +109,7 @@
             "fields": [
               {
                 "name": "company",
+                "sensitive": true,
                 "type": "text",
                 "width": "1/2"
               },
@@ -257,6 +258,7 @@
               },
               {
                 "name": "phone",
+                "sensitive": true,
                 "type": "text",
                 "width": "1/2"
               },
