@@ -47,11 +47,11 @@ function buildTableNode(
   plansByName: ReadonlyMap<string, TablePlan>,
 ): TableNode {
   const components = fields.filter(isComponentField).map((field) => {
-    const childName = componentTableName(plan.name, field.name);
+    const childName = componentTableName(plan.name, field.component);
     const childPlan = plansByName.get(childName);
     if (childPlan === undefined) {
       throw new ContentEngineError(
-        `Table plan for component "${field.name}" of ${plan.name} is missing.`,
+        `Table plan for component "${field.component}" of ${plan.name} is missing.`,
       );
     }
     return {

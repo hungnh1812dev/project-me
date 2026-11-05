@@ -55,7 +55,7 @@ describe('sql-generator', () => {
       expect(plan.statements[0]).toBe('CREATE SCHEMA IF NOT EXISTS "content";');
     });
 
-    it('creates exactly the 8 tables of SPEC §8.2', () => {
+    it('creates exactly the 8 tables of the cv-page component paths', () => {
       const created = plan.statements
         .map((statement) => /^CREATE TABLE "content"\."(\w+)"/.exec(statement))
         .filter((match) => match !== null)
@@ -65,7 +65,7 @@ describe('sql-generator', () => {
         'cv_page__skill',
         'cv_page__experience',
         'cv_page__experience__role',
-        'cv_page__project',
+        'cv_page__experience__role__project',
         'cv_page__education',
         'cv_page__language',
         'cv_page__reference',

@@ -29,14 +29,14 @@ describe('assertTreeInput', () => {
       assertTreeInput(cvPageRoot(), {
         values: { position: 'Lead', isMain: true },
         components: {
-          experience: [
+          experiences: [
             {
               componentUid: UID,
               values: { company: 'Acme' },
-              components: { role: [{ values: { teamSize: 4 } }] },
+              components: { roles: [{ values: { teamSize: 4 } }] },
             },
           ],
-          skill: [],
+          skills: [],
         },
       }),
     ).not.toThrow();
@@ -48,20 +48,20 @@ describe('assertTreeInput', () => {
     ['an unknown root field', { values: { team_size: 1 } }, ['values', 'team_size']],
     ['a field of another table', { values: { location: 'x' } }, ['values', 'location']],
     ['an unknown component', { components: { roles: [] } }, ['components', 'roles']],
-    ['a component that is not a list', { components: { skill: {} } }, ['components', 'skill']],
+    ['a component that is not a list', { components: { skills: {} } }, ['components', 'skills']],
     [
       'an unknown item key',
-      { components: { skill: [{ id: 1 }] } },
-      ['components', 'skill', 0, 'id'],
+      { components: { skills: [{ id: 1 }] } },
+      ['components', 'skills', 0, 'id'],
     ],
     [
       'an unknown nested field',
       {
         components: {
-          experience: [{ components: { role: [{ values: { salary: 1 } }] } }],
+          experiences: [{ components: { roles: [{ values: { salary: 1 } }] } }],
         },
       },
-      ['components', 'experience', 0, 'components', 'role', 0, 'values', 'salary'],
+      ['components', 'experiences', 0, 'components', 'roles', 0, 'values', 'salary'],
     ],
   ])('rejects %s', (_label, input, path) => {
     const error = treeError(input);
@@ -71,20 +71,20 @@ describe('assertTreeInput', () => {
 
   it('rejects a uid that is not a UUID', () => {
     const error = treeError({
-      components: { skill: [{ componentUid: '1 OR 1=1' }] },
+      components: { skills: [{ componentUid: '1 OR 1=1' }] },
     });
     expect(error.code).toBe(CONTENT_ERROR_CODES.TREE_INVALID_UID);
-    expect(error.path).toEqual(['components', 'skill', 0, 'componentUid']);
+    expect(error.path).toEqual(['components', 'skills', 0, 'componentUid']);
   });
 
   it('rejects the same uid twice in one list (case-insensitive)', () => {
     const error = treeError({
       components: {
-        skill: [{ componentUid: UID }, { componentUid: UID.toUpperCase() }],
+        skills: [{ componentUid: UID }, { componentUid: UID.toUpperCase() }],
       },
     });
     expect(error.code).toBe(CONTENT_ERROR_CODES.TREE_DUPLICATE_UID);
-    expect(error.path).toEqual(['components', 'skill', 1, 'componentUid']);
+    expect(error.path).toEqual(['components', 'skills', 1, 'componentUid']);
   });
 
   it('allows more than one item only for repeatable components', () => {

@@ -24,7 +24,7 @@ Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md]
 
 ```mermaid
 flowchart LR
-  s["content/schemas/*.json<br/>cv-page, profile"] --> g["content:generate<br/>validate, diff vs snapshot.json"]
+  s["content/schemas/*.json<br/>cv-page, resume, header ..."] --> g["content:generate<br/>validate, diff vs snapshot.json"]
   g --> m["content/migrations/000N_*.sql<br/>+ snapshot.json"]
   g --> sdl["graphql:print-schema<br/>content/schema.graphql"]
   m --> rev["review + commit"] --> ci["CI checks<br/>generate --check, print-schema --check"]

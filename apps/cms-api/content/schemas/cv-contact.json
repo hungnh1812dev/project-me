@@ -6,30 +6,30 @@
   "fields": [
     {
       "name": "name",
-      "type": "string"
+      "type": "text"
     },
     {
       "name": "address",
-      "type": "string",
+      "type": "text",
       "sensitive": true
     },
     {
       "name": "phone",
-      "type": "string",
+      "type": "text",
       "sensitive": true
     },
     {
       "name": "email",
-      "type": "string",
+      "type": "text",
       "sensitive": true
     },
     {
       "name": "linkedin",
-      "type": "string"
+      "type": "text"
     },
     {
       "name": "github",
-      "type": "string",
+      "type": "text",
       "sensitive": true
     },
     {

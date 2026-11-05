@@ -4,35 +4,53 @@
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [
-    { "name": "position", "type": "string" },
-    { "name": "isMain", "type": "boolean" },
-    { "name": "company", "type": "string" },
+    { "name": "position", "type": "text", "width": "1/2" },
+    { "name": "isMain", "type": "boolean", "width": "1/2" },
+    { "name": "name", "type": "text" },
     { "name": "summary", "type": "richtext" },
     {
-      "name": "skill",
+      "name": "skills",
       "type": "component",
+      "component": "skill",
       "repeatable": true,
       "fields": [
-        { "name": "level", "type": "string" },
-        { "name": "skill", "type": "string" }
+        { "name": "level", "type": "text" },
+        { "name": "skill", "type": "text" }
       ]
     },
     {
-      "name": "experience",
+      "name": "experiences",
       "type": "component",
+      "component": "experience",
       "repeatable": true,
       "fields": [
-        { "name": "company", "type": "string" },
-        { "name": "location", "type": "string" },
+        { "name": "company", "type": "text", "width": "1/2" },
+        { "name": "location", "type": "text", "width": "1/2" },
+        { "name": "period", "type": "text", "width": "1/2" },
         {
-          "name": "role",
+          "name": "roles",
           "type": "component",
+          "component": "role",
           "repeatable": true,
           "fields": [
-            { "name": "position", "type": "string" },
-            { "name": "period", "type": "string" },
-            { "name": "teamSize", "type": "integer" },
-            { "name": "projects", "type": "string" },
+            { "name": "position", "type": "text", "width": "1/2" },
+            { "name": "period", "type": "text", "width": "1/2" },
+            { "name": "teamSize", "type": "integer", "width": "1/2" },
+            {
+              "name": "projects",
+              "type": "component",
+              "component": "project",
+              "repeatable": true,
+              "fields": [
+                { "name": "name", "type": "text" },
+                { "name": "teamSize", "type": "integer", "width": "1/2" },
+                { "name": "role", "type": "text", "width": "1/2" },
+                { "name": "liveLink", "type": "text", "width": "1/2" },
+                { "name": "repositoryLink", "type": "text", "width": "1/2" },
+                { "name": "techStack", "type": "json" },
+                { "name": "responsibilities", "type": "richtext" }
+              ]
+            },
             { "name": "techStack", "type": "json" },
             { "name": "responsibilities", "type": "richtext" }
           ]
@@ -40,48 +58,37 @@
       ]
     },
     {
-      "name": "project",
+      "name": "educations",
       "type": "component",
+      "component": "education",
       "repeatable": true,
       "fields": [
-        { "name": "name", "type": "string" },
-        { "name": "teamSize", "type": "integer" },
-        { "name": "role", "type": "string" },
-        { "name": "liveLink", "type": "string" },
-        { "name": "repositoryLink", "type": "string" },
-        { "name": "techStack", "type": "json" },
-        { "name": "responsibilities", "type": "richtext" }
-      ]
-    },
-    {
-      "name": "education",
-      "type": "component",
-      "repeatable": true,
-      "fields": [
-        { "name": "degree", "type": "string" },
-        { "name": "institution", "type": "string" },
-        { "name": "period", "type": "string" },
-        { "name": "location", "type": "string" },
+        { "name": "degree", "type": "text", "width": "1/2" },
+        { "name": "institution", "type": "text", "width": "1/2" },
+        { "name": "period", "type": "text", "width": "1/2" },
+        { "name": "location", "type": "text", "width": "1/2" },
         { "name": "description", "type": "richtext" }
       ]
     },
     {
-      "name": "language",
+      "name": "languages",
       "type": "component",
+      "component": "language",
       "repeatable": true,
       "fields": [
-        { "name": "language", "type": "string" },
-        { "name": "level", "type": "string" }
+        { "name": "language", "type": "text", "width": "1/2" },
+        { "name": "level", "type": "text", "width": "1/2" }
       ]
     },
     {
-      "name": "reference",
+      "name": "referees",
       "type": "component",
+      "component": "reference",
       "repeatable": true,
       "fields": [
-        { "name": "name", "type": "string" },
-        { "name": "phone", "type": "string" },
-        { "name": "role", "type": "string" }
+        { "name": "name", "type": "text" },
+        { "name": "phone", "type": "text", "width": "1/2" },
+        { "name": "role", "type": "text", "width": "1/2" }
       ]
     }
   ]

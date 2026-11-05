@@ -175,7 +175,8 @@ collision checks run only once every name is well formed.
 
 `apps/cms-api/content/schemas/cv-page.json` (ported from the old ERD; the
 old `responsitoryLink` is spelled `repositoryLink`, and the old
-`reviewerSessionId` column is gone, SPEC D2):
+`reviewerSessionId` column is gone, SPEC D2). A component field carries its
+`component` value, which names its table; `width` is `1/3`, `1/2` or `full`:
 
 ```json
 {
@@ -183,26 +184,25 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [
-    { "name": "position", "type": "string" },
-    { "name": "isMain", "type": "boolean" },
-    { "name": "company", "type": "string" },
+    { "name": "position", "type": "text", "width": "1/2" },
+    { "name": "isMain", "type": "boolean", "width": "1/2" },
+    { "name": "name", "type": "text" },
     { "name": "summary", "type": "richtext" },
     {
-      "name": "experience",
+      "name": "experiences",
       "type": "component",
+      "component": "experience",
       "repeatable": true,
       "fields": [
-        { "name": "company", "type": "string" },
-        { "name": "location", "type": "string" },
+        { "name": "company", "type": "text", "width": "1/2" },
         {
-          "name": "role",
+          "name": "roles",
           "type": "component",
+          "component": "role",
           "repeatable": true,
           "fields": [
-            { "name": "position", "type": "string" },
-            { "name": "teamSize", "type": "integer" },
-            { "name": "techStack", "type": "json" },
-            { "name": "responsibilities", "type": "richtext" }
+            { "name": "teamSize", "type": "integer", "width": "1/2" },
+            { "name": "techStack", "type": "json" }
           ]
         }
       ]
@@ -211,23 +211,51 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
 }
 ```
 
-(Shortened: the real file also has `skill`, `project`, `education`,
-`language` and `reference`.) It produces the 8 tables of SPEC §8.2:
+(Shortened: the real file also has `skills`, `educations`, `languages`,
+`referees` (component `reference`) and, inside a role, `projects`.) It
+produces 8 tables:
 
 ```
-cv_page                     root: position, is_main, company, summary
-cv_page__skill              level, skill
-cv_page__experience         company, location
-cv_page__experience__role   position, period, team_size, projects, tech_stack, responsibilities
-cv_page__project            name, team_size, role, live_link, repository_link, tech_stack, responsibilities
-cv_page__education          degree, institution, period, location, description
-cv_page__language           language, level
-cv_page__reference          name, phone, role
+cv_page                                root: position, is_main, name, summary
+cv_page__skill                         level, skill
+cv_page__experience                    company, location, period
+cv_page__experience__role              position, period, team_size, tech_stack, responsibilities
+cv_page__experience__role__project     name, team_size, role, live_link, repository_link, tech_stack, responsibilities
+cv_page__education                     degree, institution, period, location, description
+cv_page__language                      language, level
+cv_page__reference                     name, phone, role
 ```
+
+`resume` and `header` use the same table naming (`resume__experience__role__project`,
+`header__nav__sub_navigation`); their tables were renamed with their data by
+migration `0006_content.sql`.
 
 Sensitive fields: `cv-contact` `address`, `phone`, `email`, `github`, and
 `resume` `experiences.company`, `referees.phone` (migration
 `0004_sensitive_site_fields.sql`, no DDL).
+
+## Data-migration notes
+
+Generated migration files are never edited; what a migration does not carry
+over is written here.
+
+### `0006_content.sql` (cv-page schema format)
+
+- Resume and header: component tables renamed to the component path
+  (`ALTER TABLE ... RENAME`, constraints and indexes included); rows are kept.
+- `cv_page.company` dropped: its values are not carried over (the root field
+  is now `name`, added empty).
+- `cv_page__experience__role.projects` (a text column) dropped: its values are
+  not carried over; projects are now rows of the new table
+  `cv_page__experience__role__project`, created empty.
+- Table `cv_page__project` (the old top-level `project` component) dropped with
+  its rows: they are not carried over to the new nested table.
+- `cv_page__experience.period` added empty. The cv-page `skill`, `experience`,
+  `education`, `language` and `reference` tables keep their names and rows (the
+  API field names are now plural: `skills`, `experiences`, `educations`,
+  `languages`, `referees`).
+- Applied with `content:generate --allow-destructive` (accepted by the user,
+  2026-11-05).
 
 ## Migrations
 
