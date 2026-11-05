@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). D21 moves the card to the homepage behind `GET /bff/v1/health`.
+Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /bff/v1/health` of this site, never cms-api.
 
 ## Techniques
 

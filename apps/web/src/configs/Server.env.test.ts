@@ -21,7 +21,6 @@ describe('parseServerEnv', () => {
     expect(parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: '0' })).toEqual({
       apiInternalUrl: 'http://cms-api:3000/api/v1',
       revalidateSeconds: 0,
-      isStatusPageEnabled: false,
       webOrigin: 'https://example.test',
       sessionSecret: 'short-dev-secret',
       turnstileSecretKey: 'turnstile-secret',
@@ -48,23 +47,6 @@ describe('parseServerEnv', () => {
   it.each(['-1', '1.5', 'abc'])('fails on WEB_REVALIDATE_SECONDS=%s', (value) => {
     expect(() => parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: value })).toThrow(
       /WEB_REVALIDATE_SECONDS/,
-    );
-  });
-
-  it.each([
-    [undefined, false],
-    ['', false],
-    ['false', false],
-    ['true', true],
-  ])('reads WEB_STATUS_PAGE_ENABLED=%j as %s', (value, expected) => {
-    expect(parseServerEnv({ ...VALID, WEB_STATUS_PAGE_ENABLED: value }).isStatusPageEnabled).toBe(
-      expected,
-    );
-  });
-
-  it.each(['TRUE', '1', 'yes', 'on'])('fails on WEB_STATUS_PAGE_ENABLED=%s', (value) => {
-    expect(() => parseServerEnv({ ...VALID, WEB_STATUS_PAGE_ENABLED: value })).toThrow(
-      /WEB_STATUS_PAGE_ENABLED/,
     );
   });
 

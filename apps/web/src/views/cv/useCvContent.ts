@@ -2,9 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 
 import { apiClient } from '../../apis/client/Api.client';
 import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
-import { sanitizeCvRichtext, type CvPageData } from '../../features/cv/Cv.graphql';
+import { type CvPageData } from '../../features/cv/Cv.graphql';
 import { useWebSession, type WebSession } from '../../features/session';
-import { sanitizeRichtext } from '../../utils/SafeRichtext.rules';
 
 const ANONYMOUS_ACTOR = 'anonymous';
 
@@ -17,7 +16,7 @@ function actorKeyOf({ status, user }: WebSession): string {
  * The CV data for the current visitor. Anonymous visitors (and the first paint
  * of everyone) get the server-rendered data without a request; a signed-in
  * visitor refetches through the BFF, and signing out falls back to the server
- * data. The server data arrives sanitized; refetched data is sanitized here.
+ * data. Both arrive sanitized by the server.
  */
 export function useCvContent(serverData: CvPageData) {
   const actor = actorKeyOf(useWebSession());
@@ -27,7 +26,7 @@ export function useCvContent(serverData: CvPageData) {
     queryKey: ['cv', actor],
     queryFn: async () => {
       const { data } = await apiClient.get<CvPageData>(BFF_ENDPOINTS.CV);
-      return sanitizeCvRichtext(data, sanitizeRichtext);
+      return data;
     },
     retry: false,
     ...(isAnonymous

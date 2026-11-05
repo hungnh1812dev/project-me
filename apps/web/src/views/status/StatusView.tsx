@@ -2,8 +2,7 @@
 
 import { Button } from '@abyss/form-commons';
 
-import { API_ENDPOINTS } from '../../configs/Api.endpoints';
-import { appEnv } from '../../configs/Browser.env';
+import { BFF_BASE_PATH, BFF_ENDPOINTS } from '../../configs/Api.endpoints';
 import { COPY } from '../../configs/Copy.constants';
 import { useLiveHealth, type LiveHealthState } from './useLiveHealth';
 
@@ -21,9 +20,10 @@ const DOT_TONE: Record<LiveHealthState, string> = {
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
 
-export function StatusCard() {
+const HEALTH_PATH = `${BFF_BASE_PATH}${BFF_ENDPOINTS.HEALTH}`;
+
+function StatusCard() {
   const { state, isFetching, lastCheckedAt, refetch } = useLiveHealth();
-  const endpoint = `${appEnv.apiBaseUrl}${API_ENDPOINTS.HEALTH.LIVE}`;
 
   return (
     <section
@@ -47,7 +47,7 @@ export function StatusCard() {
 
       <dl className="border-border grid grid-cols-1 gap-x-6 gap-y-1 border-t px-5 py-4 text-sm sm:grid-cols-[max-content_1fr] sm:gap-y-3">
         <dt className="text-muted-foreground">{COPY.status.endpointLabel}</dt>
-        <dd className="mb-2 font-mono text-xs break-all sm:mb-0 sm:text-sm">GET {endpoint}</dd>
+        <dd className="mb-2 font-mono text-xs break-all sm:mb-0 sm:text-sm">GET {HEALTH_PATH}</dd>
         <dt className="text-muted-foreground">{COPY.status.lastCheckedLabel}</dt>
         <dd className="tabular-nums">
           {lastCheckedAt ? (
@@ -73,5 +73,17 @@ export function StatusCard() {
         </Button>
       </div>
     </section>
+  );
+}
+
+export function StatusView() {
+  return (
+    <>
+      <h1 className="text-2xl font-semibold tracking-tight">{COPY.page.title}</h1>
+      <p className="text-muted-foreground mt-2 max-w-prose text-sm">{COPY.page.description}</p>
+      <div className="mt-8">
+        <StatusCard />
+      </div>
+    </>
   );
 }

@@ -5,8 +5,11 @@ export const COPY = {
   },
   page: {
     title: 'System status',
-    description:
-      'The public site is not live yet. This page confirms the site can reach the content API through the same domain.',
+    description: 'This page confirms the site can reach the content API through its own server.',
+  },
+  nav: {
+    label: 'Main',
+    cv: 'CV',
   },
   session: {
     signIn: 'Sign in',

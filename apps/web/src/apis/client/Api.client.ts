@@ -1,7 +1,6 @@
 import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 
 import { BFF_BASE_PATH } from '../../configs/Api.endpoints';
-import { appEnv } from '../../configs/Browser.env';
 import { API_TIMEOUT_MS } from '../../configs/Http.constants';
 import { stripTrailingSlashes } from '../../configs/StripTrailingSlashes.rules';
 
@@ -22,11 +21,3 @@ export function createApiClient(
 
 /** The BFF of this site: the browser holds no token and calls no other API (ADR 0018). */
 export const apiClient = createApiClient(BFF_BASE_PATH);
-
-/**
- * Direct cms-api calls of the reviewer dialog, the status card and the GraphQL
- * client. Removed with them in WBH-7 and WBH-8.
- */
-export const cmsApiBrowserClient = createApiClient(appEnv.apiBaseUrl, {
-  withCredentials: true,
-});

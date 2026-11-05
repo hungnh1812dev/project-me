@@ -23,8 +23,6 @@ export interface ServerEnv {
   apiInternalUrl: string;
   /** Data cache lifetime for server fetches; 0 disables caching. */
   revalidateSeconds: number;
-  /** Whether `/status` shows the API health card; off answers 404 (ADR 0014). */
-  isStatusPageEnabled: boolean;
   /** Exact origin of this site; the only `Origin` a state-changing BFF route accepts. */
   webOrigin: string;
   /** Key material for the sealed session cookies. */
@@ -39,19 +37,7 @@ export interface ServerEnv {
   clientIpHeader: string | undefined;
 }
 
-const BOOLEAN_ENV_VALUES = { true: true, false: false } as const;
-
 type EnvSource = Record<string, string | undefined>;
-
-/** A deploy switch: exactly `true` or `false`; unset or blank means off. */
-function parseSwitch(key: string, raw: string | undefined): boolean {
-  const value = raw?.trim() ?? '';
-  if (value === '') return false;
-  if (value in BOOLEAN_ENV_VALUES) {
-    return BOOLEAN_ENV_VALUES[value as keyof typeof BOOLEAN_ENV_VALUES];
-  }
-  throw new Error(`${key} must be true or false.`);
-}
 
 function parseWebOrigin(raw: string | undefined): string {
   const value = stripTrailingSlashes(requireEnv('WEB_ORIGIN', raw).trim());
@@ -140,7 +126,6 @@ export function parseServerEnv(source: EnvSource): ServerEnv {
   return {
     apiInternalUrl,
     revalidateSeconds,
-    isStatusPageEnabled: parseSwitch('WEB_STATUS_PAGE_ENABLED', source.WEB_STATUS_PAGE_ENABLED),
     webOrigin: parseWebOrigin(source.WEB_ORIGIN),
     sessionSecret: parseSessionSecret(source.WEB_SESSION_SECRET, source),
     turnstileSecretKey,
