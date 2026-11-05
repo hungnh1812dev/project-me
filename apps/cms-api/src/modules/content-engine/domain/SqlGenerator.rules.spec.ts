@@ -2,10 +2,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { ContentTypeDefinition, FieldDefinition } from './DefinitionSchema.rules';
+import { planTables } from './Naming.rules';
 import {
   buildSnapshot,
   emptySnapshot,
   hashDefinition,
+  pairRenamedTables,
   planMigration,
   quoteIdentifier,
   renderMigrationSql,
@@ -190,6 +192,138 @@ describe('sql-generator', () => {
     ]);
     expect(plan.changedSlugs).toEqual(['post']);
     expect(plan.nextSnapshot.contentTypes).not.toHaveProperty('post');
+  });
+
+  describe('component table renames', () => {
+    function tagged(
+      tagsComponent: string,
+      linksComponent: string,
+      extra: FieldDefinition[] = [],
+      childFields: FieldDefinition[] = [{ name: 'url', type: 'string' }],
+    ): ContentTypeDefinition {
+      return post([
+        TITLE,
+        {
+          name: 'tags',
+          type: 'component',
+          component: tagsComponent,
+          repeatable: true,
+          fields: [
+            { name: 'label', type: 'string' },
+            ...extra,
+            {
+              name: 'links',
+              type: 'component',
+              component: linksComponent,
+              repeatable: true,
+              fields: childFields,
+            },
+          ],
+        },
+      ]);
+    }
+
+    it('renames a leaf table with its primary key, parent key and index', () => {
+      const plan = diff([tagged('tags', 'links')], [tagged('tags', 'link')]);
+      expect(plan.statements).toEqual([
+        'ALTER TABLE "content"."post__tags__links" RENAME TO "post__tags__link";',
+        'ALTER TABLE "content"."post__tags__link" RENAME CONSTRAINT "post__tags__links_pk" TO "post__tags__link_pk";',
+        'ALTER TABLE "content"."post__tags__link" RENAME CONSTRAINT "post__tags__links_parent_fk" TO "post__tags__link_parent_fk";',
+        'ALTER INDEX "content"."post__tags__links_parent_idx" RENAME TO "post__tags__link_parent_idx";',
+      ]);
+      expect(plan.destructiveChanges).toEqual([]);
+      expect(renderMigrationSql(plan)).toContain(
+        '-- Renamed post__tags__links -> post__tags__link',
+      );
+    });
+
+    it('renames a parent and its child, parent first, children keep their place', () => {
+      const plan = diff([tagged('tags', 'links')], [tagged('tag', 'link')]);
+      const renames = plan.statements.filter((statement) => / RENAME TO /.test(statement));
+      expect(renames).toEqual([
+        'ALTER TABLE "content"."post__tags" RENAME TO "post__tag";',
+        'ALTER INDEX "content"."post__tags_parent_idx" RENAME TO "post__tag_parent_idx";',
+        'ALTER TABLE "content"."post__tags__links" RENAME TO "post__tag__link";',
+        'ALTER INDEX "content"."post__tags__links_parent_idx" RENAME TO "post__tag__link_parent_idx";',
+      ]);
+      expect(plan.statements.some((statement) => statement.startsWith('DROP'))).toBe(false);
+      expect(plan.destructiveChanges).toEqual([]);
+    });
+
+    it('renames and adds a column to the renamed table', () => {
+      const plan = diff(
+        [tagged('tags', 'links')],
+        [
+          tagged(
+            'tags',
+            'link',
+            [],
+            [
+              { name: 'url', type: 'string' },
+              { name: 'rel', type: 'string' },
+            ],
+          ),
+        ],
+      );
+      expect(plan.statements).toContain(
+        'ALTER TABLE "content"."post__tags__link" ADD COLUMN "rel" text;',
+      );
+      expect(
+        plan.statements.findIndex((s) => s.includes('RENAME TO "post__tags__link"')),
+      ).toBeLessThan(plan.statements.findIndex((s) => s.includes('ADD COLUMN "rel"')));
+      expect(plan.destructiveChanges).toEqual([]);
+    });
+
+    it('creates a new child under a renamed parent against the new name', () => {
+      const before = tagged('tags', 'links');
+      const after = tagged('tag', 'links', [
+        {
+          name: 'notes',
+          type: 'component',
+          component: 'note',
+          repeatable: true,
+          fields: [{ name: 'text', type: 'string' }],
+        },
+      ]);
+      const plan = diff([before], [after]);
+      const create = plan.statements.find((s) =>
+        s.startsWith('CREATE TABLE "content"."post__tag__note"'),
+      );
+      expect(create).toContain('REFERENCES "content"."post__tag" ("id")');
+      expect(plan.statements.findIndex((s) => s.includes('RENAME TO "post__tag"'))).toBeLessThan(
+        plan.statements.indexOf(create as string),
+      );
+    });
+
+    it('drops and recreates when both the field name and the component change', () => {
+      const renamedField = (field: FieldDefinition): FieldDefinition => ({
+        ...field,
+        name: 'labels',
+      });
+      const before = tagged('tags', 'links');
+      const after = post([TITLE, renamedField(before.fields[1] as FieldDefinition)]);
+      const changed = {
+        ...after,
+        fields: [
+          TITLE,
+          { ...(after.fields[1] as FieldDefinition), component: 'label' } as FieldDefinition,
+        ],
+      };
+      const plan = diff([before], [changed]);
+      expect(plan.statements.some((s) => s.includes('RENAME TO'))).toBe(false);
+      expect(plan.destructiveChanges).toContain('Drop table post__tags');
+    });
+
+    it('pairs nothing when table names are unchanged', () => {
+      const tables = planTables(tagged('tags', 'links'));
+      expect(pairRenamedTables(tables, tables)).toEqual([]);
+    });
+
+    it('never pairs root tables or tables of another content type', () => {
+      const previous = planTables(tagged('tags', 'links'));
+      const other: ContentTypeDefinition = { ...tagged('tag', 'link'), slug: 'page' };
+      expect(pairRenamedTables(previous, planTables(other))).toEqual([]);
+    });
   });
 
   it('hashes definitions independent of key order', () => {

@@ -18,7 +18,7 @@ Turns the content type definitions (JSON) into database tables in the `content` 
 
 ## Techniques
 
-Definitions (the required type `displayName`, optional field `displayName` and `width`, and the `component` value that names each component table) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
+Definitions (the required type `displayName`, optional field `displayName` and `width`, and the `component` value that names each component table) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. A component table whose `component` value changed (same content type and `apiPath`) is renamed with its data, constraints and indexes (`pairRenamedTables`), not dropped; renames are listed as `-- Renamed <old> -> <new>` lines and are not destructive. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
 
 ## Technologies
 
@@ -73,7 +73,7 @@ Tests: 11 files (not listed).
 | `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`) |
 | `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, `component` values, field `displayName`, depth, relations) |
 | `domain/Naming.rules.ts` | `planTables` (tables named by `component`, with `apiPath`), `toSqlIdentifier`, table and relation names |
-| `domain/SqlGenerator.rules.ts` | `planMigration`, `renderMigrationSql`, snapshots and column types |
+| `domain/SqlGenerator.rules.ts` | `planMigration` (renames first, then create and column diff, then drops), `pairRenamedTables`, `renderMigrationSql`, snapshots and column types |
 | `domain/TreeInput.rules.ts` | `assertTreeInput`: checks a submitted document tree |
 | `domain/field-types/FieldType.entity.ts` | `FieldTypeSpec`, `FieldValueKind`, `CoerceContext` |
 | `domain/field-types/FieldTypeRegistry.rules.ts` | `FIELD_TYPE_SPECS`, `fieldTypeOf`: one spec per field type |
