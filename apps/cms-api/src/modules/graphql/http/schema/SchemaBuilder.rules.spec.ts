@@ -142,6 +142,48 @@ describe('buildGraphqlSchema', () => {
     expect(objectType(schema, 'AllTypes_Seo').getFields().team_size).toBeDefined();
   });
 
+  it('names component types by the component value and keeps the field names', () => {
+    const definition: ContentTypeDefinition = {
+      slug: 'cv-page',
+      displayName: 'CV Page',
+      kind: 'single',
+      draftAndPublish: false,
+      fields: [
+        {
+          name: 'jobs',
+          type: 'component',
+          component: 'experience',
+          repeatable: true,
+          fields: [
+            {
+              name: 'roles',
+              type: 'component',
+              component: 'role',
+              repeatable: true,
+              fields: [
+                {
+                  name: 'projects',
+                  type: 'component',
+                  component: 'project',
+                  repeatable: true,
+                  fields: [{ name: 'teamSize', type: 'integer' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const built = buildGraphqlSchema([definition]);
+    expect(String(objectType(built, 'CvPage').getFields().jobs?.type)).toBe('[CvPage_Experience!]');
+    expect(String(objectType(built, 'CvPage_Experience').getFields().roles?.type)).toBe(
+      '[CvPage_Experience_Role!]',
+    );
+    const project = objectType(built, 'CvPage_Experience_Role').getFields().projects;
+    expect(String(project?.type)).toBe('[CvPage_Experience_Role_Project!]');
+    expect(objectType(built, 'CvPage_Experience_Role_Project').getFields().teamSize).toBeDefined();
+  });
+
   it('gives a collection an item field and a list field', () => {
     const query = objectType(schema, 'Query').getFields();
     expect(query.allTypes?.args.map((arg) => arg.name)).toEqual(['documentId', 'status']);

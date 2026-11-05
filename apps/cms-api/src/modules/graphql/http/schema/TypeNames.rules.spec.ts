@@ -25,5 +25,9 @@ describe('type names', () => {
     const experience = componentTypeName('CvPage', 'experience');
     expect(experience).toBe('CvPage_Experience');
     expect(componentTypeName(experience, 'role')).toBe('CvPage_Experience_Role');
+    expect(componentTypeName('CvPage_Experience_Role', 'project')).toBe(
+      'CvPage_Experience_Role_Project',
+    );
+    expect(componentTypeName('Header', 'subNavigation')).toBe('Header_SubNavigation');
   });
 });
