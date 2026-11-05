@@ -34,6 +34,8 @@ check_routing() {
   expect_status "admin SPA /" 200
   request GET "$ADMIN_ORIGIN/accounts/settings"
   expect_status "admin SPA fallback for a client route" 200
+  request GET "$ADMIN_ORIGIN/api-tokens"
+  expect_status "admin SPA route /api-tokens is not taken by the /api router" 200
 }
 
 check_health() {

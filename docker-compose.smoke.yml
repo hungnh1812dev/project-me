@@ -100,8 +100,9 @@ services:
       retries: 30
     labels:
       traefik.enable: 'true'
+      # Whole segment, not PathPrefix: /api-tokens is an admin SPA route and must reach cms-admin.
       traefik.http.routers.api.entrypoints: web
-      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathPrefix(`/api`)
+      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathRegexp(`^/api(/|$$)`)
       traefik.http.routers.api.priority: '100'
       traefik.http.routers.api.middlewares: api-inflight
       # Upload and replace answer with Connection: close, so a rejected request
