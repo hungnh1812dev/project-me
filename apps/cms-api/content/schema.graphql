@@ -165,14 +165,13 @@ type CvPage {
   updatedBy: Int
   position: String
   isMain: Boolean
-  company: String
+  name: String
   summary: String
-  skill: [CvPage_Skill!]
-  experience: [CvPage_Experience!]
-  project: [CvPage_Project!]
-  education: [CvPage_Education!]
-  language: [CvPage_Language!]
-  reference: [CvPage_Reference!]
+  skills: [CvPage_Skill!]
+  experiences: [CvPage_Experience!]
+  educations: [CvPage_Education!]
+  languages: [CvPage_Language!]
+  references: [CvPage_Reference!]
 
   """
   Paths of the fields the caller may not read; their values are masked or null.
@@ -190,7 +189,8 @@ type CvPage_Experience {
   componentUid: ID!
   company: String
   location: String
-  role: [CvPage_Experience_Role!]
+  period: String
+  roles: [CvPage_Experience_Role!]
 }
 
 type CvPage_Experience_Role {
@@ -198,12 +198,12 @@ type CvPage_Experience_Role {
   position: String
   period: String
   teamSize: Int
-  projects: String
+  projects: [CvPage_Experience_Role_Project!]
   techStack: JSON
   responsibilities: String
 }
 
-type CvPage_Project {
+type CvPage_Experience_Role_Project {
   componentUid: ID!
   name: String
   teamSize: Int
@@ -257,7 +257,7 @@ enum CvPageSortField {
   updatedBy
   position
   isMain
-  company
+  name
   summary
 }
 
@@ -273,7 +273,7 @@ input CvPageFilter {
   updatedBy: IntFilter
   position: TextFilter
   isMain: BooleanFilter
-  company: TextFilter
+  name: TextFilter
   summary: TextFilter
 }
 
@@ -301,10 +301,10 @@ type Header_Nav {
   title: String
   requiresRole: String
   link: String
-  subNavigations: [Header_Nav_SubNavigations!]
+  subNavigations: [Header_Nav_SubNavigation!]
 }
 
-type Header_Nav_SubNavigations {
+type Header_Nav_SubNavigation {
   componentUid: ID!
   title: String
   requiresRole: String
@@ -383,11 +383,11 @@ type Resume {
   isMain: Boolean
   name: String
   summary: String
-  skills: [Resume_Skills!]
-  experiences: [Resume_Experiences!]
-  educations: [Resume_Educations!]
-  languages: [Resume_Languages!]
-  referees: [Resume_Referees!]
+  skills: [Resume_Skill!]
+  experiences: [Resume_Experience!]
+  educations: [Resume_Education!]
+  languages: [Resume_Language!]
+  referees: [Resume_Referee!]
 
   """
   Paths of the fields the caller may not read; their values are masked or null.
@@ -395,31 +395,31 @@ type Resume {
   _maskedFields: [String!]!
 }
 
-type Resume_Skills {
+type Resume_Skill {
   componentUid: ID!
   level: String
   skill: String
 }
 
-type Resume_Experiences {
+type Resume_Experience {
   componentUid: ID!
   company: String
   location: String
   period: String
-  roles: [Resume_Experiences_Roles!]
+  roles: [Resume_Experience_Role!]
 }
 
-type Resume_Experiences_Roles {
+type Resume_Experience_Role {
   componentUid: ID!
   position: String
   period: String
   teamSize: Int
-  projects: [Resume_Experiences_Roles_Projects!]
+  projects: [Resume_Experience_Role_Project!]
   techStack: JSON
   responsibilities: String
 }
 
-type Resume_Experiences_Roles_Projects {
+type Resume_Experience_Role_Project {
   componentUid: ID!
   name: String
   teamSize: Int
@@ -430,7 +430,7 @@ type Resume_Experiences_Roles_Projects {
   responsibilities: String
 }
 
-type Resume_Educations {
+type Resume_Education {
   componentUid: ID!
   degree: String
   institution: String
@@ -439,13 +439,13 @@ type Resume_Educations {
   description: String
 }
 
-type Resume_Languages {
+type Resume_Language {
   componentUid: ID!
   language: String
   level: String
 }
 
-type Resume_Referees {
+type Resume_Referee {
   componentUid: ID!
   name: String
   phone: String

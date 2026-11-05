@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentEditPath, contentNewPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { DocumentRecord } from '@features/content/Content.api';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
 import type { FakeHandler } from '@test/FakeApi.fixture';
@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
-const copy = COPY.content;
+const copy = EN_TEXT.content;
 const SLUG = 'cv-page';
 const DOC_ID = 'doc_1';
 const UID_SKILL = '00000000-0000-4000-8000-00000000000a';
@@ -24,11 +24,11 @@ function draft(overrides: Record<string, unknown> = {}) {
     values: {
       position: 'Engineer',
       isMain: false,
-      company: 'Acme',
+      name: 'Acme',
       summary: '<p>Hi</p>',
     },
     components: {
-      skill: [
+      skills: [
         {
           componentUid: UID_SKILL,
           values: { level: 'Senior', skill: 'React' },
@@ -74,23 +74,23 @@ describe('DocumentEditPage: new cv-page', () => {
     await screen.findByLabelText('Position');
     expect(screen.getByRole('heading', { name: copy.newTitle('CV Page') })).toBeInTheDocument();
     expect(screen.queryByText(new RegExp(SLUG))).not.toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Is main' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Is Main' })).toBeInTheDocument();
     // The richtext editor is lazy-loaded.
     expect(await screen.findByText('Summary')).toBeInTheDocument();
-    for (const label of ['Skill', 'Experience', 'Project', 'Education', 'Language', 'Reference']) {
+    for (const label of ['Skills', 'Experiences', 'Educations', 'Languages', 'References']) {
       expect(screen.getByRole('heading', { level: 2, name: label })).toBeInTheDocument();
     }
 
     await userEvent.type(screen.getByLabelText('Position'), 'Engineer');
-    await userEvent.click(screen.getByRole('switch', { name: 'Is main' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Click to add skill' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Is Main' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Click to add skills' }));
     await userEvent.type(screen.getByLabelText('Skill', { selector: 'input' }), 'React');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
 
     await waitFor(() => expect(api.callsTo(`POST ${DOCUMENTS.BY_SLUG(SLUG)}`)).toHaveLength(1));
     expect(bodyOf(api.callsTo(`POST ${DOCUMENTS.BY_SLUG(SLUG)}`)[0])).toEqual({
       values: { position: 'Engineer', isMain: true },
-      components: { skill: [{ values: { skill: 'React' } }] },
+      components: { skills: [{ values: { skill: 'React' } }] },
     });
     expect(
       await screen.findByRole('heading', { name: copy.editTitle('CV Page') }),
@@ -100,10 +100,10 @@ describe('DocumentEditPage: new cv-page', () => {
   it('blocks the save on invalid numbers and JSON in a nested component (depth 2)', async () => {
     const { api } = await open(contentNewPath(SLUG));
     await screen.findByLabelText('Position');
-    await userEvent.click(screen.getByRole('button', { name: 'Click to add experience' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Click to add role' }));
-    await userEvent.type(screen.getByLabelText('Team size'), '4.5');
-    await userEvent.type(screen.getByLabelText('Tech stack'), 'not json');
+    await userEvent.click(screen.getByRole('button', { name: 'Click to add experiences' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Click to add roles' }));
+    await userEvent.type(screen.getByLabelText('Team Size'), '4.5');
+    await userEvent.type(screen.getByLabelText('Tech Stack'), 'not json');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
 
     expect(await screen.findByText(copy.invalidInteger)).toBeInTheDocument();
@@ -121,10 +121,10 @@ describe('DocumentEditPage: new cv-page', () => {
         },
       }),
     });
-    await userEvent.type(await screen.findByLabelText('Company'), 'Acme');
+    await userEvent.type(await screen.findByLabelText('Name'), 'Acme');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
     expect(await screen.findByRole('alert')).toHaveTextContent('values.position is required');
-    expect(screen.getByLabelText('Company')).toHaveValue('Acme');
+    expect(screen.getByLabelText('Name')).toHaveValue('Acme');
   });
 
   it('says so when the role can see no fields', async () => {
@@ -188,7 +188,7 @@ describe('DocumentEditPage: edit draft', () => {
       ...getDraft(
         draft({
           components: {
-            skill: [
+            skills: [
               {
                 componentUid: UID_SKILL,
                 values: { level: 'Senior', skill: 'React' },
@@ -209,15 +209,15 @@ describe('DocumentEditPage: edit draft', () => {
       }),
     });
     await screen.findByLabelText('Position');
-    await userEvent.click(screen.getByRole('button', { name: 'Move skill 1 down' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Move skills 1 down' }));
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
     await waitFor(() =>
       expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(1),
     );
     const body = bodyOf(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)[0]) as {
-      components: { skill: { componentUid: string }[] };
+      components: { skills: { componentUid: string }[] };
     };
-    expect(body.components.skill.map((item) => item.componentUid)).toEqual([second, UID_SKILL]);
+    expect(body.components.skills.map((item) => item.componentUid)).toEqual([second, UID_SKILL]);
   });
 
   it('renders masked fields read-only and never sends them', async () => {
@@ -227,11 +227,11 @@ describe('DocumentEditPage: edit draft', () => {
           values: {
             position: 'Engineer',
             isMain: false,
-            company: '***',
+            name: '***',
             summary: null,
           },
-          components: { reference: null, skill: [] },
-          _maskedFields: ['company', 'reference'],
+          components: { references: null, skills: [] },
+          _maskedFields: ['name', 'references'],
         }),
       ),
       [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
@@ -239,12 +239,12 @@ describe('DocumentEditPage: edit draft', () => {
         data: { documentId: DOC_ID, version: 4 },
       }),
     });
-    const company = await screen.findByLabelText('Company');
-    expect(company).toHaveAttribute('readonly');
-    expect(company).toHaveValue(copy.protectedValue);
-    expect(screen.getByLabelText('Reference')).toHaveValue(copy.protectedValue);
+    const nameInput = await screen.findByLabelText('Name');
+    expect(nameInput).toHaveAttribute('readonly');
+    expect(nameInput).toHaveValue(copy.protectedValue);
+    expect(screen.getByLabelText('References')).toHaveValue(copy.protectedValue);
     expect(
-      screen.queryByRole('button', { name: 'Click to add reference' }),
+      screen.queryByRole('button', { name: 'Click to add references' }),
     ).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Position'), '!');
@@ -290,14 +290,14 @@ describe('DocumentEditPage: edit draft', () => {
       details: {
         currentVersion: 5,
         server: {
-          values: { position: 'Lead', company: '***' },
+          values: { position: 'Lead', name: '***' },
           components: {},
-          _maskedFields: ['company'],
+          _maskedFields: ['name'],
         },
         submitted: {
-          values: { position: 'Engineer!', company: '***' },
+          values: { position: 'Engineer!', name: '***' },
           components: {},
-          _maskedFields: ['company'],
+          _maskedFields: ['name'],
         },
         diff,
       },
@@ -313,7 +313,7 @@ describe('DocumentEditPage: edit draft', () => {
       await open(contentEditPath(SLUG, DOC_ID), {
         [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
           status: 200,
-          data: draft({ _maskedFields: ['company'] }),
+          data: draft({ _maskedFields: ['name'] }),
         }),
         [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: (config) => {
           puts.push(bodyOf(config));
@@ -333,7 +333,7 @@ describe('DocumentEditPage: edit draft', () => {
         [
           positionDiff,
           {
-            path: 'values.company',
+            path: 'values.name',
             change: 'changed',
             server: '***',
             submitted: 'Initech',
@@ -373,7 +373,7 @@ describe('DocumentEditPage: edit draft', () => {
       await open(contentEditPath(SLUG, DOC_ID), {
         [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
           status: 200,
-          data: draft({ _maskedFields: ['company'] }),
+          data: draft({ _maskedFields: ['name'] }),
         }),
         [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: (config) => {
           puts.push(bodyOf(config));
@@ -381,7 +381,7 @@ describe('DocumentEditPage: edit draft', () => {
             status: 409,
             data: conflictBody([
               {
-                path: 'values.company',
+                path: 'values.name',
                 change: 'changed',
                 server: '***',
                 submitted: 'Initech',

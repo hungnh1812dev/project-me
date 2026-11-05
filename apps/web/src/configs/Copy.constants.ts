@@ -5,8 +5,11 @@ export const COPY = {
   },
   page: {
     title: 'System status',
-    description:
-      'The public site is not live yet. This page confirms the site can reach the content API through the same domain.',
+    description: 'This page confirms the site can reach the content API through its own server.',
+  },
+  nav: {
+    label: 'Main',
+    cv: 'CV',
   },
   session: {
     signIn: 'Sign in',
@@ -14,68 +17,6 @@ export const COPY = {
     openCms: 'Open CMS',
     signOutFailed: 'Sign-out did not reach the server, so you are still signed in. Try again.',
     signedInAs: (name: string) => `Signed in as ${name}`,
-    reviewing: 'Reviewing as a guest',
-    endReview: 'End review',
-  },
-  reviewer: {
-    open: 'Reviewer access',
-    title: 'Request reviewer access',
-    description:
-      'Look around as a read-only guest for 24 hours. Tell us a little about your visit; please do not include personal details.',
-    stepLabel: (step: number, total: number) => `Step ${step} of ${total}`,
-    back: 'Back',
-    next: 'Next',
-    cancel: 'Cancel',
-    submit: 'Start review',
-    steps: {
-      role: 'Who are you?',
-      purposes: 'Why are you visiting?',
-      notes: 'Anything else?',
-    },
-    role: {
-      label: 'Your role',
-      placeholder: 'Choose a role',
-      other: 'Other',
-      otherLabel: 'Describe your role',
-    },
-    purposes: {
-      legend: 'Purpose of your visit',
-      hint: 'Optional. Pick all that apply.',
-      other: 'Other',
-      otherLabel: 'Describe your purpose',
-    },
-    notes: {
-      label: 'Notes for the site owner',
-      hint: (max: number) => `Optional. Plain text, up to ${max} characters.`,
-      count: (used: number, max: number) => `${used} / ${max}`,
-    },
-    turnstile: {
-      label: 'Verification',
-      loading: 'Loading the verification check',
-      required: 'Complete the verification check to continue.',
-      expired: 'The verification check expired. Complete it again.',
-      failed: 'The verification check could not load. Check your connection and reload the page.',
-    },
-    validation: {
-      roleRequired: 'Choose your role.',
-      roleOtherRequired: 'Describe your role.',
-      purposeOtherRequired: 'Describe your purpose, or untick Other.',
-      notesTooLong: (max: number) => `Use at most ${max} characters.`,
-    },
-    errors: {
-      disabled: 'Reviewer access is switched off right now.',
-      unavailable: 'Reviewer access is temporarily unavailable. Try again later.',
-      turnstileFailed: 'The verification check did not pass. Complete it again and retry.',
-      ipLimited: 'A review session was already started from this connection.',
-      ipLimitedSeconds: (seconds: number) =>
-        `A review session was already started from this connection. Try again in ${seconds} ${seconds === 1 ? 'second' : 'seconds'}.`,
-      ipLimitedMinutes: (minutes: number) =>
-        `A review session was already started from this connection. Try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`,
-      capacity: 'Too many review sessions are active. Try again later.',
-      invalid: 'Some of your answers were not accepted. Check them and retry.',
-      network: 'Could not reach the server. Check your connection and try again.',
-      unexpected: 'Something went wrong on our side. Try again in a moment.',
-    },
   },
   login: {
     title: 'Sign in',
@@ -84,6 +25,13 @@ export const COPY = {
     passwordLabel: 'Password',
     submit: 'Sign in',
     cancel: 'Cancel',
+    humanCheck: {
+      loading: 'Loading the security check',
+      required: 'Complete the security check to continue.',
+      expired: 'The security check expired. Complete it again.',
+      failed: 'The security check could not load. Check your connection and reload the page.',
+      unavailable: 'The security check is not set up on this site, so sign-in is unavailable.',
+    },
     validation: {
       emailRequired: 'Enter your email address.',
       emailInvalid: 'Enter an email like name@example.com.',
@@ -98,6 +46,9 @@ export const COPY = {
       rateLimited: 'Too many sign-in attempts. Wait a few minutes, then try again.',
       network: 'Could not reach the server. Check your connection and try again.',
       unexpected: 'Something went wrong on our side. Try again in a moment.',
+      humanCheckFailed: 'The security check did not pass. Try again.',
+      humanCheckUnavailable:
+        'The security check is unavailable right now. Try again in a few minutes.',
       privileged:
         'Accounts that can edit content sign in on the admin console, not on this site. Open the admin console to continue.',
     },
@@ -135,7 +86,6 @@ export const COPY = {
     emptyTitle: 'No CV published yet',
     emptyDescription: 'The owner has not published a main resume. Check back later.',
     maskedValue: 'Sign in to view',
-    maskedValueForReviewer: 'Hidden for reviewers',
     contact: {
       title: 'Contact',
       email: 'Email',

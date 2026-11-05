@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Button, Checkbox } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import {
   CONTENT_WILDCARD_SUBJECT,
   PERMISSION_ACTIONS,
@@ -17,8 +17,7 @@ import {
   type ScopeState,
 } from './TokenScope.rules';
 
-const copy = COPY.access.tokenScope;
-const matrixCopy = COPY.access.matrix;
+type MatrixCopy = ScreenText<'access'>['access']['matrix'];
 
 export interface TokenScopeEditorProps {
   state: ScopeState;
@@ -32,7 +31,7 @@ export interface TokenScopeEditorProps {
   marked: ReadonlySet<string>;
 }
 
-function labelOf(subject: string, known: ReadonlySet<string>): string {
+function labelOf(subject: string, known: ReadonlySet<string>, matrixCopy: MatrixCopy): string {
   if (subject === CONTENT_WILDCARD_SUBJECT) return matrixCopy.wildcard;
   return known.has(subject) ? subject : matrixCopy.unknownType(subject);
 }
@@ -49,6 +48,9 @@ export function TokenScopeEditor({
   canGrant,
   marked,
 }: TokenScopeEditorProps) {
+  const { access } = useScreenText('access');
+  const copy = access.tokenScope;
+  const matrixCopy = access.matrix;
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const known = new Set(contentTypes.map((type) => type.slug));
   const anyNotGrantable = subjects.some((subject) =>
@@ -83,7 +85,7 @@ export function TokenScopeEditor({
           </thead>
           <tbody>
             {subjects.map((subject) => {
-              const label = labelOf(subject, known);
+              const label = labelOf(subject, known, matrixCopy);
               const isWildcard = subject === CONTENT_WILDCARD_SUBJECT;
               const contentType = contentTypes.find((type) => type.slug === subject);
               const anyGranted = PERMISSION_ACTIONS.some(
@@ -177,6 +179,8 @@ function FieldGroups({
   state: ScopeState;
   onChange: TokenScopeEditorProps['onChange'];
 }) {
+  const { access } = useScreenText('access');
+  const matrixCopy = access.matrix;
   const fields = contentType.fields.filter((field) => !field.system);
   return (
     <div className="grid min-w-0 gap-6 md:grid-cols-2">
@@ -190,16 +194,16 @@ function FieldGroups({
             key={action}
             legend={
               kind === 'readableFields'
-                ? COPY.access.fields.readable
-                : COPY.access.fields.writable(actionLabel)
+                ? access.fields.readable
+                : access.fields.writable(actionLabel)
             }
             fields={fields}
             value={cell[kind]}
             disabled={false}
             emptyHint={
               kind === 'readableFields'
-                ? COPY.access.fields.noneSelected
-                : COPY.access.fields.noneSelectedWrite
+                ? access.fields.noneSelected
+                : access.fields.noneSelectedWrite
             }
             onChange={(value) =>
               onChange((current) => setScopeFieldList(current, { subject, action }, kind, value))

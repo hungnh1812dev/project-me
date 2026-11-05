@@ -12,8 +12,8 @@ import {
   TextInput,
 } from '@abyss/form-commons';
 import { LoadError } from '@components/PageStates';
-import { COPY } from '@configs/Copy.constants';
 import { API_TOKEN_LIMITS } from '@configs/Http.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import type { ApiToken } from '@features/access/Access.api';
 import { type PermissionAction } from '@features/access/Access.constants';
 import { useContentTypesQuery } from '@features/access/Access.queries';
@@ -30,23 +30,24 @@ import { useTokenSubmit, type TokenDialogOutcome } from './useTokenSubmit';
 
 export type { TokenDialogOutcome } from './useTokenSubmit';
 
-const copy = COPY.access.tokenForm;
+type TokenFormCopy = ScreenText<'access'>['access']['tokenForm'];
 
 export type TokenDialogTarget = { mode: 'create' } | { mode: 'edit'; token: ApiToken };
 
-const formSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, copy.validation.nameRequired)
-    .max(API_TOKEN_LIMITS.NAME_MAX_LENGTH, copy.validation.nameTooLong),
-  expiresOn: z.string().refine((value) => {
-    if (value === '') return true;
-    const end = endOfDay(value);
-    return end === null || end.getTime() > Date.now();
-  }, copy.validation.expiryPast),
-});
-type FormValues = z.input<typeof formSchema>;
+const formSchemaOf = (copy: TokenFormCopy) =>
+  z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, copy.validation.nameRequired)
+      .max(API_TOKEN_LIMITS.NAME_MAX_LENGTH, copy.validation.nameTooLong),
+    expiresOn: z.string().refine((value) => {
+      if (value === '') return true;
+      const end = endOfDay(value);
+      return end === null || end.getTime() > Date.now();
+    }, copy.validation.expiryPast),
+  });
+type FormValues = z.input<ReturnType<typeof formSchemaOf>>;
 
 /**
  * Create or edit an API token. Creating switches the same dialog to
@@ -98,6 +99,8 @@ function TokenFormBody({
   onDone: (outcome: TokenDialogOutcome) => void;
   onLockChange: (locked: boolean) => void;
 }) {
+  const access = useScreenText('access');
+  const copy = access.access.tokenForm;
   const caller = useCallerAccess();
   const contentTypes = useContentTypesQuery();
   const editing = target.mode === 'edit' ? target.token : null;
@@ -107,7 +110,7 @@ function TokenFormBody({
   );
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchemaOf(copy)),
     defaultValues: {
       name: editing?.name ?? '',
       expiresOn: localDateOf(editing?.expiresAt ?? null),
@@ -181,7 +184,7 @@ function TokenFormBody({
             </div>
             {contentTypes.isError ? (
               <LoadError
-                message={COPY.access.role.contentTypesFailed}
+                message={access.access.role.contentTypesFailed}
                 isRetrying={contentTypes.isFetching}
                 onRetry={() => void contentTypes.refetch()}
               />

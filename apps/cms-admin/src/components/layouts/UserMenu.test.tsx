@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import { initialsOf } from './UserMenu';
 
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
-const session = COPY.session;
+const session = EN_TEXT.session;
 
 async function open(user: CurrentUser = TEST_USER) {
   const harness = createTestServices({
@@ -81,7 +81,9 @@ describe('UserMenu', () => {
     await userEvent.click(trigger);
     await userEvent.click(screen.getByRole('menuitem', { name: session.signOut }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: COPY.login.title })).toBeVisible();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: EN_TEXT.login.title }),
+    ).toBeVisible();
     expect(api.callsTo(`POST ${LOGOUT}`)).toHaveLength(1);
   });
 });

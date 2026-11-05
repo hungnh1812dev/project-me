@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { Textarea } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
@@ -12,8 +12,6 @@ import {
   setConditionsText,
   setFieldList,
 } from './PermissionMatrix.rules';
-
-const copy = COPY.access;
 
 /**
  * Field access and conditions of one content subject's granted actions.
@@ -33,6 +31,7 @@ export function CellDetails({
   subjectLabel: string;
   contentType: ContentType | undefined;
 }) {
+  const copy = useScreenText('access').access;
   const granted = actionsFor(subject).filter((action) => state[subject]?.[action] !== undefined);
   const contentFields = (contentType?.fields ?? []).filter((field) => !field.system);
 
@@ -118,6 +117,7 @@ function ConditionsEditor({
   shouldForceOpen: boolean;
   onChange: (text: string) => void;
 }) {
+  const copy = useScreenText('access').access;
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;

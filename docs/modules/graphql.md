@@ -88,14 +88,14 @@ differences are handled by step 3 visibility and by masking.
 
 ### Names
 
-| Source                         | GraphQL                                                       | Example (`cv-page`)      |
-| ------------------------------ | ------------------------------------------------------------- | ------------------------ |
-| content type slug (kebab-case) | object type, PascalCase                                       | `CvPage`                 |
-| component path                 | `<Root>_<Field>[_<Field>]`, PascalCase parts                  | `CvPage_Experience_Role` |
-| single item root field         | camelCase slug                                                | `cvPage`                 |
-| list root field (collection)   | camelCase slug + `List`                                       | `cvPageList`             |
-| page / filter / sort types     | `<Root>Page`, `<Root>Filter`, `<Root>Sort`, `<Root>SortField` | `CvPageFilter`           |
-| content field                  | the API field name, unchanged                                 | `isMain`, `teamSize`     |
+| Source                         | GraphQL                                                                                         | Example (`cv-page`)              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- | -------------------------------- |
+| content type slug (kebab-case) | object type, PascalCase                                                                         | `CvPage`                         |
+| component path                 | `<Root>_<Component>[_<Component>]`, PascalCase of each `component` value (not the field `name`) | `CvPage_Experience_Role_Project` |
+| single item root field         | camelCase slug                                                                                  | `cvPage`                         |
+| list root field (collection)   | camelCase slug + `List`                                                                         | `cvPageList`                     |
+| page / filter / sort types     | `<Root>Page`, `<Root>Filter`, `<Root>Sort`, `<Root>SortField`                                   | `CvPageFilter`                   |
+| content field                  | the API field name, unchanged                                                                   | `isMain`, `teamSize`             |
 
 Root type names never contain `_`, so they cannot clash with component names.
 The builder **fails** (never renames) on any other clash: two slugs mapping to

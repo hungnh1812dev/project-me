@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 
 import { COPY } from '../../configs/Copy.constants';
 import type { AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, Wrapper } from '../../features/session/Session.fixture';
+import { fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { AccountMenu } from './AccountMenu';
 
 vi.mock('../../configs/Browser.env', () => ({
@@ -12,7 +12,7 @@ vi.mock('../../configs/Browser.env', () => ({
 describe('account menu with an admin URL', () => {
   it('links Open CMS to the admin console', async () => {
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>

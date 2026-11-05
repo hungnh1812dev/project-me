@@ -1,6 +1,6 @@
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import baseUserEvent, { PointerEventsCheckLevel } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MediaApi, MediaFile } from './Media.api';
@@ -9,7 +9,11 @@ import { MediaApiProvider } from './MediaApi.context';
 import { UploadDialog } from './UploadDialog';
 import type { SendFile } from './useUploadQueue';
 
-const copy = COPY.media.uploadDialog;
+// Radix marks the dialog `pointer-events: none` under React `act` once a component above it
+// calls `use`; a browser without `act` is unaffected, so the check is off here.
+const userEvent = baseUserEvent.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never });
+
+const copy = EN_TEXT.media.uploadDialog;
 const MIB = 1024 * 1024;
 
 interface Pending {
@@ -63,7 +67,9 @@ function setup(props: Partial<Parameters<typeof UploadDialog>[0]> = {}) {
 
 // The picker's accept filter is bypassed so the dialog's own checks are what is tested.
 const choose = (files: File[]) =>
-  userEvent.setup({ applyAccept: false }).upload(screen.getByTestId('upload-dialog-input'), files);
+  baseUserEvent
+    .setup({ applyAccept: false, pointerEventsCheck: PointerEventsCheckLevel.Never })
+    .upload(screen.getByTestId('upload-dialog-input'), files);
 const uploadButton = () => screen.getByRole('button', { name: /^Upload( \d+ files)?$/ });
 
 const createObjectURL = vi.fn<(source: Blob | MediaSource) => string>(() => 'blob:preview');

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 
 /** Skeleton rows shown while a table loads. */
 const TABLE_SKELETON_ROWS = 3;
@@ -82,7 +82,7 @@ export function LoadError({
     <div className="grid justify-items-start gap-3">
       <FormAlert tone="error">{message}</FormAlert>
       <Button type="button" loading={isRetrying} onClick={onRetry}>
-        {COPY.common.retry}
+        {COMMON_TEXT.common.retry}
       </Button>
     </div>
   );

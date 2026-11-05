@@ -31,12 +31,12 @@ Every table has `id` (int identity PK), `created_at`, `updated_at`. User-facing 
   - `UNIQUE (document_id) WHERE published_at IS NULL`
   - `UNIQUE (document_id) WHERE published_at IS NOT NULL`
   - `INDEX (published_at, created_at DESC)`
-- **Component table** `<slug>__<path>`, e.g. `cv_page__experience__role`:
+- **Component table** `<slug>__<path>`, `<path>` = the snake_case `component` values from the root joined by `__` (never the field names; ADR 0019, CM-4), e.g. `cv_page__experience__role` for fields `experiences` (`component: "experience"`) and `roles` (`component: "role"`):
   - columns: `id`, `component_uid uuid`, `parent_id int NOT NULL REFERENCES <parent>(id) ON DELETE CASCADE`, `order_index int`, then the fields
   - `INDEX (parent_id, order_index)`
   - **No `_lnk` tables**: components are owned exclusively, so cascade delete removes orphans by construction.
 - The generator **fails** (never truncates) when a composed name exceeds 63 bytes or two names collide after normalisation.
-- `cv-page.json` produces **8 tables**: root + skill, experience, experience__role, project, education, language, reference.
+- `cv-page.json` produces **8 tables**: root + skill, experience, experience__role, experience__role__project, education, language, reference (after migration 0006, feature `cv-page-schema`; before it, `project` was a root-level component).
 
 ### 8.3 Conditions DSL (ABAC)
 

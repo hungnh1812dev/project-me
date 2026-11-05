@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES } from '@configs/Http.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
@@ -27,25 +27,25 @@ async function openSet(handlers: Record<string, FakeHandler>) {
 const field = (label: string) => screen.getByLabelText(new RegExp(`^${label}`));
 
 async function fillAndSubmit() {
-  await userEvent.type(field(COPY.password.emailLabel), EMAIL);
-  await userEvent.type(field(COPY.password.codeLabel), CODE);
-  await userEvent.type(field(COPY.password.newPasswordLabel), NEW_PASSWORD);
-  await userEvent.type(field(COPY.password.confirmPasswordLabel), NEW_PASSWORD);
-  await userEvent.click(screen.getByRole('button', { name: COPY.password.set.submit }));
+  await userEvent.type(field(EN_TEXT.password.emailLabel), EMAIL);
+  await userEvent.type(field(EN_TEXT.password.codeLabel), CODE);
+  await userEvent.type(field(EN_TEXT.password.newPasswordLabel), NEW_PASSWORD);
+  await userEvent.type(field(EN_TEXT.password.confirmPasswordLabel), NEW_PASSWORD);
+  await userEvent.click(screen.getByRole('button', { name: EN_TEXT.password.set.submit }));
 }
 
 describe('SetPasswordPage', () => {
   it('sets the password and returns to sign in with a notice', async () => {
     const { api } = await openSet({ [`POST ${SET}`]: () => ({ status: 204 }) });
     expect(
-      screen.getByRole('heading', { level: 1, name: COPY.password.set.title }),
+      screen.getByRole('heading', { level: 1, name: EN_TEXT.password.set.title }),
     ).toBeInTheDocument();
     await fillAndSubmit();
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: COPY.login.title }),
+      await screen.findByRole('heading', { level: 1, name: EN_TEXT.login.title }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(COPY.login.notices.passwordSet);
+    expect(screen.getByRole('status')).toHaveTextContent(EN_TEXT.login.notices.passwordSet);
     expect(JSON.parse(String(api.callsTo(`POST ${SET}`)[0]?.data))).toEqual({
       email: EMAIL,
       code: CODE,
@@ -61,22 +61,22 @@ describe('SetPasswordPage', () => {
       }),
     });
     await fillAndSubmit();
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.password.errors.invalidCode);
-    expect(field(COPY.password.emailLabel)).toHaveValue(EMAIL);
+    expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.password.errors.invalidCode);
+    expect(field(EN_TEXT.password.emailLabel)).toHaveValue(EMAIL);
   });
 
   it('needs a valid email before sending a new code', async () => {
     const { api } = await openSet({});
     const resend = screen.getByRole('button', {
-      name: COPY.password.resendCode,
+      name: EN_TEXT.password.resendCode,
     });
     await userEvent.click(resend);
-    expect(field(COPY.password.emailLabel)).toHaveFocus();
+    expect(field(EN_TEXT.password.emailLabel)).toHaveFocus();
     expect(api.callsTo(`POST ${REQUEST_OTP}`)).toHaveLength(0);
 
-    await userEvent.type(field(COPY.password.emailLabel), EMAIL);
+    await userEvent.type(field(EN_TEXT.password.emailLabel), EMAIL);
     await userEvent.click(resend);
-    expect(await screen.findByText(COPY.password.codeResent(EMAIL))).toBeVisible();
-    expect(field(COPY.password.codeLabel)).toHaveFocus();
+    expect(await screen.findByText(EN_TEXT.password.codeResent(EMAIL))).toBeVisible();
+    expect(field(EN_TEXT.password.codeLabel)).toHaveFocus();
   });
 });

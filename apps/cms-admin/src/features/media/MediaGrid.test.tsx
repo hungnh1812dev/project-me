@@ -1,4 +1,4 @@
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
@@ -8,7 +8,7 @@ import { MEDIA_SEARCH_DEBOUNCE_MS } from './Media.constants';
 import { MediaFilters, type MediaFiltersValue } from './MediaFilters';
 import { MediaGrid } from './MediaGrid';
 
-const copy = COPY.media;
+const copy = EN_TEXT.media;
 
 function file(overrides: Partial<MediaFile> = {}): MediaFile {
   return {

@@ -1,14 +1,18 @@
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import baseUserEvent, { PointerEventsCheckLevel } from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import { ImageInsertDialog, type InsertedImage } from './ImageInsertDialog';
 import type { MediaApi, MediaFile } from './Media.api';
 import { MediaApiProvider } from './MediaApi.context';
 
-const copy = COPY.media;
+// Radix marks the dialog `pointer-events: none` under React `act` once a component above it
+// calls `use`; a browser without `act` is unaffected, so the check is off here.
+const userEvent = baseUserEvent.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never });
+
+const copy = EN_TEXT.media;
 
 const photo = (overrides: Partial<MediaFile> = {}): MediaFile => ({
   id: 'f1',

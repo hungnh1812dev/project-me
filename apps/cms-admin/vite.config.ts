@@ -7,6 +7,9 @@ import { defineConfig } from 'vitest/config';
 /** Used when DEV_SERVER_PORT is not set; differs from web so both can run. */
 const DEFAULT_DEV_SERVER_PORT = 5173;
 
+/** Path prefix the dev server forwards to `DEV_API_PROXY_TARGET`. */
+const DEV_API_PROXY_PREFIX = '/api';
+
 /** Form-heavy page tests exceed the 5 s default when the whole monorepo's tests run in parallel. */
 const TEST_TIMEOUT_MS = 20_000;
 
@@ -43,6 +46,10 @@ export default defineConfig(({ mode }) => {
     server: {
       port: Number(env.DEV_SERVER_PORT ?? DEFAULT_DEV_SERVER_PORT),
       strictPort: true,
+      // Dev only: a build never carries the proxy.
+      ...(env.DEV_API_PROXY_TARGET
+        ? { proxy: { [DEV_API_PROXY_PREFIX]: { target: env.DEV_API_PROXY_TARGET } } }
+        : {}),
     },
     test: {
       environment: 'jsdom',

@@ -1,16 +1,39 @@
+import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { COPY } from '../../configs/Copy.constants';
-import type { AuthApi } from '../../features/session/Auth.api';
-import {
-  fakeApi,
-  httpError,
-  PRIVILEGED_USER,
-  TEST_USER,
-  Wrapper,
-} from '../../features/session/Session.fixture';
+import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
+import { fakeApi, httpError, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { AccountMenu } from './AccountMenu';
+
+const humanCheck = vi.hoisted(() => ({ solves: true, tokensIssued: 0, siteKey: 'site-key' }));
+
+vi.mock('../../configs/Browser.env', () => ({
+  appEnv: {
+    get turnstileSiteKey() {
+      return humanCheck.siteKey || undefined;
+    },
+    adminUrl: undefined,
+  },
+}));
+// Stands in for Cloudflare: solves on every mount (a fresh challenge) with a new token.
+vi.mock('../../features/auth/TurnstileWidget', () => ({
+  TurnstileWidget: ({ action, onToken }: { action: string; onToken: (token: string) => void }) => {
+    useEffect(() => {
+      if (humanCheck.solves) onToken(`${action}-token-${++humanCheck.tokensIssued}`);
+      // Once per mount, like the real widget (it keeps its callbacks in a ref).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return <div data-testid={`turnstile-${action}`} />;
+  },
+}));
+
+beforeEach(() => {
+  humanCheck.solves = true;
+  humanCheck.tokensIssued = 0;
+  humanCheck.siteKey = 'site-key';
+});
 
 const login = COPY.login;
 
@@ -42,7 +65,7 @@ describe('sign-in dialog', () => {
 
   it('signs in, closes and shows the account', async () => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'tok' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -53,6 +76,7 @@ describe('sign-in dialog', () => {
     expect(api.login).toHaveBeenCalledWith({
       email: 'owner@example.com',
       password: 'correct horse',
+      humanCheckToken: 'login-token-1',
     });
     expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
   });
@@ -61,7 +85,7 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_CREDENTIALS' })),
+        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -81,14 +105,27 @@ describe('sign-in dialog', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.rateLimitedMinutes(2));
   });
 
+  it.each([
+    ['BFF_HUMAN_CHECK_FAILED', 403, login.errors.humanCheckFailed],
+    ['BFF_HUMAN_CHECK_UNAVAILABLE', 503, login.errors.humanCheckUnavailable],
+    ['BFF_PRIVILEGED_ACCOUNT', 403, login.errors.privileged],
+    ['BFF_UPSTREAM_FAILED', 502, login.errors.unexpected],
+  ])('maps %s to its message', async (errorCode, status, message) => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(httpError(status, { errorCode })),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  });
+
   it('asks for the authenticator code, then signs in', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('tok'),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue(TEST_USER),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -102,8 +139,8 @@ describe('sign-in dialog', () => {
       await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
     ).toBeInTheDocument();
     expect(api.verifyTwoFactor).toHaveBeenCalledWith({
-      tempToken: 'tmp',
       code: '123456',
+      humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
     });
     expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
   });
@@ -112,12 +149,11 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_2FA_CODE' })),
+        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -130,12 +166,11 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_TEMP_TOKEN' })),
+        .mockRejectedValue(httpError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -149,7 +184,6 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['email'],
       }),
     });
@@ -157,14 +191,55 @@ describe('sign-in dialog', () => {
     await fillCredentials(user);
     expect(await screen.findByText(login.twoFactor.emailWarning)).toBeInTheDocument();
     await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
-    expect(api.sendLoginEmailCode).toHaveBeenCalledWith('tmp');
+    expect(api.sendLoginEmailCode).toHaveBeenCalledWith({
+      humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
+    });
+  });
+
+  it('sends a new token for the emailed code, the resend and the verify', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({
+        kind: 'two-factor-required',
+        methods: ['email'],
+      }),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue(TEST_USER),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
+    await user.click(await screen.findByRole('button', { name: login.twoFactor.resend }));
+    await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(2));
+    await user.type(screen.getByLabelText(new RegExp(login.twoFactor.emailLabel)), '123456');
+    await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
+    await waitFor(() => expect(api.verifyTwoFactor).toHaveBeenCalledTimes(1));
+    const tokens = [
+      ...vi.mocked(api.sendLoginEmailCode).mock.calls.map(([input]) => input?.humanCheckToken),
+      vi.mocked(api.verifyTwoFactor).mock.calls[0]?.[0].humanCheckToken,
+    ];
+    expect(tokens).toHaveLength(3);
+    expect(new Set(tokens).size).toBe(3);
+  });
+
+  it('holds the emailed code until the second check passes', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockImplementation(() => {
+        humanCheck.solves = false;
+        return Promise.resolve({ kind: 'two-factor-required', methods: ['email'] });
+      }),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    await screen.findByText(login.twoFactor.emailWarning);
+    expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: login.twoFactor.resend }));
+    expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
+    expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
   });
 
   it('rejects an account whose method this site does not support', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['sms'],
       }),
     });
@@ -185,11 +260,55 @@ describe('sign-in dialog', () => {
   });
 });
 
+describe('human check', () => {
+  it('renders a login widget and blocks the call until it passes', async () => {
+    humanCheck.solves = false;
+    const { user, api } = await openDialog();
+    expect(screen.getByTestId('turnstile-login')).toBeInTheDocument();
+    await fillCredentials(user);
+    expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
+    expect(api.login).not.toHaveBeenCalled();
+  });
+
+  it('asks for a fresh check after a failed sign-in', async () => {
+    const api = fakeApi({
+      login: vi
+        .fn<AuthApi['login']>()
+        .mockRejectedValueOnce(httpError(403, { errorCode: 'BFF_HUMAN_CHECK_FAILED' }))
+        .mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.humanCheckFailed);
+    await user.type(screen.getByLabelText(new RegExp(login.passwordLabel)), 'correct horse');
+    await user.click(screen.getByRole('button', { name: login.submit }));
+    await waitFor(() => expect(api.login).toHaveBeenCalledTimes(2));
+    const tokens = vi.mocked(api.login).mock.calls.map(([input]) => input.humanCheckToken);
+    expect(new Set(tokens).size).toBe(2);
+  });
+
+  it('says sign-in is unavailable when no site key is configured', async () => {
+    humanCheck.siteKey = '';
+    await openDialog();
+    expect(screen.getByText(login.humanCheck.unavailable)).toBeInTheDocument();
+    expect(screen.queryByLabelText(new RegExp(login.emailLabel))).not.toBeInTheDocument();
+  });
+
+  it('shows no reviewer entry', async () => {
+    render(
+      <Wrapper api={fakeApi()}>
+        <AccountMenu />
+      </Wrapper>,
+    );
+    await screen.findByRole('button', { name: COPY.session.signIn });
+    expect(screen.queryByRole('button', { name: /reviewer/i })).not.toBeInTheDocument();
+  });
+});
+
 describe('privileged accounts', () => {
   it('tells an admin to use the admin console and stays signed out', async () => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
-      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(new PrivilegedAccessError()),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -203,11 +322,11 @@ describe('privileged accounts', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('adm'),
-      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+      verifyTwoFactor: vi
+        .fn<AuthApi['verifyTwoFactor']>()
+        .mockRejectedValue(new PrivilegedAccessError()),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -221,7 +340,7 @@ describe('account menu', () => {
   it('keeps the user signed in and says so when sign-out fails', async () => {
     const user = userEvent.setup();
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
       logout: vi.fn<AuthApi['logout']>().mockRejectedValue(new Error('offline')),
     });
     render(
@@ -237,7 +356,7 @@ describe('account menu', () => {
   it('shows the signed-in actor after a silent refresh and signs out', async () => {
     const user = userEvent.setup();
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>
@@ -254,7 +373,7 @@ describe('account menu', () => {
 
   it('hides Open CMS when no admin URL is configured', async () => {
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>

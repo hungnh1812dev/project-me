@@ -3,7 +3,7 @@
  * these names from here, so a move or rename inside an app changes this file
  * only. Enforced by the `no-restricted-imports` rule in `eslint.config.mjs`.
  */
-export { COPY as ADMIN_COPY } from '../../cms-admin/src/configs/Copy.constants';
+export { EN_TEXT as ADMIN_COPY } from '../../cms-admin/src/configs/locales/en';
 export { API_ENDPOINTS } from '../../cms-admin/src/configs/Api.endpoints';
 export { API_ERROR_CODES } from '../../cms-admin/src/configs/Http.constants';
 export {

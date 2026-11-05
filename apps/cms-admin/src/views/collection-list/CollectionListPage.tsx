@@ -9,7 +9,7 @@ import {
 import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { useRestoreFocus } from '@components/useRestoreFocus';
 import { contentNewPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import {
   CONTENT_WILDCARD_SUBJECT,
   isForbidden,
@@ -28,15 +28,15 @@ import { SingleTypeRedirect } from './SingleTypeRedirect';
 import { useBulkRun } from './useBulkRun';
 import { useCollectionList } from './useCollectionList';
 
-const copy = COPY.content;
-const list = copy.collection;
-const bulkCopy = copy.bulk;
-
 /**
  * `/content/:slug`: the draft list of a collection with sortable
  * columns, paging, bulk publish / unpublish / delete and JSON import.
  */
 export function CollectionListPage() {
+  const text = useScreenText('content');
+  const copy = text.content;
+  const list = copy.collection;
+  const bulkCopy = copy.bulk;
   const { slug = '' } = useParams();
   const caller = useCallerAccess();
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -90,8 +90,9 @@ export function CollectionListPage() {
     slug,
     valueFields,
     draftAndPublish && rows.some((row) => row.publishState !== undefined),
+    text,
   );
-  const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row);
+  const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row, text);
 
   const heading = (
     <PageHeader

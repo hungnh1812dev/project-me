@@ -42,6 +42,17 @@ describe('fetchGraphql', () => {
     expect((init as { next?: unknown }).next).toEqual({ revalidate: 60 });
   });
 
+  it('sends the access token as Bearer and skips the data cache', async () => {
+    answer(200, { data: { a: 1 } });
+
+    await fetchGraphql(DOCUMENT, undefined, { accessToken: 'at' });
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer at');
+    expect(init.cache).toBe('no-store');
+    expect((init as { next?: unknown }).next).toBeUndefined();
+  });
+
   it('throws with the first error code when the answer has errors', async () => {
     answer(200, { errors: [{ extensions: { code: 'BAD_INPUT' } }] });
     await expect(fetchGraphql(DOCUMENT)).rejects.toMatchObject({

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, useCallerAccess } from '@features/access';
 import type { BackupFile, BackupsList } from '@features/backups/Backups.api';
 import {
@@ -13,7 +13,7 @@ import { formatDateTime } from '@utils/DateFormat.rules';
 
 import { DownloadBackupDialog } from './DownloadBackupDialog';
 
-const copy = COPY.backups;
+type BackupsCopy = ScreenText<'backups'>['backups'];
 
 const BYTES_PER_STEP = 1024;
 const BYTE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB'] as const;
@@ -34,12 +34,15 @@ function formatBytes(bytes: number): string {
 }
 
 /** "2026-10-27 03:00 UTC" from an ISO time, for the tooltip. */
-function utcTextOf(iso: string): string {
+function utcTextOf(iso: string, copy: BackupsCopy): string {
   const minutes = new Date(iso).toISOString().replace('T', ' ');
   return copy.utc(minutes.replace(/:\d{2}\.\d+Z$/, ''));
 }
 
-function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColumn<BackupFile>[] {
+function columnsOf(
+  onDownload: (backup: BackupFile) => void,
+  copy: BackupsCopy,
+): readonly SheetColumn<BackupFile>[] {
   return [
     {
       key: 'created',
@@ -48,7 +51,7 @@ function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColu
       renderCell: (backup) => (
         <time
           dateTime={backup.createdAt}
-          title={utcTextOf(backup.createdAt)}
+          title={utcTextOf(backup.createdAt, copy)}
           className="tabular-nums"
         >
           {formatDateTime(backup.createdAt)}
@@ -85,6 +88,7 @@ function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColu
 }
 
 function SummaryLine({ meta }: { meta: BackupsList['meta'] }) {
+  const copy = useScreenText('backups').backups;
   const parts = [
     copy.summary.count(meta.count),
     copy.summary.total(formatBytes(meta.totalBytes)),
@@ -95,6 +99,7 @@ function SummaryLine({ meta }: { meta: BackupsList['meta'] }) {
 
 /** `/backups` (owner): the nightly dumps and a download behind password + code. */
 export function BackupsPage() {
+  const copy = useScreenText('backups').backups;
   const backups = useBackupsQuery();
   const caller = useCallerAccess();
   const [chosen, setChosen] = useState<BackupFile | null>(null);
@@ -157,7 +162,7 @@ export function BackupsPage() {
             <SortableSheet
               className="rounded-none border-0"
               caption={copy.tableLabel}
-              columns={columnsOf(setChosen)}
+              columns={columnsOf(setChosen, copy)}
               rows={backups.data.data}
               getRowId={(backup) => backup.key}
               getRowLabel={(backup) => backup.fileName}

@@ -5,7 +5,7 @@ modules: apps/cms-api/src/modules/content-engine, apps/cms-api/src/modules/conte
 
 # Content modeling: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Actors
 
@@ -24,7 +24,7 @@ Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md]
 
 ```mermaid
 flowchart LR
-  s["content/schemas/*.json<br/>cv-page, profile"] --> g["content:generate<br/>validate, diff vs snapshot.json"]
+  s["content/schemas/*.json<br/>cv-page, resume, header ..."] --> g["content:generate<br/>validate, diff vs snapshot.json"]
   g --> m["content/migrations/000N_*.sql<br/>+ snapshot.json"]
   g --> sdl["graphql:print-schema<br/>content/schema.graphql"]
   m --> rev["review + commit"] --> ci["CI checks<br/>generate --check, print-schema --check"]

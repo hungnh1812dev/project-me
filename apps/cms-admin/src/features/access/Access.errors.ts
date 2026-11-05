@@ -6,10 +6,8 @@ import {
   rateLimitedMessage,
   type ApiIssue,
 } from '@apis/client/ApiFailure.errors';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
-
-const copy = COPY.access;
+import type { ScreenText } from '@configs/locales';
 
 /** A failed accounts/roles call, reduced to what the pages branch on. */
 export interface AccessError {
@@ -28,13 +26,15 @@ function indexesOf(details: Record<string, unknown>): number[] {
   return Array.isArray(raw) ? raw.filter((value): value is number => Number.isInteger(value)) : [];
 }
 
-const MESSAGE_BY_CODE: Readonly<Record<string, string>> = {
-  [API_ERROR_CODES.ACCESS_RANK_FORBIDDEN]: copy.errors.rankForbidden,
-  [API_ERROR_CODES.PERMISSION_NOT_HELD]: copy.errors.permissionNotHeld,
-  [API_ERROR_CODES.API_TOKEN_SCOPE_NOT_HELD]: copy.errors.scopeNotHeld,
-};
+type AccessText = ScreenText<'access'>;
 
-export function toAccessError(error: unknown): AccessError {
+const messageByCodeOf = (text: AccessText): Readonly<Record<string, string>> => ({
+  [API_ERROR_CODES.ACCESS_RANK_FORBIDDEN]: text.access.errors.rankForbidden,
+  [API_ERROR_CODES.PERMISSION_NOT_HELD]: text.access.errors.permissionNotHeld,
+  [API_ERROR_CODES.API_TOKEN_SCOPE_NOT_HELD]: text.access.errors.scopeNotHeld,
+});
+
+export function toAccessError(error: unknown, text: AccessText): AccessError {
   const failure = apiFailureOf(error);
   const base = {
     errorCode: undefined,
@@ -51,18 +51,18 @@ export function toAccessError(error: unknown): AccessError {
         message: rateLimitedMessage(failure.retryAfterSeconds),
       };
     case 'network':
-      return { ...base, tone: 'warning', message: copy.errors.network };
+      return { ...base, tone: 'warning', message: text.access.errors.network };
     case 'unexpected':
-      return { ...base, tone: 'error', message: copy.errors.unexpected };
+      return { ...base, tone: 'error', message: text.access.errors.unexpected };
     case 'http': {
       const details = apiDetailsOf(error);
       const known =
-        failure.errorCode === undefined ? undefined : MESSAGE_BY_CODE[failure.errorCode];
+        failure.errorCode === undefined ? undefined : messageByCodeOf(text)[failure.errorCode];
       return {
         errorCode: failure.errorCode,
         status: failure.status,
         tone: 'error',
-        message: known ?? copy.errors.unexpected,
+        message: known ?? text.access.errors.unexpected,
         issues: apiIssuesOf(error),
         indexes: indexesOf(details),
       };

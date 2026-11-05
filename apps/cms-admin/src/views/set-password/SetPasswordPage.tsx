@@ -3,7 +3,7 @@ import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import { BackToSignIn } from '@features/auth/BackToSignIn';
 import type { LoginNoticeState } from '@features/auth/LoginNotice.rules';
 import { toPasswordError, type PasswordError } from '@features/auth/Password.errors';
@@ -95,8 +95,10 @@ export function SetPasswordPage() {
 
   return (
     <AuthPageLayout>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{COPY.password.set.title}</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{COPY.password.set.description}</p>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">
+        {COMMON_TEXT.password.set.title}
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">{COMMON_TEXT.password.set.description}</p>
       <FormProvider {...form}>
         <form
           noValidate
@@ -107,11 +109,11 @@ export function SetPasswordPage() {
             <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
           {resentTo !== null ? (
-            <FormAlert tone="info">{COPY.password.codeResent(resentTo)}</FormAlert>
+            <FormAlert tone="info">{COMMON_TEXT.password.codeResent(resentTo)}</FormAlert>
           ) : null}
           <TextInput<SetValues>
             name="email"
-            label={COPY.password.emailLabel}
+            label={COMMON_TEXT.password.emailLabel}
             type="email"
             autoComplete="username"
             inputMode="email"
@@ -120,8 +122,8 @@ export function SetPasswordPage() {
           />
           <TextInput<SetValues>
             name="code"
-            label={COPY.password.codeLabel}
-            description={COPY.password.codeHint}
+            label={COMMON_TEXT.password.codeLabel}
+            description={COMMON_TEXT.password.codeHint}
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={OTP_CODE_LENGTH}
@@ -131,15 +133,15 @@ export function SetPasswordPage() {
           />
           <TextInput<SetValues>
             name="newPassword"
-            label={COPY.password.newPasswordLabel}
-            description={COPY.password.newPasswordHint}
+            label={COMMON_TEXT.password.newPasswordLabel}
+            description={COMMON_TEXT.password.newPasswordHint}
             type="password"
             autoComplete="new-password"
             required
           />
           <TextInput<SetValues>
             name="confirmPassword"
-            label={COPY.password.confirmPasswordLabel}
+            label={COMMON_TEXT.password.confirmPasswordLabel}
             type="password"
             autoComplete="new-password"
             required
@@ -150,7 +152,7 @@ export function SetPasswordPage() {
             className="mt-2 w-full"
             loading={setPassword.isPending}
           >
-            {COPY.password.set.submit}
+            {COMMON_TEXT.password.set.submit}
           </Button>
         </form>
       </FormProvider>
@@ -161,7 +163,7 @@ export function SetPasswordPage() {
           loading={resend.isPending}
           onClick={() => void onResend()}
         >
-          {COPY.password.resendCode}
+          {COMMON_TEXT.password.resendCode}
         </Button>
       </div>
       <BackToSignIn />

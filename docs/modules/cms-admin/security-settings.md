@@ -22,7 +22,7 @@ One dialog per action; each confirms with a code (`ConfirmWithCodeForm`) and cal
 
 ## Technologies
 
-React 19, TanStack Query (`@tanstack/react-query`), react-hook-form + zod where there is a form, `@abyss/form-commons` components; text from `configs/Copy.constants.ts`. `qrcode.react` for the TOTP QR code.
+React 19, TanStack Query (`@tanstack/react-query`), react-hook-form + zod where there is a form, `@abyss/form-commons` components; text from `configs/locales` (`useScreenText`). `qrcode.react` for the TOTP QR code.
 
 ## Entry points
 
@@ -30,7 +30,7 @@ Route `APP_ROUTES.SECURITY_SETTINGS` (`/settings/security`).
 
 ## Where to change what
 
-The route is in `configs/App.routes.ts` and the page is registered in `views/Views.registry.ts`. Text goes in `configs/Copy.constants.ts`, never inline. A component a second page needs moves to `features/` or `components/` (code-standards §4.6). Two-factor rules live in `features/security` (high-risk path).
+The route is in `configs/App.routes.ts` and the page is registered in `views/Views.registry.ts`. Text goes in `configs/locales/en/<Screen>.ts`, never inline; the page lists the screens it reads in `textScreens` of its `Views.registry.ts` entry. A component a second page needs moves to `features/` or `components/` (code-standards §4.6). Two-factor rules live in `features/security` (high-risk path).
 
 ## Files
 

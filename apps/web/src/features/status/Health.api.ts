@@ -1,5 +1,5 @@
 import { apiClient } from '../../apis/client/Api.client';
-import { API_ENDPOINTS } from '../../configs/Api.endpoints';
+import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
 
 export interface HealthResponse {
   status: string;
@@ -10,6 +10,6 @@ export const HEALTH_QUERY_KEYS = {
 } as const;
 
 export async function fetchLiveHealth(): Promise<HealthResponse> {
-  const response = await apiClient.get<HealthResponse>(API_ENDPOINTS.HEALTH.LIVE);
+  const response = await apiClient.get<HealthResponse>(BFF_ENDPOINTS.HEALTH);
   return response.data;
 }

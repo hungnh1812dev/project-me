@@ -10,6 +10,7 @@ export {
   COMPONENT_FIELD_TYPE,
   CONTENT_DB_SCHEMA,
   CONTENT_STATUSES,
+  DEFAULT_FIELD_WIDTH,
   MEDIA_FIELD_TYPE,
   RICHTEXT_FIELD_TYPE,
   RICHTEXT_ALLOWED_URL_SCHEMES,
@@ -26,6 +27,7 @@ export {
   type ContentTypeDefinition,
   type ContentTypeKind,
   type FieldDefinition,
+  type FieldWidth,
   type ScalarFieldType,
 } from './domain/DefinitionSchema.rules';
 export {

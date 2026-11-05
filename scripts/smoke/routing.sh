@@ -34,20 +34,28 @@ check_routing() {
   expect_status "admin SPA /" 200
   request GET "$ADMIN_ORIGIN/accounts/settings"
   expect_status "admin SPA fallback for a client route" 200
+  request GET "$ADMIN_ORIGIN/api-tokens"
+  expect_status "admin SPA route /api-tokens is not taken by the /api router" 200
 }
 
 check_health() {
   echo "Health through the proxy"
-  request GET "$WEB_ORIGIN$API_PREFIX/health/ready"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/health/ready"
   expect_status "GET health/ready" 200
   if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "health/ready body is {status: ok}"; else fail "health/ready body: $(cat "$BODY")"; fi
 }
 
+# D21: cms-api is reachable on the admin host only; web answers its own 404.
+check_api_absent_on_web_host() {
+  request GET "$WEB_ORIGIN$API_PREFIX/health/live"
+  expect_status "cms-api is not served on the web origin ($API_PREFIX/health/live)" 404
+}
+
 check_trailing_slashes() {
   echo "Trailing slashes (SPEC §12-17: never 3xx)"
-  request GET "$WEB_ORIGIN$API_PREFIX/health/live/"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/health/live/"
   expect_status "GET health/live/ with trailing slash" 200
-  request POST "$WEB_ORIGIN$API_PREFIX/health/live/" -H 'Content-Type: application/json' --data '{}'
+  request POST "$ADMIN_ORIGIN$API_PREFIX/health/live/" -H 'Content-Type: application/json' --data '{}'
   if [[ "$STATUS" =~ ^3 || "$STATUS" == "000" ]]; then
     fail "POST with trailing slash returned $STATUS"
   else

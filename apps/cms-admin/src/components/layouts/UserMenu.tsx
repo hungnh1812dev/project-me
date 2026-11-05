@@ -9,18 +9,22 @@ import {
 } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import { useCurrentUser, useSession } from '@features/auth';
 import { Link } from 'react-router';
 
 const ACCOUNT_LINKS = [
-  { path: APP_ROUTES.PROFILE, label: COPY.session.profileLink, isForReviewer: true },
+  { path: APP_ROUTES.PROFILE, label: COMMON_TEXT.session.profileLink, isForReviewer: true },
   {
     path: APP_ROUTES.CHANGE_PASSWORD,
-    label: COPY.session.changePasswordLink,
+    label: COMMON_TEXT.session.changePasswordLink,
     isForReviewer: false,
   },
-  { path: APP_ROUTES.SECURITY_SETTINGS, label: COPY.session.securityLink, isForReviewer: false },
+  {
+    path: APP_ROUTES.SECURITY_SETTINGS,
+    label: COMMON_TEXT.session.securityLink,
+    isForReviewer: false,
+  },
 ] as const;
 
 /** First code point, so an emoji is never split into a lone surrogate. */
@@ -51,7 +55,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={COPY.session.accountMenu(user.displayName)}
+        aria-label={COMMON_TEXT.session.accountMenu(user.displayName)}
         className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-foreground outline-none hover:bg-primary/20 focus-visible:ring-[3px] focus-visible:ring-ring/50"
       >
         <span aria-hidden="true">{initialsOf(user.displayName, user.email)}</span>
@@ -78,7 +82,7 @@ export function UserMenu() {
             void session.signOut();
           }}
         >
-          {COPY.session.signOut}
+          {COMMON_TEXT.session.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

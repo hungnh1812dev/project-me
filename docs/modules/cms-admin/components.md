@@ -38,17 +38,18 @@ A new menu item: add the page to `views/Views.registry.ts` and its section in `N
 <!-- prettier-ignore-start -->
 
 ```
-components/ (5 files)
+components/ (6 files)
   layouts/ (7 files)
 ```
 
-Tests: 5 files (not listed).
+Tests: 6 files (not listed).
 
 | File | Description |
 |---|---|
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
 | `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton`, `LoadError`: page title and loading/error states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
+| `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), a loading screen throws its promise (no `use`, so no conditional-use warning); an already loaded screen renders at once; shows `LoadError` when the load fails, and its retry clears the failed loads (`retryFailedScreenText`) and loads again; optional `fallback` replaces the skeleton |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |
 | `useRestoreFocus.ts` | `useRestoreFocus`: puts focus back on the opener after a dialog closes |
 | `layouts/AppShell.tsx` | `AppShell`: signed-in layout (side menu, top bar, reviewer banner, outlet) |

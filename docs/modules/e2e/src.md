@@ -38,7 +38,7 @@ A helper used by two or more specs goes here; one spec's helper stays in the spe
 <!-- prettier-ignore-start -->
 
 ```
-src/ (16 files)
+src/ (15 files)
 ```
 
 Tests: 1 file (not listed).
@@ -56,7 +56,6 @@ Tests: 1 file (not listed).
 | `Locators.fixture.ts` | Common locators: field by label, list item, content save button |
 | `Mailpit.client.ts` | `waitForCode`, `mailIdsFor`: read one-time codes from Mailpit |
 | `Png.fixture.ts` | `pngOf`: builds a valid PNG of a given size |
-| `ReviewerDialog.fixture.ts` | Copy and steps of the reviewer request dialog |
 | `RichtextDocument.fixture.ts` | Create, update, read and remove a CV page with richtext images through the API |
 | `Session.fixture.ts` | Sign in (owner, role), user menu, sign out, owner API token |
 | `SmokeDatabase.client.ts` | `clearReviewerSessions`, `insertLibraryFiles`: direct smoke DB setup |

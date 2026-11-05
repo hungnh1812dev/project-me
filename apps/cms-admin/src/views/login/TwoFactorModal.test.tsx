@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { VERIFY, EMAIL_CHALLENGE } = API_ENDPOINTS.TWO_FACTOR;
-const copy = COPY.login.twoFactor;
+const copy = EN_TEXT.login.twoFactor;
 const TEMP = 'temp-token';
 
 async function openChallenge(method: string, handlers: Record<string, FakeHandler> = {}) {
@@ -25,7 +25,7 @@ async function openChallenge(method: string, handlers: Record<string, FakeHandle
   renderApp(services, APP_ROUTES.LOGIN);
   await userEvent.type(screen.getByLabelText(/^Email/), TEST_USER.email);
   await userEvent.type(screen.getByLabelText(/^Password/), 'pw-123456789');
-  await userEvent.click(screen.getByRole('button', { name: COPY.login.submit }));
+  await userEvent.click(screen.getByRole('button', { name: EN_TEXT.login.submit }));
   const dialog = await screen.findByRole('dialog', { name: copy.title });
   return { api, services, dialog };
 }
@@ -45,7 +45,7 @@ describe('TwoFactorModal (login second step)', () => {
     await userEvent.type(input, '123456{Enter}');
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: COPY.page.title }),
+      await screen.findByRole('heading', { level: 1, name: EN_TEXT.page.title }),
     ).toBeInTheDocument();
     expect(services.store.getState().auth.accessToken).toBe('t9');
     expect(api.callsTo(`POST ${VERIFY}`)[0]?.data).toBe(
@@ -132,7 +132,7 @@ describe('TwoFactorModal (login second step)', () => {
       }),
     });
     expect(
-      await within(dialog).findByText(COPY.password.errors.rateLimitedSeconds(30)),
+      await within(dialog).findByText(EN_TEXT.password.errors.rateLimitedSeconds(30)),
     ).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: copy.resend })).toBeDisabled();
   });

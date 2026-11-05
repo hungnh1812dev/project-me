@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { NAV_GROUP_OPEN_STORAGE_KEY } from '@configs/NavSections.constants';
 import type { Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
@@ -9,7 +9,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
-const nav = COPY.access.nav;
+const nav = EN_TEXT.access.nav;
 
 const readerRole: Role = {
   id: 'role_reader',
@@ -172,8 +172,10 @@ describe('SideMenu', () => {
     await open();
 
     await within(mainNav()).findByRole('link', { name: 'Blog Post' });
-    expect(screen.queryByRole('button', { name: COPY.session.signOut })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: EN_TEXT.session.signOut })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: EN_TEXT.session.securityLink }),
+    ).not.toBeInTheDocument();
   });
 
   it('marks the open page as current', async () => {

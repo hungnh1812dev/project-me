@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
+import { render, screen } from '@testing-library/react';
+import { FormProvider, useForm } from 'react-hook-form';
 
 import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
 import {
@@ -60,16 +62,18 @@ describe('list display', () => {
   });
 
   it('formats empty, masked, boolean, datetime and plain values', () => {
-    const empty = COPY.content.collection.emptyValue;
-    expect(formatListValue('string', null)).toBe(empty);
-    expect(formatListValue('string', '')).toBe(empty);
-    expect(formatListValue('string', MASKED_VALUE)).toBe(COPY.content.collection.protectedValue);
-    expect(formatListValue('boolean', true)).toBe(COPY.content.collection.yes);
-    expect(formatListValue('boolean', false)).toBe(COPY.content.collection.no);
-    expect(formatListValue('integer', 7)).toBe('7');
-    expect(formatListValue('string', { a: 1 })).toBe(empty);
-    expect(formatListValue('datetime', 'not a date')).toBe('not a date');
-    expect(formatListValue('datetime', '2026-01-02T03:04:05Z')).not.toBe(empty);
+    const empty = EN_TEXT.content.collection.emptyValue;
+    expect(formatListValue('string', null, EN_TEXT.content)).toBe(empty);
+    expect(formatListValue('string', '', EN_TEXT.content)).toBe(empty);
+    expect(formatListValue('string', MASKED_VALUE, EN_TEXT.content)).toBe(
+      EN_TEXT.content.collection.protectedValue,
+    );
+    expect(formatListValue('boolean', true, EN_TEXT.content)).toBe(EN_TEXT.content.collection.yes);
+    expect(formatListValue('boolean', false, EN_TEXT.content)).toBe(EN_TEXT.content.collection.no);
+    expect(formatListValue('integer', 7, EN_TEXT.content)).toBe('7');
+    expect(formatListValue('string', { a: 1 }, EN_TEXT.content)).toBe(empty);
+    expect(formatListValue('datetime', 'not a date', EN_TEXT.content)).toBe('not a date');
+    expect(formatListValue('datetime', '2026-01-02T03:04:05Z', EN_TEXT.content)).not.toBe(empty);
   });
 
   it('keeps CollectionListPage free of FIELD_TYPE', () => {
@@ -78,5 +82,26 @@ describe('list display', () => {
       'utf8',
     );
     expect(page).not.toContain('FIELD_TYPE');
+  });
+});
+
+describe('adapterFor text and string', () => {
+  function Field({ type }: { type: string }) {
+    const form = useForm();
+    return (
+      <FormProvider {...form}>
+        {adapterFor(type).render({ name: 'value', label: 'Value', copy: EN_TEXT.content })}
+      </FormProvider>
+    );
+  }
+
+  it('shows text as a one-line input', () => {
+    render(<Field type={FIELD_TYPE.TEXT} />);
+    expect(screen.getByLabelText('Value').tagName).toBe('INPUT');
+  });
+
+  it('shows string as a multi-line text area', () => {
+    render(<Field type={FIELD_TYPE.STRING} />);
+    expect(screen.getByLabelText('Value').tagName).toBe('TEXTAREA');
   });
 });

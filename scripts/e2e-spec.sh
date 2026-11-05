@@ -38,11 +38,12 @@ fi
 # shellcheck source=/dev/null
 source "$E2E_VARS_FILE"
 
-# The API host resolves to loopback in Chromium (*.localhost); curl needs it pinned.
+# The API host resolves to loopback in Chromium (*.localhost); curl needs it pinned
+# to both loopback families (the Vite dev server may listen on IPv6 only).
 api_host="$(echo "$E2E_API_BASE_URL" | sed -E 's#^https?://([^/:]+).*#\1#')"
 api_port="$(echo "$E2E_API_BASE_URL" | sed -nE 's#^https?://[^/:]+:([0-9]+).*#\1#p')"
 api_port="${api_port:-80}"
-if ! curl -sS --max-time 5 --resolve "$api_host:$api_port:127.0.0.1" \
+if ! curl -sS --max-time 5 --resolve "$api_host:$api_port:127.0.0.1,[::1]" \
   "$E2E_API_BASE_URL$HEALTH_PATH" 2>/dev/null | grep -q "$HEALTH_OK_BODY"; then
   echo "The kept $stack stack is not answering ($E2E_API_BASE_URL$HEALTH_PATH)." >&2
   echo "Start a new one with '$START_HINT'." >&2

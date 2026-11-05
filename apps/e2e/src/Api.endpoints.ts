@@ -41,3 +41,17 @@ export const API_PATHS = {
 
 /** Absolute URL of a cms-api path. */
 export const apiUrl = (path: string): string => `${e2eEnv.apiBaseUrl}${path}`;
+
+/** web BFF paths, relative to `e2eEnv.webUrl`. The browser calls only these on the web origin. */
+export const BFF_PATHS = {
+  PREFIX: '/bff/v1/',
+  HEALTH: '/bff/v1/health',
+  SESSION: '/bff/v1/session',
+  CV: '/bff/v1/cv',
+  AUTH: {
+    LOGIN: '/bff/v1/auth/login',
+    LOGOUT: '/bff/v1/auth/logout',
+    TWO_FACTOR_VERIFY: '/bff/v1/auth/two-factor/verify',
+    TWO_FACTOR_EMAIL_CODE: '/bff/v1/auth/two-factor/email-code',
+  },
+} as const;

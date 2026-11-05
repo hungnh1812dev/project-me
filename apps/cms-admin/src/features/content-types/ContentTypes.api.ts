@@ -1,12 +1,19 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
 
+/** Share of the admin form row a field takes. */
+export type FieldWidth = '1/3' | '1/2' | 'full';
+
 /** A field of a content type. */
 export interface ContentTypeField {
   path: string;
   type: string;
   system: boolean;
   component: boolean;
+  /** Admin label set in the definition; absent when none. */
+  displayName?: string;
+  /** Form row share; absent on components. */
+  width?: FieldWidth;
   repeatable: boolean;
   rootScalar: boolean;
   conditionKind: string | null;

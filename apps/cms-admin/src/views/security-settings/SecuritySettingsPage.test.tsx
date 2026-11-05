@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { TOTP_SETUP, ENABLE, DISABLE, EMAIL_SEND_CODE } = API_ENDPOINTS.TWO_FACTOR;
-const copy = COPY.security;
+const copy = EN_TEXT.security;
 const PASSWORD = 'correct horse battery staple';
 const SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 
@@ -45,9 +45,9 @@ describe('SecuritySettingsPage', () => {
   it('is linked from the user menu and shows 2FA off', async () => {
     await openSecurity([TEST_USER]);
     await userEvent.click(
-      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+      screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
     );
-    expect(screen.getByRole('menuitem', { name: COPY.session.securityLink })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: EN_TEXT.session.securityLink })).toHaveAttribute(
       'href',
       APP_ROUTES.SECURITY_SETTINGS,
     );

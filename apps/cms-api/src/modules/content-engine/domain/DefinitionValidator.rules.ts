@@ -87,11 +87,15 @@ function checkSlug(slug: string, errors: DefinitionValidationError[]): void {
 
 const CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
 
-function checkDisplayName(displayName: string, errors: DefinitionValidationError[]): void {
+function checkDisplayName(
+  displayName: string,
+  path: DefinitionPath,
+  errors: DefinitionValidationError[],
+): void {
   const problem = displayNameProblem(displayName);
   if (problem === undefined) return;
   errors.push({
-    path: ['displayName'],
+    path,
     rule: DEFINITION_RULES.DISPLAY_NAME_INVALID,
     message: `displayName ${problem}. It must be 1 to ${DISPLAY_NAME_MAX_LENGTH} characters, trimmed, on one line.`,
   });
@@ -108,6 +112,40 @@ function displayNameProblem(displayName: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Field names and `component` values both become table or column segments.
+ * A component field's name is only an API key (it has no column and its table
+ * segment comes from `component`), so it may be an SQL reserved word.
+ */
+function checkIdentifier(
+  value: string,
+  label: string,
+  path: DefinitionPath,
+  errors: DefinitionValidationError[],
+  { allowSqlReserved = false }: { allowSqlReserved?: boolean } = {},
+): void {
+  const identifier = toSqlIdentifier(value);
+  if (!isWellFormedSqlIdentifier(identifier)) {
+    errors.push({
+      path,
+      rule: DEFINITION_RULES.IDENTIFIER_INVALID,
+      message: `${label} "${value}" maps to "${identifier}", which must match ${SQL_IDENTIFIER_PATTERN.source} without "__" or a trailing "_". Start with a lowercase letter and use only letters, digits and single underscores.`,
+    });
+  } else if (ENGINE_RESERVED.has(identifier)) {
+    errors.push({
+      path,
+      rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
+      message: `${label} "${value}" maps to "${identifier}", a column the content engine owns. Rename it.`,
+    });
+  } else if (!allowSqlReserved && SQL_RESERVED.has(identifier)) {
+    errors.push({
+      path,
+      rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
+      message: `${label} "${value}" maps to "${identifier}", a reserved SQL word. Rename it.`,
+    });
+  }
+}
+
 function checkFields(
   fields: FieldDefinition[],
   depth: number,
@@ -121,24 +159,14 @@ function checkFields(
     const namePath = [...fieldPath, 'name'];
     const identifier = toSqlIdentifier(field.name);
 
-    if (!isWellFormedSqlIdentifier(identifier)) {
-      errors.push({
-        path: namePath,
-        rule: DEFINITION_RULES.IDENTIFIER_INVALID,
-        message: `Field name "${field.name}" maps to "${identifier}", which must match ${SQL_IDENTIFIER_PATTERN.source} without "__" or a trailing "_". Start with a lowercase letter and use only letters, digits and single underscores.`,
-      });
-    } else if (ENGINE_RESERVED.has(identifier)) {
-      errors.push({
-        path: namePath,
-        rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
-        message: `Field name "${field.name}" maps to "${identifier}", a column the content engine owns. Rename the field.`,
-      });
-    } else if (SQL_RESERVED.has(identifier)) {
-      errors.push({
-        path: namePath,
-        rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
-        message: `Field name "${field.name}" maps to "${identifier}", a reserved SQL word. Rename the field.`,
-      });
+    checkIdentifier(field.name, 'Field name', namePath, errors, {
+      allowSqlReserved: isComponentField(field),
+    });
+    if (field.displayName !== undefined) {
+      checkDisplayName(field.displayName, [...fieldPath, 'displayName'], errors);
+    }
+    if (isComponentField(field)) {
+      checkIdentifier(field.component, 'Component', [...fieldPath, 'component'], errors);
     }
 
     const clash = seen.get(identifier);
@@ -249,7 +277,7 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
   const definition = parsed.data;
   const errors: DefinitionValidationError[] = [];
   checkSlug(definition.slug, errors);
-  checkDisplayName(definition.displayName, errors);
+  checkDisplayName(definition.displayName, ['displayName'], errors);
   checkFields(definition.fields, 0, [], errors);
 
   // Composition only makes sense on well-formed, depth-limited names.

@@ -2,7 +2,6 @@
 
 import { COPY } from '../../configs/Copy.constants';
 import { mainResumeOf, type CvPageData } from '../../features/cv/Cv.graphql';
-import { useWebSession } from '../../features/session';
 import { ContactCard } from './ContactCard';
 import { MaskedTextContext, ResumeSections } from './ResumeSections';
 import { useCvContent } from './useCvContent';
@@ -14,8 +13,6 @@ interface CvViewProps {
 
 export function CvView({ initialData }: CvViewProps) {
   const { data, isPending, isError } = useCvContent(initialData);
-  const { kind } = useWebSession();
-  const maskedText = kind === 'reviewer' ? COPY.cv.maskedValueForReviewer : COPY.cv.maskedValue;
 
   if (isPending) {
     return <output className="text-muted-foreground block text-sm">{COPY.cv.loading}</output>;
@@ -42,7 +39,7 @@ export function CvView({ initialData }: CvViewProps) {
   }
 
   return (
-    <MaskedTextContext.Provider value={maskedText}>
+    <MaskedTextContext.Provider value={COPY.cv.maskedValue}>
       <h1 className="text-2xl font-semibold tracking-tight">
         {resume.name ?? COPY.cv.fallbackName}
       </h1>

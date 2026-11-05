@@ -71,7 +71,7 @@ async function stubOwnerWithTwoFactor(page: Page) {
 
 const mainMenu = (page: Page) => page.getByRole('navigation', { name: nav.label });
 const backupsLink = (page: Page) =>
-  mainMenu(page).getByRole('link', { name: copy.nav, exact: true });
+  mainMenu(page).getByRole('link', { name: ADMIN_COPY.access.nav.backups, exact: true });
 const checkBackups = (page: Page) => page.getByRole('button', { name: copy.check.button }).click();
 
 function collectConsoleErrors(page: Page): string[] {

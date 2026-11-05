@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CHANGE } = API_ENDPOINTS.PASSWORD;
-const copy = COPY.security;
+const copy = EN_TEXT.security;
 const PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a brand new passphrase 42';
 
@@ -37,7 +37,7 @@ describe('ChangePasswordPage', () => {
       [`POST ${CHANGE}`]: () => ({ status: 204 }),
     });
     await fillChange(PASSWORD);
-    expect(await screen.findByText(COPY.login.notices.passwordChanged)).toBeVisible();
+    expect(await screen.findByText(EN_TEXT.login.notices.passwordChanged)).toBeVisible();
     expect(services.store.getState().auth).toMatchObject({
       status: 'anonymous',
       accessToken: null,
@@ -70,7 +70,7 @@ describe('ChangePasswordPage', () => {
     await userEvent.type(screen.getByLabelText(/^New password/), NEW_PASSWORD);
     await userEvent.type(screen.getByLabelText(/^Confirm new password/), `${NEW_PASSWORD}x`);
     await userEvent.click(screen.getByRole('button', { name: copy.changePassword.submit }));
-    expect(await screen.findByText(COPY.password.validation.passwordsDiffer)).toBeVisible();
+    expect(await screen.findByText(EN_TEXT.password.validation.passwordsDiffer)).toBeVisible();
     expect(api.callsTo(`POST ${CHANGE}`)).toHaveLength(0);
   });
 });

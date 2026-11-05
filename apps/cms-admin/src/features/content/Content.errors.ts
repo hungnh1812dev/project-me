@@ -1,10 +1,8 @@
 import { type FormAlertTone } from '@abyss/form-commons';
 import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
+import type { ScreenText } from '@configs/locales';
 import { isAxiosError } from 'axios';
-
-const copy = COPY.content.errors;
 
 export interface SaveError {
   message: string;
@@ -20,7 +18,8 @@ export function serverMessage(error: unknown): string | undefined {
 }
 
 /** A failed create / update, reduced to the alert the form shows. */
-export function toSaveError(error: unknown): SaveError {
+export function toSaveError(error: unknown, text: ScreenText<'content'>): SaveError {
+  const copy = text.content.errors;
   const failure = apiFailureOf(error);
   switch (failure.kind) {
     case 'rate-limited':

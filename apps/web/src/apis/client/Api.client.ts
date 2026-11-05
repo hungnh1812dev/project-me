@@ -1,10 +1,10 @@
 import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 
-import { appEnv } from '../../configs/Browser.env';
+import { BFF_BASE_PATH } from '../../configs/Api.endpoints';
 import { API_TIMEOUT_MS } from '../../configs/Http.constants';
 import { stripTrailingSlashes } from '../../configs/StripTrailingSlashes.rules';
 
-/** Axios instance for cms-api. Every request path loses its trailing slash. */
+/** Axios instance for a JSON API. Every request path loses its trailing slash. */
 export function createApiClient(
   baseURL: string,
   options: Omit<CreateAxiosDefaults, 'baseURL'> = {},
@@ -19,8 +19,5 @@ export function createApiClient(
   return client;
 }
 
-// Sends the host-only refresh cookie (Path /api/v1/auth) with auth calls; the
-// cookie is set by cms-api on this site's own origin (SPEC §6, D14).
-export const apiClient = createApiClient(appEnv.apiBaseUrl, {
-  withCredentials: true,
-});
+/** The BFF of this site: the browser holds no token and calls no other API (ADR 0018). */
+export const apiClient = createApiClient(BFF_BASE_PATH);

@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { deferred, type FakeHandler, type FakeReply } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
@@ -17,7 +17,7 @@ function signedInServices(extraHandlers: Record<string, FakeHandler> = {}) {
   });
 }
 
-const loginHeading = () => screen.findByRole('heading', { level: 1, name: COPY.login.title });
+const loginHeading = () => screen.findByRole('heading', { level: 1, name: EN_TEXT.login.title });
 
 describe('App', () => {
   it('shows a loading state, not the login page, while the session restores', async () => {
@@ -29,13 +29,13 @@ describe('App', () => {
     const restoring = services.session.restore();
     renderApp(services);
 
-    expect(screen.getByRole('status')).toHaveTextContent(COPY.session.restoring);
-    expect(screen.queryByRole('heading', { name: COPY.login.title })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(EN_TEXT.session.restoring);
+    expect(screen.queryByRole('heading', { name: EN_TEXT.login.title })).not.toBeInTheDocument();
 
     gate.resolve({ status: 200, data: { accessToken: 't1' } });
     await restoring;
     expect(
-      await screen.findByRole('heading', { level: 1, name: COPY.page.title }),
+      await screen.findByRole('heading', { level: 1, name: EN_TEXT.page.title }),
     ).toBeInTheDocument();
   });
 
@@ -54,14 +54,14 @@ describe('App', () => {
     renderApp(services);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: COPY.page.title }),
+      await screen.findByRole('heading', { level: 1, name: EN_TEXT.page.title }),
     ).toBeInTheDocument();
     await userEvent.click(
-      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+      screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
     );
     expect(screen.getByText(TEST_USER.displayName)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('menuitem', { name: COPY.session.signOut }));
+    await userEvent.click(screen.getByRole('menuitem', { name: EN_TEXT.session.signOut }));
     expect(await loginHeading()).toBeInTheDocument();
     expect(api.callsTo(`POST ${LOGOUT}`)).toHaveLength(1);
     expect(services.store.getState().auth.accessToken).toBeNull();
@@ -72,9 +72,9 @@ describe('App', () => {
     await services.session.restore();
     renderApp(services);
 
-    expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
+    expect(await screen.findByText(EN_TEXT.status.state.ok)).toBeInTheDocument();
     expect(screen.getByText(/\/api\/v1\/health\/live$/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.status.checkAgain })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: EN_TEXT.status.checkAgain })).toHaveAttribute(
       'data-slot',
       'button',
     );
@@ -89,9 +89,9 @@ describe('App', () => {
     await services.session.restore();
     renderApp(services);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.status.errorHint);
-    await userEvent.click(screen.getByRole('button', { name: COPY.status.checkAgain }));
-    expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.status.errorHint);
+    await userEvent.click(screen.getByRole('button', { name: EN_TEXT.status.checkAgain }));
+    expect(await screen.findByText(EN_TEXT.status.state.ok)).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 

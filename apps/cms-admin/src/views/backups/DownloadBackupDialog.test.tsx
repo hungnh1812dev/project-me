@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { BackupFile } from '@features/backups/Backups.api';
 import type { FakeHandler } from '@test/FakeApi.fixture';
@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { BACKUPS } = API_ENDPOINTS;
-const copy = COPY.backups;
+const copy = EN_TEXT.backups;
 const PASSWORD = 'correct horse battery staple';
 const LINK_URL = 'https://bucket.example.test/abyss.dump.age?sig=abc';
 
@@ -96,7 +96,7 @@ describe('DownloadBackupDialog', () => {
       }),
     });
     await fillAndSubmit(dialog, '123456');
-    expect(await within(dialog).findByText(COPY.security.errors.invalidCode)).toBeVisible();
+    expect(await within(dialog).findByText(EN_TEXT.security.errors.invalidCode)).toBeVisible();
     expect(assign).not.toHaveBeenCalled();
   });
 
@@ -108,7 +108,7 @@ describe('DownloadBackupDialog', () => {
       }),
     });
     await fillAndSubmit(dialog, '123456');
-    expect(await within(dialog).findByText(COPY.security.errors.wrongPassword)).toBeVisible();
+    expect(await within(dialog).findByText(EN_TEXT.security.errors.wrongPassword)).toBeVisible();
   });
 
   it('points to the security settings when 2FA is off', async () => {
@@ -142,7 +142,7 @@ describe('DownloadBackupDialog', () => {
     });
     await fillAndSubmit(dialog, '123456');
     expect(
-      await within(dialog).findByText(COPY.password.errors.rateLimitedMinutes(2)),
+      await within(dialog).findByText(EN_TEXT.password.errors.rateLimitedMinutes(2)),
     ).toBeVisible();
   });
 

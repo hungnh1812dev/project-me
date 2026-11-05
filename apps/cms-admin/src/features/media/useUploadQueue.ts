@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useScreenText } from '@configs/locales';
 
 import type { MediaFile } from './Media.api';
 import { toMediaError } from './Media.errors';
@@ -24,6 +25,8 @@ export type SendFile = (
 
 /** Runs an upload batch: files wait until `start`, then go out a few at a time. */
 export function useUploadQueue(send: SendFile) {
+  const mediaText = useScreenText('media');
+  const accessText = useScreenText('access');
   const [items, setItems] = useState<UploadItem[]>([]);
   const itemsRef = useRef<UploadItem[]>([]);
   const controllersRef = useRef(new Map<string, AbortController>());
@@ -72,12 +75,18 @@ export function useUploadQueue(send: SendFile) {
           .catch((error: unknown) => {
             if (!isCurrent()) return;
             controllersRef.current.delete(id);
-            commit(markFailed(itemsRef.current, id, toMediaError(error).message));
+            commit(
+              markFailed(
+                itemsRef.current,
+                id,
+                toMediaError(error, { ...mediaText, ...accessText }).message,
+              ),
+            );
           })
           .finally(pump);
       }
     },
-    [commit],
+    [commit, mediaText, accessText],
   );
 
   const add = useCallback(

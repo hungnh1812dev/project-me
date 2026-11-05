@@ -1,66 +1,37 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { requestGraphql } from '../../apis/client/Graphql.client';
-import {
-  GRAPHQL_FAILURE_CODES,
-  GraphqlRequestError,
-  isUnauthenticatedGraphqlError,
-} from '../../apis/GraphqlResponse.rules';
-import {
-  CV_PAGE_DOCUMENT,
-  sanitizeCvRichtext,
-  type CvPageData,
-} from '../../features/cv/Cv.graphql';
+import { apiClient } from '../../apis/client/Api.client';
+import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
+import { type CvPageData } from '../../features/cv/Cv.graphql';
 import { useWebSession, type WebSession } from '../../features/session';
-import { sanitizeRichtext } from '../../utils/SafeRichtext.rules';
 
 const ANONYMOUS_ACTOR = 'anonymous';
 
 /** Who the data belongs to, so one actor's cache entry is never read by another. */
-function actorKeyOf({ status, kind, user }: WebSession): string {
-  return status === 'authenticated' && user !== null
-    ? `${kind ?? 'account'}:${user.id}`
-    : ANONYMOUS_ACTOR;
+function actorKeyOf({ status, user }: WebSession): string {
+  return status === 'authenticated' && user !== null ? `account:${user.id}` : ANONYMOUS_ACTOR;
 }
 
 /**
  * The CV data for the current visitor. Anonymous visitors (and the first paint
- * of everyone) get the server-rendered data without a request; a signed-in or
- * reviewer session refetches with its own token, and signing out falls back to
- * the server data. A reviewer token the API no longer accepts (switch off,
- * 24 h expiry) ends the session the same way. The server data arrives sanitized; refetched data is
- * sanitized here.
+ * of everyone) get the server-rendered data without a request; a signed-in
+ * visitor refetches through the BFF, and signing out falls back to the server
+ * data. Both arrive sanitized by the server.
  */
 export function useCvContent(serverData: CvPageData) {
-  const session = useWebSession();
-  const actor = actorKeyOf(session);
+  const actor = actorKeyOf(useWebSession());
   const isAnonymous = actor === ANONYMOUS_ACTOR;
 
-  const query = useQuery({
+  return useQuery({
     queryKey: ['cv', actor],
-    queryFn: () => {
-      const accessToken = session.getAccessToken();
-      if (accessToken === null) {
-        throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.UNKNOWN);
-      }
-      return requestGraphql<CvPageData>(CV_PAGE_DOCUMENT, undefined, accessToken).then((data) =>
-        sanitizeCvRichtext(data, sanitizeRichtext),
-      );
+    queryFn: async () => {
+      const { data } = await apiClient.get<CvPageData>(BFF_ENDPOINTS.CV);
+      return data;
     },
     retry: false,
     ...(isAnonymous
       ? { initialData: serverData, staleTime: Infinity }
-      : // Data read with a token is dropped as soon as nothing shows it.
+      : // Data read for an account is dropped as soon as nothing shows it.
         { gcTime: 0 }),
   });
-
-  const isReviewerTokenRefused =
-    session.kind === 'reviewer' && isUnauthenticatedGraphqlError(query.error);
-  const { signOut } = session;
-  useEffect(() => {
-    if (isReviewerTokenRefused) void signOut();
-  }, [isReviewerTokenRefused, signOut]);
-
-  return query;
 }

@@ -26,7 +26,7 @@ Next.js App Router, the web GraphQL server client, DOMPurify.
 
 ## Entry points
 
-Facade `index.ts`: `loadCvPage`, `mainResumeOf`; the GraphQL document and types in `Cv.graphql.ts`.
+Facade `index.ts`: `loadCvPage`, `mainResumeOf`; the BFF route imports `answerCvRead` from `CvPage.server.ts` (reads the session through `features/session` server files); the GraphQL document and types in `Cv.graphql.ts`.
 
 ## Where to change what
 
@@ -46,7 +46,7 @@ Tests: 2 files (not listed).
 | File | Description |
 |---|---|
 | `Cv.graphql.ts` | The CV GraphQL document, its result types and `mainResumeOf` (exports `ResumeSkill`, `ResumeProject`, `ResumeRole`, `ResumeExperience` +10) |
-| `CvPage.server.ts` | Server loader of the sanitized CV data (exports `loadCvPage`) |
+| `CvPage.server.ts` | Server loaders of the sanitized CV data (anonymous, cached; and per visitor token, uncached) and the handler of `GET /bff/v1/cv` (exports `loadCvPage`, `loadCvPageForSession`, `answerCvRead`) |
 | `index.ts` | Public facade of the feature (exports `mainResumeOf`, `loadCvPage`) |
 
 <!-- prettier-ignore-end -->

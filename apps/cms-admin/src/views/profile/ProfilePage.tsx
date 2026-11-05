@@ -1,10 +1,9 @@
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
-
-const copy = COPY.security.profile;
 
 /** `/settings/profile`: read-only details of the signed-in account. */
 export function ProfilePage() {
+  const copy = useScreenText('security').security.profile;
   const user = useCurrentUser();
   if (user === null) return null;
 

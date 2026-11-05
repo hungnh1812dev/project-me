@@ -1,6 +1,6 @@
 import { retryAfterSecondsOf } from '@apis/client/ApiFailure.errors';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import { isAxiosError } from 'axios';
 
 const SECONDS_PER_MINUTE = 60;
@@ -16,35 +16,35 @@ export interface PasswordError {
 const MESSAGE_BY_CODE: Readonly<Record<string, Pick<PasswordError, 'kind' | 'message'>>> = {
   [API_ERROR_CODES.INVALID_OTP]: {
     kind: 'invalid-code',
-    message: COPY.password.errors.invalidCode,
+    message: COMMON_TEXT.password.errors.invalidCode,
   },
   [API_ERROR_CODES.WEAK_PASSWORD]: {
     kind: 'weak-password',
-    message: COPY.password.errors.weakPassword,
+    message: COMMON_TEXT.password.errors.weakPassword,
   },
   [API_ERROR_CODES.TOTP_REQUIRED]: {
     kind: 'totp-required',
-    message: COPY.password.errors.totpRequired,
+    message: COMMON_TEXT.password.errors.totpRequired,
   },
 };
 
 function rateLimitedMessage(retryAfter: unknown): string {
   const seconds = retryAfterSecondsOf(retryAfter);
-  if (seconds === undefined) return COPY.password.errors.rateLimited;
+  if (seconds === undefined) return COMMON_TEXT.password.errors.rateLimited;
   if (seconds < SECONDS_PER_MINUTE) {
-    return COPY.password.errors.rateLimitedSeconds(seconds);
+    return COMMON_TEXT.password.errors.rateLimitedSeconds(seconds);
   }
-  return COPY.password.errors.rateLimitedMinutes(Math.ceil(seconds / SECONDS_PER_MINUTE));
+  return COMMON_TEXT.password.errors.rateLimitedMinutes(Math.ceil(seconds / SECONDS_PER_MINUTE));
 }
 
 /** Maps a failed request-code / reset / set call to what the form shows. */
 export function toPasswordError(error: unknown): PasswordError {
   if (!isAxiosError(error)) {
-    return { kind: 'unexpected', message: COPY.password.errors.unexpected };
+    return { kind: 'unexpected', message: COMMON_TEXT.password.errors.unexpected };
   }
   const response = error.response;
   if (response === undefined) {
-    return { kind: 'network', message: COPY.password.errors.network };
+    return { kind: 'network', message: COMMON_TEXT.password.errors.network };
   }
   if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
     const headers = response.headers as Record<string, unknown>;
@@ -55,5 +55,5 @@ export function toPasswordError(error: unknown): PasswordError {
   }
   const errorCode = (response.data as { errorCode?: unknown } | null)?.errorCode;
   const known = typeof errorCode === 'string' ? MESSAGE_BY_CODE[errorCode] : undefined;
-  return known ?? { kind: 'unexpected', message: COPY.password.errors.unexpected };
+  return known ?? { kind: 'unexpected', message: COMMON_TEXT.password.errors.unexpected };
 }

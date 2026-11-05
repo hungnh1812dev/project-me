@@ -4,7 +4,13 @@
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [
-    { "name": "name", "type": "string" },
-    { "name": "photo", "type": "media" }
+    {
+      "name": "name",
+      "type": "text"
+    },
+    {
+      "name": "photo",
+      "type": "media"
+    }
   ]
 }

@@ -6,7 +6,7 @@ summary: Turning on and removing TOTP or email-code two-factor for the signed-in
 
 # Two-factor setup: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `two-factor-setup`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `two-factor-setup`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -35,7 +35,3 @@ A trusted device that skips 2FA ([sign-in](../sign-in/SPEC.md) out of scope).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-04 Flow folder created from the old SPEC (D8, §9 "2FA setup", Q3).

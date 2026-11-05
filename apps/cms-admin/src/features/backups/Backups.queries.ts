@@ -1,7 +1,7 @@
 import { apiFailureOf } from '@apis/client/ApiFailure.errors';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES, HEALTH_QUERY_RETRY, HTTP_STATUS } from '@configs/Http.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import type { NavItem, NavItemsState } from '@configs/NavSections.constants';
 import { useQuery } from '@tanstack/react-query';
 
@@ -14,7 +14,7 @@ export const BACKUPS_QUERY_KEYS = {
 
 /** The owner-only rule has no permission subject; this names the link for the shell's check. */
 const BACKUPS_NAV_ITEM: NavItem = {
-  label: COPY.backups.nav,
+  label: COMMON_TEXT.nav.backups,
   path: APP_ROUTES.BACKUPS,
   section: 'systemSettings',
   subject: 'backups',

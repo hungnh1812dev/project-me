@@ -95,19 +95,19 @@ A second owner is refused either way. Break-glass for a lost second factor: `npm
 
 ### 5.2 Reviewer switch off or on
 
-Design: D2a, ADR 0014. Both keys are runtime env: a config change plus a restart, never a new image. Production runs with both `false`.
+Design: D2a, ADR 0014. The switch is the cms-api key `REVIEWER_FEATURE_ENABLED`, a runtime env: a config change plus a restart, never a new image. Web has no reviewer button and no `/status` page any more (ADR 0018); the owner manages reviewer access on the cms-admin Reviewer page. Production runs with `false`.
 
 Off:
 
 1. Owner, in cms-admin: Reviewer page, switch reviewer access off. This revokes live reviewer sessions and writes the audit row.
-2. `cms-api-config`: `REVIEWER_FEATURE_ENABLED: "false"`; web Deployment env: `WEB_STATUS_PAGE_ENABLED: "false"`. Restart both.
-3. Check: `GET /api/v1/reviewer/status` answers `404` with `REVIEWER_FEATURE_OFF`; `GET /status` on the web origin answers 404; the web header has no "Reviewer access" button; the cms-api start log shows the switch off and "Reviewer cleanup not started".
+2. `cms-api-config`: `REVIEWER_FEATURE_ENABLED: "false"`. Restart cms-api.
+3. Check: `GET https://admin.<domain>/api/v1/reviewer/status` answers `404` with `REVIEWER_FEATURE_OFF`; the cms-api start log shows the switch off and "Reviewer cleanup not started".
 
 On:
 
-1. Set both keys to `"true"` and restart.
+1. Set `REVIEWER_FEATURE_ENABLED: "true"` and restart cms-api.
 2. Owner, in cms-admin: switch reviewer access on (the toggle stayed off).
-3. Check: `GET /api/v1/reviewer/status` answers `200 { "enabled": true }`; `/status` shows the card; the "Reviewer access" button is back for an anonymous visitor.
+3. Check: `GET https://admin.<domain>/api/v1/reviewer/status` answers `200 { "enabled": true }`.
 
 Reviewer access is open only when the switch is `true`, the owner toggle is on, and Turnstile plus `OTP_PEPPER` are configured.
 

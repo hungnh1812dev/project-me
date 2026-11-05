@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { Button } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import {
   collectLeafIds,
   DATA_BACKED_SECTION_ID,
@@ -58,7 +58,7 @@ export function AppNameLink() {
       to={APP_ROUTES.HOME}
       className="rounded-sm text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      {COPY.app.name}
+      {COMMON_TEXT.app.name}
     </Link>
   );
 }
@@ -66,7 +66,7 @@ export function AppNameLink() {
 function SkeletonRows() {
   return (
     <div aria-busy="true" className="grid gap-1 px-3">
-      <output className="sr-only">{COPY.access.nav.loading}</output>
+      <output className="sr-only">{COMMON_TEXT.nav.loading}</output>
       {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
         <div key={index} className="h-6 animate-pulse rounded bg-muted" />
       ))}
@@ -161,9 +161,9 @@ function MenuSection({
       {isLoading ? <SkeletonRows /> : null}
       {hasFailed ? (
         <div className="grid justify-items-start gap-1 px-3">
-          <p className="text-sm text-destructive-strong">{COPY.access.nav.catalogError}</p>
+          <p className="text-sm text-destructive-strong">{COMMON_TEXT.nav.catalogError}</p>
           <Button variant="ghost" size="sm" onClick={() => menu.catalogFailure?.retry()}>
-            {COPY.access.nav.retryCatalog}
+            {COMMON_TEXT.nav.retryCatalog}
           </Button>
         </div>
       ) : null}
@@ -195,7 +195,7 @@ export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
-        <nav aria-label={COPY.access.nav.label} className="grid gap-5">
+        <nav aria-label={COMMON_TEXT.nav.label} className="grid gap-5">
           {menu.isReady ? (
             NAV_SECTIONS.map((section) => (
               <MenuSection
