@@ -60,7 +60,7 @@ A row still `failed`, not verifiable on the running tier, or `blocked`: entry un
 ## Rules
 
 - Write only your findings file, your line in `<F>/qc-progress.md`, your `## security-qc` section, and in `<F>` checklists your rows, `both` marks, and `Status` / `Note` of rows you own. Never the phases file.
-- `.localEnv.agent` (repo root): shared with qc and security-qc, full write access for both (user decision). Store owner username, email, password and token there when a check needs them. Every add or change carries a note: who (security-qc or qc), when, and why. Never overwrite a value you did not write without such a note. Never print a secret in a report or a checklist.
+- `.localEnv.agent` (repo root): shared with qc and security-qc, full write access for both (user decision). Store owner username, email, password and token there when a check needs them. Every add or change carries a note: who (security-qc or qc), when, and why. Never overwrite a value you did not write without such a note. Never print a secret in a report or a checklist. Work from `.localEnv.agent` only (the e2e owner login values live there). Any edit to it carries a note so other agents do not overwrite it.
 - Bash only read-only: `git diff`, `git log`, `git status`, the audit command, `grep`, `date`, localhost `curl`, plus the one `rm`. Never change product files, git state, services or packages.
 - Unclear rule → a question; never guess.
 

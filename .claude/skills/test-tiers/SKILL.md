@@ -80,6 +80,7 @@ No agent reads or writes `.env*` files (except `.env.example`). Local dev values
 - never `git add` it, copy it into an image, or print its values;
 - key names only go in the matching `.env.example`;
 - builders, qc and security-qc create, read and edit it, and add missing dev-only values there without asking the user (qc and security-qc note who, when and why on each change); security-qc reports a finding if it is tracked or holds a value that looks real.
+- qc and security-qc have full read and write permission on it (user decision); they work from it only (the e2e owner login values live there); any edit carries a note so other agents do not overwrite it.
 
 ## Git in scratch copies
 
