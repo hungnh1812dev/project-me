@@ -120,6 +120,20 @@ export default [
     [DEEP_FEATURE_IMPORT_BAN, TEST_UTILS_BAN, VIEWS_BAN],
     TEST_FILES,
   ),
+  // The session feature's index is client-facing; its server-only files are not exported there.
+  restrictImports(
+    ['src/features/cv/**/*.server.ts'],
+    [
+      {
+        regex: '^\\.\\./(?!session/)[^./][^/]*/',
+        message:
+          'Import another feature through its index.ts, not a deep path (session server files excepted).',
+      },
+      TEST_UTILS_BAN,
+      VIEWS_BAN,
+    ],
+    TEST_FILES,
+  ),
   restrictImports(['src/components/**'], [TEST_UTILS_BAN, VIEWS_BAN], TEST_FILES),
   restrictImports(
     ['src/libs/**', 'src/apis/**', 'src/utils/**'],
