@@ -81,3 +81,9 @@ const UUID_SEGMENT = '[0-9a-f-]{36}';
 /** URL of an admin edit page for a document of `slug`. */
 export const editUrlPattern = (slug: string): RegExp =>
   new RegExp(`/content/${slug}/${UUID_SEGMENT}$`);
+
+/** Sealed sign-in cookie of the web BFF (__Host- prefix: Secure, Path=/, no Domain). */
+export const WEB_SESSION_COOKIE_NAME = '__Host-abyss_web_session';
+
+/** Sealed code-step cookie of the web BFF (Max-Age 300). */
+export const WEB_TWO_FACTOR_COOKIE_NAME = '__Host-abyss_web_2fa';

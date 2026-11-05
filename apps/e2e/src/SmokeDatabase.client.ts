@@ -18,8 +18,12 @@ function assertSmokeStack(): void {
 }
 
 function runSql(statement: string): void {
+  querySql(statement);
+}
+
+function querySql(statement: string): string {
   assertSmokeStack();
-  execFileSync('docker', [
+  return execFileSync('docker', [
     'exec',
     e2eEnv.dbContainer,
     'psql',
@@ -29,9 +33,22 @@ function runSql(statement: string): void {
     e2eEnv.dbUser,
     '-d',
     e2eEnv.dbName,
+    '-t',
+    '-A',
     '-c',
     statement,
-  ]);
+  ]).toString();
+}
+
+const SAFE_EMAIL = /^[A-Za-z0-9._@+-]+$/;
+
+/** Refresh tokens of the account that are neither revoked nor expired. */
+export function countActiveRefreshTokens(email: string): number {
+  if (!SAFE_EMAIL.test(email)) throw new Error(`unsafe email: ${email}`);
+  const count = querySql(
+    `SELECT count(*) FROM refresh_tokens rt JOIN accounts a ON a.id = rt.account_id WHERE a.email = '${email}' AND rt.revoked_at IS NULL AND rt.expires_at > now();`,
+  );
+  return Number(count.trim());
 }
 
 /** The reviewer endpoint allows one session per IP per 10 minutes. */
