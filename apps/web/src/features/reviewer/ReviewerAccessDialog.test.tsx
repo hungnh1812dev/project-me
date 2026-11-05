@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { COPY } from '../../configs/Copy.constants';
 import { REVIEWER_OTHER_VALUE } from '../../configs/Reviewer.constants';
 import { useWebSession } from '../session';
-import type { AuthApi } from '../session/Auth.api';
 import { fakeApi, httpError, Wrapper } from '../session/Session.fixture';
 import type { ReviewerApi } from './Reviewer.api';
 import { toSessionInput, type ReviewerFormValues } from './Reviewer.form';
@@ -43,8 +42,8 @@ vi.stubGlobal(
 const copy = COPY.reviewer;
 
 function SessionProbe() {
-  const { status, kind, getAccessToken } = useWebSession();
-  return <p data-testid="probe">{`${status}/${kind ?? '-'}/${getAccessToken() ?? '-'}`}</p>;
+  const { status } = useWebSession();
+  return <p data-testid="probe">{status}</p>;
 }
 
 function setup(createSession: ReviewerApi['createSession']) {
@@ -52,15 +51,7 @@ function setup(createSession: ReviewerApi['createSession']) {
     isEnabled: vi.fn<ReviewerApi['isEnabled']>().mockResolvedValue(true),
     createSession,
   };
-  const auth = fakeApi({
-    me: vi.fn<AuthApi['me']>().mockResolvedValue({
-      id: 'rev-1',
-      email: 'reviewer-1@reviewer.invalid',
-      displayName: 'Reviewer',
-      role: 'reviewer',
-      permissions: ['article:read'],
-    }),
-  });
+  const auth = fakeApi();
   const onOpenChange = vi.fn<(open: boolean) => void>();
   const user = userEvent.setup();
   render(
@@ -122,7 +113,7 @@ describe('reviewer access dialog', () => {
       accessToken: 'rev-token',
       expiresAt: '2026-10-23T00:00:00Z',
     });
-    const { user, auth, onOpenChange } = setup(createSession);
+    const { user, onOpenChange } = setup(createSession);
     await chooseRole(user, 'Recruiter');
     await user.click(screen.getByRole('button', { name: copy.next }));
     await user.click(screen.getByLabelText('Hiring'));
@@ -131,16 +122,13 @@ describe('reviewer access dialog', () => {
     await user.click(screen.getByRole('button', { name: 'pass check' }));
     await user.click(screen.getByRole('button', { name: copy.submit }));
 
-    await waitFor(() =>
-      expect(screen.getByTestId('probe')).toHaveTextContent('authenticated/reviewer/rev-token'),
-    );
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(createSession).toHaveBeenCalledWith({
       visitorRole: 'Recruiter',
       purposeTags: ['Hiring'],
       notes: 'Looking at the CV',
       turnstileToken: 'cf-token',
     });
-    expect(auth.me).toHaveBeenCalledWith('rev-token');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
@@ -157,7 +145,7 @@ describe('reviewer access dialog', () => {
     await user.click(screen.getByRole('button', { name: 'pass check' }));
     await user.click(screen.getByRole('button', { name: copy.submit }));
     expect(await screen.findByText(copy.errors.ipLimitedMinutes(5))).toBeInTheDocument();
-    expect(screen.getByTestId('probe')).toHaveTextContent('anonymous/-/-');
+    expect(screen.getByTestId('probe')).toHaveTextContent('anonymous');
     // The spent token is gone: submitting again needs a new check.
     await user.click(screen.getByRole('button', { name: copy.submit }));
     expect(await screen.findByText(copy.turnstile.required)).toBeInTheDocument();

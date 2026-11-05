@@ -15,7 +15,6 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import { apiFailureOf } from '../../apis/client/ApiFailure.errors';
 import { COPY } from '../../configs/Copy.constants';
-import { useWebSession } from '../session';
 import { NotesStep } from './NotesStep';
 import { PurposesStep } from './PurposesStep';
 import { type ReviewerApi } from './Reviewer.api';
@@ -70,7 +69,6 @@ function ReviewerFlow({
   api: ReviewerApi;
   onClose: () => void;
 }) {
-  const session = useWebSession();
   const [step, setStep] = useState(0);
   const [alert, setAlert] = useState<ReviewerAlert | null>(null);
   const humanCheck = useHumanCheck(siteKey);
@@ -83,11 +81,10 @@ function ReviewerFlow({
 
   const start = useMutation({
     mutationFn: async (turnstileToken: string) => {
-      const created = await api.createSession({
+      await api.createSession({
         ...toSessionInput(form.getValues()),
         turnstileToken,
       });
-      await session.startReviewerSession(created.accessToken);
     },
     onSuccess: onClose,
     onError: (cause) => {

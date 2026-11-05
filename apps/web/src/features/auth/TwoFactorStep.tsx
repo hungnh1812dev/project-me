@@ -7,14 +7,14 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import type { Alert, ApiFailure } from '../../apis/client/ApiFailure.errors';
 import {
-  API_ERROR_CODES,
+  BFF_ERROR_CODES,
   LOGIN_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
 } from '../../configs/Auth.constants';
 import { COPY } from '../../configs/Copy.constants';
 import { useWebSession, type TwoFactorChallenge } from '../session';
-import { loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
+import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
 import { useEmailCode } from './useEmailCode';
 
 const copy = COPY.login.twoFactor;
@@ -28,27 +28,17 @@ function methodOf(methods: readonly string[]): TwoFactorMethod | undefined {
   return TWO_FACTOR_METHODS.find((method) => methods.includes(method));
 }
 
-/** Failure -> alert, or 'expired' when the temp token is dead. */
+/** Failure -> alert, or 'expired' when the challenge is gone. */
 function alertOf(failure: ApiFailure): Alert | 'expired' {
-  switch (failure.kind) {
-    case 'rate-limited':
-      return {
-        tone: 'warning',
-        message: rateLimitedMessage(failure.retryAfterSeconds),
-      };
-    case 'network':
-      return { tone: 'warning', message: COPY.login.errors.network };
-    case 'http':
-      if (failure.errorCode === API_ERROR_CODES.INVALID_TEMP_TOKEN) {
-        return 'expired';
-      }
-      if (failure.errorCode === API_ERROR_CODES.INVALID_2FA_CODE) {
-        return { tone: 'error', message: copy.errors.invalidCode };
-      }
-      return { tone: 'error', message: COPY.login.errors.unexpected };
-    case 'unexpected':
-      return { tone: 'error', message: COPY.login.errors.unexpected };
+  const shared = sharedFailureAlertOf(failure);
+  if (shared !== null) return shared;
+  if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.TWO_FACTOR_EXPIRED) {
+    return 'expired';
   }
+  if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.INVALID_TWO_FACTOR_CODE) {
+    return { tone: 'error', message: copy.errors.invalidCode };
+  }
+  return { tone: 'error', message: COPY.login.errors.unexpected };
 }
 
 /**
@@ -80,26 +70,16 @@ export function TwoFactorStep({
       </div>
     );
   }
-  return (
-    <CodeForm
-      method={method}
-      tempToken={challenge.tempToken}
-      onCancel={onCancel}
-      onExpired={onExpired}
-      onDone={onDone}
-    />
-  );
+  return <CodeForm method={method} onCancel={onCancel} onExpired={onExpired} onDone={onDone} />;
 }
 
 function CodeForm({
   method,
-  tempToken,
   onCancel,
   onExpired,
   onDone,
 }: {
   method: TwoFactorMethod;
-  tempToken: string;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
@@ -107,7 +87,7 @@ function CodeForm({
   const session = useWebSession();
   const [alert, setAlert] = useState<Alert | null>(null);
   const email = useEmailCode(
-    method === 'email' ? () => session.sendLoginEmailCode(tempToken) : () => Promise.resolve(),
+    method === 'email' ? () => session.sendLoginEmailCode() : () => Promise.resolve(),
     (failure) => {
       if (alertOf(failure) === 'expired') onExpired();
     },
@@ -138,7 +118,7 @@ function CodeForm({
 
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
-    verify.mutate({ tempToken, code: values.code.trim() });
+    verify.mutate({ code: values.code.trim() });
   });
 
   const sendAlert = method === 'email' && email.failure !== null ? alertOf(email.failure) : null;

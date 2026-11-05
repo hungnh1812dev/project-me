@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 
 import { COPY } from '../../configs/Copy.constants';
-import { fakeApi, Wrapper } from '../../features/session/Session.fixture';
+import type { AuthApi } from '../../features/session/Auth.api';
+import { fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { AccountMenu } from './AccountMenu';
 
 const isEnabled = vi.hoisted(() => vi.fn<() => Promise<boolean>>());
@@ -57,7 +58,7 @@ describe('account menu reviewer entry', () => {
     render(
       <Wrapper
         api={fakeApi({
-          refresh: vi.fn<() => Promise<string>>().mockResolvedValue('tok'),
+          readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
         })}
       >
         <AccountMenu />

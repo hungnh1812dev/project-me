@@ -29,9 +29,8 @@ interface LoginValues {
 }
 
 /**
- * Sign-in dialog with the 2FA step. Credentials go from the browser straight
- * to cms-api, which sets the refresh cookie; nothing passes through the Next
- * server. Its content unmounts on close, so each opening starts clean.
+ * Sign-in dialog with the 2FA step. Credentials go to the BFF of this site,
+ * which keeps the tokens in a sealed HttpOnly cookie; the browser never holds one. Its content unmounts on close, so each opening starts clean.
  */
 export function WebLoginDialog({
   open,
@@ -68,7 +67,7 @@ function LoginFlow({ onClose }: { onClose: () => void }) {
         return;
       }
       form.resetField('password');
-      setChallenge({ tempToken: outcome.tempToken, methods: outcome.methods });
+      setChallenge({ methods: outcome.methods });
     },
     onError: (cause) => {
       setAlert(loginErrorAlertOf(cause, credentialAlertOf));

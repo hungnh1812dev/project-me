@@ -14,7 +14,7 @@ Flows: [`sign-in`](../../flows/sign-in/FLOW.md).
 
 ## Purpose
 
-The sign-in of reader accounts on the public site: credentials, then the TOTP or emailed code ([sign-in flow](../../flows/sign-in/FLOW.md)). Today's web calls cms-api from the browser (D14); D21 (feature web-bff-hardening, not built yet) moves every browser call to the BFF under `/bff/v1`, so this module changes then ([web rules](../../apps/web/RULES.md)).
+The sign-in of reader accounts on the public site: credentials, then the TOTP or emailed code ([sign-in flow](../../flows/sign-in/FLOW.md)). The dialog calls only the BFF under `/bff/v1` (D21); the browser holds no token ([web rules](../../apps/web/RULES.md)).
 
 ## Techniques
 
@@ -45,8 +45,8 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `LoginAlerts.rules.ts` | Maps sign-in failures to their alerts (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
-| `TwoFactorStep.tsx` | Second sign-in step for the temp token (exports `TwoFactorStep`) |
+| `LoginAlerts.rules.ts` | Maps sign-in failures (BFF error codes, rate limit, network) to their alerts (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
+| `TwoFactorStep.tsx` | Second sign-in step (code check; the BFF holds the temp token) (exports `TwoFactorStep`) |
 | `WebLoginDialog.tsx` | The sign-in dialog (exports `WebLoginDialog`) |
 | `index.ts` | Public facade of the feature (exports `WebLoginDialog`) |
 | `useEmailCode.ts` | Sends emailed 2FA codes, once on mount and on request (exports `useEmailCode`) |

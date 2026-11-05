@@ -6,7 +6,7 @@ import {
   unwrapGraphqlResponse,
   type GraphqlDocument,
 } from '../GraphqlResponse.rules';
-import { apiClient } from './Api.client';
+import { cmsApiBrowserClient } from './Api.client';
 
 /**
  * Runs a GraphQL query from the browser as the signed-in visitor. The caller
@@ -19,7 +19,7 @@ export async function requestGraphql<T>(
 ): Promise<T> {
   let response: { status: number; data: unknown };
   try {
-    response = await apiClient.post<unknown>(
+    response = await cmsApiBrowserClient.post<unknown>(
       API_ENDPOINTS.GRAPHQL,
       { ...document, variables },
       {

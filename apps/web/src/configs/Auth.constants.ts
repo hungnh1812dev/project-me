@@ -26,6 +26,17 @@ export const API_ERROR_CODES = {
   INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
 } as const;
 
+/** Error codes of the BFF the sign-in UI branches on (ADR 0018 section 3). */
+export const BFF_ERROR_CODES = {
+  INVALID_CREDENTIALS: 'BFF_INVALID_CREDENTIALS',
+  INVALID_TWO_FACTOR_CODE: 'BFF_INVALID_TWO_FACTOR_CODE',
+  TWO_FACTOR_EXPIRED: 'BFF_TWO_FACTOR_EXPIRED',
+  PRIVILEGED_ACCOUNT: 'BFF_PRIVILEGED_ACCOUNT',
+  RATE_LIMITED: 'BFF_RATE_LIMITED',
+  HUMAN_CHECK_FAILED: 'BFF_HUMAN_CHECK_FAILED',
+  HUMAN_CHECK_UNAVAILABLE: 'BFF_HUMAN_CHECK_UNAVAILABLE',
+} as const;
+
 /** Name of the refresh cookie cms-api sets and reads (`Set-Cookie` / `Cookie`). */
 export const CMS_API_REFRESH_COOKIE_NAME = '__Secure-abyss_rt';
 

@@ -11,14 +11,6 @@ export const TEST_USER: CurrentUser = {
   email: 'owner@example.com',
   displayName: 'Mai Owner',
   role: 'viewer',
-  permissions: ['article:read', 'profile:read'],
-};
-
-/** An editor: holds write permissions, so the web refuses its session. */
-export const PRIVILEGED_USER: CurrentUser = {
-  ...TEST_USER,
-  role: 'editor',
-  permissions: ['article:read', 'article:update'],
 };
 
 /** Every AuthApi method as a mock, so tests can assert on calls. */
@@ -29,11 +21,8 @@ export function fakeApi(overrides: Partial<AuthApi> = {}): FakeApi {
     login: vi.fn<AuthApi['login']>(),
     verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>(),
     sendLoginEmailCode: vi.fn<AuthApi['sendLoginEmailCode']>().mockResolvedValue(undefined),
-    refresh: vi
-      .fn<AuthApi['refresh']>()
-      .mockRejectedValue(httpError(401, { errorCode: 'AUTH_REQUIRED' })),
+    readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(null),
     logout: vi.fn<AuthApi['logout']>().mockResolvedValue(undefined),
-    me: vi.fn<AuthApi['me']>().mockResolvedValue(TEST_USER),
     ...overrides,
   } as FakeApi;
 }

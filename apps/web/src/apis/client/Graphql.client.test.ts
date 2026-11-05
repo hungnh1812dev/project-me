@@ -1,5 +1,5 @@
 import { GraphqlRequestError } from '../GraphqlResponse.rules';
-import { apiClient } from './Api.client';
+import { cmsApiBrowserClient } from './Api.client';
 import { requestGraphql } from './Graphql.client';
 
 const DOCUMENT = { query: 'query Q { a }', operationName: 'Q' };
@@ -9,7 +9,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('requestGraphql', () => {
   it('posts with the Bearer token and returns data', async () => {
     const post = vi
-      .spyOn(apiClient, 'post')
+      .spyOn(cmsApiBrowserClient, 'post')
       .mockResolvedValue({ status: 200, data: { data: { a: 1 } } });
 
     const data = await requestGraphql(DOCUMENT, { id: 'x' }, 'tok');
@@ -26,7 +26,7 @@ describe('requestGraphql', () => {
   });
 
   it('maps an errors entry to the first error code', async () => {
-    vi.spyOn(apiClient, 'post').mockResolvedValue({
+    vi.spyOn(cmsApiBrowserClient, 'post').mockResolvedValue({
       status: 200,
       data: { errors: [{ extensions: { code: 'FORBIDDEN' } }] },
     });
@@ -36,7 +36,7 @@ describe('requestGraphql', () => {
   });
 
   it('maps a non-200 answer and a network failure to the typed error', async () => {
-    vi.spyOn(apiClient, 'post').mockResolvedValueOnce({
+    vi.spyOn(cmsApiBrowserClient, 'post').mockResolvedValueOnce({
       status: 401,
       data: {},
     });
@@ -45,7 +45,7 @@ describe('requestGraphql', () => {
       status: 401,
     });
 
-    vi.spyOn(apiClient, 'post').mockRejectedValueOnce(new Error('offline'));
+    vi.spyOn(cmsApiBrowserClient, 'post').mockRejectedValueOnce(new Error('offline'));
     await expect(requestGraphql(DOCUMENT, undefined, 't')).rejects.toBeInstanceOf(
       GraphqlRequestError,
     );

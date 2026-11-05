@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { apiClient } from '../../apis/client/Api.client';
+import { cmsApiBrowserClient } from '../../apis/client/Api.client';
 import { appEnv } from '../../configs/Browser.env';
 import { REVIEWER_STATUS_STALE_MS } from '../../configs/Reviewer.constants';
 import { useWebSession } from '../session';
@@ -10,7 +10,7 @@ export const REVIEWER_QUERY_KEYS = {
   status: ['reviewer', 'status'],
 } as const;
 
-export const reviewerApi = createReviewerApi(apiClient);
+export const reviewerApi = createReviewerApi(cmsApiBrowserClient);
 
 /**
  * True while the owner has reviewer access switched on. Only an anonymous

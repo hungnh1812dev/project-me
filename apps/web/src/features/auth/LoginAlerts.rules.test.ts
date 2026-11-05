@@ -22,14 +22,37 @@ describe('loginErrorAlertOf', () => {
 });
 
 describe('credentialAlertOf', () => {
-  it('reads a 4xx as incorrect credentials and a 5xx as unexpected', () => {
-    expect(credentialAlertOf({ kind: 'http', status: 401, errorCode: undefined })).toEqual({
+  const http = (errorCode: string | undefined, status = 400) =>
+    credentialAlertOf({ kind: 'http', status, errorCode });
+
+  it('reads BFF_INVALID_CREDENTIALS as one generic message', () => {
+    expect(http('BFF_INVALID_CREDENTIALS', 401)).toEqual({
       tone: 'error',
       message: errors.invalidCredentials,
     });
-    expect(credentialAlertOf({ kind: 'http', status: 500, errorCode: undefined })).toEqual({
-      tone: 'error',
-      message: errors.unexpected,
+  });
+
+  it.each([
+    ['BFF_HUMAN_CHECK_FAILED', 'error', errors.humanCheckFailed],
+    ['BFF_HUMAN_CHECK_UNAVAILABLE', 'warning', errors.humanCheckUnavailable],
+    ['BFF_PRIVILEGED_ACCOUNT', 'warning', errors.privileged],
+  ] as const)('maps %s', (code, tone, message) => {
+    expect(http(code)).toEqual({ tone, message });
+  });
+
+  it('reads any other code, with or without a status, as unexpected', () => {
+    expect(http('BFF_INVALID_REQUEST')).toEqual({ tone: 'error', message: errors.unexpected });
+    expect(http(undefined, 500)).toEqual({ tone: 'error', message: errors.unexpected });
+  });
+
+  it('maps a rate limit to its wait and a network failure to a warning', () => {
+    expect(credentialAlertOf({ kind: 'rate-limited', retryAfterSeconds: 30 })).toEqual({
+      tone: 'warning',
+      message: errors.rateLimitedSeconds(30),
+    });
+    expect(credentialAlertOf({ kind: 'network' })).toEqual({
+      tone: 'warning',
+      message: errors.network,
     });
   });
 });

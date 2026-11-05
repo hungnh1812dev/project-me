@@ -2,14 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { COPY } from '../../configs/Copy.constants';
-import type { AuthApi } from '../../features/session/Auth.api';
-import {
-  fakeApi,
-  httpError,
-  PRIVILEGED_USER,
-  TEST_USER,
-  Wrapper,
-} from '../../features/session/Session.fixture';
+import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
+import { fakeApi, httpError, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { AccountMenu } from './AccountMenu';
 
 const login = COPY.login;
@@ -42,7 +36,7 @@ describe('sign-in dialog', () => {
 
   it('signs in, closes and shows the account', async () => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'tok' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -61,7 +55,7 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_CREDENTIALS' })),
+        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -81,14 +75,27 @@ describe('sign-in dialog', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.rateLimitedMinutes(2));
   });
 
+  it.each([
+    ['BFF_HUMAN_CHECK_FAILED', 403, login.errors.humanCheckFailed],
+    ['BFF_HUMAN_CHECK_UNAVAILABLE', 503, login.errors.humanCheckUnavailable],
+    ['BFF_PRIVILEGED_ACCOUNT', 403, login.errors.privileged],
+    ['BFF_UPSTREAM_FAILED', 502, login.errors.unexpected],
+  ])('maps %s to its message', async (errorCode, status, message) => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(httpError(status, { errorCode })),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  });
+
   it('asks for the authenticator code, then signs in', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('tok'),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue(TEST_USER),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -101,10 +108,7 @@ describe('sign-in dialog', () => {
     expect(
       await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
     ).toBeInTheDocument();
-    expect(api.verifyTwoFactor).toHaveBeenCalledWith({
-      tempToken: 'tmp',
-      code: '123456',
-    });
+    expect(api.verifyTwoFactor).toHaveBeenCalledWith({ code: '123456' });
     expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
   });
 
@@ -112,12 +116,11 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_2FA_CODE' })),
+        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -130,12 +133,11 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_TEMP_TOKEN' })),
+        .mockRejectedValue(httpError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -149,7 +151,6 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['email'],
       }),
     });
@@ -157,14 +158,13 @@ describe('sign-in dialog', () => {
     await fillCredentials(user);
     expect(await screen.findByText(login.twoFactor.emailWarning)).toBeInTheDocument();
     await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
-    expect(api.sendLoginEmailCode).toHaveBeenCalledWith('tmp');
+    expect(api.sendLoginEmailCode).toHaveBeenCalledWith(undefined);
   });
 
   it('rejects an account whose method this site does not support', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['sms'],
       }),
     });
@@ -188,8 +188,7 @@ describe('sign-in dialog', () => {
 describe('privileged accounts', () => {
   it('tells an admin to use the admin console and stays signed out', async () => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
-      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(new PrivilegedAccessError()),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -203,11 +202,11 @@ describe('privileged accounts', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('adm'),
-      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+      verifyTwoFactor: vi
+        .fn<AuthApi['verifyTwoFactor']>()
+        .mockRejectedValue(new PrivilegedAccessError()),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -221,7 +220,7 @@ describe('account menu', () => {
   it('keeps the user signed in and says so when sign-out fails', async () => {
     const user = userEvent.setup();
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
       logout: vi.fn<AuthApi['logout']>().mockRejectedValue(new Error('offline')),
     });
     render(
@@ -237,7 +236,7 @@ describe('account menu', () => {
   it('shows the signed-in actor after a silent refresh and signs out', async () => {
     const user = userEvent.setup();
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>
@@ -254,7 +253,7 @@ describe('account menu', () => {
 
   it('hides Open CMS when no admin URL is configured', async () => {
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>

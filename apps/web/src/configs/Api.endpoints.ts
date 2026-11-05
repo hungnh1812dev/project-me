@@ -26,13 +26,16 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-/** The browser's only API: the BFF routes of this site (ADR 0018). */
+/** Base path of the BFF routes of this site (ADR 0018); the browser's only API. */
+export const BFF_BASE_PATH = '/bff/v1';
+
+/** BFF routes, relative to `BFF_BASE_PATH`. */
 export const BFF_ENDPOINTS = {
-  HEALTH: '/bff/v1/health',
-  SESSION: '/bff/v1/session',
-  CV: '/bff/v1/cv',
-  LOGIN: '/bff/v1/auth/login',
-  EMAIL_CODE: '/bff/v1/auth/two-factor/email-code',
-  VERIFY_TWO_FACTOR: '/bff/v1/auth/two-factor/verify',
-  LOGOUT: '/bff/v1/auth/logout',
+  HEALTH: '/health',
+  SESSION: '/session',
+  CV: '/cv',
+  LOGIN: '/auth/login',
+  EMAIL_CODE: '/auth/two-factor/email-code',
+  VERIFY_TWO_FACTOR: '/auth/two-factor/verify',
+  LOGOUT: '/auth/logout',
 } as const;

@@ -98,6 +98,9 @@ export const COPY = {
       rateLimited: 'Too many sign-in attempts. Wait a few minutes, then try again.',
       network: 'Could not reach the server. Check your connection and try again.',
       unexpected: 'Something went wrong on our side. Try again in a moment.',
+      humanCheckFailed: 'The security check did not pass. Try again.',
+      humanCheckUnavailable:
+        'The security check is unavailable right now. Try again in a few minutes.',
       privileged:
         'Accounts that can edit content sign in on the admin console, not on this site. Open the admin console to continue.',
     },
