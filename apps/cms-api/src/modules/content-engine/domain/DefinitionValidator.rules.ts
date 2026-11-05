@@ -112,12 +112,17 @@ function displayNameProblem(displayName: string): string | undefined {
   return undefined;
 }
 
-/** Field names and `component` values both become table or column segments. */
+/**
+ * Field names and `component` values both become table or column segments.
+ * A component field's name is only an API key (it has no column and its table
+ * segment comes from `component`), so it may be an SQL reserved word.
+ */
 function checkIdentifier(
   value: string,
   label: string,
   path: DefinitionPath,
   errors: DefinitionValidationError[],
+  { allowSqlReserved = false }: { allowSqlReserved?: boolean } = {},
 ): void {
   const identifier = toSqlIdentifier(value);
   if (!isWellFormedSqlIdentifier(identifier)) {
@@ -132,7 +137,7 @@ function checkIdentifier(
       rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
       message: `${label} "${value}" maps to "${identifier}", a column the content engine owns. Rename it.`,
     });
-  } else if (SQL_RESERVED.has(identifier)) {
+  } else if (!allowSqlReserved && SQL_RESERVED.has(identifier)) {
     errors.push({
       path,
       rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
@@ -154,7 +159,9 @@ function checkFields(
     const namePath = [...fieldPath, 'name'];
     const identifier = toSqlIdentifier(field.name);
 
-    checkIdentifier(field.name, 'Field name', namePath, errors);
+    checkIdentifier(field.name, 'Field name', namePath, errors, {
+      allowSqlReserved: isComponentField(field),
+    });
     if (field.displayName !== undefined) {
       checkDisplayName(field.displayName, [...fieldPath, 'displayName'], errors);
     }

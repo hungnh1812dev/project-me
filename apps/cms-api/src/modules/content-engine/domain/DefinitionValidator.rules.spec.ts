@@ -316,13 +316,35 @@ describe('validateDefinition', () => {
         expect(rulesOf(definition([{ name, type: 'string' }]))).toEqual([
           DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
-        // `component(name)` uses the word as both the field name and the component value.
+        // A component field may be named by the word; the `component` value may not.
         expect(rulesOf(definition([component(name, [{ name: 'a', type: 'string' }])]))).toEqual([
           DEFINITION_RULES.IDENTIFIER_RESERVED,
-          DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
+        expect(
+          errorsOf(
+            definition([{ ...component(name, [{ name: 'a', type: 'string' }]), name: 'x' }]),
+          ),
+        ).toEqual([expect.objectContaining({ path: ['fields', 0, 'component'] })]);
       },
     );
+
+    it('allows an SQL keyword as a component field name but not an engine-owned one', () => {
+      const inner = [{ name: 'a', type: 'string' }] as const;
+      const named = (name: string, componentValue: string) => ({
+        ...component(componentValue, [...inner]),
+        name,
+      });
+      expect(validateDefinition(definition([named('references', 'reference')])).ok).toBe(true);
+      expect(validateDefinition(definition([named('order', 'order_item')])).ok).toBe(true);
+      expect(errorsOf(definition([named('order', 'order')]))).toEqual([
+        expect.objectContaining({ path: ['fields', 0, 'component'] }),
+      ]);
+      for (const name of ['status', 'id']) {
+        expect(rulesOf(definition([named(name, 'reference')]))).toEqual([
+          DEFINITION_RULES.IDENTIFIER_RESERVED,
+        ]);
+      }
+    });
 
     it('rejects a slug that maps to an SQL keyword', () => {
       expect(rulesOf(definition([{ name: 'a', type: 'string' }], 'user'))).toEqual([

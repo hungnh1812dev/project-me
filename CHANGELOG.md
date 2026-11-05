@@ -9,6 +9,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 ### Changes
 
 - cms-api: content type definitions take `component` (the value that names a component table and its GraphQL type), `displayName` and `width` (`1/3`, `1/2`, `full`) on fields; short text is `text`, long text `string`; field views carry `displayName` and the resolved `width`. The schemas `cv-page`, `resume`, `header`, `cv-contact` and `profile` move to the new format; migration `0006_content.sql` renames the resume and header component tables (rows kept) and drops `cv_page.company`, `cv_page__experience__role.projects` and `cv_page__project` (data not carried over, see [content-schema](docs/modules/content-schema.md) "Data-migration notes"); `content/schema.graphql` is reprinted.
+- cms-api: the definition validator lets a component field's `name` be an SQL reserved word (cv-page `references`); `identifier.reserved` still applies to its `component` value and to every other field.
 - cms-admin: labels from `displayName`, `text` and `string` inputs and field widths follow the new definitions (CPS-6, pending).
 
 - root: agent hooks `session-gate` (a checklist run gets its own manager session; a dispatch is refused once the session's context grew 100k tokens) and `read-guard` (refuses whole-file reads over 12 KB, `sed -n` over 150 lines, `cat` of large files and large unpiped `git diff`); the manager's session break and resume follow them ([global FLOW](docs/global/FLOW.md) "Where a change goes").
