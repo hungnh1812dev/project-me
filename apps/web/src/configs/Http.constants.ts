@@ -41,6 +41,7 @@ export const ALLOW_HEADER = 'allow';
 export const ACCEPT_HEADER = 'accept';
 export const AUTHORIZATION_HEADER = 'authorization';
 export const COOKIE_HEADER = 'cookie';
+export const SET_COOKIE_HEADER = 'set-cookie';
 export const CACHE_CONTROL_HEADER = 'cache-control';
 export const CACHE_CONTROL_NO_STORE = 'no-store';
 export const CONTENT_LENGTH_HEADER = 'content-length';

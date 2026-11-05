@@ -1,6 +1,13 @@
 import { BFF_ERROR_CODES, BffError, bffErrorResponse } from './Bff.errors';
 
 describe('bffErrorResponse', () => {
+  it('appends each Set-Cookie line the refusal carries', () => {
+    const response = bffErrorResponse(
+      new BffError('BFF_PRIVILEGED_ACCOUNT', {}, ['a=; Max-Age=0', 'b=; Max-Age=0']),
+    );
+    expect(response.headers.getSetCookie()).toEqual(['a=; Max-Age=0', 'b=; Max-Age=0']);
+  });
+
   it('answers statusCode, errorCode and a fixed message, never cached', async () => {
     const response = bffErrorResponse(new BffError('BFF_INVALID_REQUEST'));
     expect(response.status).toBe(400);

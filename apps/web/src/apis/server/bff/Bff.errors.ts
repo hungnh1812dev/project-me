@@ -6,6 +6,7 @@ import {
   CACHE_CONTROL_NO_STORE,
   HTTP_STATUS,
   RETRY_AFTER_HEADER,
+  SET_COOKIE_HEADER,
 } from '../../../configs/Http.constants';
 
 /** Every refusal of the BFF (ADR 0018 section 3): one row per code. */
@@ -79,13 +80,20 @@ export class BffError extends Error {
   readonly errorCode: BffErrorCode;
   readonly statusCode: number;
   readonly headers: Readonly<Record<string, string>>;
+  /** `Set-Cookie` lines the refusal carries (a session cleared by the refusal). */
+  readonly setCookies: readonly string[];
 
-  constructor(errorCode: BffErrorCode, headers: Record<string, string> = {}) {
+  constructor(
+    errorCode: BffErrorCode,
+    headers: Record<string, string> = {},
+    setCookies: readonly string[] = [],
+  ) {
     super(errorCode);
     this.name = 'BffError';
     this.errorCode = errorCode;
     this.statusCode = BFF_ERROR_CODES[errorCode].statusCode;
     this.headers = headers;
+    this.setCookies = setCookies;
   }
 
   static methodNotAllowed(allowedMethods: readonly string[]): BffError {
@@ -100,11 +108,13 @@ export class BffError extends Error {
 /** The `{ statusCode, errorCode, message }` answer for a refusal. */
 export function bffErrorResponse(error: BffError): Response {
   const { statusCode, message } = BFF_ERROR_CODES[error.errorCode];
-  return Response.json(
+  const response = Response.json(
     { statusCode, errorCode: error.errorCode, message },
     {
       status: statusCode,
       headers: { ...error.headers, [CACHE_CONTROL_HEADER]: CACHE_CONTROL_NO_STORE },
     },
   );
+  for (const cookie of error.setCookies) response.headers.append(SET_COOKIE_HEADER, cookie);
+  return response;
 }

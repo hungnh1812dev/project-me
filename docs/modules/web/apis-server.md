@@ -55,7 +55,7 @@ Tests: 7 files (not listed).
 
 | File | Description |
 |---|---|
-| `bff/Bff.errors.ts` | The 15 BFF error codes with status and fixed message, `BffError` and the refusal response |
+| `bff/Bff.errors.ts` | The 15 BFF error codes with status and fixed message, `BffError` (may carry `Set-Cookie` lines) and the refusal response |
 | `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, human-check hook, handle, no-store |
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |

@@ -22,3 +22,17 @@ export const API_ERROR_CODES = {
 
 /** Name of the refresh cookie cms-api sets and reads (`Set-Cookie` / `Cookie`). */
 export const CMS_API_REFRESH_COOKIE_NAME = '__Secure-abyss_rt';
+
+/** Sealed session cookie of the BFF: the tokens of a signed-in visitor (ADR 0018 section 4). */
+export const WEB_SESSION_COOKIE_NAME = '__Host-abyss_web_session';
+
+/** Sealed cookie that carries the 2FA challenge between the sign-in step and the code step. */
+export const TWO_FACTOR_COOKIE_NAME = '__Host-abyss_web_2fa';
+
+export const TWO_FACTOR_COOKIE_MAX_AGE_SECONDS = 300;
+
+/** A session read refreshes the access token when it expires within this lead. */
+export const ACCESS_REFRESH_LEAD_MS = 30_000;
+
+/** A settled refresh answer is shared this long, so a race never presents a rotated token. */
+export const REFRESH_RESULT_SHARE_MS = 10_000;
