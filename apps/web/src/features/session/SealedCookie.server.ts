@@ -10,7 +10,7 @@ import {
   TWO_FACTOR_METHODS,
   WEB_SESSION_COOKIE_NAME,
 } from '../../configs/Auth.constants';
-import { COOKIE_HEADER } from '../../configs/Http.constants';
+import { COOKIE_HEADER, SET_COOKIE_HEADER } from '../../configs/Http.constants';
 import { getServerEnv } from '../../configs/Server.env';
 
 const SEAL_VERSION = 1;
@@ -142,3 +142,9 @@ export function writeTwoFactorCookie(challenge: SealedTwoFactorChallenge): strin
 
 export const clearSessionCookie = (): string => clearCookieLine(WEB_SESSION_COOKIE_NAME);
 export const clearTwoFactorCookie = (): string => clearCookieLine(TWO_FACTOR_COOKIE_NAME);
+
+/** The one place a `Set-Cookie` line joins an answer. */
+export function withSetCookies(response: Response, setCookies: readonly string[]): Response {
+  for (const cookie of setCookies) response.headers.append(SET_COOKIE_HEADER, cookie);
+  return response;
+}

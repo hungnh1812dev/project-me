@@ -30,7 +30,7 @@ Facade `index.ts`: `WebSessionProvider`, `useWebSession`, `PrivilegedAccessError
 
 ## Where to change what
 
-Server side (BFF, D21, ADR 0018 section 4): `SealedCookie.server.ts` is the only place that seals cookies and sets their attributes; `WebSession.server.ts` reads the session (`readWebSession(request)` returns `setCookies` the answer must carry; a privileged account throws `BFF_PRIVILEGED_ACCOUNT` with both cookies cleared). Server files are not in `index.ts`. A new auth call: `Auth.api.ts`; session state: `WebSession.context.tsx`. Other features import only the facade.
+Server side (BFF, D21, ADR 0018 section 4): `SealedCookie.server.ts` is the only place that seals cookies and sets their attributes; `WebSession.server.ts` reads the session (`readWebSession(request)` returns `setCookies` the answer must carry; a privileged account throws `BFF_PRIVILEGED_ACCOUNT` with both cookies cleared). `SignIn.server.ts` holds one handler per sign-in route (`logInVisitor`, `sendTwoFactorEmailCode`, `verifyTwoFactorCode`, `logOutVisitor`) and their body schemas; the route files under `app/bff/v1/` only bind them with `defineBffRoute`; a new route adds a handler here and a route file. Server files are not in `index.ts`. A new auth call: `Auth.api.ts`; session state: `WebSession.context.tsx`. Other features import only the facade.
 
 ## Files
 
@@ -38,18 +38,19 @@ Server side (BFF, D21, ADR 0018 section 4): `SealedCookie.server.ts` is the only
 <!-- prettier-ignore-start -->
 
 ```
-session/ (6 files)
+session/ (7 files)
 ```
 
-Tests: 4 files (not listed).
+Tests: 5 files (not listed).
 
 | File | Description |
 |---|---|
 | `Auth.api.ts` | Login, 2FA, refresh, logout and `/auth/me` calls with their types (exports `LoginCredentials`, `CurrentUser`, `TwoFactorChallenge`, `TwoFactorVerification` +5) |
 | `SealedCookie.server.ts` | AES-256-GCM sealing of the two `__Host-` cookies, their one writer and clearer, and the request readers (exports `SealedWebSession`, `SealedTwoFactorChallenge`, `sealCookieValue`, `openCookieValue` +6) |
 | `Session.fixture.tsx` | Test users and a fake auth API for tests (exports `TEST_USER`, `PRIVILEGED_USER`, `FakeApi`, `fakeApi` +2) |
+| `SignIn.server.ts` | The sign-in, 2FA, email-code and sign-out handlers of the BFF routes with their body schemas; seals the session and refuses privileged accounts (exports `loginBodySchema`, `emailCodeBodySchema`, `verifyBodySchema`, `logInVisitor` +3) |
 | `WebSession.context.tsx` | The session context and its provider (exports `SessionStatus`, `SessionKind`, `WebSession`, `WebSessionProvider` +1) |
-| `WebSession.server.ts` | Server session read: refresh 30 s before expiry shared per refresh token, current account, privileged-account refusal (exports `WebSessionRead`, `accessExpiryOf`, `isPrivilegedAccount`, `readWebSession`) |
+| `WebSession.server.ts` | Server session read: refresh 30 s before expiry shared per refresh token, current account, privileged-account refusal (exports `WebSessionRead`, `accessExpiryOf`, `isPrivilegedAccount`, `readWebSession` +2); also `publicUserOf` and the `GET /bff/v1/session` handler |
 | `index.ts` | Public facade of the feature (exports `PrivilegedAccessError`, `CurrentUser`, `LoginCredentials`, `LoginOutcome` +5) |
 
 <!-- prettier-ignore-end -->

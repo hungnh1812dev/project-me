@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { writeSessionCookie } from './SealedCookie.server';
-import { accessExpiryOf, isPrivilegedAccount, readWebSession } from './WebSession.server';
+import {
+  accessExpiryOf,
+  answerSessionRead,
+  isPrivilegedAccount,
+  readWebSession,
+} from './WebSession.server';
 
 vi.mock('../../configs/Server.env', () => ({
   getServerEnv: () => ({
@@ -157,6 +162,27 @@ describe('readWebSession', () => {
     client.logOut.mockRejectedValue(new Error('down'));
     await expect(readWebSession(requestFor(NOW + 60_000))).rejects.toMatchObject({
       errorCode: 'BFF_PRIVILEGED_ACCOUNT',
+    });
+  });
+});
+
+describe('answerSessionRead', () => {
+  it('answers a null user for a signed-out visitor and the allowlisted fields otherwise', async () => {
+    const signedOut = await answerSessionRead({
+      request: new Request('https://site.test/'),
+      body: {},
+      visitorIp: undefined,
+    });
+    expect(await signedOut.json()).toEqual({ user: null });
+
+    client.readCurrentAccount.mockResolvedValue({ ...READER, passwordHash: 'x' });
+    const signedIn = await answerSessionRead({
+      request: requestFor(NOW + 600_000),
+      body: {},
+      visitorIp: undefined,
+    });
+    expect(await signedIn.json()).toEqual({
+      user: { id: '1', email: 'a@b.c', displayName: 'A', role: 'reader' },
     });
   });
 });

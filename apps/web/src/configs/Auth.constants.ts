@@ -1,6 +1,12 @@
 /** Authenticator and emailed login codes are both 6 digits (SPEC D8). */
 export const LOGIN_CODE_LENGTH = 6;
 
+/** Longest sign-in field the BFF accepts; cms-api's own caps. */
+export const EMAIL_MAX_LENGTH = 254;
+export const PASSWORD_MAX_LENGTH = 128;
+/** A pasted code may carry spaces; cms-api trims it and rejects what is longer. */
+export const TWO_FACTOR_CODE_MAX_LENGTH = LOGIN_CODE_LENGTH * 2;
+
 /** 2FA methods cms-api offers (`two_fa_method`). */
 export const TWO_FACTOR_METHODS = ['totp', 'email'] as const;
 export type TwoFactorMethod = (typeof TWO_FACTOR_METHODS)[number];

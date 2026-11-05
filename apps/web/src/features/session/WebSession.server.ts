@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { BffError } from '../../apis/server/bff/Bff.errors';
+import type { BffContext } from '../../apis/server/bff/BffRoute.server';
 import { visitorIpOf } from '../../apis/server/bff/ClientIp.rules';
 import { cmsApiClient, type CurrentAccount } from '../../apis/server/restful/CmsApi.client';
 import {
@@ -14,6 +15,7 @@ import {
   clearSessionCookie,
   clearTwoFactorCookie,
   readSessionCookie,
+  withSetCookies,
   writeSessionCookie,
   type SealedWebSession,
 } from './SealedCookie.server';
@@ -138,4 +140,17 @@ export async function readWebSession(request: Request): Promise<WebSessionRead> 
   if (account === null) return { status: 'signed-out', setCookies: [clearSessionCookie()] };
   if (isPrivilegedAccount(account)) return refuseDueToPrivilege(session.refreshToken, visitorIp);
   return { status: 'signed-in', account, accessToken: session.accessToken, setCookies };
+}
+
+/** The only account fields that leave the server (api-contract "Web BFF"). */
+export function publicUserOf(account: CurrentAccount) {
+  const { id, email, displayName, role } = account;
+  return { id, email, displayName, role };
+}
+
+/** `GET /bff/v1/session`: the signed-in visitor or `null`, carrying a rotated or cleared cookie. */
+export async function answerSessionRead({ request }: BffContext<unknown>): Promise<Response> {
+  const read = await readWebSession(request);
+  const user = read.status === 'signed-in' ? publicUserOf(read.account) : null;
+  return withSetCookies(Response.json({ user }), read.setCookies);
 }
