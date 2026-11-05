@@ -41,7 +41,7 @@ Only what the job needs (`ADR-STATUS`: none): `SPEC` → `agent-skills:spec-driv
    | # | Feature | Depends on | Apps / packages | Phases |
    |---|---|---|---|---|
    ```
-   Under `## Feature <name>`, its phases: more than one only with 3 or more independent parts, or when `Notes` asks. Every task belongs to exactly one feature.
+   Under `## Feature <name>`, its phases, split by testable outputs; a phase over ~8 tasks is split. Every task belongs to exactly one feature.
    ```
    ### Phase <n>: <name>
    Goal: <one line>
@@ -49,15 +49,15 @@ Only what the job needs (`ADR-STATUS`: none): `SPEC` → `agent-skills:spec-driv
    Outputs: <each testable by qc (browser or CLI): endpoint, screen, CLI, data - with how to check it>
    Tasks: <IDs in build order>
    ```
-6. **Checkpoints** (user rule, every plan and every `DESIGN` / `REPLAN` that adds tasks): qc never runs per task, only at checkpoints. Every completed feature part has a checkpoint listing its task IDs, inputs, testable outputs, the main doubts for QC, and (from `CHECKLIST <phase>`) its checklist, which replaces exit criteria. Each task still has its own builder and commit gate; security gates are unchanged. No `done` report while a feature lacks a checkpoint.
+6. **Checkpoints** (user rule, every plan and every `DESIGN` / `REPLAN` that adds tasks): qc never runs per task, only at checkpoints. Each phase has one checkpoint, at its end, listing its task IDs, inputs, testable outputs, the main doubts for QC, and (from `CHECKLIST <phase>`) its checklist, which replaces exit criteria. Each task still has its own builder and commit gate; security gates are unchanged. No `done` report while a feature lacks a checkpoint.
 
    Checklists change only in `CHECKLIST <phase>`, never in the middle of a phase.
 
    **Checklist** under each checkpoint, in the `test-tiers` format, `Source` `planner`, `Status` `todo`, empty `Note`; IDs `C<checkpoint>-<n>` (e.g. `CLG-2`), unique in the file, one row per requirement:
-   - **small checkpoint** (not the last of a phase with several): only `T0 cli` rows, `Checker` `qc`, the unit tests that must pass for the files its tasks change (`Expected output` names the test files or cases). Anything needing integration tests, e2e, a browser or a security check goes in the phase checkpoint's table;
-   - **phase checkpoint** (the last or only one): each row at the one lowest tier (1, 2 or 3) that shows it; do not repeat the small checkpoints' rows (qc merges them in).
+   each row at the one lowest tier (1, 2 or 3) that shows it.
    Set `Checker` from the checker's scope; if unclear, ask the user. qc and security-qc work on copies; your table stays as written.
-7. Anything not decidable from the files (requirements, design tokens, env values, API contracts) is a question for the user, with a recommended answer and the trade-off.
+7. `PLAN` (and `REPLAN` adding tasks): rate the feature, highest that fits: `small` (≤ 3 tasks, one phase, one app or module, no security gate, no schema or migration change), `medium` (4–8 tasks, a security gate, or 2+ apps), `large` (over 8 tasks or several phases). `large`: name session breaks `after <ID>` at task boundaries, about every 4–5 tasks, preferring a module or builder change. Write both under `## Feature <name>`: `Size: <size> - <reason>` and `Breaks: after <ID>, ... | none`.
+8. Anything not decidable from the files (requirements, design tokens, env values, API contracts) is a question for the user, with a recommended answer and the trade-off.
 
 ## Rules
 
@@ -74,6 +74,8 @@ files changed: <paths>
 summary: <3-6 lines: what was decided or written>
 features: <ordered list: name (depends on; apps/packages)> | unchanged
 phases: <per feature: n phases (<names>)>
+size: <per feature: small | medium | large - one-line reason> | unchanged
+breaks: <per large feature: after <ID>, ...> | none
 new or changed tasks: <feature + phase + IDs + one-line titles, for the board; or none>
 questions: <numbered, each with a recommended answer; or none>
 ```

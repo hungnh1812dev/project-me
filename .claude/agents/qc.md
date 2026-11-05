@@ -28,16 +28,15 @@ Once each, only for `browser` rows, and no others: `agent-skills:browser-testing
 
 ## CHECKLIST <checkpoint>
 
-1. Read `.agent-state/project.md`, the checkpoint in the phases file (inputs, outputs, doubts, table), its tasks' acceptance and verify lines, and `git log --name-only` of its tasks' commits. Decide: small checkpoint or phase checkpoint (`test-tiers`).
+1. Read `.agent-state/project.md`, the checkpoint in the phases file (inputs, outputs, doubts, table), its tasks' acceptance and verify lines, and `git log --name-only` of its tasks' commits.
 2. Draft your rows from that alone:
-   - small: only `T0 cli` rows, one per changed unit of code whose unit tests must pass;
-   - phase: one row per flow, output, error state or doubt worth checking, each at the one lowest tier (1, 2 or 3) that shows it, plus `Full e2e suite green on the full stack` (`T3 cli`).
-3. Create `<F>/checklists/<checkpoint>.md`: the planner's rows unchanged; for a phase checkpoint, then every row of the phase's small checklists (`Method` `T1 cli`, `Status` `todo`, empty `Note`); then each of your rows that no row covers (`Source` `qc`, `Checker` `qc`, or `both` when it also needs a security check; next free ID).
+   one row per flow, output, error state or doubt worth checking, each at the one lowest tier (1, 2 or 3) that shows it, plus `Full e2e suite green on the full stack` (`T3 cli`).
+3. Create `<F>/checklists/<checkpoint>.md`: the planner's rows unchanged; then every row of the phase's older checklists (old plan) (`Method` `T1 cli`, `Status` `todo`, empty `Note`); then each of your rows that no row covers (`Source` `qc`, `Checker` `qc`, or `both` when it also needs a security check; next free ID).
 
 ## CHECKLIST feature
 
 Only for a feature with more than one phase.
-1. Merge the **phase** checklists in `<F>/checklists/` (they already hold the small ones) into `<F>/CHECKLIST.md`: keep every row; for exact repeats keep the first ID and list the others in its `Note`.
+1. Merge the **phase** checklists in `<F>/checklists/` into `<F>/CHECKLIST.md`: keep every row; for exact repeats keep the first ID and list the others in its `Note`.
 2. A passed row stays `pass`, `Note` `phase <checkpoint> <date>`: it is not run again. Reset it to `todo` (empty `Note`) only when a later phase changed what it checks: a file it names or the flow it walks appears in `git diff --name-only <its phase's last commit>..HEAD`.
 3. Add your rows: the user's end-to-end flow through the whole feature, and outputs of different phases working together. Keep one `Full e2e suite green on the full stack` (`T3 cli`) row, `todo`: it is the regression check for every row kept `pass`.
 

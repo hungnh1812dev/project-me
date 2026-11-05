@@ -11,6 +11,10 @@ RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Ru
 - Before a checklist: a qc / security-qc CHECKLIST or CHECK (checklist mode) is denied when the session
   already ran other jobs.
 - During and after: in checklist mode only CHECKLIST, CHECK, RECHECK and FIX of the same target pass.
+- After a plan: a TASK or BATCH is denied in a session that ran PLAN when the in-progress feature's
+  board says `Size: medium` or `Size: large`.
+- Break points: once a TASK or BATCH named in the board's `Breaks:` line ran, a TASK or BATCH of other
+  tasks is denied (FIX and RECHECK of that unit still pass).
 State: .agent-state/.session-gate.json (git-ignored). Any error lets the call through.
 """
 import json, os, re, sys, time
@@ -18,6 +22,10 @@ import json, os, re, sys, time
 GROWTH_LIMIT = 100_000
 STATE_FILE = ".agent-state/.session-gate.json"
 STATE_TTL_S = 2 * 24 * 3600
+FEATURES_FILE = ".agent-state/features.md"
+BOARD_LINE = re.compile(r"^(Size|Breaks):[ \t]*(.*)$", re.M)
+TASK_ID = re.compile(r"\b[A-Z][A-Z0-9]*-\d+\b")
+BUILD_JOBS = ("TASK", "BATCH")
 JOBS = re.compile(r"^\s*(TASK|BATCH|REQUEST|CHECKLIST|CHECK|RECHECK|FIX|REPLAN|SPEC|PLAN|ADR-STATUS)\b:?\s*([^\s:]*)")
 CHECKERS = ("qc", "security-qc")
 CHECKLIST_JOBS = ("CHECKLIST", "CHECK")
@@ -57,6 +65,19 @@ def save_state(state):
         json.dump(state, f, indent=1)
 
 
+def board_plan():
+    """Size and break task IDs from the in-progress feature's board; ("", []) when there is none."""
+    try:
+        for row in open(FEATURES_FILE):
+            cells = [c.strip() for c in row.split("|")]
+            if len(cells) > 4 and cells[3].startswith("in-progress"):
+                lines = dict(BOARD_LINE.findall(open(os.path.join(".agent-state", cells[4], "board.md")).read()))
+                return (lines.get("Size", "").split() or [""])[0], TASK_ID.findall(lines.get("Breaks", ""))
+    except OSError:
+        pass
+    return "", []
+
+
 def deny(reason):
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
                                              "permissionDecisionReason": f"session-gate: {reason}; {BREAK}."}}))
@@ -67,11 +88,13 @@ def job_of(tool_input):
     if not isinstance(text, str):
         text = json.dumps(text)
     m = JOBS.match(text)
-    return (m.group(1), m.group(2).rstrip(":")) if m else (None, None)
+    if not m:
+        return None, None, []
+    return m.group(1), m.group(2).rstrip(":,"), TASK_ID.findall(text.splitlines()[0])
 
 
 def pre_tool_use(event, state):
-    job, target = job_of(event.get("tool_input") or {})
+    job, target, ids = job_of(event.get("tool_input") or {})
     if not job:
         return
     agent = (event.get("tool_input") or {}).get("subagent_type", "")
@@ -90,6 +113,15 @@ def pre_tool_use(event, state):
         if session["jobs"]:
             return deny(f"the checklist of {target} must start in a fresh session (this one already ran other jobs)")
         session["mode"] = target
+    if job == "PLAN":
+        session["planned"] = True
+    elif job in BUILD_JOBS:
+        size, breaks = board_plan()
+        if session.get("planned") and size in ("medium", "large"):
+            return deny(f"the plan of the in-progress feature is {size}; its build needs a fresh session")
+        if session.get("break_at") and session["break_at"] not in ids:
+            return deny(f"the board names a session break at {session['break_at']}")
+        session["break_at"] = session.get("break_at") or next((i for i in ids if i in breaks), None)
     session["jobs"] += 1
 
 

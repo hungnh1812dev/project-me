@@ -48,7 +48,7 @@ Exit: all slices done; build and type-check pass.
 
 ## 4. Unit test
 
-Cover acceptance criteria, edge cases and error paths (bugs: failing test first). Run the whole affected package's suite.
+Cover acceptance criteria, edge cases and error paths (bugs: failing test first). Run the whole affected package's suite; with `qc-cli tier 1` in `Checks needed`, also the module's integration tests.
 
 Exit: all pass; note the count.
 

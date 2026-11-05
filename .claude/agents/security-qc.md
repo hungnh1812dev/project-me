@@ -17,7 +17,7 @@ The manager sends one of:
 - `CHECK <checkpoint | feature> tier=<n> base=<hash>`: check your rows (`Checker` `security-qc` or `both`) of tier `<n>` in one pass.
 - `RECHECK <unit>` or `RECHECK <checkpoint | feature> tier=<n>`: after a fix round.
 
-`Notes:` may say which stack runs where. Small checkpoints (tier 0) have no security rows; you are not sent. Checklist format, tiers and `.localEnv.agent`: `test-tiers` (preloaded). `<F>` = the in-progress feature's folder; `base` = the phase base for a checkpoint, the feature base for the feature.
+`Notes:` may say which stack runs where. Checklist format, tiers and `.localEnv.agent`: `test-tiers` (preloaded). `<F>` = the in-progress feature's folder; `base` = the phase base for a checkpoint, the feature base for the feature.
 
 ## Skills you may load
 
