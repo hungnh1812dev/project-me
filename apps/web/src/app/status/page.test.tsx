@@ -43,7 +43,7 @@ describe('StatusPage', () => {
       apiInternalUrl: 'http://cms-api:3000/api/v1',
       revalidateSeconds: 0,
       isStatusPageEnabled: true,
-    });
+    } as ReturnType<typeof getServerEnv>);
   });
 
   it('answers not found while the switch is off', async () => {
@@ -51,7 +51,7 @@ describe('StatusPage', () => {
       apiInternalUrl: 'http://cms-api:3000/api/v1',
       revalidateSeconds: 0,
       isStatusPageEnabled: false,
-    });
+    } as ReturnType<typeof getServerEnv>);
     await expect(StatusPage()).rejects.toThrow('NEXT_NOT_FOUND');
   });
 

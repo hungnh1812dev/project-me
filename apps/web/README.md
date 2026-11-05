@@ -62,7 +62,9 @@ in a production build.
   the browser bundle at build time (so they are public, never secrets) and a
   missing `NEXT_PUBLIC_API_BASE_URL` fails the build.
 - `src/configs/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
-  `WEB_REVALIDATE_SECONDS` and `WEB_STATUS_PAGE_ENABLED` at runtime. An invalid value stops the server at
+  `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
+  `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
+  `CLIENT_IP_HEADER`) at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
@@ -162,7 +164,8 @@ docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
 the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are optional build args.
-Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`
+Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`,
+`WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts
