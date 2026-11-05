@@ -13,9 +13,11 @@ import {
   type TwoFactorMethod,
 } from '../../configs/Auth.constants';
 import { COPY } from '../../configs/Copy.constants';
+import { TURNSTILE } from '../../configs/Security.constants';
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
 import { useEmailCode } from './useEmailCode';
+import { useHumanCheck } from './useHumanCheck';
 
 const copy = COPY.login.twoFactor;
 const CODE_PATTERN = new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`);
@@ -48,11 +50,13 @@ function alertOf(failure: ApiFailure): Alert | 'expired' {
  */
 export function TwoFactorStep({
   challenge,
+  siteKey,
   onCancel,
   onExpired,
   onDone,
 }: {
   challenge: TwoFactorChallenge;
+  siteKey: string;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
@@ -70,27 +74,46 @@ export function TwoFactorStep({
       </div>
     );
   }
-  return <CodeForm method={method} onCancel={onCancel} onExpired={onExpired} onDone={onDone} />;
+  return (
+    <CodeForm
+      method={method}
+      siteKey={siteKey}
+      onCancel={onCancel}
+      onExpired={onExpired}
+      onDone={onDone}
+    />
+  );
 }
 
 function CodeForm({
   method,
+  siteKey,
   onCancel,
   onExpired,
   onDone,
 }: {
   method: TwoFactorMethod;
+  siteKey: string;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
 }) {
   const session = useWebSession();
   const [alert, setAlert] = useState<Alert | null>(null);
+  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.TWO_FACTOR);
+  // The emailed code goes out as soon as the first check passes; the next
+  // check (a fresh token) is for the verify call.
   const email = useEmailCode(
-    method === 'email' ? () => session.sendLoginEmailCode() : () => Promise.resolve(),
+    method === 'email'
+      ? () => {
+          const humanCheckToken = humanCheck.takeToken();
+          return session.sendLoginEmailCode(humanCheckToken === null ? {} : { humanCheckToken });
+        }
+      : () => Promise.resolve(),
     (failure) => {
       if (alertOf(failure) === 'expired') onExpired();
     },
+    method !== 'email' || humanCheck.hasToken,
   );
   const form = useForm<CodeValues>({
     defaultValues: { code: '' },
@@ -118,7 +141,9 @@ function CodeForm({
 
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
-    verify.mutate({ code: values.code.trim() });
+    const humanCheckToken = humanCheck.requireToken();
+    if (humanCheckToken === null) return;
+    verify.mutate({ code: values.code.trim(), humanCheckToken });
   });
 
   const sendAlert = method === 'email' && email.failure !== null ? alertOf(email.failure) : null;
@@ -156,12 +181,16 @@ function CodeForm({
               className="h-auto px-0"
               loading={email.isSending}
               disabled={email.isCoolingDown}
-              onClick={email.resend}
+              onClick={() => {
+                if (humanCheck.hasToken) email.resend();
+                else humanCheck.requireToken();
+              }}
             >
               {copy.resend}
             </Button>
           </p>
         ) : null}
+        {humanCheck.field}
         <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onCancel}>
             {copy.cancel}

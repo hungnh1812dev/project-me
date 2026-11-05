@@ -16,9 +16,8 @@ export const appEnv = Object.freeze({
    */
   adminUrl: optionalLinkTarget('NEXT_PUBLIC_ADMIN_URL', process.env.NEXT_PUBLIC_ADMIN_URL),
   /**
-   * Cloudflare Turnstile site key (public by design). Optional: without it
-   * the "Reviewer access" entry is hidden, since a session cannot be started
-   * without the widget.
+   * Cloudflare Turnstile site key (public by design). Optional until WBH-9:
+   * without it the sign-in dialog says the security check is unavailable.
    */
   turnstileSiteKey: optionalText(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
 });

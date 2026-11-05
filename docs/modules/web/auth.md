@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/features/auth
 app: web
-summary: Web sign-in dialog with the two-factor step
+summary: Web sign-in dialog with the two-factor step and its Turnstile human check
 ---
 
 # Auth (web)
@@ -18,11 +18,11 @@ The sign-in of reader accounts on the public site: credentials, then the TOTP or
 
 ## Techniques
 
-Client components (`'use client'`). The dialog content unmounts on close, so each opening starts clean. Every failure maps to one alert: a credential failure gives one generic message (no account enumeration), 429 says how long to wait, a privileged account is refused. Emailed codes are sent once on mount (a ref survives the StrictMode double mount).
+Client components (`'use client'`). The dialog content unmounts on close, so each opening starts clean. Every failure maps to one alert: a credential failure gives one generic message (no account enumeration), 429 says how long to wait, a privileged account is refused. Each step shows a Turnstile widget (action `login`, then `two-factor`); a token works once, so every request (sign-in, emailed code, resend, verify) takes a fresh token and the widget remounts. The emailed code goes out once, as soon as the first check passes (a ref survives the StrictMode double mount). The Turnstile script loads only while the dialog is open. Without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` the dialog says sign-in is unavailable (required at build from WBH-9).
 
 ## Technologies
 
-React, react-hook-form with Zod, the session feature's API.
+React, react-hook-form with Zod, the session feature's API, Cloudflare Turnstile (explicit rendering).
 
 ## Entry points
 
@@ -38,18 +38,21 @@ Alert texts and mapping: `LoginAlerts.rules.ts` and the web copy module. The cal
 <!-- prettier-ignore-start -->
 
 ```
-auth/ (5 files)
+auth/ (8 files)
 ```
 
-Tests: 2 files (not listed).
+Tests: 3 files (not listed).
 
 | File | Description |
 |---|---|
 | `LoginAlerts.rules.ts` | Maps sign-in failures (BFF error codes, rate limit, network) to their alerts (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
+| `Turnstile.client.ts` | Types of the Cloudflare explicit-render API on `window.turnstile` (exports `TurnstileApi`) |
+| `TurnstileWidget.tsx` | Renders one Turnstile challenge for an action and loads the script only while mounted (exports `TurnstileWidget`) |
 | `TwoFactorStep.tsx` | Second sign-in step (code check; the BFF holds the temp token) (exports `TwoFactorStep`) |
 | `WebLoginDialog.tsx` | The sign-in dialog (exports `WebLoginDialog`) |
 | `index.ts` | Public facade of the feature (exports `WebLoginDialog`) |
-| `useEmailCode.ts` | Sends emailed 2FA codes, once on mount and on request (exports `useEmailCode`) |
+| `useEmailCode.ts` | Sends emailed 2FA codes, once when ready and on request (exports `useEmailCode`) |
+| `useHumanCheck.tsx` | Holds the one-use token and error of a step's widget; `takeToken` renews the challenge (exports `useHumanCheck`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

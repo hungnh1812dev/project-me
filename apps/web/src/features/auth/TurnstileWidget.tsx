@@ -4,25 +4,28 @@ import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 
 import { COPY } from '../../configs/Copy.constants';
-import { TURNSTILE } from '../../configs/Security.constants';
+import { TURNSTILE, type TurnstileAction } from '../../configs/Security.constants';
 
 import './Turnstile.client';
 
-const copy = COPY.reviewer.turnstile;
+const copy = COPY.login.humanCheck;
 
 /**
  * Cloudflare Turnstile. The script loads only while this component is
- * mounted (inside the reviewer dialog), so no other page contacts Cloudflare.
+ * mounted (inside the sign-in dialog), so no other page contacts Cloudflare.
  * Mount it with a new `key` to get a fresh challenge (a token works once).
  */
 export function TurnstileWidget({
   siteKey,
+  action,
   hasScriptFailed,
   onFailed,
   onToken,
   onExpired,
 }: {
   siteKey: string;
+  /** The BFF checks that the token was issued for the step it protects. */
+  action: TurnstileAction;
   /** Held by the parent so it survives a remount (Back and Next). */
   hasScriptFailed: boolean;
   onFailed: () => void;
@@ -45,6 +48,7 @@ export function TurnstileWidget({
     if (!ready || api === undefined || container.current === null) return;
     widgetId.current = api.render(container.current, {
       sitekey: siteKey,
+      action,
       callback: (token) => callbacks.current.onToken(token),
       'expired-callback': () => callbacks.current.onExpired(),
       'error-callback': () => callbacks.current.onFailed(),
@@ -53,7 +57,7 @@ export function TurnstileWidget({
       if (widgetId.current !== null) api.remove(widgetId.current);
       widgetId.current = null;
     };
-  }, [ready, siteKey]);
+  }, [ready, siteKey, action]);
 
   return (
     <div className="grid gap-2">

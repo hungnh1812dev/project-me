@@ -4,6 +4,7 @@ export interface TurnstileApi {
     container: HTMLElement,
     options: {
       sitekey: string;
+      action: string;
       callback: (token: string) => void;
       'expired-callback': () => void;
       'error-callback': () => void;
