@@ -28,9 +28,9 @@ describe('TurnstileWidget', () => {
         siteKey="site-key"
         action={TURNSTILE.ACTIONS.TWO_FACTOR}
         hasScriptFailed={false}
-        onFailed={vi.fn()}
-        onToken={vi.fn()}
-        onExpired={vi.fn()}
+        onFailed={vi.fn<() => void>()}
+        onToken={vi.fn<() => void>()}
+        onExpired={vi.fn<() => void>()}
       />,
     );
     expect(api.render).toHaveBeenCalledWith(
@@ -43,8 +43,8 @@ describe('TurnstileWidget', () => {
 
   it('hands the token and the failure to its parent', () => {
     const api = stubTurnstile();
-    const onToken = vi.fn();
-    const onFailed = vi.fn();
+    const onToken = vi.fn<(token: string) => void>();
+    const onFailed = vi.fn<() => void>();
     render(
       <TurnstileWidget
         siteKey="site-key"
@@ -52,7 +52,7 @@ describe('TurnstileWidget', () => {
         hasScriptFailed={false}
         onFailed={onFailed}
         onToken={onToken}
-        onExpired={vi.fn()}
+        onExpired={vi.fn<() => void>()}
       />,
     );
     const options = api.render.mock.calls[0]?.[1];

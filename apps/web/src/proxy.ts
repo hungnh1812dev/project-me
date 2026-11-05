@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { appEnv } from './configs/Browser.env';
 import { CSP_HEADER, NONCE_HEADER } from './configs/Security.constants';
 import { buildContentSecurityPolicy, generateNonce } from './utils/ContentSecurityPolicy.rules';
 
@@ -13,7 +12,6 @@ export function proxy(request: NextRequest): NextResponse {
   const nonce = generateNonce();
   const csp = buildContentSecurityPolicy({
     nonce,
-    apiBaseUrl: appEnv.apiBaseUrl,
     isDev: process.env.NODE_ENV === 'development',
   });
 
@@ -27,13 +25,13 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 /**
- * Everything except API calls (served by cms-api) and build assets; prefetches
+ * Everything except BFF calls (route handlers set their own headers) and build assets; prefetches
  * carry no document, so they get no nonce. Must stay a static literal.
  */
 export const config = {
   matcher: [
     {
-      source: '/((?!api/|_next/static|_next/image|favicon.ico).*)',
+      source: '/((?!bff/|_next/static|_next/image|favicon.ico).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

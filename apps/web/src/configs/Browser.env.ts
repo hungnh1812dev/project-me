@@ -1,5 +1,4 @@
-import { optionalLinkTarget, optionalText, requireEnv } from './RequireEnv.rules';
-import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
+import { optionalLinkTarget, requireEnv } from './RequireEnv.rules';
 
 /**
  * Typed, validated view of the browser-visible env. `NEXT_PUBLIC_*` values are
@@ -7,17 +6,17 @@ import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
  * `process.env[name]`). A missing key fails the build.
  */
 export const appEnv = Object.freeze({
-  apiBaseUrl: stripTrailingSlashes(
-    requireEnv('NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL),
-  ),
   /**
    * Admin console URL for the "Open CMS" link. Optional: the link is hidden
    * when unset. An absolute http(s) URL or a path; no trailing slash.
    */
   adminUrl: optionalLinkTarget('NEXT_PUBLIC_ADMIN_URL', process.env.NEXT_PUBLIC_ADMIN_URL),
   /**
-   * Cloudflare Turnstile site key (public by design). Optional until WBH-9:
-   * without it the sign-in dialog says the security check is unavailable.
+   * Cloudflare Turnstile site key (public by design). Required: a build
+   * without it fails.
    */
-  turnstileSiteKey: optionalText(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+  turnstileSiteKey: requireEnv(
+    'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+  ),
 });

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build from the repo root:
-#   docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_BASE_URL=... .
+#   docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=... .
 ARG NODE_IMAGE=node:24.18-alpine
 
 FROM ${NODE_IMAGE} AS base
@@ -26,14 +26,12 @@ COPY --from=prune /repo/out/full/ .
 # turbo prune keeps workspace packages only; root config files come separately.
 COPY --from=prune /repo/tsconfig.base.json ./
 # Baked into the browser bundle at build time; see apps/web/.env.example.
-ARG NEXT_PUBLIC_API_BASE_URL
-RUN test -n "$NEXT_PUBLIC_API_BASE_URL" || (echo "NEXT_PUBLIC_API_BASE_URL build arg is required" >&2; exit 1)
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 # Optional: target of the "Open CMS" link. Empty hides the link.
 ARG NEXT_PUBLIC_ADMIN_URL=
 ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
-# Optional: Cloudflare Turnstile site key (public). Empty hides "Reviewer access".
-ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+# Required: Cloudflare Turnstile site key (public).
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+RUN test -n "$NEXT_PUBLIC_TURNSTILE_SITE_KEY" || (echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY build arg is required" >&2; exit 1)
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN pnpm turbo run build --filter=@abyss/web
 

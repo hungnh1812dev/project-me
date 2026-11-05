@@ -37,10 +37,9 @@ pnpm --filter @abyss/web dev       # http://localhost:5174
 ```
 
 The dev port is `DEV_SERVER_PORT` from the shell environment (default 5174; a
-`.env.local` value is loaded too late to set it). In dev, `next.config.ts`
-forwards `/api` to `DEV_API_PROXY_TARGET` (a local cms-api) unchanged, like
-Traefik does in production. That rewrite exists only for the dev server, never
-in a production build.
+`.env.local` value is loaded too late to set it). The browser never calls
+cms-api: it talks only to this origin (`/bff/v1/*`), so the dev server has no
+`/api` proxy. The Next server reaches cms-api through `API_INTERNAL_URL`.
 
 `@abyss/form-commons` is consumed from its `dist/`, so build it once first
 (`pnpm build` at the root does this through Turborepo's `^build`).
@@ -60,7 +59,8 @@ in a production build.
 
 - `src/configs/Browser.env.ts` reads `NEXT_PUBLIC_*` keys. They are inlined into
   the browser bundle at build time (so they are public, never secrets) and a
-  missing `NEXT_PUBLIC_API_BASE_URL` fails the build.
+  missing `NEXT_PUBLIC_TURNSTILE_SITE_KEY` fails the build. No cms-api URL is
+  ever baked into the bundle.
 - `src/configs/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
   `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
   `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
@@ -105,12 +105,9 @@ tokens only (`bg-card`, `text-muted-foreground`).
 ## Sign-in and session
 
 - The header "Sign in" opens `WebLoginDialog` (email + password, then the 2FA
-  code when the account has it). Calls go from the browser to
-  `NEXT_PUBLIC_API_BASE_URL` (`/auth/login`, `/auth/2fa/verify`,
-  `/auth/refresh`, `/auth/logout`, `/auth/me`); cms-api sets the host-only
-  `__Secure-abyss_rt` refresh cookie (Path `/api/v1/auth`). No Server Action,
-  Route Handler or `cookies()` call touches auth, and the Next server never
-  sees a token.
+  code when the account has it). Calls go from the browser to this origin's
+  BFF (`/bff/v1/auth/*`); the BFF talks to cms-api and keeps the tokens in
+  sealed cookies.
 - `features/session` owns the session: `useWebSession` and `WebSessionProvider`
   (mounted in `src/components/layouts/AppProviders.tsx`), the auth API and the one
   `PrivilegedAccessError`. `features/auth` (sign-in dialog) and
@@ -157,13 +154,13 @@ tokens only (`bg-card`, `text-muted-foreground`).
 ## Docker
 
 ```bash
-docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_BASE_URL=/api/v1 -t abyss-web .
+docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key> -t abyss-web .
 docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
 ```
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are optional build args.
+the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
 Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`,
 `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
@@ -188,15 +185,15 @@ The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a fil
   on its scripts) and on the response. The policy is built in
   `src/utils/ContentSecurityPolicy.rules.ts`: `script-src 'self' 'nonce-<n>'
 'strict-dynamic'` + the Turnstile origin, `style-src 'self' 'nonce-<n>'` with
-  `style-src-attr 'unsafe-inline'`, `connect-src 'self'` plus the origin
-  of `NEXT_PUBLIC_API_BASE_URL` when it is absolute, `img-src` with Cloudinary,
+  `style-src-attr 'unsafe-inline'`, `connect-src 'self'` (plus
+  `ws:` in dev), `img-src` with Cloudinary,
   `frame-src` Turnstile, `frame-ancestors 'none'`. Dev adds `'unsafe-eval'` and
   `ws:`. Origins and header values are constants in `src/configs/security*.ts`.
 - Radix dialogs inject a scroll-lock `<style>` through react-remove-scroll-bar;
   `components/layouts/CspNonce.tsx` passes it the request nonce (`get-nonce` `setNonce`) so
   `style-src` stays nonce-only.
-- `next.config.ts` adds HSTS, `nosniff` and `Referrer-Policy` to every route.
-- The proxy matcher skips `/api/`, `/_next/static`, `/_next/image` and
+- `next.config.ts` adds HSTS, `nosniff`, `Referrer-Policy`, `Cross-Origin-Opener-Policy: same-origin`, a deny-all `Permissions-Policy` and `X-Frame-Options: DENY` to every route.
+- The proxy matcher skips `/bff/`, `/_next/static`, `/_next/image` and
   prefetches. The root layout awaits `connection()`, so every page renders per
   request (the server data cache from `WEB_REVALIDATE_SECONDS` still applies).
 - `scripts/smoke.sh` asserts the headers, the nonce match and a fresh nonce

@@ -1,5 +1,5 @@
 /**
- * The single map of cms-api paths (SPEC §5), relative to `appEnv.apiBaseUrl`.
+ * The single map of cms-api paths (SPEC §5), relative to `API_INTERNAL_URL`.
  * No trailing slashes; the API client strips them anyway.
  */
 export const API_ENDPOINTS = {
