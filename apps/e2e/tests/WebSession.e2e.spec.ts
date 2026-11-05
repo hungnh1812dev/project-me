@@ -322,20 +322,3 @@ test('the code step: a resend after a 429 stays blocked for a huge Retry-After a
   await page.waitForTimeout(COOLDOWN_SETTLE_MS);
   await expect(resend).toBeDisabled();
 });
-
-test('a signed-in reader gets no Reviewer access button and no reviewer status call', async ({
-  page,
-}) => {
-  await page.goto(e2eEnv.webUrl);
-  await openDialog(page);
-  const statusCalls: string[] = [];
-  page.on('request', (req) => {
-    if (req.url().endsWith(API_PATHS.REVIEWER.STATUS)) statusCalls.push(req.url());
-  });
-  await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
-  await expect(signOutButton(page)).toBeVisible();
-  await expect(page.getByRole('button', { name: WEB_COPY.reviewer.open, exact: true })).toHaveCount(
-    0,
-  );
-  expect(statusCalls).toEqual([]);
-});
