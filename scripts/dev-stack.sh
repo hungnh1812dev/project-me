@@ -29,6 +29,7 @@ API_PREFIX="/api/v1"
 LOOPBACK="127.0.0.1"
 HEALTH_OK_BODY='"status":"ok"'
 TURNSTILE_TEST_SITE_KEY="1x00000000000000000000AA"
+WEB_SESSION_SECRET_KEY="WEB_SESSION_SECRET"
 RATE_LIMIT_OVERRIDE_OPT_IN="smoke"
 RATE_LIMIT_OVERRIDE="10000"
 READY_TIMEOUT_SECONDS=180
@@ -90,7 +91,7 @@ create_local_env() {
       echo "DEV_STACK_WEB_PORT=$DEFAULT_WEB_PORT"
       echo "DEV_STACK_MAILPIT_HTTP_PORT=$DEFAULT_MAILPIT_HTTP_PORT"
       echo "DEV_STACK_MAILPIT_SMTP_PORT=$DEFAULT_MAILPIT_SMTP_PORT"
-      for name in DB_PASSWORD JWT_ACCESS_SECRET OTP_PEPPER TOTP_ENC_KEY; do
+      for name in DB_PASSWORD JWT_ACCESS_SECRET OTP_PEPPER TOTP_ENC_KEY "$WEB_SESSION_SECRET_KEY"; do
         echo "$name=$(stack_random_secret)"
       done
     } >"$LOCAL_ENV_FILE"
@@ -98,9 +99,15 @@ create_local_env() {
   echo "Created .localEnv.agent with generated dev-only values."
 }
 
+# The web BFF seals its cookies with WEB_SESSION_SECRET; an older .localEnv.agent gets one added.
+ensure_web_session_secret() {
+  grep -q "^$WEB_SESSION_SECRET_KEY=" "$LOCAL_ENV_FILE" || echo "$WEB_SESSION_SECRET_KEY=$(stack_random_secret)" >>"$LOCAL_ENV_FILE"
+}
+
 load_local_env() {
   [[ -f "$LOCAL_ENV_FILE" ]] || create_local_env
   ensure_local_env_is_ignored
+  ensure_web_session_secret
   set -a
   # shellcheck source=/dev/null
   source "$LOCAL_ENV_FILE"
@@ -229,8 +236,7 @@ start_apps() {
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
   DEV_SERVER_PORT="$WEB_PORT_DEV" \
     API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
-    NEXT_PUBLIC_API_BASE_URL="$API_PREFIX" NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
-    WEB_STATUS_PAGE_ENABLED=true \
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
   wait_until "cms-admin ($ADMIN_ORIGIN)" cms-admin admin_is_up
@@ -239,7 +245,7 @@ start_apps() {
 
 write_e2e_vars() {
   stack_resolve_db_identity
-  stack_export_e2e_env "$ADMIN_ORIGIN" "$API_BASE_URL" "$MAILPIT_URL"
+  stack_export_e2e_env "$ADMIN_ORIGIN" "$API_BASE_URL" "$MAILPIT_URL" "$WEB_ORIGIN"
   (
     umask 077
     for name in "${E2E_VARS[@]}"; do printf 'export %s=%q\n' "$name" "${!name}"; done >"$E2E_VARS_FILE"
