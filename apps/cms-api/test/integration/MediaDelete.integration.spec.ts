@@ -51,6 +51,7 @@ const GALLERY = {
     {
       name: 'block',
       type: 'component',
+      component: 'block',
       fields: [{ name: 'image', type: 'media' }],
     },
   ],

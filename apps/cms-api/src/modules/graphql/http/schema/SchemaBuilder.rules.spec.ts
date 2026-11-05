@@ -43,12 +43,14 @@ const ALL_TYPES: ContentTypeDefinition = {
     {
       name: 'items',
       type: 'component',
+      component: 'items',
       repeatable: true,
       fields: [
         { name: 'label', type: 'string' },
         {
           name: 'inner',
           type: 'component',
+          component: 'inner',
           fields: [{ name: 'note', type: 'string' }],
         },
       ],
@@ -56,6 +58,7 @@ const ALL_TYPES: ContentTypeDefinition = {
     {
       name: 'seo',
       type: 'component',
+      component: 'seo',
       fields: [{ name: 'team_size', type: 'integer' }],
     },
   ],
@@ -374,11 +377,13 @@ describe('buildGraphqlSchema', () => {
           {
             name: 'teamSize',
             type: 'component',
+            component: 'teamSize',
             fields: [{ name: 'a', type: 'string' }],
           },
           {
             name: 'team_size',
             type: 'component',
+            component: 'team_size',
             fields: [{ name: 'a', type: 'string' }],
           },
         ],

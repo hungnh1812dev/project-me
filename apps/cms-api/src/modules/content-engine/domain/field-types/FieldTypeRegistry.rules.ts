@@ -14,8 +14,8 @@ type ScalarFieldType = (typeof SCALAR_FIELD_TYPES)[number];
 const coerceText = (value: unknown) => (typeof value === 'string' ? value : undefined);
 
 /**
- * `string`, `text` and `richtext` differ only in validation and editor, so
- * they share a column type and a mask.
+ * `text` (short, one line), `string` (long plain text) and `richtext` differ
+ * only in validation and editor, so they share a column type and a mask.
  */
 const TEXT_LIKE = {
   columnType: 'text',

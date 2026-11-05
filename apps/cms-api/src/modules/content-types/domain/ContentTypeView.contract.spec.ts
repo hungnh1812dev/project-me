@@ -42,6 +42,7 @@ const PROFILE = {
     {
       name: 'experience',
       type: 'component',
+      component: 'experience',
       repeatable: true,
       fields: [{ name: 'company', type: 'string' }],
     },

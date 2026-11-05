@@ -25,12 +25,14 @@ const PROFILE = {
     {
       name: 'experience',
       type: 'component',
+      component: 'experience',
       repeatable: true,
       fields: [
         { name: 'company', type: 'string' },
         {
           name: 'role',
           type: 'component',
+          component: 'role',
           repeatable: true,
           fields: [{ name: 'teamSize', type: 'integer' }],
         },

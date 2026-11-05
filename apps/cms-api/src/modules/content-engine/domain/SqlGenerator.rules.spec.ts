@@ -26,12 +26,14 @@ const TITLE: FieldDefinition = { name: 'title', type: 'string' };
 const TAGS: FieldDefinition = {
   name: 'tags',
   type: 'component',
+  component: 'tags',
   repeatable: true,
   fields: [
     { name: 'label', type: 'string' },
     {
       name: 'links',
       type: 'component',
+      component: 'links',
       repeatable: true,
       fields: [{ name: 'url', type: 'string' }],
     },

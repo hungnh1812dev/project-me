@@ -18,7 +18,7 @@ Turns the content type definitions (JSON) into database tables in the `content` 
 
 ## Techniques
 
-Definitions (including the required `displayName`, a metadata-only key) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
+Definitions (the required type `displayName`, optional field `displayName` and `width`, and the `component` value that names each component table) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
 
 ## Technologies
 
@@ -56,7 +56,7 @@ Tests: 11 files (not listed).
 | `adapters/ContentDatabase.adapter.ts` | Content DB connection and migration constants (lock key, file names) |
 | `adapters/KyselyContent.repository.ts` | `KyselyContentRepository`: insert, replace and load document trees |
 | `adapters/KyselyContentTransactionRunner.adapter.ts` | `KyselyContentTransactionRunner`, `contentTrxOf`: content transactions with after-commit callbacks |
-| `adapters/MigrationFiles.adapter.ts` | Load definitions, list and write migration files, snapshot, checksums |
+| `adapters/MigrationFiles.adapter.ts` | Load definitions, list and write migration files, snapshot (old snapshots get `component = name`), checksums |
 | `adapters/MigrationRunner.adapter.ts` | `runContentMigrations`: applies pending content migrations under a lock |
 | `adapters/PgContentType.repository.ts` | `PgContentTypeRepository`: stored content types |
 | `adapters/TreeLoader.adapter.ts` | `loadComponentTrees`: loads the nested component rows of documents |
@@ -66,13 +66,13 @@ Tests: 11 files (not listed).
 | `cli/ContentGenerate.command.ts` | `content:generate`: writes or checks migrations; refuses destructive changes |
 | `cli/ContentMigrate.command.ts` | `content:migrate`: runs pending content migrations |
 | `domain/ContentDocument.entity.ts` | `ContentDocument`, `ContentStatus`, `DocumentRef`, engine errors |
-| `domain/ContentEngine.constants.ts` | Schema name, depth and identifier limits, patterns, field type names |
+| `domain/ContentEngine.constants.ts` | Schema name, depth and identifier limits, patterns, field type names, `FIELD_WIDTHS` |
 | `domain/ContentRowMapping.rules.ts` | `toColumnValues`, `toDocument`: values <-> rows |
 | `domain/ContentTree.entity.ts` | `ContentRow`, `ComponentNode`, `ComponentTrees` |
 | `domain/ContentTypeRegistry.entity.ts` | `ContentTypeRegistry`, table nodes, `UnknownContentTypeError` |
-| `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition |
-| `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, depth, relations) |
-| `domain/Naming.rules.ts` | `planTables`, `toSqlIdentifier`, table and relation names |
+| `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`) |
+| `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, `component` values, field `displayName`, depth, relations) |
+| `domain/Naming.rules.ts` | `planTables` (tables named by `component`, with `apiPath`), `toSqlIdentifier`, table and relation names |
 | `domain/SqlGenerator.rules.ts` | `planMigration`, `renderMigrationSql`, snapshots and column types |
 | `domain/TreeInput.rules.ts` | `assertTreeInput`: checks a submitted document tree |
 | `domain/field-types/FieldType.entity.ts` | `FieldTypeSpec`, `FieldValueKind`, `CoerceContext` |

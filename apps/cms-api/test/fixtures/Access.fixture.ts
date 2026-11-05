@@ -31,6 +31,7 @@ export const ARTICLE_DEFINITION = {
     {
       name: 'reference',
       type: 'component',
+      component: 'reference',
       fields: [
         { name: 'name', type: 'string' },
         { name: 'phone', type: 'string' },

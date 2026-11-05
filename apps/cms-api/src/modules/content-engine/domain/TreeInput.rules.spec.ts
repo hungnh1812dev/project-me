@@ -97,6 +97,7 @@ describe('assertTreeInput', () => {
         {
           name: 'contact',
           type: 'component',
+          component: 'contact',
           fields: [{ name: 'email', type: 'string' }],
         },
       ],

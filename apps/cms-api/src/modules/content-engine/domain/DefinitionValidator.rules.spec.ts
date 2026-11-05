@@ -22,7 +22,7 @@ function definition(fields: Field[], slug = 'post'): Record<string, unknown> {
 }
 
 function component(name: string, fields: Field[]): Field {
-  return { name, type: 'component', repeatable: true, fields };
+  return { name, type: 'component', component: name, repeatable: true, fields };
 }
 
 /** Root -> c1 -> c2 -> ... -> c<depth>, the deepest holding one string field. */
@@ -43,6 +43,10 @@ function errorsOf(input: unknown): DefinitionValidationError[] {
   const result = validateDefinition(input);
   if (result.ok) throw new Error('expected the definition to be rejected');
   return result.errors;
+}
+
+function isValid(input: unknown): boolean {
+  return validateDefinition(input).ok;
 }
 
 function rulesOf(input: unknown): string[] {
@@ -121,6 +125,7 @@ describe('validateDefinition', () => {
         {
           name: 'address',
           type: 'component',
+          component: 'address',
           fields: [{ name: 'city', type: 'string' }],
         },
       ],
@@ -143,7 +148,20 @@ describe('validateDefinition', () => {
       ['an unknown top-level key', { ...definition([{ name: 'a', type: 'string' }]), extra: 1 }],
       ['an empty field list', definition([])],
       ['an unknown field type', definition([{ name: 'a', type: 'uuid' }])],
-      ['an unknown field key', definition([{ name: 'a', type: 'string', width: 50 }])],
+      ['an unknown field key', definition([{ name: 'a', type: 'string', color: 'red' }])],
+      ['a numeric width', definition([{ name: 'a', type: 'string', width: 50 }])],
+      ['a percent width', definition([{ name: 'a', type: 'string', width: '50%' }])],
+      ['an empty width', definition([{ name: 'a', type: 'string', width: '' }])],
+      [
+        'a width on a component',
+        definition([{ ...component('a', [{ name: 'b', type: 'string' }]), width: 'full' }]),
+      ],
+      [
+        'a component field without component',
+        definition([{ name: 'a', type: 'component', fields: [{ name: 'b', type: 'string' }] }]),
+      ],
+      ['component on a scalar', definition([{ name: 'a', type: 'string', component: 'a' }])],
+      ['a non-string displayName', definition([{ name: 'a', type: 'string', displayName: 1 }])],
       ['a component without fields', definition([{ name: 'a', type: 'component' }])],
       ['a component with no children', definition([component('a', [])])],
       ['a scalar with children', definition([{ name: 'a', type: 'string', fields: [] }])],
@@ -158,6 +176,60 @@ describe('validateDefinition', () => {
     it('points at the offending key', () => {
       const [error] = errorsOf(definition([component('a', [{ name: 'b', type: 'uuid' }])]));
       expect(error?.path).toEqual(['fields', 0, 'fields', 0, 'type']);
+    });
+  });
+
+  describe('field metadata', () => {
+    it.each(['1/3', '1/2', 'full'])('accepts width %s on a scalar', (width) => {
+      expect(isValid(definition([{ name: 'a', type: 'string', width }]))).toBe(true);
+    });
+
+    it('accepts a displayName on a scalar and on a component', () => {
+      const fields: Field[] = [
+        { name: 'a', type: 'text', displayName: 'Tech stack' },
+        { ...component('b', [{ name: 'c', type: 'text' }]), displayName: 'Bees' },
+      ];
+      expect(isValid(definition(fields))).toBe(true);
+    });
+
+    it.each(['', ' x', 'x ', 'a\nb', 'x'.repeat(61)])(
+      'rejects field displayName %j with its path',
+      (displayName) => {
+        expect(errorsOf(definition([{ name: 'a', type: 'text', displayName }]))).toEqual([
+          expect.objectContaining({
+            rule: DEFINITION_RULES.DISPLAY_NAME_INVALID,
+            path: ['fields', 0, 'displayName'],
+          }),
+        ]);
+      },
+    );
+  });
+
+  describe('component value', () => {
+    function withComponent(value: string): Record<string, unknown> {
+      return definition([{ ...component('a', [{ name: 'b', type: 'text' }]), component: value }]);
+    }
+
+    it('accepts a camelCase value that differs from name', () => {
+      expect(isValid(withComponent('subNavigation'))).toBe(true);
+    });
+
+    it.each([
+      ['Bad', DEFINITION_RULES.IDENTIFIER_INVALID],
+      ['', DEFINITION_RULES.IDENTIFIER_INVALID],
+      ['with__double', DEFINITION_RULES.IDENTIFIER_INVALID],
+      ['select', DEFINITION_RULES.IDENTIFIER_RESERVED],
+      ['status', DEFINITION_RULES.IDENTIFIER_RESERVED],
+    ])('rejects component %j', (value, rule) => {
+      expect(errorsOf(withComponent(value))).toEqual([
+        expect.objectContaining({ rule, path: ['fields', 0, 'component'] }),
+      ]);
+    });
+
+    it('rejects two siblings with the same component value', () => {
+      const first = component('first', [{ name: 'x', type: 'text' }]);
+      const second = { ...component('second', [{ name: 'y', type: 'text' }]), component: 'first' };
+      expect(rulesOf(definition([first, second]))).toContain(DEFINITION_RULES.IDENTIFIER_COLLISION);
     });
   });
 
@@ -244,7 +316,9 @@ describe('validateDefinition', () => {
         expect(rulesOf(definition([{ name, type: 'string' }]))).toEqual([
           DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
+        // `component(name)` uses the word as both the field name and the component value.
         expect(rulesOf(definition([component(name, [{ name: 'a', type: 'string' }])]))).toEqual([
+          DEFINITION_RULES.IDENTIFIER_RESERVED,
           DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
       },
@@ -303,7 +377,7 @@ describe('validateDefinition', () => {
       );
       expect(errorsOf(deep)).toEqual([
         expect.objectContaining({
-          path: ['fields', 0, 'fields', 0, 'name'],
+          path: ['fields', 0, 'fields', 0, 'component'],
           rule: DEFINITION_RULES.IDENTIFIER_TOO_LONG,
           message: containing(`Table name "cv_page__experience__${bytes(43)}"`),
         }),
