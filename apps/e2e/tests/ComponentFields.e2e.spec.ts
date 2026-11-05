@@ -17,17 +17,17 @@ const ROLE_NAME = `Role ${RUN_ID}`;
 interface StoredItem {
   componentUid?: string;
   values: { skill?: string };
-  components: { role?: unknown[] };
+  components: { roles?: unknown[] };
 }
 interface StoredDocument {
-  components: { skill?: StoredItem[]; experience?: StoredItem[] };
+  components: { skills?: StoredItem[]; experiences?: StoredItem[] };
 }
 
 const addSlot = (scope: Page | ReturnType<typeof listItem>, label: string) =>
   scope.getByRole('button', { name: list.addSlot(label), exact: true });
 
 const skillName = (page: Page, index: number) =>
-  fieldByLabel(listItem(page, 'Skill', index), 'Skill');
+  fieldByLabel(listItem(page, 'Skills', index), 'Skill');
 
 const names = async (page: Page, count: number) => {
   const found: string[] = [];
@@ -74,18 +74,18 @@ test.describe.serial('owner: component fields (dashed slots, remove, move)', () 
   };
 
   test('the empty slot adds an item on click, Enter and Space', async () => {
-    const slot = addSlot(page, 'Skill');
+    const slot = addSlot(page, 'Skills');
     await expect(slot).toBeVisible();
-    await expect(listItem(page, 'Skill', 0)).toHaveCount(0);
+    await expect(listItem(page, 'Skills', 0)).toHaveCount(0);
 
     await slot.click();
-    await expect(listItem(page, 'Skill', 0)).toBeVisible();
+    await expect(listItem(page, 'Skills', 0)).toBeVisible();
     await slot.focus();
     await page.keyboard.press('Enter');
-    await expect(listItem(page, 'Skill', 1)).toBeVisible();
+    await expect(listItem(page, 'Skills', 1)).toBeVisible();
     await slot.focus();
     await page.keyboard.press('Space');
-    await expect(listItem(page, 'Skill', 2)).toBeVisible();
+    await expect(listItem(page, 'Skills', 2)).toBeVisible();
 
     for (const [index, name] of NAMES.entries()) {
       await skillName(page, index).fill(name);
@@ -94,35 +94,55 @@ test.describe.serial('owner: component fields (dashed slots, remove, move)', () 
   });
 
   test('ends are disabled and the focus follows the moved item', async () => {
-    await expect(page.getByRole('button', { name: list.moveUp('Skill', 0) })).toBeDisabled();
-    await expect(page.getByRole('button', { name: list.moveDown('Skill', 2) })).toBeDisabled();
+    await expect(page.getByRole('button', { name: list.moveUp('Skills', 0) })).toBeDisabled();
+    await expect(page.getByRole('button', { name: list.moveDown('Skills', 2) })).toBeDisabled();
 
-    await page.getByRole('button', { name: list.moveDown('Skill', 0) }).focus();
+    await page.getByRole('button', { name: list.moveDown('Skills', 0) }).focus();
     await page.keyboard.press('Enter');
     expect(await names(page, 3)).toEqual([NAMES[1], NAMES[0], NAMES[2]]);
-    await expect(page.getByRole('button', { name: list.moveDown('Skill', 1) })).toBeFocused();
+    await expect(page.getByRole('button', { name: list.moveDown('Skills', 1) })).toBeFocused();
 
     // The item reached the bottom: focus moves to the enabled opposite control.
     await page.keyboard.press('Enter');
     expect(await names(page, 3)).toEqual([NAMES[1], NAMES[2], NAMES[0]]);
-    await expect(page.getByRole('button', { name: list.moveUp('Skill', 2) })).toBeFocused();
+    await expect(page.getByRole('button', { name: list.moveUp('Skills', 2) })).toBeFocused();
   });
 
   test('tab order per item is remove, up, down, then the next item and the slot', async () => {
-    await page.getByRole('button', { name: list.remove('Skill', 1) }).focus();
+    await page.getByRole('button', { name: list.remove('Skills', 1) }).focus();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: list.moveUp('Skill', 1) })).toBeFocused();
+    await expect(page.getByRole('button', { name: list.moveUp('Skills', 1) })).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: list.moveDown('Skill', 1) })).toBeFocused();
+    await expect(page.getByRole('button', { name: list.moveDown('Skills', 1) })).toBeFocused();
   });
 
   test('a nested component keeps the same slot behavior at depth 2', async () => {
-    await addSlot(page, 'Experience').click();
-    const experience = listItem(page, 'Experience', 0);
-    await addSlot(experience, 'Role').click();
-    await expect(listItem(experience, 'Role', 0)).toBeVisible();
-    await expect(experience.getByRole('button', { name: list.remove('Role', 0) })).toBeVisible();
-    await fieldByLabel(listItem(experience, 'Role', 0), 'Position').fill(ROLE_NAME);
+    await addSlot(page, 'Experiences').click();
+    const experience = listItem(page, 'Experiences', 0);
+    await addSlot(experience, 'Roles').click();
+    await expect(listItem(experience, 'Roles', 0)).toBeVisible();
+    await expect(experience.getByRole('button', { name: list.remove('Roles', 0) })).toBeVisible();
+    await fieldByLabel(listItem(experience, 'Roles', 0), 'Position').fill(ROLE_NAME);
+    // Projects live under a role (three levels deep).
+    await addSlot(listItem(experience, 'Roles', 0), 'Projects').click();
+    await expect(listItem(listItem(experience, 'Roles', 0), 'Projects', 0)).toBeVisible();
+  });
+
+  test('two 1/2 fields share one row at desktop width', async () => {
+    const position = fieldByLabel(page, 'Position').first();
+    const isMain = page.getByRole('switch', { name: 'Is Main' });
+    const [positionBox, isMainBox] = await Promise.all([
+      position.boundingBox(),
+      isMain.boundingBox(),
+    ]);
+    expect(positionBox).not.toBeNull();
+    expect(isMainBox).not.toBeNull();
+    const positionMiddle = (positionBox?.y ?? 0) + (positionBox?.height ?? 0) / 2;
+    const isMainMiddle = (isMainBox?.y ?? 0) + (isMainBox?.height ?? 0) / 2;
+    expect(Math.abs(positionMiddle - isMainMiddle)).toBeLessThan(positionBox?.height ?? 0);
+    expect(isMainBox?.x ?? 0).toBeGreaterThan(
+      (positionBox?.x ?? 0) + (positionBox?.width ?? 0) - 1,
+    );
   });
 
   test('save, then the API order matches the screen and new items carry no uid', async () => {
@@ -130,26 +150,26 @@ test.describe.serial('owner: component fields (dashed slots, remove, move)', () 
     await expect(page).toHaveURL(EDIT_URL);
     documentId = EDIT_URL.exec(page.url())?.[1] ?? '';
     const stored = await readStored();
-    const skills = stored.components.skill ?? [];
+    const skills = stored.components.skills ?? [];
     expect(skills.map((item) => item.values.skill)).toEqual([NAMES[1], NAMES[2], NAMES[0]]);
     uidsBeforeEdit = Object.fromEntries(
       skills.map((item) => [item.values.skill ?? '', item.componentUid]),
     );
     expect(Object.values(uidsBeforeEdit).every(Boolean)).toBe(true);
-    expect(stored.components.experience?.[0]?.components.role).toHaveLength(1);
+    expect(stored.components.experiences?.[0]?.components.roles).toHaveLength(1);
   });
 
   test('remove, move and add, save: order kept, uids of existing items kept, none for removed', async () => {
     // Screen now: Beta, Gamma, Alpha. Remove Gamma, move Alpha up, add Delta.
-    await page.getByRole('button', { name: list.remove('Skill', 1) }).click();
-    await page.getByRole('button', { name: list.moveUp('Skill', 1) }).click();
-    await addSlot(page, 'Skill').click();
+    await page.getByRole('button', { name: list.remove('Skills', 1) }).click();
+    await page.getByRole('button', { name: list.moveUp('Skills', 1) }).click();
+    await addSlot(page, 'Skills').click();
     const added = `Delta ${RUN_ID}`;
     await skillName(page, 2).fill(added);
     expect(await names(page, 3)).toEqual([NAMES[0], NAMES[1], added]);
     await save();
 
-    const skills = (await readStored()).components.skill ?? [];
+    const skills = (await readStored()).components.skills ?? [];
     expect(skills.map((item) => item.values.skill)).toEqual([NAMES[0], NAMES[1], added]);
     expect(skills[0]?.componentUid).toBe(uidsBeforeEdit[NAMES[0]]);
     expect(skills[1]?.componentUid).toBe(uidsBeforeEdit[NAMES[1]]);

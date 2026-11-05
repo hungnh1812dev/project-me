@@ -140,12 +140,13 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
       }),
     ).toBeVisible();
     await expect(fieldByLabel(page, 'Position')).toBeVisible();
-    await expect(page.getByRole('switch', { name: 'Is main' })).toBeVisible();
-    await expect(fieldByLabel(page, 'Company')).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Is Main' })).toBeVisible();
+    await expect(fieldByLabel(page, 'Name')).toBeVisible();
+    await expect(fieldByLabel(page, 'Name')).toHaveJSProperty('tagName', 'INPUT');
     await expect(richtextEditor(page, 'Summary')).toBeVisible();
     await expect(page.getByRole('toolbar', { name: copy.richtext.toolbar }).first()).toBeVisible();
     await expect(page.getByText(copy.notEditableYet)).toHaveCount(0);
-    for (const label of ['Skill', 'Experience', 'Project', 'Education', 'Language', 'Reference']) {
+    for (const label of ['Skills', 'Experiences', 'Educations', 'Languages', 'References']) {
       await expect(section(page, label)).toBeVisible();
       await expect(addButton(page, label)).toBeVisible();
       await expect(listItemsOf(page, label)).toHaveCount(0);
@@ -153,7 +154,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   });
 
   test('keyboard: the switch toggles with Space and fields follow DOM order', async () => {
-    const toggle = page.getByRole('switch', { name: 'Is main' });
+    const toggle = page.getByRole('switch', { name: 'Is Main' });
     await fieldByLabel(page, 'Position').focus();
     await page.keyboard.press('Tab');
     await expect(toggle).toBeFocused();
@@ -163,17 +164,17 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await page.keyboard.press('Space');
     await expect(toggle).not.toBeChecked();
     await page.keyboard.press('Tab');
-    await expect(fieldByLabel(page, 'Company')).toBeFocused();
+    await expect(fieldByLabel(page, 'Name')).toBeFocused();
   });
 
   test('nested validation shows inline errors and sends nothing', async () => {
     const { writes, stop } = recordWrites(page);
-    await addButton(page, 'Experience').click();
-    const experience = listItem(page, 'Experience', 0);
-    await addButton(experience, 'Role').click();
-    const role = listItem(experience, 'Role', 0);
-    await fieldByLabel(role, 'Team size').fill(TEAM_SIZE_DECIMAL);
-    await fieldByLabel(role, 'Tech stack').fill(NOT_JSON);
+    await addButton(page, 'Experiences').click();
+    const experience = listItem(page, 'Experiences', 0);
+    await addButton(experience, 'Roles').click();
+    const role = listItem(experience, 'Roles', 0);
+    await fieldByLabel(role, 'Team Size').fill(TEAM_SIZE_DECIMAL);
+    await fieldByLabel(role, 'Tech Stack').fill(NOT_JSON);
     await contentSaveButton(page).click();
     await expect(role).toContainText(copy.invalidInteger);
     await expect(role).toContainText(copy.invalidJson);
@@ -181,17 +182,17 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     stop();
 
     // Remove the invalid experience again.
-    await experience.getByRole('button', { name: list.remove('Experience', 0) }).click();
-    await expect(listItemsOf(page, 'Experience')).toHaveCount(0);
-    await expect(addButton(page, 'Experience')).toBeVisible();
+    await experience.getByRole('button', { name: list.remove('Experiences', 0) }).click();
+    await expect(listItemsOf(page, 'Experiences')).toHaveCount(0);
+    await expect(addButton(page, 'Experiences')).toBeVisible();
   });
 
   test('creating a draft posts once and moves to the edit URL with the values', async () => {
     const { writes, stop } = recordWrites(page);
     await fieldByLabel(page, 'Position').fill(POSITION);
-    await addButton(page, 'Skill').click();
-    await fieldByLabel(listItem(page, 'Skill', 0), 'Skill').fill(SKILL_NAMES[0] ?? '');
-    await fieldByLabel(listItem(page, 'Skill', 0), 'Level').fill('Expert');
+    await addButton(page, 'Skills').click();
+    await fieldByLabel(listItem(page, 'Skills', 0), 'Skill').fill(SKILL_NAMES[0] ?? '');
+    await fieldByLabel(listItem(page, 'Skills', 0), 'Level').fill('Expert');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(EDIT_URL);
     stop();
@@ -209,7 +210,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
       }),
     ).toBeVisible();
     await expect(fieldByLabel(page, 'Position')).toHaveValue(POSITION);
-    await expect(fieldByLabel(listItem(page, 'Skill', 0), 'Skill')).toHaveValue(
+    await expect(fieldByLabel(listItem(page, 'Skills', 0), 'Skill')).toHaveValue(
       SKILL_NAMES[0] ?? '',
     );
   });
@@ -217,9 +218,9 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   test('editing sends only changed top-level fields, keeps the uid, and survives reload', async () => {
     // Add two more skills, save, then edit.
     for (const name of SKILL_NAMES.slice(1)) {
-      await addButton(page, 'Skill').click();
-      const count = await section(page, 'Skill').getByRole('listitem').count();
-      await fieldByLabel(listItem(page, 'Skill', count - 1), 'Skill').fill(name);
+      await addButton(page, 'Skills').click();
+      const count = await section(page, 'Skills').getByRole('listitem').count();
+      await fieldByLabel(listItem(page, 'Skills', count - 1), 'Skill').fill(name);
     }
     let recorder = recordWrites(page);
     await saveDraftAndExpectNotice(page);
@@ -307,16 +308,16 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   });
 
   test('reordering and removing skills keeps the same rows (component uid)', async () => {
-    const skillValue = (index: number) => fieldByLabel(listItem(page, 'Skill', index), 'Skill');
+    const skillValue = (index: number) => fieldByLabel(listItem(page, 'Skills', index), 'Skill');
     await expect(skillValue(0)).toHaveValue(SKILL_NAMES[0] ?? '');
     await expect(skillValue(2)).toHaveValue(SKILL_NAMES[2] ?? '');
-    await expect(page.getByRole('button', { name: list.moveUp('Skill', 0) })).toBeDisabled();
+    await expect(page.getByRole('button', { name: list.moveUp('Skills', 0) })).toBeDisabled();
 
     // Move the last skill to the top, remove the middle one.
-    await page.getByRole('button', { name: list.moveUp('Skill', 2) }).click();
-    await page.getByRole('button', { name: list.moveUp('Skill', 1) }).click();
+    await page.getByRole('button', { name: list.moveUp('Skills', 2) }).click();
+    await page.getByRole('button', { name: list.moveUp('Skills', 1) }).click();
     await expect(skillValue(0)).toHaveValue(SKILL_NAMES[2] ?? '');
-    await page.getByRole('button', { name: list.remove('Skill', 2) }).click();
+    await page.getByRole('button', { name: list.remove('Skills', 2) }).click();
 
     const recorder = recordWrites(page);
     await saveDraftAndExpectNotice(page);
@@ -327,7 +328,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     await page.reload();
     await expect(skillValue(0)).toHaveValue(SKILL_NAMES[2] ?? '');
     await expect(skillValue(1)).toHaveValue(SKILL_NAMES[0] ?? '');
-    await expect(section(page, 'Skill').getByRole('listitem')).toHaveCount(2);
+    await expect(section(page, 'Skills').getByRole('listitem')).toHaveCount(2);
   });
 
   test('a stale version shows the conflict alert and reload fetches the latest', async () => {
@@ -397,7 +398,7 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
   });
 
   test('masked fields are read-only "Protected" and never sent', async () => {
-    const masked = ['company', 'reference.phone', 'summary'];
+    const masked = ['name', 'references.phone', 'summary'];
     await page.route(`**${DOCUMENTS_PATH}/*`, async (route) => {
       if (route.request().method() !== 'GET') return route.fallback();
       const response = await route.fetch();
@@ -405,28 +406,29 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
       json['_maskedFields'] = masked;
       json['values'] = {
         ...(json['values'] as object),
-        company: '***',
+        name: '***',
       };
       return route.fulfill({ response, json });
     });
     await page.reload();
-    const company = fieldByLabel(page, 'Company');
-    await expect(company).toHaveValue(copy.protectedValue);
-    await expect(company).toHaveAttribute('readonly', '');
+    const maskedName = fieldByLabel(page, 'Name');
+    await expect(maskedName).toHaveValue(copy.protectedValue);
+    await expect(maskedName).toHaveAttribute('readonly', '');
     await expect(fieldByLabel(page, 'Summary')).toHaveValue(copy.protectedValue);
     await expect(fieldByLabel(page, 'Summary')).toHaveAttribute('readonly', '');
 
     await fieldByLabel(page, 'Position').fill(`${POSITION_EDITED} masked`);
-    await addButton(page, 'Reference').click();
-    await expect(fieldByLabel(listItem(page, 'Reference', 0), 'Phone')).toHaveValue(
+    await addButton(page, 'References').click();
+    await expect(fieldByLabel(listItem(page, 'References', 0), 'Phone')).toHaveValue(
       copy.protectedValue,
     );
-    await fieldByLabel(listItem(page, 'Reference', 0), 'Name').fill('Ref name');
+    await fieldByLabel(listItem(page, 'References', 0), 'Name').fill('Ref name');
     const recorder = recordWrites(page);
     await saveDraftAndExpectNotice(page);
     recorder.stop();
     const sent = JSON.stringify(bodyOf(recorder.writes[0] as Request));
-    expect(sent).not.toContain('company');
+    const sentValues = bodyOf(recorder.writes[0] as Request)['values'] as Record<string, unknown>;
+    expect(Object.keys(sentValues)).not.toContain('name');
     expect(sent).not.toContain('"phone"');
     expect(sent).not.toContain('***');
     await page.unroute(`**${DOCUMENTS_PATH}/*`);
