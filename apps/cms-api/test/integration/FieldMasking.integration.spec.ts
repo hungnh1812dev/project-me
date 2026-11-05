@@ -131,7 +131,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
         },
         components: {
           experiences: [{ values: { company: SECRET.experienceCompany, location: 'HN' } }],
-          referees: [{ values: { name: 'Ref', phone: SECRET.phone } }],
+          references: [{ values: { name: 'Ref', phone: SECRET.phone } }],
           skills: [{ values: { skill: 'SQL', level: 'expert' } }],
         },
       }),
@@ -144,8 +144,8 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
   });
 
   const fields: FieldAccess = {
-    readable: FieldSelection.of(['position', 'experiences.location', 'referees.name']),
-    writable: FieldSelection.of(['position', 'experiences', 'referees']),
+    readable: FieldSelection.of(['position', 'experiences.location', 'references.name']),
+    writable: FieldSelection.of(['position', 'experiences', 'references']),
   };
 
   it('never selects unreadable columns or tables, and serializes masks', async () => {
@@ -169,7 +169,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
         'summary',
         'skills',
         'experiences.company',
-        'referees.phone',
+        'references.phone',
       ]),
     );
   });
@@ -185,7 +185,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
         values: { position: 'Staff', name: served.values.name },
         components: {
           experiences: served.components.experiences,
-          referees: served.components.referees,
+          references: served.components.references,
           skills: served.components.skills,
         },
         [MASKED_FIELDS_KEY]: [],
@@ -208,7 +208,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
       summary: SECRET.summary,
     });
     expect(stored.components.experiences?.[0]?.values.company).toBe(SECRET.experienceCompany);
-    expect(stored.components.referees?.[0]?.values.phone).toBe(SECRET.phone);
+    expect(stored.components.references?.[0]?.values.phone).toBe(SECRET.phone);
     expect(stored.components.skills).toHaveLength(1);
   });
 

@@ -212,7 +212,7 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
 ```
 
 (Shortened: the real file also has `skills`, `educations`, `languages`,
-`referees` (component `reference`) and, inside a role, `projects`.) It
+`references` (component `reference`) and, inside a role, `projects`.) It
 produces 8 tables:
 
 ```
@@ -253,9 +253,18 @@ over is written here.
 - `cv_page__experience.period` added empty. The cv-page `skill`, `experience`,
   `education`, `language` and `reference` tables keep their names and rows (the
   API field names are now plural: `skills`, `experiences`, `educations`,
-  `languages`, `referees`).
+  `languages`, `references`).
 - Applied with `content:generate --allow-destructive` (accepted by the user,
   2026-11-05).
+
+### `0007_content.sql` (cv-page `referees` renamed `references`)
+
+- Comments only, no DDL: the field keeps its component `reference`, so the
+  table `cv_page__reference` and its rows stay. Component rows are keyed by
+  table and parent, not by field name (drafts and published copies are rows of
+  the same tables), so existing rows are read under `references` with no data
+  loss and no re-save needed. Clients that send or query `referees` for
+  `cv-page` must use `references`; `resume` keeps `referees`.
 
 ## Migrations
 

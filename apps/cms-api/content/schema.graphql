@@ -171,7 +171,7 @@ type CvPage {
   experiences: [CvPage_Experience!]
   educations: [CvPage_Education!]
   languages: [CvPage_Language!]
-  referees: [CvPage_Reference!]
+  references: [CvPage_Reference!]
 
   """
   Paths of the fields the caller may not read; their values are masked or null.

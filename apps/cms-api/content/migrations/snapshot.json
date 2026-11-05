@@ -60,7 +60,7 @@
       }
     },
     "cv-page": {
-      "hash": "c9e471530f98d987ef2c321dde31f9dd0b9cb8e554110f838a1936cf149bbed3",
+      "hash": "25af9b08b649776f074e2ff5266e3df311316456cf83433c13d5a5d3f98ea1db",
       "definition": {
         "slug": "cv-page",
         "displayName": "CV Page",
@@ -246,7 +246,7 @@
             ]
           },
           {
-            "name": "referees",
+            "name": "references",
             "type": "component",
             "component": "reference",
             "repeatable": true,

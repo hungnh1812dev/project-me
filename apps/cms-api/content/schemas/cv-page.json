@@ -81,7 +81,7 @@
       ]
     },
     {
-      "name": "referees",
+      "name": "references",
       "type": "component",
       "component": "reference",
       "repeatable": true,

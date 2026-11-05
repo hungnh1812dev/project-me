@@ -150,7 +150,7 @@ describe('toDocumentTree on update', () => {
   });
 
   it('never sends masked paths, even when they differ', () => {
-    const masked = new Set(['name', 'referees', 'experiences.location']);
+    const masked = new Set(['name', 'references', 'experiences.location']);
     const form = structuredClone(initial);
     form.name = 'changed';
     form.position = 'Lead';
@@ -158,6 +158,6 @@ describe('toDocumentTree on update', () => {
     const body = toDocumentTree(tree, form, initial, masked);
     expect(body.values).toEqual({ position: 'Lead' });
     expect(body.components?.experiences?.[0]?.values).not.toHaveProperty('location');
-    expect(body.components).not.toHaveProperty('referees');
+    expect(body.components).not.toHaveProperty('references');
   });
 });

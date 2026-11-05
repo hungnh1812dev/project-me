@@ -77,7 +77,7 @@ describe('DocumentEditPage: new cv-page', () => {
     expect(screen.getByRole('switch', { name: 'Is Main' })).toBeInTheDocument();
     // The richtext editor is lazy-loaded.
     expect(await screen.findByText('Summary')).toBeInTheDocument();
-    for (const label of ['Skills', 'Experiences', 'Educations', 'Languages', 'Referees']) {
+    for (const label of ['Skills', 'Experiences', 'Educations', 'Languages', 'References']) {
       expect(screen.getByRole('heading', { level: 2, name: label })).toBeInTheDocument();
     }
 
@@ -230,8 +230,8 @@ describe('DocumentEditPage: edit draft', () => {
             name: '***',
             summary: null,
           },
-          components: { referees: null, skills: [] },
-          _maskedFields: ['name', 'referees'],
+          components: { references: null, skills: [] },
+          _maskedFields: ['name', 'references'],
         }),
       ),
       [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
@@ -242,8 +242,10 @@ describe('DocumentEditPage: edit draft', () => {
     const nameInput = await screen.findByLabelText('Name');
     expect(nameInput).toHaveAttribute('readonly');
     expect(nameInput).toHaveValue(copy.protectedValue);
-    expect(screen.getByLabelText('Referees')).toHaveValue(copy.protectedValue);
-    expect(screen.queryByRole('button', { name: 'Click to add referees' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('References')).toHaveValue(copy.protectedValue);
+    expect(
+      screen.queryByRole('button', { name: 'Click to add references' }),
+    ).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Position'), '!');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
