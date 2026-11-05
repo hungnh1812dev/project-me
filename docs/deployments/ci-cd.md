@@ -67,7 +67,7 @@ Release images come only from a `v<x.y.z>` tag made by the `release-tag` skill i
 - Tags: a release image is tagged `<app version>` only (for example `cms-api:0.0.2`), immutable, no moving tag; it is pushed by the run of a repo tag `v<x.y.z>` run (`.github/scripts/release-apps.sh` picks the apps whose version changed since the previous release; it refuses a commit that is not the origin/main tip and any version that is not x.y.z) and the deploy repo `main` is bumped. Branch pushes push nothing (ADR 0016).
 - Each app is bumped only when its own image changed, so the three apps can sit on different tags.
 - Git tags: the repo tag `v<x.y.z>` (starts the release run) and one `<app>@<x.y.z>` per bumped app (a record only). The `staging` branch of the deploy repo is no longer bumped by CI.
-- Build-time values are baked into the images, so a change needs a new image, not a restart: web `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; cms-admin `VITE_API_BASE_URL`.
+- Build-time values are baked into the images, so a change needs a new image, not a restart: web `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; cms-admin `VITE_API_BASE_URL`.
 
 ## 4. Publish and the deploy repo contract
 
@@ -111,14 +111,13 @@ Do the steps in order. Paths are GitHub web UI paths in this repo (`Settings > .
 
 **3. Environment variables** (`Settings > Environments > production > Environment variables`):
 
-| Variable                         | Required | Value                                                                       | Read by                      |
-| -------------------------------- | -------- | --------------------------------------------------------------------------- | ---------------------------- |
-| `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                     | deploy job                   |
-| `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory of the `<app>-sync-overlay.yaml` files (step 6)                   | deploy job; fails when unset |
-| `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin, for example `https://<domain>/api/v1`      | cms-admin image build arg    |
-| `NEXT_PUBLIC_API_BASE_URL`       | yes      | `/api/v1` when the API is served on the web host                            | web image build arg          |
-| `NEXT_PUBLIC_ADMIN_URL`          | no       | admin console URL                                                           | web image build arg          |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | no       | real Cloudflare Turnstile site key (public); empty hides the reviewer entry | web image build arg          |
+| Variable                         | Required | Value                                                                              | Read by                      |
+| -------------------------------- | -------- | ---------------------------------------------------------------------------------- | ---------------------------- |
+| `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                            | deploy job                   |
+| `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory of the `<app>-sync-overlay.yaml` files (step 6)                          | deploy job; fails when unset |
+| `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin on the admin host: `https://admin.<domain>/api/v1` | cms-admin image build arg    |
+| `NEXT_PUBLIC_ADMIN_URL`          | no       | admin console URL                                                                  | web image build arg          |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes      | real Cloudflare Turnstile site key (public); the web Dockerfile fails without it   | web image build arg          |
 
 These are baked into public bundles, so they are variables, never secrets. A missing required variable fails the image job before the build starts.
 
@@ -165,15 +164,15 @@ Never removed by a CI change: SHA-pinned actions; the tag guards of `release-app
 
 ## 8. Carried over from the earlier deployment
 
-| Part                                                                  | Verdict | Where it lives now                                                                                           |
-| --------------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
-| `changes` job, `affected.sh` routing, zero or unknown base = all apps | carried | `ci.yml`, `affected.sh` (`@abyss/` scope, `app-checks.yml` routing; `apps/e2e` and `scripts/` affect no app) |
-| Branch targets: develop checks only, staging and main publish         | changed | `pipeline-target.sh` depth table (section 1); only a repo tag publishes                                      |
-| Image prefix and tags `<branch>-<sha7>`, `<branch>`                   | changed | image prefix kept; tags are `<app version>` only (section 3)                                                 |
-| Image, manifest, deploy flow of `_publish.yml`                        | carried | `_publish.yml` (adds `TURBO_VERSION`, the web `NEXT_PUBLIC_*` build args, required `VITE_API_BASE_URL`)      |
-| Deploy contract (repo and path variables, token secret, overlay tag)  | carried | `_publish.yml` deploy job (adds `persist-credentials: false`, token only as a per-command header)            |
-| Per-app flow files with a nested `publish` job                        | adapted | shared `app-checks.yml` plus `publish-<app>` jobs in `ci.yml`, gated on the app flow result                  |
-| `build` job inside the GitHub Environment                             | changed | read-only jobs run without an Environment; only the publish jobs read Environment values                     |
-| Optional `VITE_API_URL` with a relative fallback                      | changed | cms-admin requires the full `VITE_API_BASE_URL`; the Dockerfile refuses to build without it                  |
-| Actions referenced by tag                                             | changed | every action pinned to a full commit SHA                                                                     |
-| Tooling self-test of the old repo                                     | dropped | belongs to another repo                                                                                      |
+| Part                                                                  | Verdict | Where it lives now                                                                                                                                   |
+| --------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `changes` job, `affected.sh` routing, zero or unknown base = all apps | carried | `ci.yml`, `affected.sh` (`@abyss/` scope, `app-checks.yml` routing; `apps/e2e` and `scripts/` affect no app)                                         |
+| Branch targets: develop checks only, staging and main publish         | changed | `pipeline-target.sh` depth table (section 1); only a repo tag publishes                                                                              |
+| Image prefix and tags `<branch>-<sha7>`, `<branch>`                   | changed | image prefix kept; tags are `<app version>` only (section 3)                                                                                         |
+| Image, manifest, deploy flow of `_publish.yml`                        | carried | `_publish.yml` (adds `TURBO_VERSION`, the web `NEXT_PUBLIC_ADMIN_URL` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` build args, required `VITE_API_BASE_URL`) |
+| Deploy contract (repo and path variables, token secret, overlay tag)  | carried | `_publish.yml` deploy job (adds `persist-credentials: false`, token only as a per-command header)                                                    |
+| Per-app flow files with a nested `publish` job                        | adapted | shared `app-checks.yml` plus `publish-<app>` jobs in `ci.yml`, gated on the app flow result                                                          |
+| `build` job inside the GitHub Environment                             | changed | read-only jobs run without an Environment; only the publish jobs read Environment values                                                             |
+| Optional `VITE_API_URL` with a relative fallback                      | changed | cms-admin requires the full `VITE_API_BASE_URL`; the Dockerfile refuses to build without it                                                          |
+| Actions referenced by tag                                             | changed | every action pinned to a full commit SHA                                                                                                             |
+| Tooling self-test of the old repo                                     | dropped | belongs to another repo                                                                                                                              |

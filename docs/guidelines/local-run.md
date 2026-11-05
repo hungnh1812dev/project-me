@@ -12,11 +12,11 @@ pnpm demo
 pnpm dev:stack:stop     # when you are done
 ```
 
-The dev stack and `pnpm demo` run with `REVIEWER_FEATURE_ENABLED` and `WEB_STATUS_PAGE_ENABLED` both `true`, so the reviewer flow and `/status` work; production runs with both `false`.
+The dev stack and `pnpm demo` run with `REVIEWER_FEATURE_ENABLED` `true`, so the reviewer flow works from the cms-admin Reviewer page; production runs with `false`. Web has no reviewer button and no `/status` switch.
 
 The stack runs Postgres 17. A dev-stack volume created on Postgres 16 does not start on 17: run `pnpm dev:stack:stop` once, which stops the stack and removes its containers and volumes, then start again. The data is demo data.
 
-`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget).
+`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and sign in (needs internet for the Turnstile widget).
 
 The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account").
 
@@ -30,7 +30,7 @@ pnpm install
 
 | Goal                                          | Use                                                   |
 | --------------------------------------------- | ----------------------------------------------------- |
-| See the web and the reviewer flow at once     | Quick start (`pnpm demo`)                             |
+| See the web and the sign-in flow at once      | Quick start (`pnpm demo`)                             |
 | Run the apps in dev mode on a throwaway stack | `pnpm dev:stack` (the demo without the reviewer step) |
 | Work on one app with hot reload               | Section 2 to 5 (dev servers + a local Postgres)       |
 | See the whole thing behind Traefik, like prod | Section 6 (smoke stack, needs only Docker)            |
@@ -111,10 +111,11 @@ pnpm --filter @abyss/cms-admin dev
 
 Open `http://admin.domain.localhost:5173` (Chromium resolves `*.localhost` to loopback), so the origin matches cms-api `ADMIN_ORIGIN`.
 
-| Key                 | Meaning                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------ |
-| `VITE_API_BASE_URL` | absolute cms-api base, no trailing slash: `http://localhost:3000/api/v1`. Bundled at build |
-| `DEV_SERVER_PORT`   | dev only, default 5173                                                                     |
+| Key                    | Meaning                                                                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`    | cms-api base on the admin origin: `https://admin.<domain>/api/v1` in production; in dev `/api/v1` with `DEV_API_PROXY_TARGET=http://localhost:3000`, or the absolute `http://localhost:3000/api/v1`. Bundled at build |
+| `DEV_SERVER_PORT`      | dev only, default 5173                                                                                                                                                                                                |
+| `DEV_API_PROXY_TARGET` | dev only, `http://localhost:3000`; the dev server forwards `/api` to it; empty = no proxy                                                                                                                             |
 
 ## 5. web (port 5174)
 
@@ -123,20 +124,23 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @abyss/web dev
 ```
 
-Open `http://domain.localhost:5174`. The dev server forwards `/api` to cms-api when `DEV_API_PROXY_TARGET` is set, so the browser sees one origin, like production.
+Open `http://domain.localhost:5174`. The browser calls only web's own routes; the Node server reaches cms-api through `API_INTERNAL_URL`.
 
-| Key                              | Kind                | Meaning                                                                                 |
-| -------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_API_BASE_URL`       | browser, build time | `/api/v1` (required; a missing value fails the build)                                   |
-| `NEXT_PUBLIC_ADMIN_URL`          | browser, build time | optional; empty hides the "Open CMS" link                                               |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | browser, build time | optional public site key; empty hides "Reviewer access". Cloudflare publishes test keys |
-| `API_INTERNAL_URL`               | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`                   |
-| `WEB_REVALIDATE_SECONDS`         | server, runtime     | data cache seconds, default 60; use `0` while developing content                        |
-| `WEB_PORT`                       | server, runtime     | port of `pnpm start` (production server), default 8080                                  |
-| `DEV_SERVER_PORT`                | dev only            | read from the shell, not `.env.local`; default 5174                                     |
-| `DEV_API_PROXY_TARGET`           | dev only            | `http://localhost:3000`; empty = no proxy                                               |
+| Key                                    | Kind                | Meaning                                                                    |
+| -------------------------------------- | ------------------- | -------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_ADMIN_URL`                | browser, build time | optional; empty hides the "Open CMS" link                                  |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required). Cloudflare publishes test keys                 |
+| `API_INTERNAL_URL`                     | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`      |
+| `WEB_ORIGIN`                           | server, runtime     | exact origin of the site (required), `http://domain.localhost:5174` in dev |
+| `WEB_SESSION_SECRET`                   | server, runtime     | session cookie key (required; 32+ bytes in production)                     |
+| `TURNSTILE_SECRET_KEY`                 | server, runtime     | Turnstile secret (required); Cloudflare publishes test secrets             |
+| `TURNSTILE_EXPECTED_HOSTNAME`          | server, runtime     | bare host a Turnstile answer must carry; required in production            |
+| `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER` | server, runtime     | visitor IP source, see `apps/web/.env.example`                             |
+| `WEB_REVALIDATE_SECONDS`               | server, runtime     | data cache seconds, default 60; use `0` while developing content           |
+| `WEB_PORT`                             | server, runtime     | port of `pnpm start` (production server), default 8080                     |
+| `DEV_SERVER_PORT`                      | dev only            | read from the shell, not `.env.local`; default 5174                        |
 
-`NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web and admin have no secrets.
+`NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web holds its secrets (`WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`) as server-only env; admin has none.
 
 ## 6. Smoke stack (everything behind Traefik, Docker only)
 

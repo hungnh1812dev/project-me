@@ -150,7 +150,11 @@ containers:
     env:
       - { name: API_INTERNAL_URL, value: 'http://cms-api.<ns>.svc.cluster.local:3000/api/v1' }
       - { name: WEB_REVALIDATE_SECONDS, value: '60' }
-      - { name: WEB_STATUS_PAGE_ENABLED, value: 'false' }
+      - { name: WEB_ORIGIN, value: 'https://<domain>' }
+      - { name: TURNSTILE_EXPECTED_HOSTNAME, value: '<domain>' }
+      - { name: TRUST_PROXY_HOPS, value: '1' }
+    envFrom:
+      - secretRef: { name: web-secrets } # WEB_SESSION_SECRET, TURNSTILE_SECRET_KEY
     livenessProbe:
       tcpSocket: { port: http }
       initialDelaySeconds: 10
@@ -165,6 +169,28 @@ containers:
       allowPrivilegeEscalation: false
       capabilities: { drop: [ALL] }
 ```
+
+- **Never set `ALLOW_TURNSTILE_TEST_SECRET`** in the web env (smoke stack only, ADR 0018 section 2.6). Web has no browser-side API calls, so it needs no Traefik route to cms-api.
+- **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` route) and the web pods (BFF calls through `API_INTERNAL_URL`); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cms-api-ingress
+  namespace: <ns>
+spec:
+  podSelector: { matchLabels: { app: cms-api } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: <traefik-ns> } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
+        - podSelector: { matchLabels: { app: web } }
+      ports: [{ protocol: TCP, port: 3000 }]
+```
+
+The cluster's CNI must enforce NetworkPolicy. The backup CronJob and the `kubectl exec` commands do not use the cms-api Service port, so they are not affected.
 
 - **Probe the port, not `/`.** `/` renders the home page on the server, which fetches content from cms-api: when the API is down or slow, an HTTP probe on `/` takes the whole site offline, and a liveness probe with the default 1 s timeout restarts the pod on a slow render. Use the TCP probes above until the web app has a light health route.
 - Resources: the Node process idles around 60 MiB and grows with the data cache and concurrent renders; 128Mi request and 384Mi limit are a starting point. The response carries no `X-Powered-By` header.
