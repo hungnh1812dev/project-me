@@ -15,14 +15,16 @@ import {
   SEC_FETCH_SITE_HEADER,
   SEC_FETCH_SITE_SAME_ORIGIN,
 } from '../../../configs/Http.constants';
+import type { TurnstileAction } from '../../../configs/Security.constants';
 import { getServerEnv } from '../../../configs/Server.env';
+import { verifyHumanCheck } from '../restful/Turnstile.client';
 import { BffError, bffErrorResponse } from './Bff.errors';
 import { visitorIpOf } from './ClientIp.rules';
 import { FixedWindowRateLimiter } from './RateLimit.rules';
 
 export type BffMethod = 'GET' | 'POST';
 export type BffBucket = keyof typeof BFF_RATE_LIMITS;
-export type HumanCheckAction = 'login' | 'two-factor';
+export type HumanCheckAction = TurnstileAction;
 
 /** Field of the request body that carries the Turnstile token; never passed to `handle`. */
 export const HUMAN_CHECK_TOKEN_FIELD = 'humanCheckToken';
@@ -115,18 +117,6 @@ async function parseBody(text: string, schema: z.ZodObject): Promise<Record<stri
   return parsed.data;
 }
 
-/**
- * The human-check step. It fails closed until the Turnstile verifier is wired
- * in (WBH-2), so a route that asks for a check can never skip it.
- */
-function verifyHumanCheckToken(
-  _token: unknown,
-  _action: HumanCheckAction,
-  _visitorIp: string | undefined,
-): Promise<void> {
-  return Promise.reject(new BffError('BFF_HUMAN_CHECK_UNAVAILABLE'));
-}
-
 function withoutHumanCheckToken(body: Record<string, unknown>): Record<string, unknown> {
   const { [HUMAN_CHECK_TOKEN_FIELD]: _token, ...rest } = body;
   return rest;
@@ -154,7 +144,7 @@ async function runPipeline<TSchema extends z.ZodObject>(
     ? await parseBody(bodyText, options.bodySchema ?? NO_BODY_SCHEMA)
     : ({} as Record<string, unknown>);
   if (options.humanCheckAction !== undefined) {
-    await verifyHumanCheckToken(body[HUMAN_CHECK_TOKEN_FIELD], options.humanCheckAction, visitorIp);
+    await verifyHumanCheck(body[HUMAN_CHECK_TOKEN_FIELD], options.humanCheckAction, visitorIp);
   }
   return options.handle({
     request,

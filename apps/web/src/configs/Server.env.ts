@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { optionalText, requireEnv } from './RequireEnv.rules';
+import { TURNSTILE } from './Security.constants';
 import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
 
 /** Shortest WEB_SESSION_SECRET accepted in production (256 bits). */
@@ -11,6 +12,11 @@ export const DEFAULT_TRUST_PROXY_HOPS = 1;
 
 /** Used when WEB_REVALIDATE_SECONDS is unset (SPEC: 60 s in production). */
 export const DEFAULT_REVALIDATE_SECONDS = 60;
+
+/** The only value of ALLOW_TURNSTILE_TEST_SECRET: the smoke stack's production build may use the test secret. */
+export const TURNSTILE_TEST_SECRET_OPT_IN = 'smoke';
+
+const HOSTNAME_PATTERN = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/;
 
 export interface ServerEnv {
   /** cms-api base URL reachable from the Next server (never sent to the browser). */
@@ -64,6 +70,41 @@ function parseSessionSecret(raw: string | undefined, source: EnvSource): string 
   return secret;
 }
 
+function parseExpectedHostname(raw: string | undefined): string | undefined {
+  const hostname = optionalText(raw)?.toLowerCase();
+  if (hostname !== undefined && !HOSTNAME_PATTERN.test(hostname)) {
+    throw new Error('TURNSTILE_EXPECTED_HOSTNAME must be a bare hostname, e.g. domain.com.');
+  }
+  return hostname;
+}
+
+/**
+ * ADR 0018 section 2.6. Anything but unset, blank or `smoke` fails start; in
+ * production the test secret needs the opt-in and a real secret needs a hostname.
+ */
+function assertTurnstileSafeForEnvironment(
+  secretKey: string,
+  expectedHostname: string | undefined,
+  source: EnvSource,
+): void {
+  const optIn = optionalText(source.ALLOW_TURNSTILE_TEST_SECRET);
+  if (optIn !== undefined && optIn !== TURNSTILE_TEST_SECRET_OPT_IN) {
+    throw new Error(
+      `ALLOW_TURNSTILE_TEST_SECRET must be unset or ${TURNSTILE_TEST_SECRET_OPT_IN}.`,
+    );
+  }
+  if (source.NODE_ENV !== 'production') return;
+  if (secretKey === TURNSTILE.ALWAYS_PASS_TEST_SECRET) {
+    if (optIn !== TURNSTILE_TEST_SECRET_OPT_IN) {
+      throw new Error(
+        'TURNSTILE_SECRET_KEY is the Cloudflare test secret, not allowed in production.',
+      );
+    }
+  } else if (expectedHostname === undefined) {
+    throw new Error('TURNSTILE_EXPECTED_HOSTNAME is required in production.');
+  }
+}
+
 function parseTrustProxyHops(raw: string | undefined): number {
   const text = optionalText(raw);
   if (text === undefined) return DEFAULT_TRUST_PROXY_HOPS;
@@ -92,14 +133,18 @@ export function parseServerEnv(source: EnvSource): ServerEnv {
     throw new Error('WEB_REVALIDATE_SECONDS must be a non-negative integer.');
   }
 
+  const turnstileSecretKey = requireEnv('TURNSTILE_SECRET_KEY', source.TURNSTILE_SECRET_KEY);
+  const turnstileExpectedHostname = parseExpectedHostname(source.TURNSTILE_EXPECTED_HOSTNAME);
+  assertTurnstileSafeForEnvironment(turnstileSecretKey, turnstileExpectedHostname, source);
+
   return {
     apiInternalUrl,
     revalidateSeconds,
     isStatusPageEnabled: parseSwitch('WEB_STATUS_PAGE_ENABLED', source.WEB_STATUS_PAGE_ENABLED),
     webOrigin: parseWebOrigin(source.WEB_ORIGIN),
     sessionSecret: parseSessionSecret(source.WEB_SESSION_SECRET, source),
-    turnstileSecretKey: requireEnv('TURNSTILE_SECRET_KEY', source.TURNSTILE_SECRET_KEY),
-    turnstileExpectedHostname: optionalText(source.TURNSTILE_EXPECTED_HOSTNAME),
+    turnstileSecretKey,
+    turnstileExpectedHostname,
     trustProxyHops: parseTrustProxyHops(source.TRUST_PROXY_HOPS),
     clientIpHeader: optionalText(source.CLIENT_IP_HEADER),
   };

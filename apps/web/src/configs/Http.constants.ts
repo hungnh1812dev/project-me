@@ -10,6 +10,8 @@ export const HEALTH_STATUS_OK = 'ok';
 export const HTTP_STATUS = {
   OK: 200,
   BAD_REQUEST: 400,
+  ACCEPTED: 202,
+  NO_CONTENT: 204,
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
@@ -36,6 +38,9 @@ export const MS_PER_SECOND = 1000;
 export const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
 export const ALLOW_HEADER = 'allow';
+export const ACCEPT_HEADER = 'accept';
+export const AUTHORIZATION_HEADER = 'authorization';
+export const COOKIE_HEADER = 'cookie';
 export const CACHE_CONTROL_HEADER = 'cache-control';
 export const CACHE_CONTROL_NO_STORE = 'no-store';
 export const CONTENT_LENGTH_HEADER = 'content-length';
@@ -56,3 +61,6 @@ export const BFF_RATE_LIMITS = {
 
 /** Visitors the rate limiter remembers per bucket; the oldest are evicted first. */
 export const RATE_LIMIT_MAX_KEYS = 10_000;
+
+/** First status of a redirect; the server never follows one. */
+export const REDIRECT_STATUS_MIN = 300;

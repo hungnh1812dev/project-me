@@ -25,3 +25,14 @@ export const API_ENDPOINTS = {
     EMAIL_CHALLENGE: '/auth/2fa/email-challenge',
   },
 } as const;
+
+/** The browser's only API: the BFF routes of this site (ADR 0018). */
+export const BFF_ENDPOINTS = {
+  HEALTH: '/bff/v1/health',
+  SESSION: '/bff/v1/session',
+  CV: '/bff/v1/cv',
+  LOGIN: '/bff/v1/auth/login',
+  EMAIL_CODE: '/bff/v1/auth/two-factor/email-code',
+  VERIFY_TWO_FACTOR: '/bff/v1/auth/two-factor/verify',
+  LOGOUT: '/bff/v1/auth/logout',
+} as const;

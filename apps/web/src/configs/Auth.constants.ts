@@ -19,3 +19,6 @@ export const API_ERROR_CODES = {
   INVALID_2FA_CODE: 'AUTH_INVALID_2FA_CODE',
   INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
 } as const;
+
+/** Name of the refresh cookie cms-api sets and reads (`Set-Cookie` / `Cookie`). */
+export const CMS_API_REFRESH_COOKIE_NAME = '__Secure-abyss_rt';

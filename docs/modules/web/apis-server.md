@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/apis/server
 app: web
-summary: Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, and the server GraphQL client
+summary: Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client
 ---
 
 # Server APIs (web)
@@ -14,13 +14,14 @@ Flows: none yet.
 
 ## Purpose
 
-Everything the Next server does on behalf of the browser. `bff/` runs every `/bff/v1/*` route through one fixed pipeline (D21, `docs/apps/web/FLOW.md` "BFF request pipeline"); `graphql/` runs the anonymous server GraphQL query for page rendering. Used by `app/bff/**/route.ts` files (one `defineBffRoute(...)` each) and by server renders.
+Everything the Next server does on behalf of the browser. `bff/` runs every `/bff/v1/*` route through one fixed pipeline (D21, `docs/apps/web/FLOW.md` "BFF request pipeline"); `restful/` holds the cms-api REST calls and the Cloudflare siteverify call; `graphql/` runs the server GraphQL query for page rendering (anonymous, or as a signed-in visitor with an access token). Used by `app/bff/**/route.ts` files (one `defineBffRoute(...)` each) and by server renders.
 
 ## Techniques
 
 - One pipeline, in order: method (405) · Origin and Sec-Fetch-Site on POST (403) · JSON content type (415) · body cap by Content-Length and capped stream read (413) · per-IP fixed-window limit per bucket (429) · strict Zod schema (400) · human check · `handle` · `Cache-Control: no-store`. An unexpected throw is `502 BFF_UPSTREAM_FAILED` with no detail.
 - Refusals are `{ statusCode, errorCode, message }` with fixed messages from `Bff.errors.ts`; logs hold the route and error code only.
-- The human-check step fails closed (`503 BFF_HUMAN_CHECK_UNAVAILABLE`) until the Turnstile verifier is wired (WBH-2).
+- The human-check step reads `humanCheckToken` from the parsed body, calls `verifyHumanCheck` and strips the token before `handle`. Fails closed: bad or missing token, action or hostname is `400 BFF_HUMAN_CHECK_FAILED`; siteverify unreachable or not JSON is `503 BFF_HUMAN_CHECK_UNAVAILABLE`. Only the action comparison is skipped, and only with Cloudflare's always-pass test secret (`TURNSTILE.ALWAYS_PASS_TEST_SECRET`). `configs/Server.env.ts` guards production at start (ADR 0018 section 2.6): the test secret needs `ALLOW_TURNSTILE_TEST_SECRET=smoke` (smoke stack only), any other secret needs `TURNSTILE_EXPECTED_HOSTNAME`.
+- `cmsApiClient` calls only `API_INTERNAL_URL` + `API_ENDPOINTS` paths with `redirect: 'manual'`, a timeout and exactly one `X-Forwarded-For` (plus `CLIENT_IP_HEADER`). It reads the refresh token from `Set-Cookie` by name, parses every answer with Zod and returns allowlisted fields. Failures are `BffError`s with fixed codes (3xx/5xx 502, timeout 504, 429 keeps `Retry-After`); a refused refresh token or access token returns `null` instead of throwing.
 - Visitor IP (D7): `CLIENT_IP_HEADER` when it carries an address, else the `TRUST_PROXY_HOPS`-th address from the right of `X-Forwarded-For`. The rate limiters live in the process (one per bucket, at most 10 000 keys).
 - Server-only files import `server-only`; this module imports no feature.
 
@@ -30,7 +31,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 
 ## Entry points
 
-`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorResponse` (`bff/`); `fetchGraphql` (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
+`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorResponse` (`bff/`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `fetchGraphql(document, variables?, { accessToken? })` (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
 
 ## Where to change what
 
@@ -47,9 +48,10 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 server/ (0 files)
   bff/ (4 files)
   graphql/ (1 file)
+  restful/ (2 files)
 ```
 
-Tests: 5 files (not listed).
+Tests: 7 files (not listed).
 
 | File | Description |
 |---|---|
@@ -57,7 +59,9 @@ Tests: 5 files (not listed).
 | `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, human-check hook, handle, no-store |
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
-| `graphql/Graphql.server.ts` | Anonymous server GraphQL query with the data cache |
+| `graphql/Graphql.server.ts` | Server GraphQL query: anonymous with the data cache, or Bearer without it |
+| `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in, 2FA, refresh, log out, current account, live health) with IP forwarding and fixed error codes |
+| `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->
