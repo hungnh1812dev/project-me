@@ -2,7 +2,9 @@
 """Hook: make the manager break its session (/clear) around checklist runs and when its context grows.
 
   PreToolUse (Agent|SendMessage)   check a dispatch against the session's state; deny with a reason
-  SessionStart                     forget the session's state (fresh session, /clear or /compact)
+  SessionStart                     forget the session's state (fresh session, /clear or /compact) and tell
+                                   the session where to resume: the in-progress feature of features.md and
+                                   the `Next:` line of its handoff.md (or that none or several are in progress)
 
 Only dispatches in the manager's format are checked (first word TASK, BATCH, REQUEST, CHECKLIST, CHECK,
 RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Rules, per session:
@@ -80,6 +82,27 @@ def board_plan():
     return "", []
 
 
+def resume_note():
+    """Where the manager resumes, from the in-progress rows of features.md; "" without a features file."""
+    try:
+        rows = [[c.strip() for c in row.split("|")] for row in open(FEATURES_FILE)]
+    except OSError:
+        return ""
+    active = [c for c in rows if len(c) > 4 and c[3].startswith("in-progress")]
+    if not active:
+        return "Resume: no feature in progress in features.md."
+    if len(active) > 1:
+        names = ", ".join(f"{c[2]} #{c[1]}" for c in active)
+        return f"Resume: {len(active)} features in progress ({names}); ask the user which to work on."
+    num, name, folder = active[0][1], active[0][2], active[0][4]
+    note = f"Resume: .agent-state/{folder} ({name}, #{num} in features.md, in-progress)"
+    try:
+        nxt = next((l.strip() for l in open(os.path.join(".agent-state", folder, "handoff.md")) if l.startswith("Next:")), "")
+    except OSError:
+        nxt = ""
+    return note + ("\n" + nxt if nxt else "")
+
+
 def deny(reason):
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
                                              "permissionDecisionReason": f"session-gate: {reason}; {BREAK}."}}))
@@ -135,6 +158,9 @@ def main():
         state = load_state()
         if event.get("hook_event_name") == "SessionStart":
             state.pop(event.get("session_id"), None)
+            note = resume_note()
+            if note:
+                print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": note}}))
         else:
             pre_tool_use(event, state)
         save_state(state)
