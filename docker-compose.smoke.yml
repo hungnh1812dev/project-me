@@ -1,5 +1,5 @@
 # Proxy smoke stack. Mirrors production routing (SPEC §1, §6):
-#   <SMOKE_DOMAIN>          -> web (no cms-api route: its /api/* is a web 404)
+#   <SMOKE_DOMAIN>          -> web (its BFF is under /api/v1; no cms-api route)
 #   admin.<SMOKE_DOMAIN>    -> cms-admin, and /api/* -> cms-api (no StripPrefix)
 #   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (catches every email)
 # Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
@@ -171,7 +171,7 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
-    # No cms-api route on this host: /api/* reaches web, which answers 404.
+    # No cms-api route on this host: web serves its BFF under /api/v1 and answers 404 for any other /api/*.
     labels:
       traefik.enable: 'true'
       traefik.http.routers.web.entrypoints: web
