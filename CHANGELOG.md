@@ -9,11 +9,11 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 ### Changes
 
 - web: the BFF moved from `/bff/v1` to `/api/v1`; `/bff/v1` is removed with no alias or redirect.
-- web: modules import each other through `@/` tsconfig path aliases instead of relative `../` paths; Vitest resolves them from the tsconfig. base-config: the Prettier import order puts `@/styles/global.css` in its own group.
-- root: `session-gate` forces the checklist session break only once the context grew more than 40k tokens; the manager resumes from a `Next:` dispatch line in `handoff.md` and reads only the in-progress row of `features.md`; `tokstats` reports turns and input tokens per job of each manager session.
-- root: `session-gate` denies a CHECK or RECHECK that names several tiers (one run per tier); `tokstats` groups Bash output by the command after a leading `cd`.
-- root: `session-gate` breaks the manager session once its context passes 95K tokens (it grew up to 100K past the start before), keeping it under the 100K prompt size Haiku bills at 5x.
-- root: the `session-gate` hook names the in-progress feature and its `Next:` line at session start, so the manager resumes without scanning `features.md` or the feature folders.
+- web: imports use `@/` tsconfig path aliases, resolved by Vitest too; base-config: Prettier groups `@/styles/global.css` alone.
+- root: `session-gate` breaks checklist sessions only after 40k tokens of growth; the manager resumes from `Next:`; `tokstats` reports per-job tokens.
+- root: `session-gate` denies a CHECK or RECHECK naming several tiers; `tokstats` groups Bash output by command after a leading `cd`.
+- root: `session-gate` breaks the manager session past 95K tokens of context, under the 100K prompt size Haiku bills at 5x.
+- root: `session-gate` names the in-progress feature and its `Next:` line at session start, so the manager skips scanning state.
 
 ## 0.1.0 (2026-11-05)
 
@@ -80,8 +80,8 @@ Repo 0.0.2 and cms-api 0.0.2: tag-driven release CI and the cms-api integration 
 
 ### DevOps patches
 
-- Tag-driven release ([ADR 0016](docs/adr/0016-tag-driven-release-ci.md)): images are built and pushed only by a repo tag `v<x.y.z>` made by the `release-tag` skill, and tagged with the app version (`APP_IMAGE_TAG` changes from `main-<sha7>` to `<x.y.z>`); the deploy repo `staging` branch is no longer bumped by CI. Patch notes: [cms-api](docs/apps/cms-api/patch-cms-api-0.0.2.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.0.2.md), [web](docs/apps/web/patch-web-0.0.2.md).
-- cms-api integration tests (Testcontainers) moved out of the Checks job into their own job that runs only on `v<x.y.z>` tags and gates the cms-api publish.
+- Tag-driven release ([ADR 0016](docs/adr/0016-tag-driven-release-ci.md)): `v<x.y.z>` tags build `<x.y.z>` images; CI stops bumping the deploy repo ([cms-api](docs/apps/cms-api/patch-cms-api-0.0.2.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.0.2.md), [web](docs/apps/web/patch-web-0.0.2.md)).
+- cms-api integration tests (Testcontainers) run in their own job, only on `v<x.y.z>` tags, gating the cms-api publish.
 - Test coverage for the tag refusal when `release-apps.sh` fails.
 
 ## 0.0.1 (2026-11-04)
@@ -101,13 +101,13 @@ First versioned release: everything built up to this date.
 
 cms-api:
 
-- Content engine: content types as JSON schemas (root plus up to 3 component levels), generated and reviewed SQL migrations in schema `content`, the type registry ([content-modeling](docs/flows/content-modeling/SPEC.md)).
-- Documents REST API: list with filter, sort and paging, read, create, draft save with a version check and a masked `409` diff, publish and unpublish, bulk actions on collections, presence ([content-editing](docs/flows/content-editing/SPEC.md)).
+- Content engine: JSON-schema content types (root plus up to 3 component levels), reviewed SQL migrations, the type registry ([content-modeling](docs/flows/content-modeling/SPEC.md)).
+- Documents REST API: list, read, create, versioned draft save with masked `409` diff, publish, unpublish, bulk actions, presence ([content-editing](docs/flows/content-editing/SPEC.md)).
 - Read-only GraphQL API over published document reads, with the same authorization and masking as REST ([public-site](docs/flows/public-site/SPEC.md)).
-- Access control: system and custom roles with a rank rule, field-level permissions with `***` masking, conditions, API tokens limited to the creator's current permissions ([access-admin](docs/flows/access-admin/SPEC.md)).
-- Identity: sign-in with refresh token rotation and reuse detection, two-factor by TOTP or email code, invitations, password reset and change, one-time owner setup page and CLI ([sign-in](docs/flows/sign-in/SPEC.md), [password](docs/flows/password/SPEC.md), [two-factor-setup](docs/flows/two-factor-setup/SPEC.md), [owner-setup](docs/flows/owner-setup/SPEC.md)).
-- Media library: upload with magic-byte checks and image re-encoding, replace in place, alt text, delete while unreferenced, purge job; stored file names `<stem>_<hash8>.<ext>` ([media](docs/flows/media/SPEC.md)).
-- Reviewer sessions: self-service 24 h read-only sessions behind a Turnstile check, the owner switch and session log, the deploy switch `REVIEWER_FEATURE_ENABLED` ([reviewer](docs/flows/reviewer/SPEC.md)).
+- Access control: ranked system and custom roles, field permissions with `***` masking and conditions, scoped API tokens ([access-admin](docs/flows/access-admin/SPEC.md)).
+- Identity: rotating refresh tokens with reuse detection, TOTP or email 2FA, invitations, password reset, owner setup ([sign-in](docs/flows/sign-in/SPEC.md), [password](docs/flows/password/SPEC.md), [two-factor-setup](docs/flows/two-factor-setup/SPEC.md), [owner-setup](docs/flows/owner-setup/SPEC.md)).
+- Media library: magic-byte-checked uploads, image re-encoding, replace, alt text, delete when unreferenced, purge job, files stored as `<stem>_<hash8>.<ext>` ([media](docs/flows/media/SPEC.md)).
+- Reviewer sessions: self-service 24 h read-only access behind Turnstile, owner switch, session log, `REVIEWER_FEATURE_ENABLED` switch ([reviewer](docs/flows/reviewer/SPEC.md)).
 - Owner-only backup download: list the nightly encrypted dumps and get a 60 s link after password plus 2FA ([backups](docs/flows/backups/SPEC.md)).
 - Always-on security audit log ([security-audit](docs/flows/security-audit/SPEC.md)); health probes; production config guards; separate database roles with TLS `verify-full`.
 
@@ -133,11 +133,11 @@ Repository:
 
 ### Bug fixes
 
-- cms-api: a rejected upload answered 502 or lost its 403; the Node `requestTimeout` is 5 min and rejected uploads close cleanly.
-- cms-admin, form-commons: uploads were cut by the 10 s client timeout, the progress bar showed 100 % too early, long file names lost their extension, `MediaInput` had no frame.
+- cms-api: rejected uploads no longer answer 502 or lose their 403; `requestTimeout` is 5 min.
+- cms-admin, form-commons: uploads outlast the 10 s client timeout; progress, long file names and the `MediaInput` frame are fixed.
 - cms-api, cms-admin, e2e: refresh races across browser tabs signed users out.
-- cms-api: updating an expired API token is refused; create permissions with conditions count as not granted; the purge keeps deleted media of another storage provider; document reads include the media `sha256`.
-- cms-admin: Zod runs jitless so its eval probe breaks no CSP; backup status loads on demand; focus returns to the trigger after a dialog closes; the collection table stays inside its card at 375 px; emoji stay whole in avatar initials.
+- cms-api: expired tokens can't be updated; conditional create counts as ungranted; purge keeps other providers' media; reads include media `sha256`.
+- cms-admin: jitless Zod keeps CSP; backup status loads on demand; dialog focus returns; tables fit 375 px; emoji initials intact.
 - web: masked CV fields show "Hidden" for reviewers.
 
 ### DevOps patches
