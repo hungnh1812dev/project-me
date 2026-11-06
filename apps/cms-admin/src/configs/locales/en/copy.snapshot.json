@@ -21,6 +21,8 @@
     "description": "Use the email and password of your Abyss CMS account.",
     "emailLabel": "Email",
     "passwordLabel": "Password",
+    "rememberMe": "Keep me signed in",
+    "rememberMeHint": "Use this only on a device you trust.",
     "submit": "Sign in",
     "forgotPassword": "Forgot your password?",
     "notices": {

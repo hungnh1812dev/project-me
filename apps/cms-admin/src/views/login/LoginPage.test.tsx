@@ -44,6 +44,30 @@ describe('LoginPage', () => {
     expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(0);
   });
 
+  it('offers an unticked, described "Keep me signed in" box after the password', async () => {
+    await openLogin(() => ({ status: 500 }));
+    const box = screen.getByRole('checkbox', { name: EN_TEXT.login.rememberMe });
+    expect(box).not.toBeChecked();
+    expect(box).toHaveAccessibleDescription(EN_TEXT.login.rememberMeHint);
+    await userEvent.click(password());
+    await userEvent.tab();
+    expect(box).toHaveFocus();
+    await userEvent.keyboard(' ');
+    expect(box).toBeChecked();
+    await userEvent.tab();
+    expect(submit()).toHaveFocus();
+  });
+
+  it('sends rememberMe true when the box is ticked', async () => {
+    const { api } = await openLogin(() => ({ status: 200, data: { accessToken: 't1' } }));
+    await userEvent.click(screen.getByRole('checkbox', { name: EN_TEXT.login.rememberMe }));
+    await fillAndSubmit();
+    await waitFor(() => expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(1));
+    expect(api.callsTo(`POST ${LOGIN}`)[0]?.data).toBe(
+      JSON.stringify({ email: TEST_USER.email, password: PASSWORD, rememberMe: true }),
+    );
+  });
+
   it('validates the email format after blur', async () => {
     await openLogin(() => ({ status: 500 }));
     await userEvent.type(email(), 'not-an-email');
@@ -68,7 +92,7 @@ describe('LoginPage', () => {
       screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
     ).toBeInTheDocument();
     expect(api.callsTo(`POST ${LOGIN}`)[0]?.data).toBe(
-      JSON.stringify({ email: TEST_USER.email, password: PASSWORD }),
+      JSON.stringify({ email: TEST_USER.email, password: PASSWORD, rememberMe: false }),
     );
     expect(services.store.getState().auth.accessToken).toBe('t1');
   });
