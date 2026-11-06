@@ -125,6 +125,7 @@ No log: lasting events go into commit messages, `handoff.md` (while open), `reso
 Updated: <YYYY-MM-DD> after <task ID>
 
 ## In progress / next
+Next: <first line of the next dispatch: agent, name, model, message> (or: ask the user <what>)
 - <ID> <title> - <state, exact next step>
 - <ID> user answers: <one line each>
 

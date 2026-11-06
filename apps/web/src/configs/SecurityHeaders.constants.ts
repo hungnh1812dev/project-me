@@ -14,7 +14,7 @@ export const SECURITY_RESPONSE_HEADERS = [
   { key: 'X-Frame-Options', value: 'DENY' },
 ] as const;
 
-/** Static policy for `/bff/*`: the proxy skips these paths, so an unmatched one (Next's HTML 404) would carry no CSP. */
+/** Static policy for `/api/*` (`BFF_BASE_PATH`): the proxy skips these paths, so an unmatched one (Next's HTML 404) would carry no CSP. */
 export const BFF_RESPONSE_HEADERS = [
   { key: 'Content-Security-Policy', value: "default-src 'none'; frame-ancestors 'none'" },
 ] as const;

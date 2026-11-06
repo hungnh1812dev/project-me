@@ -14,7 +14,7 @@ Flows: [`sign-in`](../../flows/sign-in/FLOW.md).
 
 ## Purpose
 
-The sign-in of reader accounts on the public site: credentials, then the TOTP or emailed code ([sign-in flow](../../flows/sign-in/FLOW.md)). The dialog calls only the BFF under `/bff/v1` (D21); the browser holds no token ([web rules](../../apps/web/RULES.md)).
+The sign-in of reader accounts on the public site: credentials, then the TOTP or emailed code ([sign-in flow](../../flows/sign-in/FLOW.md)). The dialog calls only the BFF under `/api/v1` (D21); the browser holds no token ([web rules](../../apps/web/RULES.md)).
 
 ## Techniques
 

@@ -15,11 +15,11 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 
 ## Steps
 
-1. The visitor opens `/cv`; the Next server renders the CV with a per-request CSP nonce (D17). A signed-in visitor's view reads it again through `GET /bff/v1/cv` (D21).
+1. The visitor opens `/cv`; the Next server renders the CV with a per-request CSP nonce (D17). A signed-in visitor's view reads it again through `GET /api/v1/cv` (D21).
 2. The server posts a GraphQL query to `/api/v1/graphql` anonymously; cms-api applies limits, builds the schema for the actor's readable types and resolves through `DocumentsQueryService` (masked).
 3. Next.js caches the answer for `WEB_REVALIDATE_SECONDS`.
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
-5. The homepage `/` shows only the status card, which polls `GET /bff/v1/health` and loads no CV data (D21, Q-BFF2).
+5. The homepage `/` shows only the status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2).
 
 ```mermaid
 sequenceDiagram
@@ -55,9 +55,9 @@ sequenceDiagram
 | `apps/cms-api/src/modules/health` | Health endpoints behind the status card | [health.md](../../modules/cms-api/health.md) |
 | `apps/web/src/features/cv` | CV data (GraphQL documents, server code) | [cv.md](../../modules/web/cv.md) |
 | `apps/web/src/views/cv` | CV page | [views-cv.md](../../modules/web/views-cv.md) |
-| `apps/web/src/features/status` | Service status card (`GET /bff/v1/health`) | [status.md](../../modules/web/status.md) |
+| `apps/web/src/features/status` | Service status card (`GET /api/v1/health`) | [status.md](../../modules/web/status.md) |
 | `apps/web/src/views/status` | Status view | [views-status.md](../../modules/web/views-status.md) |
-| `apps/web/src/features/session` | Who is signed in, for `GET /bff/v1/cv` | [session.md](../../modules/web/session.md) |
+| `apps/web/src/features/session` | Who is signed in, for `GET /api/v1/cv` | [session.md](../../modules/web/session.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

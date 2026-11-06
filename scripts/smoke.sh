@@ -44,6 +44,10 @@ API_PREFIX="/api/v1"
 WEB_UNKNOWN_PATH="/this-page-does-not-exist"
 WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
+# The web BFF owns /api/v1/* on the web host; its old path /bff/v1 is removed (404, no alias).
+WEB_BFF_HEALTH_PATH="/api/v1/health"
+WEB_REMOVED_BFF_HEALTH_PATH="/bff/v1/health"
+BFF_CACHE_CONTROL="no-store"
 JWT_ACCESS_KID="smoke"
 TOTP_ENC_KID="smoke-totp"
 # Written only with SMOKE_KEEP=1 (gitignored, mode 600): the e2e env of the kept

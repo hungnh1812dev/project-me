@@ -8,7 +8,7 @@ const HEALTH_BODIES = {
   down: { status: 'unavailable' },
 } as const;
 
-/** `GET /bff/v1/health`: 200 `ok` while cms-api is live, 503 `unavailable` otherwise. */
+/** `GET /api/v1/health`: 200 `ok` while cms-api is live, 503 `unavailable` otherwise. */
 export async function answerHealthRead(): Promise<Response> {
   const isLive = await cmsApiClient.readLiveHealth();
   return isLive

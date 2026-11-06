@@ -18,7 +18,7 @@ vi.mock('../../../../../apis/server/bff/BffRoute.server', async (importOriginal)
   defineBffRoute,
 }));
 
-describe('/bff/v1/auth/login route', () => {
+describe('/api/v1/auth/login route', () => {
   it('exports POST wired to logInVisitor with its route options', async () => {
     const route = await import('./route');
 

@@ -8,7 +8,7 @@ const defineBffRoute = vi.hoisted(() =>
 
 vi.mock('../../../../apis/server/bff/BffRoute.server', () => ({ defineBffRoute }));
 
-describe('/bff/v1/session route', () => {
+describe('/api/v1/session route', () => {
   it('exports GET wired to answerSessionRead with its route options', async () => {
     const route = await import('./route');
 

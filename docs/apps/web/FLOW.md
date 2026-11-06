@@ -24,7 +24,7 @@ Every BFF route, in this order (D21):
 
 ```mermaid
 flowchart LR
-  req(["browser request /bff/v1/*"]) --> m{"method allowed?"}
+  req(["browser request /api/v1/*"]) --> m{"method allowed?"}
   m --> o{"Origin = WEB_ORIGIN?"}
   o --> b{"JSON, at most 8 KiB?"}
   b --> rl{"rate limit"}
@@ -40,4 +40,4 @@ Applies to flows: `public-site`.
 
 1. `src/proxy.ts` creates the per-request nonce and sets the CSP header (D17).
 2. Server Components fetch content anonymously through GraphQL from `API_INTERNAL_URL`, cached for `WEB_REVALIDATE_SECONDS`.
-3. Client components call only the BFF under `/bff/v1`, through the browser API client.
+3. Client components call only the BFF under `/api/v1`, through the browser API client.

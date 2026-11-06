@@ -6,6 +6,14 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### Changes
+
+- web: the BFF moved from `/bff/v1` to `/api/v1`; `/bff/v1` is removed with no alias or redirect.
+- root: `session-gate` forces the checklist session break only once the context grew more than 40k tokens; the manager resumes from a `Next:` dispatch line in `handoff.md` and reads only the in-progress row of `features.md`; `tokstats` reports turns and input tokens per job of each manager session.
+- root: `session-gate` denies a CHECK or RECHECK that names several tiers (one run per tier); `tokstats` groups Bash output by the command after a leading `cd`.
+- root: `session-gate` breaks the manager session once its context passes 95K tokens (it grew up to 100K past the start before), keeping it under the 100K prompt size Haiku bills at 5x.
+- root: the `session-gate` hook names the in-progress feature and its `Next:` line at session start, so the manager resumes without scanning `features.md` or the feature folders.
+
 ## 0.1.0 (2026-11-05)
 
 Repo 0.1.0, cms-api, cms-admin and web 0.1.0, e2e 0.0.2: the web BFF, the content schema moves to component paths, admin labels and widths, and the fixes since 0.0.1.

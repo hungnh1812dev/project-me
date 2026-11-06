@@ -21,7 +21,7 @@ describe('createAuthApi', () => {
   it('reads the session from the BFF', async () => {
     const { api, seen } = clientAnswering(() => ({ user: TEST_USER }));
     await expect(api.readSession()).resolves.toEqual(TEST_USER);
-    expect(seen[0]).toMatchObject({ method: 'get', url: '/session', baseURL: '/bff/v1' });
+    expect(seen[0]).toMatchObject({ method: 'get', url: '/session', baseURL: '/api/v1' });
   });
 
   it('reads no session as null', async () => {

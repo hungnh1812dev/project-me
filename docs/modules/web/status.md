@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /bff/v1/health` of this site, never cms-api.
+Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api.
 
 ## Techniques
 
@@ -46,7 +46,7 @@ Tests: 1 file (not listed).
 | File | Description |
 |---|---|
 | `Health.api.ts` | Liveness call, response type and query keys (exports `HealthResponse`, `HEALTH_QUERY_KEYS`, `fetchLiveHealth`) |
-| `Health.server.ts` | Handler of `GET /bff/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
+| `Health.server.ts` | Handler of `GET /api/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

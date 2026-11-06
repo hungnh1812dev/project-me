@@ -31,14 +31,14 @@ All routes sit under `/api/v1`. One error shape: `{ statusCode, errorCode, messa
 
 `:slug` is always checked against the `content_types` registry before any SQL is built; never interpolated directly.
 
-**Web BFF (D21, [ADR 0018](../../adr/0018-web-bff.md) §2, error codes §3).** Served by apps/web on the web origin under `/bff/v1`; the only API the public site's browser calls. JSON only, `Cache-Control: no-store`, errors `{ statusCode, errorCode, message }`.
+**Web BFF (D21, [ADR 0018](../../adr/0018-web-bff.md) §2, error codes §3).** Served by apps/web on the web origin under `/api/v1`; the only API the public site's browser calls. JSON only, `Cache-Control: no-store`, errors `{ statusCode, errorCode, message }`.
 
 | Endpoint                                  | Body                                                           | Answer                                                                                        |
 | ----------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `GET /bff/v1/health`                      | -                                                              | `200 { status: "ok" }` · `503 { status: "unavailable" }`                                      |
-| `GET /bff/v1/session`                     | -                                                              | `200 { user: { id, email, displayName, role } \| null }`                                      |
-| `POST /bff/v1/auth/login`                 | `{ email, password, humanCheckToken, rememberMe? }` (§16 RM-6) | `200 { status: "signed-in", user }` · `200 { status: "two-factor-required", methods }`        |
-| `POST /bff/v1/auth/two-factor/email-code` | `{ humanCheckToken }`                                          | `202`                                                                                         |
-| `POST /bff/v1/auth/two-factor/verify`     | `{ code, humanCheckToken }`                                    | `200 { user }`                                                                                |
-| `POST /bff/v1/auth/logout`                | -                                                              | `204`                                                                                         |
-| `GET /bff/v1/cv`                          | -                                                              | `200 <CV page data>` for the signed-in visitor (`401 BFF_SESSION_REQUIRED` without a session) |
+| `GET /api/v1/health`                      | -                                                              | `200 { status: "ok" }` · `503 { status: "unavailable" }`                                      |
+| `GET /api/v1/session`                     | -                                                              | `200 { user: { id, email, displayName, role } \| null }`                                      |
+| `POST /api/v1/auth/login`                 | `{ email, password, humanCheckToken, rememberMe? }` (§16 RM-6) | `200 { status: "signed-in", user }` · `200 { status: "two-factor-required", methods }`        |
+| `POST /api/v1/auth/two-factor/email-code` | `{ humanCheckToken }`                                          | `202`                                                                                         |
+| `POST /api/v1/auth/two-factor/verify`     | `{ code, humanCheckToken }`                                    | `200 { user }`                                                                                |
+| `POST /api/v1/auth/logout`                | -                                                              | `204`                                                                                         |
+| `GET /api/v1/cv`                          | -                                                              | `200 <CV page data>` for the signed-in visitor (`401 BFF_SESSION_REQUIRED` without a session) |

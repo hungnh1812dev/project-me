@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-Everything the Next server does on behalf of the browser. `bff/` runs every `/bff/v1/*` route through one fixed pipeline (D21, `docs/apps/web/FLOW.md` "BFF request pipeline"); `restful/` holds the cms-api REST calls and the Cloudflare siteverify call; `graphql/` runs the server GraphQL query for page rendering (anonymous, or as a signed-in visitor with an access token). Used by `app/bff/**/route.ts` files (one `defineBffRoute(...)` each) and by server renders.
+Everything the Next server does on behalf of the browser. `bff/` runs every `/api/v1/*` route through one fixed pipeline (D21, `docs/apps/web/FLOW.md` "BFF request pipeline"); `restful/` holds the cms-api REST calls and the Cloudflare siteverify call; `graphql/` runs the server GraphQL query for page rendering (anonymous, or as a signed-in visitor with an access token). Used by `app/api/**/route.ts` files (one `defineBffRoute(...)` each) and by server renders.
 
 ## Techniques
 

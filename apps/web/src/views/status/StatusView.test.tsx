@@ -31,7 +31,7 @@ describe('StatusView', () => {
     expect(screen.getByRole('heading', { level: 1, name: COPY.page.title })).toBeInTheDocument();
     expect(screen.getByText(COPY.page.description)).toBeInTheDocument();
     expect(await screen.findByText(COPY.status.state.ok)).toBeInTheDocument();
-    expect(screen.getByText('GET /bff/v1/health')).toBeInTheDocument();
+    expect(screen.getByText('GET /api/v1/health')).toBeInTheDocument();
   });
 
   it('shows the unreachable state and re-checks on demand', async () => {

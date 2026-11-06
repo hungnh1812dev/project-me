@@ -26,7 +26,7 @@ export async function loadCvPageForSession(accessToken: string): Promise<CvPageD
   );
 }
 
-/** `GET /bff/v1/cv`: the CV page data for the signed-in visitor, `BFF_SESSION_REQUIRED` otherwise. */
+/** `GET /api/v1/cv`: the CV page data for the signed-in visitor, `BFF_SESSION_REQUIRED` otherwise. */
 export async function answerCvRead({ request }: BffContext<unknown>): Promise<Response> {
   const read = await readWebSession(request);
   if (read.status === 'signed-out') throw new BffError('BFF_SESSION_REQUIRED', {}, read.setCookies);

@@ -11,18 +11,18 @@ Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md)
 
 - **User**: an invited account (editor, admin, owner) signing in to cms-admin, or a visitor with an account signing in on the web site.
 - **cms-admin**: keeps the access token in memory and sends it as a Bearer header; the refresh token is the `__Secure-abyss_rt` cookie (D14).
-- **web BFF**: Next.js Route Handlers under `/bff/v1`; holds both cms-api tokens in the sealed `__Host-abyss_web_session` cookie (D21).
+- **web BFF**: Next.js Route Handlers under `/api/v1`; holds both cms-api tokens in the sealed `__Host-abyss_web_session` cookie (D21).
 - **cms-api identity**: checks credentials and the second factor, issues and rotates tokens.
 
 ## Steps
 
-1. The user sends email, password and the remember-me choice (`POST /auth/login`; web: `POST /bff/v1/auth/login` with a Turnstile token).
+1. The user sends email, password and the remember-me choice (`POST /auth/login`; web: `POST /api/v1/auth/login` with a Turnstile token).
 2. cms-api runs exactly one Argon2id verify (a dummy hash for an unknown email) and answers unknown, wrong and inactive accounts the same way (D8).
 3. 2FA off: the session starts at once (`AuthService.startSession`). 2FA on: cms-api answers with a 2FA temp token (TTL 300 s, 5 attempts) that carries the remember-me claim `rm`; the user sends the code to `POST /auth/2fa/verify` (email code: `POST /auth/2fa/email-challenge` first), and the session starts with the claim's value (RM-1).
 4. Starting a session issues the refresh token row (with `remember_me` and the TTL of that mode) and writes `auth.login_succeeded` in the same transaction (RM-2, RM-4).
 5. cms-admin gets the access token in the body and the refresh cookie, persistent only when remembered (RM-3). The web BFF seals both tokens into `__Host-abyss_web_session`, persistent only when remembered (RM-6); the browser gets no token.
 6. Refresh: cms-admin calls `POST /auth/refresh` with the cookie (Origin checked, D14), one tab at a time (Web Lock + BroadcastChannel); the BFF refreshes server-side when the access token has under 30 s left. Each rotation keeps the family's mode; reuse of a rotated token revokes the family (D9).
-7. Sign-out: `POST /auth/logout` (web: `POST /bff/v1/auth/logout`, which always clears both cookies).
+7. Sign-out: `POST /auth/logout` (web: `POST /api/v1/auth/logout`, which always clears both cookies).
 
 ## Login, with and without 2FA
 
@@ -121,17 +121,17 @@ sequenceDiagram
 sequenceDiagram
   actor U as Visitor
   participant B as Browser
-  participant F as web BFF /bff/v1
+  participant F as web BFF /api/v1
   participant T as Cloudflare Turnstile
   participant API as cms-api (API_INTERNAL_URL)
   U->>B: email + password (+ Keep me signed in)
-  B->>F: POST /bff/v1/auth/login (humanCheckToken, rememberMe?)
+  B->>F: POST /api/v1/auth/login (humanCheckToken, rememberMe?)
   F->>F: method, Origin, JSON, size, rate limit, Zod schema
   F->>T: siteverify (action login)
   F->>API: POST /auth/login (forwarded client IP)
   alt 2FA required
     F-->>B: two-factor-required + sealed __Host-abyss_web_2fa (carries rememberMe)
-    B->>F: POST /bff/v1/auth/two-factor/verify (code, humanCheckToken)
+    B->>F: POST /api/v1/auth/two-factor/verify (code, humanCheckToken)
     F->>API: POST /auth/2fa/verify
   end
   F->>F: refuse accounts with any permission other than read (403 BFF_PRIVILEGED_ACCOUNT)

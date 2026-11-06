@@ -148,7 +148,7 @@ export function publicUserOf(account: CurrentAccount) {
   return { id, email, displayName, role };
 }
 
-/** `GET /bff/v1/session`: the signed-in visitor or `null`, carrying a rotated or cleared cookie. */
+/** `GET /api/v1/session`: the signed-in visitor or `null`, carrying a rotated or cleared cookie. */
 export async function answerSessionRead({ request }: BffContext<unknown>): Promise<Response> {
   const read = await readWebSession(request);
   const user = read.status === 'signed-in' ? publicUserOf(read.account) : null;
