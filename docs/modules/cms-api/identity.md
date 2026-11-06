@@ -65,7 +65,7 @@ Tests: 24 files (not listed).
 | `application/OwnerSetup.service.ts` | `OwnerSetupService`: one-time `/setup` owner creation with the setup token |
 | `application/Password.service.ts` | `PasswordService`, `hashPassword`, `verifyPassword`: reset, set and change |
 | `application/Reauthentication.service.ts` | `ReauthenticationService`: password (and code) check before a sensitive action |
-| `application/RefreshToken.service.ts` | `RefreshTokenService`: rotation, reuse detection, grace window |
+| `application/RefreshToken.service.ts` | `RefreshTokenService`: rotation, reuse detection, grace window; the remember_me mode and its TTL per family |
 | `application/SecretBox.service.ts` | `SecretBox`: AES-256-GCM sealing of stored secrets (TOTP) |
 | `application/SeedAccount.service.ts` | `SeedAccountService`: seeds test accounts where allowed |
 | `application/SessionRevocation.service.ts` | `SessionRevocationService`: revokes all sessions of an account |
@@ -81,8 +81,8 @@ Tests: 24 files (not listed).
 | `cli/PasswordInput.client.ts` | `promptHidden`, `readPasswordFromStream`: hidden password input for CLIs |
 | `cli/Seed.command.ts` | `db:seed`: idempotent system roles seed, then default permissions of roles that have none |
 | `cli/SeedAccount.command.ts` | Seed account CLI |
-| `domain/Authentication.rules.ts` | Login failure reasons, password acceptance, refresh grace rule |
-| `domain/Identity.constants.ts` | Password, OTP, TOTP, two-factor, setup token and cipher settings; error lists |
+| `domain/Authentication.rules.ts` | Login failure reasons, password acceptance, refresh grace rule, refresh TTL per remember_me mode |
+| `domain/Identity.constants.ts` | Password, OTP, TOTP, two-factor, setup token, refresh TTLs (30 days remembered, 12 hours not) and cipher settings; error lists |
 | `domain/Identity.errors.ts` | Identity domain errors (invalid credentials, weak password, invalid OTP, ...) |
 | `domain/SetupToken.rules.ts` | `isSetupTokenValid`: constant-time setup token check |
 | `http/AllowedOrigin.guard.ts` | `AllowedOriginGuard`: refuses cookie requests from other origins |

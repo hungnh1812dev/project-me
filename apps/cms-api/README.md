@@ -128,7 +128,7 @@ count).
   verification key is chosen by the `kid` header (`JWT_ACCESS_KID`).
   The JWT guard compares `tv`/`pv` with the database (see `docs/modules/access-control.md`).
 - Refresh cookie `__Secure-abyss_rt`: `HttpOnly; Secure; SameSite=Strict;
-Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
+Path=/api/v1/auth`, 30 days, host-only (no `Domain`). The raw token is never
   stored, only its SHA-256. Every refresh rotates it within its family;
   presenting an already rotated token revokes the whole family and bumps
   `accounts.token_version`.

@@ -179,7 +179,7 @@ export class AuthService {
     twoFactorMethod: TwoFaMethod | null = null,
   ): Promise<SessionTokens> {
     const refreshToken = await this.runner.run(async (unit) => {
-      const token = await this.refreshTokens.issue(account.id, meta, unit);
+      const token = await this.refreshTokens.issue(account.id, true, meta, unit);
       await this.audit.record(unit, {
         actor: selfActor(account.id),
         action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
