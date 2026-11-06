@@ -43,7 +43,7 @@ for f in glob.glob(f"{root}/*/subagents/*.jsonl"):
                     p = re.sub(r"\.agent-state/features/[^/]+/", ".agent-state/features/<F>/", p)
                     reads[p][0] += 1; reads[p][1] += n
                 elif name == "Bash":
-                    cmd = inp.get("command", "").strip()
+                    cmd = re.sub(r"^cd \S+\s*(&&|;|\n)\s*", "", inp.get("command", "").strip())   # the real command, not the cd
                     key = " ".join(cmd.split()[:2])[:40]
                     bash[key][0] += 1; bash[key][1] += n
     if ok:
