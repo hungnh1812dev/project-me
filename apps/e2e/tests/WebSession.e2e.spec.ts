@@ -52,11 +52,18 @@ async function waitForHumanCheck(page: Page): Promise<void> {
   await expect(dialog(page).locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
 }
 
-async function fillCredentials(page: Page, email: string, password: string): Promise<void> {
+async function fillCredentials(
+  page: Page,
+  email: string,
+  password: string,
+  options: { remember?: boolean } = {},
+): Promise<void> {
   const form = dialog(page);
   await waitForHumanCheck(page);
   await form.getByRole('textbox', { name: login.emailLabel }).fill(email);
   await form.getByLabel(login.passwordLabel).fill(password);
+  // Ticked after the fields are filled: a blur error above the box would shift it under the pointer.
+  if (options.remember) await form.getByRole('checkbox', { name: login.rememberMeLabel }).check();
   await form.getByRole('button', { name: login.submit }).click();
 }
 
@@ -171,6 +178,83 @@ test('a reader signs in on the web, stays signed in on reload, and signs out', a
   await page.reload();
   await expect(headerSignIn(page)).toBeVisible();
   await expect(signOutButton(page)).toHaveCount(0);
+});
+
+const REMEMBERED_SECONDS = 2_592_000;
+const REMEMBERED_SLACK_SECONDS = 120;
+const SESSION_COOKIE_EXPIRES = -1;
+const rememberBox = (page: Page) =>
+  dialog(page).getByRole('checkbox', { name: login.rememberMeLabel });
+
+test('the keep-me-signed-in box is unticked on every open; unticked sets a session cookie, ticked about 30 days, both survive a reload', async ({
+  page,
+  context,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  await expect(rememberBox(page)).not.toBeChecked();
+  await expect(dialog(page).getByText(login.rememberMeHint)).toBeVisible();
+  await rememberBox(page).focus();
+  await page.keyboard.press('Space');
+  await expect(rememberBox(page)).toBeChecked();
+  await page.keyboard.press('Escape');
+  await openDialog(page);
+  await expect(rememberBox(page)).not.toBeChecked();
+  // A reopened dialog keeps its human check on "Loading"; a fresh page gives a ready one.
+  await page.reload();
+  await openDialog(page);
+
+  await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  expect(await hostCookie(context, WEB_SESSION_COOKIE_NAME)).toMatchObject({
+    expires: SESSION_COOKIE_EXPIRES,
+    httpOnly: true,
+    secure: true,
+  });
+  await page.reload();
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  expect(await hostCookie(context, WEB_SESSION_COOKIE_NAME)).toMatchObject({
+    expires: SESSION_COOKIE_EXPIRES,
+  });
+  expect(await storageState(page)).toEqual(EMPTY_STORAGE);
+  await signOutButton(page).click();
+  await expect(headerSignIn(page)).toBeVisible();
+
+  await openDialog(page);
+  await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword, { remember: true });
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  const cookie = await hostCookie(context, WEB_SESSION_COOKIE_NAME);
+  expect(cookie).toMatchObject({ httpOnly: true, secure: true });
+  const secondsLeft = (cookie?.expires ?? 0) - Date.now() / 1000;
+  expect(secondsLeft).toBeGreaterThan(REMEMBERED_SECONDS - REMEMBERED_SLACK_SECONDS);
+  expect(secondsLeft).toBeLessThanOrEqual(REMEMBERED_SECONDS);
+  expect(await storageState(page)).toEqual(EMPTY_STORAGE);
+  await signOutButton(page).click();
+  await expect(headerSignIn(page)).toBeVisible();
+});
+
+test('a ticked box on the credentials step is kept through the code step', async ({
+  page,
+  context,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  const seen = await mailIdsFor(context, e2eEnv.reader2faEmail);
+  await fillCredentials(page, e2eEnv.reader2faEmail, e2eEnv.reader2faPassword, { remember: true });
+  const step = page.getByRole('dialog', { name: login.twoFactor.title });
+  await expect(step).toBeVisible();
+  const code = await waitForCode(context, e2eEnv.reader2faEmail, seen);
+  await step.getByLabel(new RegExp(`^${login.twoFactor.emailLabel}`)).fill(code);
+  await waitForHumanCheck(page);
+  await step.getByRole('button', { name: login.twoFactor.submit }).click();
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  const cookie = await hostCookie(context, WEB_SESSION_COOKIE_NAME);
+  const secondsLeft = (cookie?.expires ?? 0) - Date.now() / 1000;
+  expect(secondsLeft).toBeGreaterThan(REMEMBERED_SECONDS - REMEMBERED_SLACK_SECONDS);
+  await signOutButton(page).click();
+  await expect(headerSignIn(page)).toBeVisible();
 });
 
 test('the owner is refused on the web: the dialog says to use the admin, the page stays anonymous and holds no token', async ({

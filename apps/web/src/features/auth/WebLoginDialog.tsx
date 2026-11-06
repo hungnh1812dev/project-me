@@ -77,7 +77,8 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
 
   const form = useForm<LoginValues>({
     defaultValues: { email: '', password: '', rememberMe: false },
-    mode: 'onTouched',
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
   });
 
   const signIn = useMutation({
