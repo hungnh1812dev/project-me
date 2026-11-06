@@ -236,7 +236,7 @@ start_apps() {
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
   DEV_SERVER_PORT="$WEB_PORT_DEV" \
     API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
-    NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
   wait_until "cms-admin ($ADMIN_ORIGIN)" cms-admin admin_is_up
