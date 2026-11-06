@@ -92,7 +92,7 @@ Every global doc, app and flow, with what it holds and the parts of the old sing
 |---|---|---|---|
 | `cms-admin` | [SPEC.md](docs/apps/cms-admin/SPEC.md) · [FLOW.md](docs/apps/cms-admin/FLOW.md) · [RULES.md](docs/apps/cms-admin/RULES.md) | React and Vite admin console for content, media and access, on admin.domain.com | - |
 | `cms-api` | [SPEC.md](docs/apps/cms-api/SPEC.md) · [FLOW.md](docs/apps/cms-api/FLOW.md) · [RULES.md](docs/apps/cms-api/RULES.md) | NestJS API: REST, read-only GraphQL, data, access policy, sessions and audit | D3, D4, D5, D8, D9, D19 |
-| `web` | [SPEC.md](docs/apps/web/SPEC.md) · [FLOW.md](docs/apps/web/FLOW.md) · [RULES.md](docs/apps/web/RULES.md) | Next.js public site with its BFF under /bff/v1 | D21 |
+| `web` | [SPEC.md](docs/apps/web/SPEC.md) · [FLOW.md](docs/apps/web/FLOW.md) · [RULES.md](docs/apps/web/RULES.md) | Next.js public site with its BFF under /api/v1 | D21 |
 
 ### Flows
 

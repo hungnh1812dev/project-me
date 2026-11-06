@@ -50,7 +50,7 @@ abyss/
 │   │       ├── app/ # routes and shell: layout.tsx, page.tsx, not-found.tsx, providers.tsx, query-client.ts, CspNonce.tsx, AccountMenu.tsx
 │   │       ├── config/ # env.server.ts (server-only), env.client.ts (NEXT_PUBLIC_* only), require-env.ts, endpoints.ts, shared *.constants.ts
 │   │       ├── lib/ # api-client.ts (browser Axios), content-security-policy.ts, api-failure.ts; Graphql.server.ts, Graphql.client.ts, SafeRichtext.rules.ts
-│   │       ├── app/bff/v1/ # BFF Route Handlers (D21); their pipeline and cms-api clients in apis/server/ (ADR 0018 §6, §8)
+│   │       ├── app/api/v1/ # BFF Route Handlers (D21); their pipeline and cms-api clients in apis/server/ (ADR 0018 §6, §8)
 │   │       └── features/ # session/ (who is signed in; sealed BFF session cookie server-side), auth/ (sign-in UI, Turnstile), status/, cv/ (reviewer/ removed, D21):
 │   │ # *.api.ts, *.graphql.ts (GraphQL documents), *.server.ts, client components
 │   └── e2e/ # @abyss/e2e Playwright

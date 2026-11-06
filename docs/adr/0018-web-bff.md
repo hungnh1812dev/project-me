@@ -1,8 +1,9 @@
-# ADR 0018: Web BFF under `/bff/v1`, sealed session cookie, cms-api off the web host
+# ADR 0018: Web BFF under `/api/v1`, sealed session cookie, cms-api off the web host
 
 - Status: accepted (2026-11-05, user answers Q7 and Q-BFF1..Q-BFF5 of 2026-10-31 and Q-WBH1..Q-WBH5 of 2026-11-05)
 - Date: 2026-11-05 (planner `PLAN web-bff-hardening`; replaces the ADR 0017 that D21 named on 2026-10-31, which was never committed; the number 0017 now belongs to the cms-admin locale loader)
 - Spec: D21 in [docs/apps/web/SPEC.md](../apps/web/SPEC.md); rules in [docs/apps/web/RULES.md](../apps/web/RULES.md) "BFF (D21)"; pipeline in [docs/apps/web/FLOW.md](../apps/web/FLOW.md); endpoints in [api-contract.md](../global/reference/api-contract.md) "Web BFF"; acceptance criteria 21-25 in [ACCEPTANCE.md](../global/ACCEPTANCE.md); D7, D14, D17 amendments in [DECISIONS.md](../global/DECISIONS.md).
+- Amended 2026-11-06 (feature web-api-path, user answers of 2026-11-06): the BFF path moved from `/bff/v1/*` to `/api/v1/*` and its route files from `app/bff/v1/` to `app/api/v1/`. (1) Pure rename: response shapes, status codes, error codes, cookies and headers unchanged. (2) Every reference follows: code, unit and e2e tests, docs, README, SPEC index, CHANGELOG. (3) Internal names keep the word `bff` (`apis/server/bff/`, `defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `BFF_BASE_PATH`, `BFF_ENDPOINTS`, the e2e `BFF_PATHS`, the `[bff]` log tag, the `BFF_*` codes). (4) `/bff/v1/*` is removed outright: web's 404, no alias, no redirect. Since cms-api also serves `/api/v1/*` on the admin origin, the two are told apart by origin (D21 "Topology"). The §8 file map is kept as built.
 - Rules for every task of this design: `code-standards` §4 (one owner, small interface, names, few files, §4.5 file names with `docs/global/RULES.md` "Naming"), the graphify rules of `CLAUDE.md`, `docs/global/RULES.md`, `docs/apps/web/RULES.md`, the sign-in and public-site flow rules.
 
 ## 1. Context (checked on the repo, 2026-11-05)
@@ -13,22 +14,22 @@
 
 ## 2. Decision: topology and endpoints
 
-1. The BFF is part of apps/web: Route Handlers `app/bff/v1/**/route.ts`, same Node server and origin. The browser calls only `/bff/v1/*`; no browser code, bundle or HTML holds a cms-api URL.
+1. The BFF is part of apps/web: Route Handlers `app/api/v1/**/route.ts`, same Node server and origin. The browser calls only `/api/v1/*`; no browser code, bundle or HTML holds a cms-api URL.
 2. The BFF reaches cms-api only on `API_INTERNAL_URL`, with `fetch(..., { redirect: 'manual' })`; any 3xx is an upstream failure.
-3. cms-api's public route moves from `domain.com/api` to `admin.domain.com/api` (Q-BFF1): cms-admin calls it same-origin; `domain.com/api/*` is answered by web (404). Smoke and deploy docs move the `api` and `api-upload` routers to the admin host; `MEDIA_LOCAL_PUBLIC_URL` moves to the admin origin; cms-admin's `CSP_EXTRA_IMG_SRC` is no longer needed on smoke. A NetworkPolicy (deploy docs) lets only Traefik and web pods reach cms-api.
+3. cms-api's public route moves from `domain.com/api` to `admin.domain.com/api` (Q-BFF1): cms-admin calls it same-origin; on `domain.com`, `/api/*` is web's: the BFF routes of item 4, every other path web's 404 (amended 2026-11-06). Smoke and deploy docs move the `api` and `api-upload` routers to the admin host; `MEDIA_LOCAL_PUBLIC_URL` moves to the admin origin; cms-admin's `CSP_EXTRA_IMG_SRC` is no longer needed on smoke. A NetworkPolicy (deploy docs) lets only Traefik and web pods reach cms-api.
 4. Endpoints (api-contract "Web BFF"). Each has a fixed list of cms-api calls; no path, query or header from the request reaches cms-api except the forwarded client IP:
 
 | BFF route | Bucket | Human check | cms-api calls |
 |---|---|---|---|
-| `GET /bff/v1/health` | read | - | `GET /health/live` |
-| `GET /bff/v1/session` | read | - | `POST /auth/refresh` when due, `GET /auth/me` |
-| `POST /bff/v1/auth/login` | auth | `login` | `POST /auth/login`, `GET /auth/me`; `POST /auth/logout` when privileged |
-| `POST /bff/v1/auth/two-factor/email-code` | auth | `two-factor` | `POST /auth/2fa/email-challenge` |
-| `POST /bff/v1/auth/two-factor/verify` | auth | `two-factor` | `POST /auth/2fa/verify`, `GET /auth/me`; `POST /auth/logout` when privileged |
-| `POST /bff/v1/auth/logout` | auth | - | `POST /auth/logout` |
-| `GET /bff/v1/cv` | read | - | session read (above), `POST /graphql` with the Bearer token, no data cache |
+| `GET /api/v1/health` | read | - | `GET /health/live` |
+| `GET /api/v1/session` | read | - | `POST /auth/refresh` when due, `GET /auth/me` |
+| `POST /api/v1/auth/login` | auth | `login` | `POST /auth/login`, `GET /auth/me`; `POST /auth/logout` when privileged |
+| `POST /api/v1/auth/two-factor/email-code` | auth | `two-factor` | `POST /auth/2fa/email-challenge` |
+| `POST /api/v1/auth/two-factor/verify` | auth | `two-factor` | `POST /auth/2fa/verify`, `GET /auth/me`; `POST /auth/logout` when privileged |
+| `POST /api/v1/auth/logout` | auth | - | `POST /auth/logout` |
+| `GET /api/v1/cv` | read | - | session read (above), `POST /graphql` with the Bearer token, no data cache |
 
-5. `GET /bff/v1/health` answers `200 { status: "ok" }` or `503 { status: "unavailable" }` (cms-api down, timeout or not `ok`). `GET /bff/v1/cv` answers the CV data sanitized on the server by the same loader as the server render (D13), so the browser no longer sanitizes refetched data.
+5. `GET /api/v1/health` answers `200 { status: "ok" }` or `503 { status: "unavailable" }` (cms-api down, timeout or not `ok`). `GET /api/v1/cv` answers the CV data sanitized on the server by the same loader as the server render (D13), so the browser no longer sanitizes refetched data.
 6. Human check in production (planner 2026-11-05, WBH-2-security#1; option A of the WBH-2 builder's three). Owner: `configs/Server.env.ts` (the web server env reader, validated once at start through instrumentation); `verifyHumanCheck` keeps its Q-WBH3 rules and gains no branch. With `NODE_ENV=production`, `parseServerEnv` throws, so the server does not start, when:
    - `TURNSTILE_SECRET_KEY` equals `TURNSTILE.ALWAYS_PASS_TEST_SECRET` and `ALLOW_TURNSTILE_TEST_SECRET` is not exactly `smoke` (that secret accepts every token, so the human check would be off);
    - `TURNSTILE_SECRET_KEY` is any other value and `TURNSTILE_EXPECTED_HOSTNAME` is unset (a token minted on another host for the same site key, e.g. cms-admin's reviewer widget under Q-BFF4, would pass).
@@ -46,7 +47,7 @@ Every refusal is `{ statusCode, errorCode, message }` with `Cache-Control: no-st
 | 401 | `BFF_INVALID_CREDENTIALS` | cms-api refused the login (any 401 of `/auth/login`; no account enumeration) |
 | 401 | `BFF_INVALID_TWO_FACTOR_CODE` | cms-api `AUTH_INVALID_2FA_CODE` |
 | 401 | `BFF_TWO_FACTOR_EXPIRED` | no or unreadable `__Host-abyss_web_2fa`, or cms-api `AUTH_INVALID_TEMP_TOKEN` |
-| 401 | `BFF_SESSION_REQUIRED` | `GET /bff/v1/cv` without a session |
+| 401 | `BFF_SESSION_REQUIRED` | `GET /api/v1/cv` without a session |
 | 403 | `BFF_ORIGIN_NOT_ALLOWED` | state-changing route with a missing or foreign `Origin`, or `Sec-Fetch-Site` other than `same-origin` |
 | 403 | `BFF_PRIVILEGED_ACCOUNT` | the account holds a permission whose action is not `read` |
 | 405 | `BFF_METHOD_NOT_ALLOWED` | method not bound (with `Allow`) |
@@ -83,7 +84,7 @@ A new code is one row here, one entry in `Bff.errors.ts` and, when the dialog sh
 | `features/session` | who is signed in: sealed cookies, session read, refresh, sign-in and sign-out (server); the session context and BFF calls (browser) | server: `readWebSession`, `logIn`, `sendEmailCode`, `verifyTwoFactor`, `logOut`; browser facade `index.ts` unchanged in kind (`WebSessionProvider`, `useWebSession`, `PrivilegedAccessError`) |
 | `features/auth` | the login dialog, the 2FA step, Turnstile in the browser | `WebLoginDialog` |
 | `features/status` | service health (server function for the route; browser query) | `readServiceHealth` (server), `fetchLiveHealth`, `HEALTH_QUERY_KEYS` |
-| `features/cv` | CV data (server render and `GET /bff/v1/cv`) | `loadCvPage`, `loadCvPageForSession`, `mainResumeOf` |
+| `features/cv` | CV data (server render and `GET /api/v1/cv`) | `loadCvPage`, `loadCvPageForSession`, `mainResumeOf` |
 | `views/status`, `views/cv` | the homepage status view; the `/cv` page view | `StatusView`, `CvView` |
 
 - Layers (web RULES): `app/` → `features/*` → `features/session` → `apis/` → `libs/`, `utils/` → `configs/`. `apis/server/**` imports no feature. A route file only binds its path to `defineBffRoute(...)` with one feature server function, imported from that feature's `*.server.ts` file (server files never appear in a feature's `index.ts`, which client code imports).
@@ -94,9 +95,12 @@ A new code is one row here, one entry in `Bff.errors.ts` and, when the dialog sh
 - A new BFF endpoint: one route file, one feature server function, one cms-api client method (and its path in `Api.endpoints.ts`), one row in api-contract; at most 4 product files, no pipeline change.
 - A new pipeline option (another bucket, another human-check action): one constant and one optional field of `defineBffRoute`; existing routes unchanged.
 - A new sealed field (remember-me RM-6): one optional field in the sealed shape, read with a default; the cookie writer is the only place that sets attributes.
+- A new BFF version (`/api/v2`): a new `BFF_BASE_PATH` value and route folder `app/api/v2/`; the two header literals (proxy matcher, `next.config.ts` source) already cover `/api/`.
 - A second replica would need a shared store for the rate limiter and the refresh map; both sit behind one small class each, so only they change.
 
 ## 8. File map (apps/web/src; tests next to each file; module docs per task)
+
+As built by web-bff-hardening; since 2026-11-06 (web-api-path) the route files below live under `app/api/v1/` instead of `app/bff/v1/`.
 
 | Task | Files |
 |---|---|

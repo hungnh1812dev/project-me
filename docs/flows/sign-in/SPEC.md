@@ -16,7 +16,7 @@ An invited account signs in with email and password, then with a second factor w
 
 Scope (Q-RM1, user): both sign-ins, cms-admin and apps/web, with the cms-api identity module behind them. Today every cms-admin sign-in sets the refresh cookie `__Secure-abyss_rt` with `Max-Age` = 7 days (`setRefreshCookie`, `http/Auth.controller.ts`) and every refresh token row lives 7 days, sliding on each rotation: every user is always remembered. This section makes that a choice on each sign-in form.
 
-**Dependency on web-bff-hardening.** The web part (RM-6) is written against the web BFF of D21 (`/bff/v1/auth/login`, the sealed `__Host-abyss_web_session` cookie), which is not built yet (feature `web-bff-hardening`, `todo`). It cannot be built before that feature, and building it on the web's current login would be thrown away by D21. The cms-api part (RM-1..RM-4) and the cms-admin part (RM-5) do not depend on it. Delivery (Q-RM6, user): one feature `remember-me` with two phases: phase 1 cms-api + cms-admin (RM-1..RM-5), phase 2 apps/web (RM-6), built only after web-bff-hardening is done. The feature enters `.agent-state/features.md` as `todo` (approved 2026-11-03).
+**Dependency on web-bff-hardening.** The web part (RM-6) is written against the web BFF of D21 (`/api/v1/auth/login`, the sealed `__Host-abyss_web_session` cookie), which is not built yet (feature `web-bff-hardening`, `todo`). It cannot be built before that feature, and building it on the web's current login would be thrown away by D21. The cms-api part (RM-1..RM-4) and the cms-admin part (RM-5) do not depend on it. Delivery (Q-RM6, user): one feature `remember-me` with two phases: phase 1 cms-api + cms-admin (RM-1..RM-5), phase 2 apps/web (RM-6), built only after web-bff-hardening is done. The feature enters `.agent-state/features.md` as `todo` (approved 2026-11-03).
 
 | Choice on the sign-in form | Browser cookie (cms-admin: `__Secure-abyss_rt`; web: `__Host-abyss_web_session`) | Server-side refresh token lifetime (cms-api) | After the browser closes |
 |---|---|---|---|
@@ -53,13 +53,13 @@ Scope (Q-RM1, user): both sign-ins, cms-admin and apps/web, with the cms-api ide
 - The value is sent as `rememberMe` with the email and password; the 2FA modal is unchanged (the choice is already in the temp token).
 - Keyboard and screen reader: the label is the checkbox's accessible name, the hint is linked with `aria-describedby`; Space toggles; the tab order is email, password, checkbox, submit.
 
-**RM-6 Web sign-in (apps/web; after web-bff-hardening; high-risk path `apps/web/src/features/auth`, security gate; tier 3 area).** Owners: the BFF login, 2FA verify and session code that D21 creates (`app/bff/v1/auth/**/route.ts`, `apis/server/`, `features/session`) and `features/auth/WebLoginDialog.tsx` with the web copy module (`configs/Copy.constants.ts`).
-- `POST /bff/v1/auth/login` body gains the optional `rememberMe: boolean` (absent = `false`), added to its Zod schema (unknown keys still refused); the BFF passes it to cms-api `POST /auth/login`.
-- The BFF keeps the choice in its sealed state: in `__Host-abyss_web_2fa` while the 2FA step is open, and in `__Host-abyss_web_session` as `{ refreshToken, accessToken, accessExpiresAt, rememberMe }`. `POST /bff/v1/auth/two-factor/verify` takes it from the sealed 2FA cookie, never from its body.
+**RM-6 Web sign-in (apps/web; after web-bff-hardening; high-risk path `apps/web/src/features/auth`, security gate; tier 3 area).** Owners: the BFF login, 2FA verify and session code that D21 creates (`app/api/v1/auth/**/route.ts`, `apis/server/`, `features/session`) and `features/auth/WebLoginDialog.tsx` with the web copy module (`configs/Copy.constants.ts`).
+- `POST /api/v1/auth/login` body gains the optional `rememberMe: boolean` (absent = `false`), added to its Zod schema (unknown keys still refused); the BFF passes it to cms-api `POST /auth/login`.
+- The BFF keeps the choice in its sealed state: in `__Host-abyss_web_2fa` while the 2FA step is open, and in `__Host-abyss_web_session` as `{ refreshToken, accessToken, accessExpiresAt, rememberMe }`. `POST /api/v1/auth/two-factor/verify` takes it from the sealed 2FA cookie, never from its body.
 - `__Host-abyss_web_session` is set with `Max-Age` = `REFRESH_TOKEN_TTL_MS` (7 days) when `rememberMe` is true, and as a session cookie otherwise; every BFF refresh that rewrites the cookie keeps the mode and, when remembered, sets `Max-Age` again (sliding). The 7-day value comes from one named web constant; the 12-hour limit is enforced by cms-api only.
 - A sealed session without `rememberMe` (written before the deploy) counts as `false` and is rewritten as a session cookie on its next refresh.
 - `WebLoginDialog`: the same checkbox and the same text as RM-5 (Q-RM8, user): label "Keep me signed in", hint "Use this only on a device you trust.", held in the web copy module, unticked every time the dialog opens, sent with the login request; the 2FA step is unchanged. It uses the web app's existing checkbox, or a native `<input type="checkbox">` styled with the web theme tokens when the web has none (no new dependency).
-- `GET /bff/v1/session`, sign-out, the privileged-account refusal and every other D21 rule are unchanged.
+- `GET /api/v1/session`, sign-out, the privileged-account refusal and every other D21 rule are unchanged.
 
 ## Acceptance
 

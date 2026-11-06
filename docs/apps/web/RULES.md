@@ -9,11 +9,11 @@ Part of the [project spec](../../../SPEC.md). App `web`: [SPEC.md](SPEC.md) · [
 
 ## Layers
 
-- **web layers** (amended 2026-10-31, ADR 0018 §6): `app/` (pages, shell incl. `AccountMenu`, BFF route files `app/bff/v1/**/route.ts`) → `features/*` → `features/session` → `apis/` (browser client of the BFF; cms-api server clients and the BFF pipeline in `apis/server/`) → `libs/`, `utils/` → `configs/`. A BFF route file only binds its path to `defineBffRoute(...)` with one feature server function, imported from that feature's `*.server.ts` file; a feature's `index.ts` (imported by client code) never re-exports a server file. `apis/server/**` imports no feature. `auth`, `status` and `cv` import no feature other than `session`. Cross-feature imports go through `index.ts`. No `reviewer` feature on web.
+- **web layers** (amended 2026-10-31, ADR 0018 §6): `app/` (pages, shell incl. `AccountMenu`, BFF route files `app/api/v1/**/route.ts`) → `features/*` → `features/session` → `apis/` (browser client of the BFF; cms-api server clients and the BFF pipeline in `apis/server/`) → `libs/`, `utils/` → `configs/`. A BFF route file only binds its path to `defineBffRoute(...)` with one feature server function, imported from that feature's `*.server.ts` file; a feature's `index.ts` (imported by client code) never re-exports a server file. `apis/server/**` imports no feature. `auth`, `status` and `cv` import no feature other than `session`. Cross-feature imports go through `index.ts`. No `reviewer` feature on web.
 
 ## Web rules
 
-Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `API_INTERNAL_URL` import `server-only`. The browser never holds a user token and never calls cms-api: every browser call goes to the BFF Route Handlers under `/bff/v1` on the web origin, which keep the cms-api tokens in a sealed HttpOnly cookie (D21, amended 2026-10-31, ADR 0018; replaces the earlier "the Next server never holds a token" rule). No Server Actions. No `store/` on web.
+Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `API_INTERNAL_URL` import `server-only`. The browser never holds a user token and never calls cms-api: every browser call goes to the BFF Route Handlers under `/api/v1` on the web origin, which keep the cms-api tokens in a sealed HttpOnly cookie (D21, amended 2026-10-31, ADR 0018; replaces the earlier "the Next server never holds a token" rule). No Server Actions. No `store/` on web.
 
 ## BFF (D21)
 
@@ -29,4 +29,4 @@ Applies to flows: `sign-in`, `public-site`.
 
 ## CSP (D17)
 
-- The CSP comes from `src/proxy.ts` with a fresh nonce per request: `script-src 'self' 'nonce-<n>' 'strict-dynamic'` (+ the Turnstile origin), `connect-src 'self'` only, `frame-ancestors 'none'`; BFF answers carry `Cache-Control: no-store` (D17).
+- The CSP comes from `src/proxy.ts` with a fresh nonce per request: `script-src 'self' 'nonce-<n>' 'strict-dynamic'` (+ the Turnstile origin), `connect-src 'self'` only, `frame-ancestors 'none'`; BFF answers carry `Cache-Control: no-store` (D17). The proxy matcher skips `api/` (the BFF prefix, with its trailing slash, so `/api-…` paths still get the nonce CSP), and `next.config.ts` `headers()` gives every `/api/*` answer, unknown paths included, the static BFF policy; both are static literals Next.js requires, each next to a comment naming `BFF_BASE_PATH` (D17 amendment of 2026-11-06).
