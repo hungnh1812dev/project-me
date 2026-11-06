@@ -20,6 +20,7 @@ export interface HumanCheckInput {
 export interface LoginCredentials extends HumanCheckInput {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 /** A password-checked login waiting for its second step; the BFF keeps the temp token. */

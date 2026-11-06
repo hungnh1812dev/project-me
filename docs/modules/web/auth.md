@@ -18,7 +18,7 @@ The sign-in of reader accounts on the public site: credentials, then the TOTP or
 
 ## Techniques
 
-Client components (`'use client'`). The dialog content unmounts on close, so each opening starts clean. Every failure maps to one alert: a credential failure gives one generic message (no account enumeration), 429 says how long to wait, a privileged account is refused. Each step shows a Turnstile widget (action `login`, then `two-factor`); a token works once, so every request (sign-in, emailed code, resend, verify) takes a fresh token and the widget remounts. The emailed code goes out once, as soon as the first check passes (a ref survives the StrictMode double mount). The Turnstile script loads only while the dialog is open. Without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` the dialog says sign-in is unavailable (required at build from WBH-9).
+Client components (`'use client'`). The dialog content unmounts on close, so each opening starts clean. Every failure maps to one alert: a credential failure gives one generic message (no account enumeration), 429 says how long to wait, a privileged account is refused. The "Keep me signed in" box (form-commons `CheckboxInput`, hint linked by `aria-describedby`) sits after the password and before the human check; it starts unticked at each opening and is unticked again after a failed sign-in or leaving the 2FA step; its value goes to the BFF as `rememberMe` and the 2FA step does not ask again (the BFF keeps it with the challenge). Each step shows a Turnstile widget (action `login`, then `two-factor`); a token works once, so every request (sign-in, emailed code, resend, verify) takes a fresh token and the widget remounts. The emailed code goes out once, as soon as the first check passes (a ref survives the StrictMode double mount). The Turnstile script loads only while the dialog is open. Without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` the dialog says sign-in is unavailable (required at build from WBH-9).
 
 ## Technologies
 
@@ -41,7 +41,7 @@ Alert texts and mapping: `LoginAlerts.rules.ts` and the web copy module. The cal
 auth/ (8 files)
 ```
 
-Tests: 3 files (not listed).
+Tests: 4 files (not listed).
 
 | File | Description |
 |---|---|

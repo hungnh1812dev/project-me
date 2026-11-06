@@ -76,6 +76,7 @@ describe('sign-in dialog', () => {
     expect(api.login).toHaveBeenCalledWith({
       email: 'owner@example.com',
       password: 'correct horse',
+      rememberMe: false,
       humanCheckToken: 'login-token-1',
     });
     expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();

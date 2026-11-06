@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import {
   Button,
+  CheckboxInput,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -30,6 +31,7 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 interface LoginValues {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 /**
@@ -74,7 +76,7 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
   const [hasExpired, setHasExpired] = useState(false);
 
   const form = useForm<LoginValues>({
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: false },
     mode: 'onTouched',
   });
 
@@ -91,12 +93,14 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
     onError: (cause) => {
       setAlert(loginErrorAlertOf(cause, credentialAlertOf));
       form.resetField('password');
+      form.resetField('rememberMe');
       form.setFocus('password');
     },
   });
 
   const closeChallenge = useCallback(() => {
     setChallenge(null);
+    form.resetField('rememberMe');
     form.setFocus('password');
   }, [form]);
   const expireChallenge = useCallback(() => {
@@ -112,6 +116,7 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
     signIn.mutate({
       email: values.email.trim(),
       password: values.password,
+      rememberMe: values.rememberMe,
       humanCheckToken,
     });
   });
@@ -153,7 +158,9 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
             spellCheck={false}
             rules={{
               required: copy.validation.emailRequired,
-              validate: (value) => EMAIL_SHAPE.test(value.trim()) || copy.validation.emailInvalid,
+              validate: (value) =>
+                (typeof value === 'string' && EMAIL_SHAPE.test(value.trim())) ||
+                copy.validation.emailInvalid,
             }}
           />
           <TextInput<LoginValues>
@@ -162,6 +169,11 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
             type="password"
             autoComplete="current-password"
             rules={{ required: copy.validation.passwordRequired }}
+          />
+          <CheckboxInput<LoginValues>
+            name="rememberMe"
+            label={copy.rememberMeLabel}
+            description={copy.rememberMeHint}
           />
           {humanCheck.field}
           <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
