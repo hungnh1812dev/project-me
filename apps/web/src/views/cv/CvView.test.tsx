@@ -1,13 +1,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { apiClient } from '../../apis/client/Api.client';
-import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
-import { COPY } from '../../configs/Copy.constants';
-import { type CvPageData } from '../../features/cv/Cv.graphql';
-import { useWebSession } from '../../features/session';
-import type { AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
+import { apiClient } from '@/apis/client/Api.client';
+import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
+import { COPY } from '@/configs/Copy.constants';
+import { type CvPageData } from '@/features/cv/Cv.graphql';
+import { useWebSession } from '@/features/session';
+import type { AuthApi } from '@/features/session/Auth.api';
+import { fakeApi, TEST_USER, Wrapper } from '@/features/session/Session.fixture';
+
 import { CvView } from './CvView';
 
 const resume = (name: string) => ({

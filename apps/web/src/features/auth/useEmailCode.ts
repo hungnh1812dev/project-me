@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
-import { apiFailureOf, type ApiFailure } from '../../apis/client/ApiFailure.errors';
-import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '../../configs/Http.constants';
+import { apiFailureOf, type ApiFailure } from '@/apis/client/ApiFailure.errors';
+import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@/configs/Http.constants';
 
 /**
  * Sends emailed 2FA codes: once as soon as `isReady` (the ref survives the

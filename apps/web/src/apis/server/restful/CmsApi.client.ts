@@ -2,12 +2,12 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { API_ENDPOINTS } from '../../../configs/Api.endpoints';
+import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import {
   API_ERROR_CODES,
   BEARER_PREFIX,
   CMS_API_REFRESH_COOKIE_NAME,
-} from '../../../configs/Auth.constants';
+} from '@/configs/Auth.constants';
 import {
   ACCEPT_HEADER,
   API_TIMEOUT_MS,
@@ -22,8 +22,9 @@ import {
   REDIRECT_STATUS_MIN,
   RETRY_AFTER_HEADER,
   SECONDS_PER_MINUTE,
-} from '../../../configs/Http.constants';
-import { getServerEnv } from '../../../configs/Server.env';
+} from '@/configs/Http.constants';
+import { getServerEnv } from '@/configs/Server.env';
+
 import { BffError } from '../bff/Bff.errors';
 
 const accessTokenAnswer = z.object({ accessToken: z.string().min(1) });

@@ -1,6 +1,7 @@
 import { AxiosError } from 'axios';
 
-import { COPY } from '../../configs/Copy.constants';
+import { COPY } from '@/configs/Copy.constants';
+
 import { PrivilegedAccessError } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 

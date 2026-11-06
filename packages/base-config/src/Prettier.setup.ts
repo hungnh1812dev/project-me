@@ -49,6 +49,8 @@ const config: PrettierBaseConfig = {
     '',
     '^@repo/(.*)$',
     '',
+    `@/styles/global.css`,
+    '',
     '^@/(.*)$',
     '',
     '^[.]',

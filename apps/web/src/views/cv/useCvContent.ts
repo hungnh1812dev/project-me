@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { apiClient } from '../../apis/client/Api.client';
-import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
-import { type CvPageData } from '../../features/cv/Cv.graphql';
-import { useWebSession, type WebSession } from '../../features/session';
+import { apiClient } from '@/apis/client/Api.client';
+import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
+import { type CvPageData } from '@/features/cv/Cv.graphql';
+import { useWebSession, WebSession } from '@/features/session';
 
 const ANONYMOUS_ACTOR = 'anonymous';
 

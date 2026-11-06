@@ -1,7 +1,8 @@
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 
-import { apiClient, createApiClient } from '../../apis/client/Api.client';
-import { BFF_BASE_PATH } from '../../configs/Api.endpoints';
+import { apiClient, createApiClient } from '@/apis/client/Api.client';
+import { BFF_BASE_PATH } from '@/configs/Api.endpoints';
+
 import { createAuthApi, PrivilegedAccessError } from './Auth.api';
 import { httpError, TEST_USER } from './Session.fixture';
 

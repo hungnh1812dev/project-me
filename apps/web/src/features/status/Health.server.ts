@@ -1,7 +1,7 @@
 import 'server-only';
 
-import { cmsApiClient } from '../../apis/server/restful/CmsApi.client';
-import { HTTP_STATUS } from '../../configs/Http.constants';
+import { cmsApiClient } from '@/apis/server/restful/CmsApi.client';
+import { HTTP_STATUS } from '@/configs/Http.constants';
 
 const HEALTH_BODIES = {
   up: { status: 'ok' },

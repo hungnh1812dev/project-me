@@ -2,7 +2,7 @@
 
 import { Button } from '@abyss/form-commons';
 
-import { COPY } from '../configs/Copy.constants';
+import { COPY } from '@/configs/Copy.constants';
 
 /**
  * Shown when a page fails to load. It never reads the thrown error, so no

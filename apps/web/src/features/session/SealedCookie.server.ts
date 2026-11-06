@@ -9,9 +9,9 @@ import {
   TWO_FACTOR_COOKIE_NAME,
   TWO_FACTOR_METHODS,
   WEB_SESSION_COOKIE_NAME,
-} from '../../configs/Auth.constants';
-import { COOKIE_HEADER, SET_COOKIE_HEADER } from '../../configs/Http.constants';
-import { getServerEnv } from '../../configs/Server.env';
+} from '@/configs/Auth.constants';
+import { COOKIE_HEADER, SET_COOKIE_HEADER } from '@/configs/Http.constants';
+import { getServerEnv } from '@/configs/Server.env';
 
 const SEAL_VERSION = 1;
 const SEAL_ALGORITHM = 'aes-256-gcm';

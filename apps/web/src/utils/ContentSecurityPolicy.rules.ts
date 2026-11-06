@@ -3,7 +3,7 @@ import {
   CSP_KEYWORDS,
   NONCE_BYTES,
   TURNSTILE_ORIGIN,
-} from '../configs/Security.constants';
+} from '@/configs/Security.constants';
 
 const { SELF, NONE, STRICT_DYNAMIC, UNSAFE_INLINE, UNSAFE_EVAL } = CSP_KEYWORDS;
 

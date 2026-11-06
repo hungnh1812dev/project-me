@@ -2,17 +2,18 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { BffError } from '../../apis/server/bff/Bff.errors';
-import { HUMAN_CHECK_TOKEN_FIELD, type BffContext } from '../../apis/server/bff/BffRoute.server';
-import { cmsApiClient, type IssuedTokens } from '../../apis/server/restful/CmsApi.client';
+import { BffError } from '@/apis/server/bff/Bff.errors';
+import { BffContext, HUMAN_CHECK_TOKEN_FIELD } from '@/apis/server/bff/BffRoute.server';
+import { cmsApiClient, IssuedTokens } from '@/apis/server/restful/CmsApi.client';
 import {
   EMAIL_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
   TWO_FACTOR_CODE_MAX_LENGTH,
   TWO_FACTOR_METHODS,
-} from '../../configs/Auth.constants';
-import { HTTP_STATUS } from '../../configs/Http.constants';
-import { TURNSTILE } from '../../configs/Security.constants';
+} from '@/configs/Auth.constants';
+import { HTTP_STATUS } from '@/configs/Http.constants';
+import { TURNSTILE } from '@/configs/Security.constants';
+
 import {
   clearSessionCookie,
   clearTwoFactorCookie,

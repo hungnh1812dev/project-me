@@ -1,8 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 
-import { COPY } from '../../configs/Copy.constants';
-import { sanitizeCvRichtext, type CvPageData, type Resume } from '../../features/cv/Cv.graphql';
-import { sanitizeRichtext } from '../../utils/SafeRichtext.rules';
+import { COPY } from '@/configs/Copy.constants';
+import { sanitizeCvRichtext, type CvPageData, type Resume } from '@/features/cv/Cv.graphql';
+import { sanitizeRichtext } from '@/utils/SafeRichtext.rules';
+
 import { ResumeSections } from './ResumeSections';
 
 const MASKED = '***';

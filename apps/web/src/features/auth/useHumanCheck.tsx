@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 
-import { COPY } from '../../configs/Copy.constants';
-import type { TurnstileAction } from '../../configs/Security.constants';
+import { COPY } from '@/configs/Copy.constants';
+import type { TurnstileAction } from '@/configs/Security.constants';
+
 import { TurnstileWidget } from './TurnstileWidget';
 
 const copy = COPY.login.humanCheck;

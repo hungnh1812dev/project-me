@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
-import { COPY } from '../../configs/Copy.constants';
+import { COPY } from '@/configs/Copy.constants';
 import {
   isMaskedField,
   type Resume,
@@ -8,8 +8,8 @@ import {
   type ResumeExperience,
   type ResumeProject,
   type ResumeRole,
-} from '../../features/cv/Cv.graphql';
-import { isSafeLinkTarget } from '../../utils/SafeLinkTarget.rules';
+} from '@/features/cv/Cv.graphql';
+import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
 
 const LINK_CLASS = 'text-primary underline-offset-4 hover:underline';
 const SECTION_TITLE_CLASS = 'text-lg font-semibold tracking-tight';

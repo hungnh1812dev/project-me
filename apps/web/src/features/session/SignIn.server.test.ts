@@ -1,6 +1,8 @@
 // @vitest-environment node
-import { BffError } from '../../apis/server/bff/Bff.errors';
-import type { BffContext } from '../../apis/server/bff/BffRoute.server';
+
+import { BffError } from '@/apis/server/bff/Bff.errors';
+import { BffContext } from '@/apis/server/bff/BffRoute.server';
+
 import {
   readTwoFactorCookie,
   writeSessionCookie,

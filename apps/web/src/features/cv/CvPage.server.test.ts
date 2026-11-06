@@ -1,4 +1,5 @@
-import { fetchGraphql } from '../../apis/server/graphql/Graphql.server';
+import { fetchGraphql } from '@/apis/server/graphql/Graphql.server';
+
 import { readWebSession } from '../session/WebSession.server';
 import { answerCvRead, loadCvPage } from './CvPage.server';
 

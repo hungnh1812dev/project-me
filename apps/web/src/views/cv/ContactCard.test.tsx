@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../../configs/Copy.constants';
-import type { CvContact } from '../../features/cv/Cv.graphql';
+import { COPY } from '@/configs/Copy.constants';
+import { CvContact } from '@/features/cv/Cv.graphql';
+
 import { ContactCard } from './ContactCard';
 
 function contactOf(overrides: Partial<CvContact> = {}): CvContact {

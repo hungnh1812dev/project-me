@@ -14,9 +14,10 @@ import {
   RATE_LIMIT_MAX_KEYS,
   SEC_FETCH_SITE_HEADER,
   SEC_FETCH_SITE_SAME_ORIGIN,
-} from '../../../configs/Http.constants';
-import type { TurnstileAction } from '../../../configs/Security.constants';
-import { getServerEnv } from '../../../configs/Server.env';
+} from '@/configs/Http.constants';
+import { TurnstileAction } from '@/configs/Security.constants';
+import { getServerEnv } from '@/configs/Server.env';
+
 import { verifyHumanCheck } from '../restful/Turnstile.client';
 import { BffError, bffErrorResponse } from './Bff.errors';
 import { visitorIpOf } from './ClientIp.rules';

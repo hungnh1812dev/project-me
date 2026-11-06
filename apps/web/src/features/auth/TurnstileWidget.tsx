@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 
-import { COPY } from '../../configs/Copy.constants';
-import { TURNSTILE, type TurnstileAction } from '../../configs/Security.constants';
-
 import './Turnstile.client';
+
+import { COPY } from '@/configs/Copy.constants';
+import { TURNSTILE, type TurnstileAction } from '@/configs/Security.constants';
 
 const copy = COPY.login.humanCheck;
 

@@ -1,6 +1,6 @@
 import { isIP } from 'node:net';
 
-import { FORWARDED_FOR_HEADER } from '../../../configs/Http.constants';
+import { FORWARDED_FOR_HEADER } from '@/configs/Http.constants';
 
 export interface VisitorIpConfig {
   /** Proxies in front of the server: how many addresses to skip from the right of `X-Forwarded-For`. */

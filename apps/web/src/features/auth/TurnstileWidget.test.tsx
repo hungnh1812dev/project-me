@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 
-import { TURNSTILE } from '../../configs/Security.constants';
+import { TURNSTILE } from '@/configs/Security.constants';
+
 import type { TurnstileApi } from './Turnstile.client';
 import { TurnstileWidget } from './TurnstileWidget';
 

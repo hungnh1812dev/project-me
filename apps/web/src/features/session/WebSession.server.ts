@@ -1,16 +1,17 @@
 import 'server-only';
 
-import { BffError } from '../../apis/server/bff/Bff.errors';
-import type { BffContext } from '../../apis/server/bff/BffRoute.server';
-import { visitorIpOf } from '../../apis/server/bff/ClientIp.rules';
-import { cmsApiClient, type CurrentAccount } from '../../apis/server/restful/CmsApi.client';
+import { BffError } from '@/apis/server/bff/Bff.errors';
+import type { BffContext } from '@/apis/server/bff/BffRoute.server';
+import { visitorIpOf } from '@/apis/server/bff/ClientIp.rules';
+import { cmsApiClient, type CurrentAccount } from '@/apis/server/restful/CmsApi.client';
 import {
   ACCESS_REFRESH_LEAD_MS,
   PERMISSION_STRING_SEPARATOR,
   READ_ACTION,
   REFRESH_RESULT_SHARE_MS,
-} from '../../configs/Auth.constants';
-import { getServerEnv } from '../../configs/Server.env';
+} from '@/configs/Auth.constants';
+import { getServerEnv } from '@/configs/Server.env';
+
 import {
   clearSessionCookie,
   clearTwoFactorCookie,

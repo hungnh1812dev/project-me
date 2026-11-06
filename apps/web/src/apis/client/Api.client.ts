@@ -1,8 +1,8 @@
 import axios, { type AxiosInstance, type CreateAxiosDefaults } from 'axios';
 
-import { BFF_BASE_PATH } from '../../configs/Api.endpoints';
-import { API_TIMEOUT_MS } from '../../configs/Http.constants';
-import { stripTrailingSlashes } from '../../configs/StripTrailingSlashes.rules';
+import { BFF_BASE_PATH } from '@/configs/Api.endpoints';
+import { API_TIMEOUT_MS } from '@/configs/Http.constants';
+import { stripTrailingSlashes } from '@/configs/StripTrailingSlashes.rules';
 
 /** Axios instance for a JSON API. Every request path loses its trailing slash. */
 export function createApiClient(

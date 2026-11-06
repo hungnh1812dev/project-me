@@ -14,10 +14,11 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import type { Alert } from '../../apis/client/ApiFailure.errors';
-import { appEnv } from '../../configs/Browser.env';
-import { COPY } from '../../configs/Copy.constants';
-import { TURNSTILE } from '../../configs/Security.constants';
+import type { Alert } from '@/apis/client/ApiFailure.errors';
+import { appEnv } from '@/configs/Browser.env';
+import { COPY } from '@/configs/Copy.constants';
+import { TURNSTILE } from '@/configs/Security.constants';
+
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 import { TwoFactorStep } from './TwoFactorStep';

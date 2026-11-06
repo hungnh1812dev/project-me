@@ -3,9 +3,10 @@ import {
   formatRetryAfter,
   type Alert,
   type ApiFailure,
-} from '../../apis/client/ApiFailure.errors';
-import { BFF_ERROR_CODES } from '../../configs/Auth.constants';
-import { COPY } from '../../configs/Copy.constants';
+} from '@/apis/client/ApiFailure.errors';
+import { BFF_ERROR_CODES } from '@/configs/Auth.constants';
+import { COPY } from '@/configs/Copy.constants';
+
 import { PrivilegedAccessError } from '../session';
 
 const { errors } = COPY.login;

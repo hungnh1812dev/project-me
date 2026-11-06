@@ -1,4 +1,4 @@
-import type { GraphqlDocument } from '../../apis/GraphqlResponse.rules';
+import type { GraphqlDocument } from '@/apis/GraphqlResponse.rules';
 
 export interface ResumeSkill {
   level: string | null;
