@@ -29,12 +29,14 @@ import { RefreshTokenService } from './RefreshToken.service';
 export interface LoginCredentials {
   readonly email: string;
   readonly password: string;
+  readonly rememberMe: boolean;
 }
 
 /** Tokens for a signed-in session. The refresh token goes into the cookie only. */
 export interface SessionTokens {
   readonly accessToken: string;
   readonly refreshToken: string;
+  readonly rememberMe: boolean;
 }
 
 export type LoginResult =
@@ -61,11 +63,10 @@ export interface CurrentAccountProfile {
 /** What `AuthService.me` returns: the profile before permissions are added. */
 export type AccountProfile = Omit<CurrentAccountProfile, 'permissions'>;
 
-/** `refresh`: no refresh token inside the grace window. */
-export interface RefreshedTokens {
-  readonly accessToken: string;
-  readonly refreshToken: string | undefined;
-}
+/** `refresh`: no refresh token (and so no mode) inside the grace window. */
+export type RefreshedTokens =
+  | { readonly accessToken: string; readonly refreshToken: string; readonly rememberMe: boolean }
+  | { readonly accessToken: string; readonly refreshToken?: undefined };
 
 /** What `startSession` needs of an account whose sign-in is complete. */
 export interface SessionAccount {
@@ -124,9 +125,9 @@ export class AuthService {
     }
     if (account === null) throw invalidCredentials();
 
-    if (account.is2faEnabled) return this.startTwoFactorStep(account);
+    if (account.is2faEnabled) return this.startTwoFactorStep(account, credentials.rememberMe);
 
-    const session = await this.startSession(account, meta);
+    const session = await this.startSession(account, meta, null, credentials.rememberMe);
     return { kind: 'session', ...session };
   }
 
@@ -156,12 +157,13 @@ export class AuthService {
   }
 
   /** Second step: POST /auth/2fa/verify with the returned token. */
-  private startTwoFactorStep(account: LoginAccountRecord): LoginResult {
+  private startTwoFactorStep(account: LoginAccountRecord, rememberMe: boolean): LoginResult {
     return {
       kind: 'two-factor',
       tempToken: this.accessTokens.signTwoFactorTempToken({
         sub: account.documentId,
         tv: account.tokenVersion,
+        rememberMe,
       }),
       // Only the configured method, never an email fallback.
       methods: account.twoFaMethod === null ? [] : [account.twoFaMethod],
@@ -172,25 +174,28 @@ export class AuthService {
    * Issues the refresh token and access token of a completed sign-in, with
    * its `auth.login_succeeded` row in the same transaction (D15).
    * `twoFactorMethod`: the second factor used, null for password only.
+   * `rememberMe`: the login choice, which sets the token lifetime (D22).
    */
   async startSession(
     account: SessionAccount,
     meta: ClientMeta,
-    twoFactorMethod: TwoFaMethod | null = null,
+    twoFactorMethod: TwoFaMethod | null,
+    rememberMe: boolean,
   ): Promise<SessionTokens> {
     const refreshToken = await this.runner.run(async (unit) => {
-      const token = await this.refreshTokens.issue(account.id, true, meta, unit);
+      const token = await this.refreshTokens.issue(account.id, rememberMe, meta, unit);
       await this.audit.record(unit, {
         actor: selfActor(account.id),
         action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED,
         targetId: account.documentId,
-        metadata: { twoFactorMethod },
+        metadata: { twoFactorMethod, rememberMe },
         ip: meta.ip,
       });
       return token;
     });
     return {
       refreshToken,
+      rememberMe,
       accessToken: this.accessTokens.signAccessToken({
         sub: account.documentId,
         tv: account.tokenVersion,
@@ -210,14 +215,13 @@ export class AuthService {
     if (rotation.kind === 'reuse' || rotation.kind === 'invalid') {
       throw invalidRefreshToken();
     }
-    return {
-      refreshToken: rotation.kind === 'rotated' ? rotation.token : undefined,
-      accessToken: this.accessTokens.signAccessToken({
-        sub: rotation.account.documentId,
-        tv: rotation.account.tokenVersion,
-        pv: rotation.account.policyVersion,
-      }),
-    };
+    const accessToken = this.accessTokens.signAccessToken({
+      sub: rotation.account.documentId,
+      tv: rotation.account.tokenVersion,
+      pv: rotation.account.policyVersion,
+    });
+    if (rotation.kind === 'grace') return { accessToken };
+    return { accessToken, refreshToken: rotation.token, rememberMe: rotation.rememberMe };
   }
 
   async logout(rawToken: string | undefined, meta: ClientMeta): Promise<void> {

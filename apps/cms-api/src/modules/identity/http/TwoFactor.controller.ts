@@ -116,7 +116,7 @@ export class TwoFactorController {
       parseBody(verifyTwoFactorSchema, body),
       clientMetaOf(this.clientIp, req),
     );
-    setRefreshCookie(res, tokens.refreshToken);
+    setRefreshCookie(res, tokens.refreshToken, tokens.rememberMe);
     return { accessToken: tokens.accessToken };
   }
 

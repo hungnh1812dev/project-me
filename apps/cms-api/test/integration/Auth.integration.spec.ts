@@ -218,7 +218,11 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
   describe('POST /auth/login', () => {
     it('returns the access token in the body and sets the §6 refresh cookie', async () => {
       const account = await createAccount();
-      const res = await login(account.email);
+      const res = await http().post(LOGIN).send({
+        email: account.email,
+        password: PASSWORD,
+        rememberMe: true,
+      });
 
       expect(res.status).toBe(200);
       expect(Object.keys(res.body as object)).toEqual(['accessToken']);
@@ -236,6 +240,32 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
         ['expires', 'httponly', 'max-age', 'path', 'samesite', 'secure'].sort(),
       );
     });
+
+    it('sets a browser-session cookie when rememberMe is absent or false', async () => {
+      const account = await createAccount();
+      for (const extra of [{}, { rememberMe: false }]) {
+        const res = await http()
+          .post(LOGIN)
+          .send({ email: account.email, password: PASSWORD, ...extra });
+        expect(res.status).toBe(200);
+        const attributes = attributesOf(refreshCookieHeader(res));
+        expect(attributes).not.toContain('max-age');
+        expect(attributes).not.toContain('expires');
+        expect(attributes.sort()).toEqual(['httponly', 'path', 'samesite', 'secure']);
+      }
+    });
+
+    it.each([['true'], [1], [null]])(
+      'refuses rememberMe %p with INVALID_REQUEST',
+      async (value) => {
+        const account = await createAccount();
+        const res = await http()
+          .post(LOGIN)
+          .send({ email: account.email, password: PASSWORD, rememberMe: value });
+        expect(res.status).toBe(400);
+        expect(res.body).toMatchObject({ errorCode: AUTH_ERROR_CODES.INVALID_REQUEST });
+      },
+    );
 
     it('stores only the hash of the refresh token', async () => {
       const account = await createAccount();

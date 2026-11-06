@@ -94,6 +94,13 @@ function setCookies(res: request.Response): string[] {
   );
 }
 
+function cookieAttributes(setCookie = ''): string[] {
+  return setCookie
+    .split(';')
+    .slice(1)
+    .map((part) => part.trim().split('=')[0]?.toLowerCase() ?? '');
+}
+
 describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let app: NestExpressApplication;
@@ -366,11 +373,44 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
       const { accessToken } = res.body as { accessToken: string };
       expect((await me(accessToken)).status).toBe(HttpStatus.OK);
       expect(setCookies(res)).toHaveLength(1);
+      expect(cookieAttributes(setCookies(res)[0])).not.toContain('max-age');
       // The TOTP-enable flow signed in once with the password only.
       expect(
         await auditMetadata(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId),
-      ).toContainEqual({ twoFactorMethod: 'totp' });
+      ).toContainEqual({ twoFactorMethod: 'totp', rememberMe: false });
     });
+
+    it.each([
+      [true, true],
+      [false, false],
+    ])(
+      'carries rememberMe=%s from login through the temp token (claim rm) to the cookie and audit',
+      async (rememberMe, isPersistent) => {
+        const account = await createAccount();
+        const { secret } = await withTotp(account);
+        const login = await post(LOGIN).send({
+          email: account.email,
+          password: PASSWORD,
+          rememberMe,
+        });
+        const res = await post(VERIFY)
+          // A choice in the verify body is ignored.
+          .send({
+            tempToken: (login.body as { tempToken: string }).tempToken,
+            code: await totpNow(secret),
+            rememberMe: !rememberMe,
+          });
+        expect(res.status).toBe(HttpStatus.OK);
+        const attributes = cookieAttributes(setCookies(res)[0]);
+        expect(attributes.includes('max-age')).toBe(isPersistent);
+        expect(attributes.includes('expires')).toBe(isPersistent);
+        const rows = await db.prisma.refreshToken.findMany({ where: { accountId: account.id } });
+        expect(rows.at(-1)?.rememberMe).toBe(rememberMe);
+        expect(
+          await auditMetadata(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId),
+        ).toContainEqual({ twoFactorMethod: 'totp', rememberMe });
+      },
+    );
 
     it('rejects a replayed code, even with a new temp token', async () => {
       const account = await createAccount();
@@ -565,6 +605,27 @@ describe('Two-factor authentication (D8, SPEC §9, T13; Postgres 17 via Testcont
   });
 
   describe('email 2FA', () => {
+    it('carries rememberMe=true through the email path to a persistent cookie', async () => {
+      const account = await createAccount();
+      await withEmail2fa(account);
+      const login = await post(LOGIN).send({
+        email: account.email,
+        password: PASSWORD,
+        rememberMe: true,
+      });
+      const { tempToken } = login.body as { tempToken: string };
+      await post(EMAIL_CHALLENGE).send({ tempToken });
+      const verified = await post(VERIFY).send({
+        tempToken,
+        code: lastCodeMailedTo(account.email),
+      });
+      expect(verified.status).toBe(HttpStatus.OK);
+      expect(cookieAttributes(setCookies(verified)[0])).toContain('max-age');
+      expect(
+        await auditMetadata(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId),
+      ).toContainEqual({ twoFactorMethod: 'email', rememberMe: true });
+    });
+
     it('enables with an emailed code, signs in through email-challenge and disables', async () => {
       const account = await createAccount();
       const { accessToken } = await withEmail2fa(account);

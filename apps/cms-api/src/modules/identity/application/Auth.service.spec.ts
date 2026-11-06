@@ -28,7 +28,7 @@ describe('AuthService dummy hash', () => {
     await expect(service.ready()).rejects.toThrow('out of memory');
 
     const refusal: unknown = await service
-      .login({ email: 'nobody@example.test', password: 'x' }, {} as never)
+      .login({ email: 'nobody@example.test', password: 'x', rememberMe: false }, {} as never)
       .catch((error: unknown) => error);
     expect(refusal).toBeInstanceOf(DomainError);
     expect((refusal as DomainError).errorCode).toBe(AUTH_ERROR_CODES.INVALID_CREDENTIALS);

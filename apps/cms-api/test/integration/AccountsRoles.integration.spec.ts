@@ -962,7 +962,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       const [ok] = await auditRows(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId);
       expect(ok).toMatchObject({
         actorId: account.id,
-        metadata: { twoFactorMethod: null },
+        metadata: { twoFactorMethod: null, rememberMe: false },
       });
     });
 
