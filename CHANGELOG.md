@@ -9,6 +9,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 ### Changes
 
 - web: the BFF moved from `/bff/v1` to `/api/v1`; `/bff/v1` is removed with no alias or redirect.
+- root: `session-gate` forces the checklist session break only once the context grew more than 40k tokens; the manager resumes from a `Next:` dispatch line in `handoff.md` and reads only the in-progress row of `features.md`; `tokstats` reports turns and input tokens per job of each manager session.
 
 ## 0.1.0 (2026-11-05)
 

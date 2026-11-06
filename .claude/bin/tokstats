@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Token use per subagent type and the biggest Read/Bash outputs, from Claude Code transcripts.
+"""Token use per manager session and subagent type, and the biggest Read/Bash outputs, from Claude Code transcripts.
 Usage: .claude/bin/tokstats [YYYY-MM-DD]   (run from the repo; default: last 14 days)"""
 import json, glob, os, re, sys, collections, subprocess, datetime
 repo = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip() or os.getcwd()
@@ -58,3 +58,27 @@ for k, (c, n) in sorted(reads.items(), key=lambda kv: -kv[1][1])[:20]:
 print("\nTop Bash prefixes (count, output KB)")
 for k, (c, n) in sorted(bash.items(), key=lambda kv: -kv[1][1])[:15]:
     print(f"{c:5} {n/1024:8.0f} KB  {k}")
+
+JOBS = re.compile(r"^\s*(TASK|BATCH|REQUEST|CHECKLIST|CHECK|RECHECK|FIX|REPLAN|SPEC|PLAN|ADR-STATUS)\b")
+print("\nManager sessions (main sessions that dispatched jobs; ctx = input tokens per turn)")
+print(f"{'started':12} {'jobs':>4} {'turns/job':>9} {'start ctx':>9} {'peak ctx':>8} {'in tok/job':>10}")
+all_jobs = all_in = 0
+for f in sorted(glob.glob(f"{root}/*.jsonl"), key=os.path.getmtime):
+    turns = {}; jobs = []; start = ""
+    for line in open(f):
+        try: d = json.loads(line)
+        except ValueError: continue
+        start = start or d.get("timestamp", "")
+        m = d.get("message") or {}
+        u = m.get("usage")
+        if u and m.get("id"):   # one API turn is split over several lines with the same id
+            turns[m["id"]] = u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0)
+        for x in m.get("content") if isinstance(m.get("content"), list) else []:
+            if isinstance(x, dict) and x.get("type") == "tool_use" and x.get("name") in ("Agent", "SendMessage"):
+                t = x.get("input", {}).get("prompt") or x.get("input", {}).get("message") or ""
+                if isinstance(t, str) and JOBS.match(t): jobs.append(len(turns))
+    if start < since or not jobs: continue
+    ctx = list(turns.values()); tin = sum(ctx); n = len(set(jobs)) or 1
+    all_jobs += n; all_in += tin
+    print(f"{start[5:16]:12} {n:4} {len(ctx)/n:9.1f} {ctx[max(jobs[0]-1, 0)]//1000:8}k {max(ctx)//1000:7}k {tin/n/1e6:9.2f}M")
+print(f"{'all':12} {all_jobs:4} {'':9} {'':9} {'':8} {all_in/max(all_jobs,1)/1e6:9.2f}M")
