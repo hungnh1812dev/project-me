@@ -170,7 +170,7 @@ async function throwTwoFactorRefusal(response: Response): Promise<never> {
 export const cmsApiClient = {
   /** Any 401 is `BFF_INVALID_CREDENTIALS`: no account enumeration. */
   async logIn(
-    credentials: { email: string; password: string },
+    credentials: { email: string; password: string; rememberMe: boolean },
     visitorIp: VisitorIp,
   ): Promise<LogInResult> {
     const response = await callCmsApi({

@@ -33,8 +33,13 @@ function jwt(expSeconds: number): string {
   return `h.${Buffer.from(JSON.stringify({ exp: expSeconds })).toString('base64url')}.s`;
 }
 
-function requestFor(accessExpiresAt: number, refreshToken = 'rt-1'): Request {
-  const line = writeSessionCookie({ refreshToken, accessToken: 'old-access', accessExpiresAt });
+function requestFor(accessExpiresAt: number, refreshToken = 'rt-1', rememberMe = false): Request {
+  const line = writeSessionCookie({
+    refreshToken,
+    accessToken: 'old-access',
+    accessExpiresAt,
+    rememberMe,
+  });
   return new Request('https://site.test/api/v1/session', {
     headers: { cookie: line.split(';')[0]!, 'x-forwarded-for': '203.0.113.9' },
   });
@@ -97,6 +102,16 @@ describe('readWebSession', () => {
     expect(client.readCurrentAccount).toHaveBeenCalledWith(access, '203.0.113.9');
     expect(read.setCookies).toHaveLength(1);
     expect(read.setCookies[0]).toMatch(/^__Host-abyss_web_session=/);
+  });
+
+  it.each([true, false])('keeps rememberMe=%s across a refresh', async (rememberMe) => {
+    client.refreshSession.mockResolvedValue({
+      accessToken: jwt(2_000_000_000),
+      refreshToken: 'rt-2',
+    });
+    client.readCurrentAccount.mockResolvedValue(READER);
+    const read = await readWebSession(requestFor(NOW + 1000, `rt-${rememberMe}`, rememberMe));
+    expect(read.setCookies[0]).toMatch(rememberMe ? /Max-Age=2592000$/ : /^(?!.*Max-Age)/);
   });
 
   it('shares one refresh between concurrent reads and for 10 s after it settles', async () => {

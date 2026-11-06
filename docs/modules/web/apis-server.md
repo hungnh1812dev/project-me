@@ -60,7 +60,7 @@ Tests: 7 files (not listed).
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
 | `graphql/Graphql.server.ts` | Server GraphQL query: anonymous with the data cache, or Bearer without it |
-| `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in, 2FA, refresh, log out, current account, live health) with IP forwarding and fixed error codes |
+| `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding and fixed error codes |
 | `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed |
 
 <!-- prettier-ignore-end -->

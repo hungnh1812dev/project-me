@@ -13,7 +13,7 @@ import {
 const env = { sessionSecret: 'a'.repeat(32) };
 vi.mock('../../configs/Server.env', () => ({ getServerEnv: () => env }));
 
-const SESSION = { refreshToken: 'r', accessToken: 'a', accessExpiresAt: 5 };
+const SESSION = { refreshToken: 'r', accessToken: 'a', accessExpiresAt: 5, rememberMe: false };
 
 function requestWith(cookie: string): Request {
   return new Request('https://site.test/', { headers: { cookie } });
@@ -67,8 +67,22 @@ describe('cookie writers', () => {
     expect(line).not.toMatch(/Max-Age|Expires|Domain/i);
   });
 
+  it('writes a persistent 30-day session cookie only when remembered', () => {
+    expect(writeSessionCookie({ ...SESSION, rememberMe: true })).toMatch(
+      /^__Host-abyss_web_session=[\w-]+; HttpOnly; Secure; SameSite=Strict; Path=\/; Max-Age=2592000$/,
+    );
+  });
+
+  it('reads a sealed session without rememberMe as false', () => {
+    const { rememberMe: _omitted, ...legacy } = SESSION;
+    const sealed = sealCookieValue('__Host-abyss_web_session', legacy);
+    expect(readSessionCookie(requestWith(`__Host-abyss_web_session=${sealed}`)).value).toEqual(
+      SESSION,
+    );
+  });
+
   it('writes the 2FA cookie with Max-Age 300', () => {
-    const line = writeTwoFactorCookie({ tempToken: 't', methods: ['totp'] });
+    const line = writeTwoFactorCookie({ tempToken: 't', methods: ['totp'], rememberMe: false });
     expect(line).toMatch(
       /^__Host-abyss_web_2fa=[\w-]+; HttpOnly; Secure; SameSite=Strict; Path=\/; Max-Age=300$/,
     );
@@ -106,13 +120,16 @@ describe('cookie readers', () => {
   });
 
   it('does not open the 2FA value as a session (name is bound)', () => {
-    const challenge = valueOf(writeTwoFactorCookie({ tempToken: 't', methods: ['email'] }));
+    const challenge = valueOf(
+      writeTwoFactorCookie({ tempToken: 't', methods: ['email'], rememberMe: false }),
+    );
     expect(
       readSessionCookie(requestWith(`__Host-abyss_web_session=${challenge}`)).value,
     ).toBeNull();
     expect(readTwoFactorCookie(requestWith(`__Host-abyss_web_2fa=${challenge}`)).value).toEqual({
       tempToken: 't',
       methods: ['email'],
+      rememberMe: false,
     });
   });
 

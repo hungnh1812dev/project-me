@@ -74,10 +74,24 @@ describe('body schemas', () => {
       false,
     );
   });
+
+  it('login takes an optional boolean rememberMe, absent reads false, other types refused', () => {
+    const base = { email: 'a@b.c', password: 'x', humanCheckToken: 't' };
+    expect(loginBodySchema.parse(base).rememberMe).toBe(false);
+    expect(loginBodySchema.parse({ ...base, rememberMe: true }).rememberMe).toBe(true);
+    expect(loginBodySchema.safeParse({ ...base, rememberMe: 'true' }).success).toBe(false);
+    expect(loginBodySchema.strict().safeParse({ ...base, extra: 1 }).success).toBe(false);
+  });
+
+  it('verify refuses a rememberMe key as unknown', () => {
+    const body = { code: '123456', humanCheckToken: 't' };
+    expect(verifyBodySchema.strict().safeParse(body).success).toBe(true);
+    expect(verifyBodySchema.strict().safeParse({ ...body, rememberMe: true }).success).toBe(false);
+  });
 });
 
 describe('logInVisitor', () => {
-  const body = { email: 'a@b.c', password: 'pw' };
+  const body = { email: 'a@b.c', password: 'pw', rememberMe: false };
 
   it('seals the session, clears the 2FA cookie and returns only allowlisted user fields', async () => {
     client.logIn.mockResolvedValue({ kind: 'signed-in', ...ISSUED });
@@ -89,6 +103,28 @@ describe('logInVisitor', () => {
     });
     expect(cookieNames(response)).toEqual(['__Host-abyss_web_session', '__Host-abyss_web_2fa']);
     expect(response.headers.getSetCookie()[0]).not.toContain('rt-1');
+  });
+
+  it.each([true, false])(
+    'passes rememberMe=%s to cms-api and sets the session cookie in that mode',
+    async (rememberMe) => {
+      client.logIn.mockResolvedValue({ kind: 'signed-in', ...ISSUED });
+      client.readCurrentAccount.mockResolvedValue(READER);
+      const response = await logInVisitor(context({ ...body, rememberMe }));
+      expect(client.logIn).toHaveBeenCalledWith({ email: 'a@b.c', password: 'pw', rememberMe }, IP);
+      expect(response.headers.getSetCookie()[0]).toMatch(
+        rememberMe ? /Max-Age=2592000$/ : /^(?!.*Max-Age)/,
+      );
+    },
+  );
+
+  it('keeps rememberMe in the 2FA cookie', async () => {
+    client.logIn.mockResolvedValue({ kind: 'two-factor-required', tempToken: 'tmp', methods: [] });
+    const response = await logInVisitor(context({ ...body, rememberMe: true }));
+    const request = new Request('https://site.test/', {
+      headers: { cookie: response.headers.getSetCookie()[0]!.split(';')[0]! },
+    });
+    expect(readTwoFactorCookie(request).value?.rememberMe).toBe(true);
   });
 
   it('answers two-factor-required with the 2FA cookie only, and drops unknown methods', async () => {
@@ -120,7 +156,11 @@ describe('logInVisitor', () => {
 });
 
 describe('two-factor routes', () => {
-  const challenge = writeTwoFactorCookie({ tempToken: 'tmp', methods: ['email'] });
+  const challenge = writeTwoFactorCookie({
+    tempToken: 'tmp',
+    methods: ['email'],
+    rememberMe: false,
+  });
 
   it('email-code answers 202 using the cookie temp token', async () => {
     const response = await sendTwoFactorEmailCode(context({}, challenge));
@@ -156,6 +196,19 @@ describe('two-factor routes', () => {
     expect(cookieNames(response)).toEqual(['__Host-abyss_web_session', '__Host-abyss_web_2fa']);
   });
 
+  it.each([true, false])(
+    'verify takes rememberMe=%s from the challenge cookie',
+    async (rememberMe) => {
+      client.verifyTwoFactor.mockResolvedValue(ISSUED);
+      client.readCurrentAccount.mockResolvedValue(READER);
+      const sealed = writeTwoFactorCookie({ tempToken: 'tmp', methods: ['email'], rememberMe });
+      const response = await verifyTwoFactorCode(context({ code: '123456' }, sealed));
+      expect(response.headers.getSetCookie()[0]).toMatch(
+        rememberMe ? /Max-Age=2592000$/ : /^(?!.*Max-Age)/,
+      );
+    },
+  );
+
   it('a wrong code keeps the challenge cookie; an expired temp token clears it', async () => {
     client.verifyTwoFactor.mockRejectedValueOnce(new BffError('BFF_INVALID_TWO_FACTOR_CODE'));
     const wrong = await refusalOf(verifyTwoFactorCode(context({ code: '1' }, challenge)));
@@ -179,6 +232,7 @@ describe('logOutVisitor', () => {
     refreshToken: 'rt-1',
     accessToken: ACCESS,
     accessExpiresAt: 4_000_000_000_000,
+    rememberMe: false,
   });
 
   it('logs out at cms-api and clears both cookies with 204', async () => {
