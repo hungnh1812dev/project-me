@@ -159,12 +159,12 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
     });
   }
 
-  function login(email: string, password = PASSWORD, path = LOGIN) {
-    return http().post(path).send({ email, password });
+  function login(email: string, password = PASSWORD, path = LOGIN, rememberMe?: boolean) {
+    return http().post(path).send({ email, password, rememberMe });
   }
 
-  async function signIn(account: Account) {
-    const res = await login(account.email);
+  async function signIn(account: Account, rememberMe?: boolean) {
+    const res = await login(account.email, PASSWORD, LOGIN, rememberMe);
     expect(res.status).toBe(200);
     return {
       accessToken: (res.body as { accessToken: string }).accessToken,
@@ -538,33 +538,36 @@ describe('auth: login, JWT, refresh rotation, logout (Postgres 17 via Testcontai
       expect((await refresh(nextToken, TEST_ADMIN_ORIGIN)).status).toBe(200);
     });
 
-    it('treats reuse of a rotated token after the grace window as theft: revokes the family and bumps token_version', async () => {
-      useRealClock();
-      const account = await createAccount();
-      const otherSession = await signIn(account);
-      const stolen = await signIn(account);
-      const rotated = refreshTokenOf(await refresh(stolen.refreshToken));
-      await rotatedAgo(stolen.refreshToken, REFRESH_TOKEN_REUSE_GRACE_MS + 1);
-      const versionBefore = await tokenVersion(account);
+    it.each([true, false])(
+      'treats reuse of a rotated token after the grace window as theft: revokes the family and bumps token_version (rememberMe %s)',
+      async (rememberMe) => {
+        useRealClock();
+        const account = await createAccount();
+        const otherSession = await signIn(account, rememberMe);
+        const stolen = await signIn(account, rememberMe);
+        const rotated = refreshTokenOf(await refresh(stolen.refreshToken));
+        await rotatedAgo(stolen.refreshToken, REFRESH_TOKEN_REUSE_GRACE_MS + 1);
+        const versionBefore = await tokenVersion(account);
 
-      const reuse = await refresh(stolen.refreshToken);
-      expect(reuse.status).toBe(401);
-      expect(errorBody(reuse)).toMatchObject({
-        errorCode: AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN,
-      });
-      expect(refreshCookieHeader(reuse)).toMatch(/Expires=Thu, 01 Jan 1970/);
+        const reuse = await refresh(stolen.refreshToken);
+        expect(reuse.status).toBe(401);
+        expect(errorBody(reuse)).toMatchObject({
+          errorCode: AUTH_ERROR_CODES.INVALID_REFRESH_TOKEN,
+        });
+        expect(refreshCookieHeader(reuse)).toMatch(/Expires=Thu, 01 Jan 1970/);
 
-      const family = await db.prisma.refreshToken.findMany({
-        where: { familyId: (await tokenRow(stolen.refreshToken)).familyId },
-      });
-      expect(family.length).toBeGreaterThanOrEqual(2);
-      expect(family.every((row) => row.revokedAt !== null)).toBe(true);
-      expect(await tokenVersion(account)).toBe(versionBefore + 1);
+        const family = await db.prisma.refreshToken.findMany({
+          where: { familyId: (await tokenRow(stolen.refreshToken)).familyId },
+        });
+        expect(family.length).toBeGreaterThanOrEqual(2);
+        expect(family.every((row) => row.revokedAt !== null)).toBe(true);
+        expect(await tokenVersion(account)).toBe(versionBefore + 1);
 
-      // The legitimately rotated token is dead too; another family is untouched.
-      expect((await refresh(rotated)).status).toBe(401);
-      expect((await tokenRow(otherSession.refreshToken)).revokedAt).toBeNull();
-    });
+        // The legitimately rotated token is dead too; another family is untouched.
+        expect((await refresh(rotated)).status).toBe(401);
+        expect((await tokenRow(otherSession.refreshToken)).revokedAt).toBeNull();
+      },
+    );
 
     it('serves two concurrent refreshes with one token without revoking the family (T11a)', async () => {
       useRealClock();
