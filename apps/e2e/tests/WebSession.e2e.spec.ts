@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { BFF_PATHS } from '../src/Api.endpoints';
+import { BFF_PATHS, isCmsApiRequest } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
 import { WEB_SESSION_COOKIE_NAME, WEB_TWO_FACTOR_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
@@ -8,7 +8,7 @@ import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { countActiveRefreshTokens } from '../src/SmokeDatabase.client';
 
 /**
- * apps/web sign-in dialog and the BFF session (sealed HttpOnly cookie; the browser calls only /bff/v1). Only reader accounts
+ * apps/web sign-in dialog and the BFF session (sealed HttpOnly cookie; the browser calls only /api/v1 on the web origin). Only reader accounts
  * (role guest, no permission) may hold a web session; owner / admin / editor
  * are refused. Self-contained: it uses the seeded reader accounts and the
  * owner, reads no state from other specs (the smoke stack lifts the login
@@ -22,7 +22,6 @@ const headerSignIn = (page: Page) =>
   page.getByRole('button', { name: WEB_COPY.session.signIn, exact: true });
 const dialog = (page: Page) => page.getByRole('dialog');
 
-const API_PREFIX = '/api/';
 const TWO_FACTOR_COOKIE_MAX_AGE_SECONDS = 300;
 const COOKIE_AGE_SLACK_SECONDS = 30;
 
@@ -110,7 +109,11 @@ test('a reader signs in on the web, stays signed in on reload, and signs out', a
   context,
 }) => {
   const requests: string[] = [];
-  page.on('request', (req) => requests.push(new URL(req.url()).pathname));
+  const cmsApiRequests: string[] = [];
+  page.on('request', (req) => {
+    requests.push(new URL(req.url()).pathname);
+    if (isCmsApiRequest(req.url())) cmsApiRequests.push(req.url());
+  });
 
   await page.goto(e2eEnv.webUrl);
   await openDialog(page);
@@ -123,8 +126,7 @@ test('a reader signs in on the web, stays signed in on reload, and signs out', a
   await expect(headerSignIn(page)).toHaveCount(0);
 
   // Every browser call of the web origin goes to the BFF; none reaches cms-api.
-  const apiPaths = requests.filter((path) => path.startsWith(API_PREFIX));
-  expect(apiPaths).toEqual([]);
+  expect(cmsApiRequests).toEqual([]);
   const authPaths = requests.filter((path) => path.startsWith(BFF_PATHS.AUTH.LOGIN));
   expect(authPaths.length).toBeGreaterThan(0);
 
