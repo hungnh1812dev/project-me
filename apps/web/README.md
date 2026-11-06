@@ -38,7 +38,7 @@ pnpm --filter @abyss/web dev       # http://localhost:5174
 
 The dev port is `DEV_SERVER_PORT` from the shell environment (default 5174; a
 `.env.local` value is loaded too late to set it). The browser never calls
-cms-api: it talks only to this origin (`/bff/v1/*`), so the dev server has no
+cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 `/api` proxy. The Next server reaches cms-api through `API_INTERNAL_URL`.
 
 `@abyss/form-commons` is consumed from its `dist/`, so build it once first
@@ -106,7 +106,7 @@ tokens only (`bg-card`, `text-muted-foreground`).
 
 - The header "Sign in" opens `WebLoginDialog` (email + password, then the 2FA
   code when the account has it). Calls go from the browser to this origin's
-  BFF (`/bff/v1/auth/*`); the BFF talks to cms-api and keeps the tokens in
+  BFF (`/api/v1/auth/*`); the BFF talks to cms-api and keeps the tokens in
   sealed cookies.
 - `features/session` owns the session: `useWebSession` and `WebSessionProvider`
   (mounted in `src/components/layouts/AppProviders.tsx`), the auth API and the one
@@ -193,7 +193,7 @@ The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a fil
   `components/layouts/CspNonce.tsx` passes it the request nonce (`get-nonce` `setNonce`) so
   `style-src` stays nonce-only.
 - `next.config.ts` adds HSTS, `nosniff`, `Referrer-Policy`, `Cross-Origin-Opener-Policy: same-origin`, a deny-all `Permissions-Policy` and `X-Frame-Options: DENY` to every route.
-- The proxy matcher skips `/bff/`, `/_next/static`, `/_next/image` and
+- The proxy matcher skips `/api/`, `/_next/static`, `/_next/image` and
   prefetches. The root layout awaits `connection()`, so every page renders per
   request (the server data cache from `WEB_REVALIDATE_SECONDS` still applies).
 - `scripts/smoke.sh` asserts the headers, the nonce match and a fresh nonce

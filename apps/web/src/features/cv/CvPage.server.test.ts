@@ -42,7 +42,7 @@ describe('loadCvPage', () => {
 
 describe('answerCvRead', () => {
   const context = {
-    request: new Request('https://site.test/bff/v1/cv'),
+    request: new Request('https://site.test/api/v1/cv'),
     body: {},
     visitorIp: undefined,
   };

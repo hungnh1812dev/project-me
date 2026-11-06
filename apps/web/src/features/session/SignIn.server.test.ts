@@ -42,7 +42,7 @@ const ISSUED = { accessToken: ACCESS, refreshToken: 'rt-1' };
 
 function context<T>(body: T, cookie?: string): BffContext<T> {
   const headers = cookie === undefined ? {} : { cookie: cookie.split(';')[0]! };
-  return { request: new Request('https://site.test/bff', { headers }), body, visitorIp: IP };
+  return { request: new Request('https://site.test/api/v1', { headers }), body, visitorIp: IP };
 }
 
 function cookieNames(response: Response): string[] {

@@ -11,7 +11,7 @@ vi.mock('../../../../../apis/server/bff/BffRoute.server', async (importOriginal)
   defineBffRoute,
 }));
 
-describe('/bff/v1/auth/logout route', () => {
+describe('/api/v1/auth/logout route', () => {
   it('exports POST wired to logOutVisitor with its route options', async () => {
     const route = await import('./route');
 

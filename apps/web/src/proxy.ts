@@ -25,13 +25,13 @@ export function proxy(request: NextRequest): NextResponse {
 }
 
 /**
- * Everything except BFF calls (route handlers set their own headers) and build assets; prefetches
+ * Everything except BFF calls (`/api/`) (route handlers set their own headers) and build assets; prefetches
  * carry no document, so they get no nonce. Must stay a static literal.
  */
 export const config = {
   matcher: [
     {
-      source: '/((?!bff/|_next/static|_next/image|favicon.ico).*)',
+      source: '/((?!api/|_next/static|_next/image|favicon.ico).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

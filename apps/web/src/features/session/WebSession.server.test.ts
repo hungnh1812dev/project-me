@@ -35,7 +35,7 @@ function jwt(expSeconds: number): string {
 
 function requestFor(accessExpiresAt: number, refreshToken = 'rt-1'): Request {
   const line = writeSessionCookie({ refreshToken, accessToken: 'old-access', accessExpiresAt });
-  return new Request('https://site.test/bff/v1/session', {
+  return new Request('https://site.test/api/v1/session', {
     headers: { cookie: line.split(';')[0]!, 'x-forwarded-for': '203.0.113.9' },
   });
 }

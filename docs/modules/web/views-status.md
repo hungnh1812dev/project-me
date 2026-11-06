@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Shows whether cms-api answers its liveness probe, read through `GET /bff/v1/health`. It is the homepage (`/`); the CV lives on `/cv`.
+Shows whether cms-api answers its liveness probe, read through `GET /api/v1/health`. It is the homepage (`/`); the CV lives on `/cv`.
 
 ## Techniques
 

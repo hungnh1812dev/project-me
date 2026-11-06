@@ -21,8 +21,8 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-/** Base path of the BFF routes of this site (ADR 0018); the browser's only API. */
-export const BFF_BASE_PATH = '/bff/v1';
+/** Base path of the BFF routes of this site (ADR 0018), the route folder `app/api/v1/`; the browser's only API. */
+export const BFF_BASE_PATH = '/api/v1';
 
 /** BFF routes, relative to `BFF_BASE_PATH`. */
 export const BFF_ENDPOINTS = {
