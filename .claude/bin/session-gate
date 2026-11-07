@@ -20,10 +20,14 @@ RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Ru
   board says `Size: medium` or `Size: large`.
 - Break points: once a TASK or BATCH named in the board's `Breaks:` line ran, a TASK or BATCH of other
   tasks is denied (FIX and RECHECK of that unit still pass).
-State: .agent-state/.session-gate.json (git-ignored). Any error lets the call through.
+State: .agent-state/.session-gate.json under the project root (git-ignored), whatever the session's cwd.
+Any error lets the call through.
 """
 import json, os, re, sys, time
 
+# The state paths below are relative to the project root, never to the session's cwd (a `cd` into a
+# subfolder would otherwise start a second state file there).
+PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 CONTEXT_LIMIT = 95_000
 MIN_GROWTH = 20_000
 CHECKLIST_LIMIT = 40_000
@@ -173,7 +177,7 @@ def pre_tool_use(event, state):
 def main():
     try:
         event = json.load(sys.stdin)
-        os.chdir(event.get("cwd") or ".")
+        os.chdir(PROJECT_DIR)
         state = load_state()
         if event.get("hook_event_name") == "SessionStart":
             state.pop(event.get("session_id"), None)
