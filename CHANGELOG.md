@@ -20,6 +20,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: `session-gate` breaks the manager session past 95K tokens of context, under the 100K prompt size Haiku bills at 5x.
 - root: `session-gate` names the in-progress feature and its `Next:` line at session start, so the manager skips scanning state.
 - root: `session-gate` keeps its state under the project root, so a session that changes folder no longer forks it.
+- root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
 
 ## 0.1.0 (2026-11-05)
 

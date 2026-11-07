@@ -40,6 +40,7 @@ Module docs (`docs/modules/`) and the generated index `docs/modules/MODULES.md` 
 | `resolved/<finding id>.md` | builder fixing a critical/high finding (format in `worker-flow`) | manager at close | ~6 lines | at close, after `SUMMARY.md` takes its row |
 | `SUMMARY.md` | manager at close | anyone | as short as possible | never |
 | `archive/*.md` | manager | grep on demand | - | never |
+| `.breaks/<time>/` (git-ignored) | `break-check` hook at each session end: the feature folder, `meta.txt` (old transcript path, head, git status) | manager, only when a `break-check:` line names it | last 5 | oldest pruned |
 
 Trim when over the limit: closed items out of `handoff.md`; module-only or stale facts from the conventions files into the archive.
 
