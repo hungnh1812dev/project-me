@@ -3,7 +3,7 @@ import { AfterCommitCallbacks, MUST_BE_SYNCHRONOUS_MESSAGE } from './AfterCommit
 
 function fakeLogger(): { logger: AppLogger; error: jest.Mock } {
   const error = jest.fn();
-  return { logger: { warn: jest.fn(), error }, error };
+  return { logger: { info: jest.fn(), warn: jest.fn(), error }, error };
 }
 
 /** A misuse the types forbid; the store still has to survive it at run time. */

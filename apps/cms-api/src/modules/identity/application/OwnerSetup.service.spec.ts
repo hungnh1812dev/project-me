@@ -69,7 +69,7 @@ function build(token: string | null = TOKEN, state?: Partial<World>) {
     }),
   } as unknown as SecurityAuditService;
   const warn = jest.fn();
-  const logger: AppLogger = { warn, error: jest.fn() };
+  const logger: AppLogger = { info: jest.fn(), warn, error: jest.fn() };
   const config = {
     secrets: { ownerSetupToken: token ?? undefined },
   } as unknown as IAppConfig;
