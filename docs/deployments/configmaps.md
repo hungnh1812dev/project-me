@@ -47,7 +47,7 @@ data:
   BACKUP_STORAGE_PREFIX: postgres/
 ```
 
-**Never set in production:** `LOGIN_RATE_LIMIT_*`, `REFRESH_RATE_LIMIT_IP`, `SETUP_STATUS_RATE_LIMIT_IP`, `SETUP_SUBMIT_RATE_LIMIT_IP`, `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE` (boot fails; smoke and e2e only), `OWNER_EMAIL` / `OWNER_DISPLAY_NAME` (CLI only). `DB_USERNAME` goes in the Secrets, never here ([secrets.md](secrets.md)).
+**Never set in production:** `LOGIN_RATE_LIMIT_*`, `REFRESH_RATE_LIMIT_IP`, `SETUP_STATUS_RATE_LIMIT_IP`, `SETUP_SUBMIT_RATE_LIMIT_IP`, `TWO_FACTOR_EMAIL_RATE_LIMIT_IP`, `ALLOW_LOGIN_RATE_LIMIT_OVERRIDE` (boot fails; smoke and e2e only), `OWNER_EMAIL` / `OWNER_DISPLAY_NAME` (CLI only). `DB_USERNAME` goes in the Secrets, never here ([secrets.md](secrets.md)).
 
 ## 2. cms-api env contract
 
