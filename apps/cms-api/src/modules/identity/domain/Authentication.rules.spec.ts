@@ -3,12 +3,15 @@ import {
   isAcceptablePassword,
   isRefreshInGrace,
   loginFailureReason,
+  refreshTokenTtlMsOf,
   type RotatedTokenFacts,
 } from './Authentication.rules';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   REFRESH_TOKEN_REUSE_GRACE_MS,
+  REFRESH_TOKEN_TTL_MS,
+  SESSION_REFRESH_TOKEN_TTL_MS,
 } from './Identity.constants';
 
 describe('isAcceptablePassword (D8)', () => {
@@ -95,5 +98,12 @@ describe('isRefreshInGrace', () => {
     ['account deleted', { ...live, account: { status: 'active', deletedAt: now } }, now],
   ])('refuses %s (reuse)', (_name, token, at) => {
     expect(isRefreshInGrace(token, at)).toBe(false);
+  });
+});
+
+describe('refreshTokenTtlMsOf (D22)', () => {
+  it('gives 30 days to a remembered session and 12 hours to an unremembered one', () => {
+    expect(refreshTokenTtlMsOf(true)).toBe(REFRESH_TOKEN_TTL_MS);
+    expect(refreshTokenTtlMsOf(false)).toBe(SESSION_REFRESH_TOKEN_TTL_MS);
   });
 });
