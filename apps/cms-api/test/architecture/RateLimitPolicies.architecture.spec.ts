@@ -124,7 +124,7 @@ describe('rate-limit policies', () => {
 });
 
 describe('rate-limit override bindings', () => {
-  it('pins exactly today six overrides', () => {
+  it('pins exactly today seven overrides', () => {
     expect(rateLimitOverrideBindings).toStrictEqual({
       LOGIN_RATE_LIMIT_IP: 'login:ip',
       LOGIN_RATE_LIMIT_EMAIL: 'login:email',
@@ -132,6 +132,7 @@ describe('rate-limit override bindings', () => {
       SETUP_STATUS_RATE_LIMIT_IP: 'setup-status:ip',
       SETUP_SUBMIT_RATE_LIMIT_IP: 'setup-submit:ip',
       TWO_FACTOR_EMAIL_RATE_LIMIT_IP: '2fa-email:ip',
+      TWO_FACTOR_MANAGE_RATE_LIMIT_IP: '2fa-manage:ip',
     });
   });
 

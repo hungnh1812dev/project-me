@@ -25,11 +25,15 @@ import { freshTotpCode } from '../src/Totp.fixture';
 /**
  * Covers 2FA on the dedicated 2FA account (seeded by scripts/smoke.sh), never the
  * owner. Rate-limit budget of this spec, all from one IP within 15 min:
- * 3 logins for this email (limit 5), 4 setup/enable/disable (limit 5),
- * 2 email-code sends (limit 5), 2 verifies (limit 10), 1 password change.
- * Together with smoke + the owner specs the IP stays at 7 of 10 logins.
+ * 3 logins for this email (limit 5), 4 setup/enable/disable, 2 email-code sends,
+ * 2 verifies (limit 10), 1 password change. Together with smoke + the owner specs
+ * the IP stays at 7 of 10 logins.
  * The restore hook after the steps adds 1 login (4 of 5 for this email), 1 email-code
- * send and its verify, 1 disable (5 of 5) and 1 password change; the IP reaches 8 of 10.
+ * send and its verify, 1 disable and 1 password change; the IP reaches 8 of 10.
+ * Setup/enable/disable would be 5 of 5 in production, but the restore needs a 6th
+ * call once other specs share the window, so test stacks raise that limit
+ * (TWO_FACTOR_MANAGE_RATE_LIMIT_IP, like the email-code one) and the restore never
+ * depends on the budget.
  * The steps depend on each other and change the account, so no retries.
  */
 test.describe.configure({ mode: 'serial', retries: 0 });

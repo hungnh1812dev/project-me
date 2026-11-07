@@ -411,6 +411,9 @@ any other `*.constants.ts`:
 - Optional override: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` replaces the `2fa-email:ip`
   limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
   e2e suite sends more than 5 email codes from one IP.
+- Optional override: `TWO_FACTOR_MANAGE_RATE_LIMIT_IP` replaces the `2fa-manage:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
+  2FA e2e spec sets up, enables and disables more than 5 times from one IP.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's
