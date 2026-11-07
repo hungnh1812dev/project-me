@@ -67,6 +67,13 @@ pnpm dev:stack:stop                                  # apps stopped, containers 
   exists is used, and with both present `e2e:spec` asks for `E2E_STACK`.
 - Env comes only from the git-ignored `.localEnv.agent` (created with generated
   dev-only values; key names in [`.env.example`](.env.example)). Logs: `.dev-stack/*.log`.
+- The account logins (owner, 2FA, reader, reader 2FA) are the `STACK_*` keys of
+  `.localEnv.agent`, passed to the specs through the stack's vars file; every stack
+  start seeds them. A spec that changes a stored account puts it back before it
+  ends (`PasswordReset` the owner's password, `TwoFactor` the 2FA account's
+  password and two-factor sign-in off), so a kept stack's logins stay valid.
+  Accounts a spec invites for itself live in that stack's database only, with
+  passwords derived from the owner password.
 - Admin `http://admin.domain.localhost:5173`, web `http://domain.localhost:5174`
   (`/api` proxied to cms-api on 3100), Mailpit `http://mail.domain.localhost:8125`.
   It never touches `abyss-smoke` and can run next to it.
