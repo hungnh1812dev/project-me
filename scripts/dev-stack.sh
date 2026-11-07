@@ -7,7 +7,9 @@
 #   pnpm dev:stack:stop   stop the apps and remove the containers and volumes
 #   pnpm e2e:spec tests/AdminAuth.e2e.spec.ts      (E2E_STACK=dev if a smoke stack is kept too)
 # Env comes only from .localEnv.agent (created with generated dev-only values when
-# missing; key names in apps/e2e/.env.example). Logs and pids: .dev-stack/.
+# missing; key names in apps/e2e/.env.example). The account logins (STACK_*) are
+# kept there too, generated once and reused on every start (ADR 0020).
+# Logs and pids: .dev-stack/.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -74,13 +76,8 @@ api_exec() {
   (cd "$API_DIR" && env ${vars[@]+"${vars[@]}"} "$@")
 }
 
-ensure_local_env_is_ignored() {
-  git -C "$ROOT_DIR" check-ignore -q .localEnv.agent || { echo ".localEnv.agent is not git-ignored." >&2; exit 1; }
-  grep -qxF .localEnv.agent "$ROOT_DIR/.dockerignore" || { echo ".localEnv.agent is not in .dockerignore." >&2; exit 1; }
-}
-
 create_local_env() {
-  ensure_local_env_is_ignored
+  stack_ensure_local_env_ignored "$LOCAL_ENV_FILE"
   (
     umask 077
     {
@@ -106,7 +103,7 @@ ensure_web_session_secret() {
 
 load_local_env() {
   [[ -f "$LOCAL_ENV_FILE" ]] || create_local_env
-  ensure_local_env_is_ignored
+  stack_ensure_local_env_ignored "$LOCAL_ENV_FILE"
   ensure_web_session_secret
   set -a
   # shellcheck source=/dev/null
@@ -262,7 +259,7 @@ start_stack() {
   mkdir -p "$STATE_DIR"
   trap 'code=$?; if ((code != 0)); then stop_stack; fi; exit $code' EXIT
   export_api_env
-  stack_generate_credentials "$DOMAIN"
+  stack_load_accounts "$DOMAIN" "$LOCAL_ENV_FILE"
   echo "Starting Postgres and Mailpit (project abyss-dev)..."
   compose up --detach --wait --wait-timeout "$READY_TIMEOUT_SECONDS"
   export DB_PASSWORD

@@ -8,6 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- root: the dev and smoke stacks keep the test account logins (`STACK_*`) in `.localEnv.agent`, generated once and reused on every start; `stack_load_accounts` replaces `stack_generate_credentials` (ADR 0020).
 - cms-api, cms-admin, web: a ticked "Keep me signed in" keeps the sign-in for 30 days (sliding); an unticked one ends with the browser session; existing sessions get 30 days at their next rotation.
 - cms-api: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` overrides the `2fa-email:ip` limit (test stacks only, same opt-in as the other rate-limit overrides); smoke and dev stacks raise it.
 - web: `BFF_AUTH_RATE_LIMIT_IP` and the opt-in `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` are set to 10000 on the smoke and dev stacks only; deploy docs list both as never set in production.
