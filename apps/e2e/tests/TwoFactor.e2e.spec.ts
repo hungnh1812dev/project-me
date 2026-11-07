@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, APP_ROUTES } from '../src/Apps.contract';
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
-import { TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
+import { SLOW_STATE_TIMEOUT_MS, TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
@@ -82,8 +82,12 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await expect(setup.getByTestId('totp-secret')).toHaveText(shownSecret);
   const first = await freshTotpCode(secret, undefined);
   await confirm(setup, security.fields.totpCode, first.code, security.totpSetup.submit);
-  await expect(page.getByText(security.twoFactor.enabledTotp)).toBeVisible();
-  await expect(page.getByText(security.twoFactor.statusTotp)).toBeVisible();
+  await expect(page.getByText(security.twoFactor.enabledTotp)).toBeVisible({
+    timeout: SLOW_STATE_TIMEOUT_MS,
+  });
+  await expect(page.getByText(security.twoFactor.statusTotp)).toBeVisible({
+    timeout: SLOW_STATE_TIMEOUT_MS,
+  });
   await signOutFromUserMenu(page);
 
   // Login 2: password, then the authenticator code in the challenge dialog.

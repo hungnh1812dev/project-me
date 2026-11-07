@@ -39,6 +39,12 @@ export const MS_PER_SECOND = 1_000;
  */
 export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;
 
+/** Wait for a UI state that follows retried or slow API calls on a loaded host. */
+export const SLOW_STATE_TIMEOUT_MS = 20_000;
+
+/** Test timeout for a spec that waits on such states. */
+export const SLOW_STATE_TEST_TIMEOUT_MS = 60_000;
+
 /** HTTP statuses the specs assert on. */
 export const HTTP = {
   OK: 200,

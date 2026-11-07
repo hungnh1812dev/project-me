@@ -328,6 +328,10 @@ test.describe.serial('richtext toolbar: formatting survives save and reload', ()
         .toBe(`Aligned ${css}`);
       await button(toolbar, label).click();
     }
+    // Every alignment must be in the editor before it is saved.
+    for (const { css } of alignments.slice(1)) {
+      await expect(editor.locator(`[style*="text-align: ${css}"]`)).toHaveCount(1);
+    }
     const before = await saveAndReload();
     expect(await editor.innerHTML()).toBe(before);
     const { summary: stored } = await readDraft(api, token(), draft.documentId);
