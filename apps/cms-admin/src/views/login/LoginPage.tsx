@@ -106,12 +106,14 @@ export function LoginPage() {
     onError: (cause) => {
       setError(toLoginError(cause, text));
       form.resetField('password');
+      form.resetField('rememberMe');
       form.setFocus('password');
     },
   });
 
   const closeChallenge = useCallback(() => {
     setChallenge(null);
+    form.resetField('rememberMe');
     form.setFocus('password');
   }, [form]);
   const expireChallenge = useCallback(() => {

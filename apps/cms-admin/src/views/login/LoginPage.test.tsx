@@ -112,6 +112,19 @@ describe('LoginPage', () => {
     expect(email()).toHaveValue(TEST_USER.email);
   });
 
+  it('unticks the keep-signed-in box after a failed sign-in', async () => {
+    await openLogin(() => ({
+      status: 401,
+      data: { errorCode: 'AUTH_INVALID_CREDENTIALS' },
+    }));
+    const box = screen.getByRole('checkbox', { name: EN_TEXT.login.rememberMe });
+    await userEvent.click(box);
+    await fillAndSubmit('wrong');
+
+    await screen.findByRole('alert');
+    expect(box).not.toBeChecked();
+  });
+
   it('tells a rate-limited user how long to wait', async () => {
     await openLogin(() => ({
       status: 429,
