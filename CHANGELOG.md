@@ -8,6 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- cms-api: every finished request leaves one log line (method, path without query, status, duration in ms), a warning above 1000 ms; the health probes are skipped (API-1).
 - root: the dev and smoke stacks keep the test account logins (`STACK_*`) in `.localEnv.agent`, generated once and reused on every start; `stack_load_accounts` replaces `stack_generate_credentials` (ADR 0020).
 - cms-api, cms-admin, web: a ticked "Keep me signed in" keeps the sign-in for 30 days (sliding); an unticked one ends with the browser session; existing sessions get 30 days at their next rotation.
 - cms-api: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` overrides the `2fa-email:ip` limit (test stacks only, same opt-in as the other rate-limit overrides); smoke and dev stacks raise it.
