@@ -9,6 +9,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 ### Changes
 
 - cms-api: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` overrides the `2fa-email:ip` limit (test stacks only, same opt-in as the other rate-limit overrides); smoke and dev stacks raise it.
+- web: `BFF_AUTH_RATE_LIMIT_IP` and the opt-in `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` are set to 10000 on the smoke and dev stacks only; deploy docs list both as never set in production.
 - web: the BFF moved from `/bff/v1` to `/api/v1`; `/bff/v1` is removed with no alias or redirect.
 - web: imports use `@/` tsconfig path aliases, resolved by Vitest too; base-config: Prettier groups `@/styles/global.css` alone.
 - root: `session-gate` breaks checklist sessions only after 40k tokens of growth; the manager resumes from `Next:`; `tokstats` reports per-job tokens.

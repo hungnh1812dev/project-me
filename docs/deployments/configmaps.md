@@ -100,18 +100,19 @@ data:
 
 Web has a Secret, `web-secrets` ([secrets.md](secrets.md) section 1), and plain `env` entries on the Deployment ([kubernetes.md](kubernetes.md) section 4), read at start. `NEXT_PUBLIC_*` values are build args (GitHub Environment variables, [ci-cd.md](ci-cd.md)); changing one means a new image. The browser calls only web's own BFF routes; web has no `NEXT_PUBLIC_API_BASE_URL` and no `/status` page switch (ADR 0018). An invalid or missing required value fails the start.
 
-| Kind        | Name                             | Value in production                                                                                                  |
-| ----------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| build arg   | `NEXT_PUBLIC_ADMIN_URL`          | `https://admin.<domain>` (optional; hides the "Open CMS" link when empty)                                            |
-| build arg   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public Cloudflare site key (required: the web Dockerfile fails without it)                                           |
-| runtime env | `API_INTERNAL_URL`               | `http://cms-api.<ns>.svc.cluster.local:3000/api/v1` (server-only; the web server reaches cms-api inside the cluster) |
-| runtime env | `WEB_ORIGIN`                     | `https://<domain>` (exact origin; the BFF accepts state-changing requests only from it)                              |
-| runtime env | `TURNSTILE_EXPECTED_HOSTNAME`    | `<domain>` (bare host; **required** in production: web refuses to start without it)                                  |
-| runtime env | `TRUST_PROXY_HOPS`               | `1` (Traefik is the one proxy in front of web)                                                                       |
-| runtime env | `CLIENT_IP_HEADER`               | optional; a header a trusted CDN sets to the visitor IP                                                              |
-| runtime env | `WEB_REVALIDATE_SECONDS`         | `60` (data cache for server-side fetches; `0` disables it)                                                           |
-| runtime env | `WEB_PORT`                       | `8080` (image default)                                                                                               |
-| never set   | `ALLOW_TURNSTILE_TEST_SECRET`    | never in deploy config; it exists only for the smoke stack (ADR 0018 section 2.6)                                    |
+| Kind        | Name                                                      | Value in production                                                                                                              |
+| ----------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| build arg   | `NEXT_PUBLIC_ADMIN_URL`                                   | `https://admin.<domain>` (optional; hides the "Open CMS" link when empty)                                                        |
+| build arg   | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`                          | public Cloudflare site key (required: the web Dockerfile fails without it)                                                       |
+| runtime env | `API_INTERNAL_URL`                                        | `http://cms-api.<ns>.svc.cluster.local:3000/api/v1` (server-only; the web server reaches cms-api inside the cluster)             |
+| runtime env | `WEB_ORIGIN`                                              | `https://<domain>` (exact origin; the BFF accepts state-changing requests only from it)                                          |
+| runtime env | `TURNSTILE_EXPECTED_HOSTNAME`                             | `<domain>` (bare host; **required** in production: web refuses to start without it)                                              |
+| runtime env | `TRUST_PROXY_HOPS`                                        | `1` (Traefik is the one proxy in front of web)                                                                                   |
+| runtime env | `CLIENT_IP_HEADER`                                        | optional; a header a trusted CDN sets to the visitor IP                                                                          |
+| runtime env | `WEB_REVALIDATE_SECONDS`                                  | `60` (data cache for server-side fetches; `0` disables it)                                                                       |
+| runtime env | `WEB_PORT`                                                | `8080` (image default)                                                                                                           |
+| never set   | `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE` | never in deploy config; smoke and dev stacks only (production web refuses the override without the opt-in, ADR 0018 section 2.7) |
+| never set   | `ALLOW_TURNSTILE_TEST_SECRET`                             | never in deploy config; it exists only for the smoke stack (ADR 0018 section 2.6)                                                |
 
 Removed: `NEXT_PUBLIC_API_BASE_URL` (build arg) and `WEB_STATUS_PAGE_ENABLED` (runtime env). Delete both from the deploy repo.
 
