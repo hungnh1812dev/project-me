@@ -56,11 +56,18 @@ const STATE_CHANGING_METHODS: readonly string[] = ['POST'];
 const UNKNOWN_VISITOR_KEY = 'unknown';
 const NO_BODY_SCHEMA = z.object({});
 
-// One limiter per bucket for the whole process: the login routes share `auth`.
-const limiters: Record<BffBucket, FixedWindowRateLimiter> = {
-  auth: new FixedWindowRateLimiter({ ...BFF_RATE_LIMITS.auth, maxKeys: RATE_LIMIT_MAX_KEYS }),
-  read: new FixedWindowRateLimiter({ ...BFF_RATE_LIMITS.read, maxKeys: RATE_LIMIT_MAX_KEYS }),
-};
+// One limiter per bucket for the whole process (the login routes share `auth`),
+// built on its first request so the env is never read at import.
+const limiters: Partial<Record<BffBucket, FixedWindowRateLimiter>> = {};
+
+function limiterOf(bucket: BffBucket): FixedWindowRateLimiter {
+  limiters[bucket] ??= new FixedWindowRateLimiter({
+    ...BFF_RATE_LIMITS[bucket],
+    limit: getServerEnv().bffRateLimitOverrides[bucket] ?? BFF_RATE_LIMITS[bucket].limit,
+    maxKeys: RATE_LIMIT_MAX_KEYS,
+  });
+  return limiters[bucket];
+}
 
 function assertSameOrigin(request: Request, webOrigin: string): void {
   const fetchSite = request.headers.get(SEC_FETCH_SITE_HEADER);
@@ -100,7 +107,7 @@ async function readCappedText(request: Request): Promise<string> {
 }
 
 function consumeRateLimit(bucket: BffBucket, visitorIp: string | undefined): void {
-  const decision = limiters[bucket].consume(visitorIp ?? UNKNOWN_VISITOR_KEY);
+  const decision = limiterOf(bucket).consume(visitorIp ?? UNKNOWN_VISITOR_KEY);
   if (!decision.isAllowed) throw BffError.rateLimited(decision.retryAfterSeconds);
 }
 

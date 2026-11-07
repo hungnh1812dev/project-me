@@ -20,7 +20,7 @@ Everything the Next server does on behalf of the browser. `bff/` runs every `/ap
 
 - One pipeline, in order: method (405) · Origin and Sec-Fetch-Site on POST (403) · JSON content type (415) · body cap by Content-Length and capped stream read (413) · per-IP fixed-window limit per bucket (429) · strict Zod schema (400) · human check · `handle` · `Cache-Control: no-store`. An unexpected throw is `502 BFF_UPSTREAM_FAILED` with no detail.
 - Refusals are `{ statusCode, errorCode, message }` with fixed messages from `Bff.errors.ts`; logs hold the route and error code only.
-- The human-check step reads `humanCheckToken` from the parsed body, calls `verifyHumanCheck` and strips the token before `handle`. Fails closed: bad or missing token, action or hostname is `400 BFF_HUMAN_CHECK_FAILED`; siteverify unreachable or not JSON is `503 BFF_HUMAN_CHECK_UNAVAILABLE`. Only the action comparison is skipped, and only with Cloudflare's always-pass test secret (`TURNSTILE.ALWAYS_PASS_TEST_SECRET`). `configs/Server.env.ts` guards production at start (ADR 0018 section 2.6): the test secret needs `ALLOW_TURNSTILE_TEST_SECRET=smoke` (smoke stack only), any other secret needs `TURNSTILE_EXPECTED_HOSTNAME`.
+- The human-check step reads `humanCheckToken` from the parsed body, calls `verifyHumanCheck` and strips the token before `handle`. Fails closed: bad or missing token, action or hostname is `400 BFF_HUMAN_CHECK_FAILED`; siteverify unreachable or not JSON is `503 BFF_HUMAN_CHECK_UNAVAILABLE`. Only the action comparison is skipped, and only with Cloudflare's always-pass test secret (`TURNSTILE.ALWAYS_PASS_TEST_SECRET`). `configs/Server.env.ts` guards production at start (ADR 0018 section 2.6): the test secret needs `ALLOW_TURNSTILE_TEST_SECRET=smoke` (smoke stack only), any other secret needs `TURNSTILE_EXPECTED_HOSTNAME`. Likewise `BFF_AUTH_RATE_LIMIT_IP` needs `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` in production.
 - `cmsApiClient` calls only `API_INTERNAL_URL` + `API_ENDPOINTS` paths with `redirect: 'manual'`, a timeout and exactly one `X-Forwarded-For` (plus `CLIENT_IP_HEADER`). It reads the refresh token from `Set-Cookie` by name, parses every answer with Zod and returns allowlisted fields. Failures are `BffError`s with fixed codes (3xx/5xx 502, timeout 504, 429 keeps `Retry-After`); a refused refresh token or access token returns `null` instead of throwing.
 - Visitor IP (D7): `CLIENT_IP_HEADER` when it carries an address, else the `TRUST_PROXY_HOPS`-th address from the right of `X-Forwarded-For`. The rate limiters live in the process (one per bucket, at most 10 000 keys).
 - Server-only files import `server-only`; this module imports no feature.
@@ -36,7 +36,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 ## Where to change what
 
 - New refusal: one row in ADR 0018 section 3, one entry in `BFF_ERROR_CODES`.
-- New bucket or limit: `BFF_RATE_LIMITS` in `configs/Http.constants.ts` and the `limiters` map in `BffRoute.server.ts`.
+- New bucket or limit: `BFF_RATE_LIMITS` in `configs/Http.constants.ts` (and its override key in `BFF_RATE_LIMIT_OVERRIDE_ENV_KEYS`, `configs/Server.env.ts`). Each bucket's limiter is built on its first request with `getServerEnv().bffRateLimitOverrides[bucket]` or the default limit; the override is for test stacks only (ADR 0018 section 2.7).
 - New env key: `configs/Server.env.ts` and `apps/web/.env.example`.
 
 ## Files
@@ -51,7 +51,7 @@ server/ (0 files)
   restful/ (2 files)
 ```
 
-Tests: 7 files (not listed).
+Tests: 8 files (not listed).
 
 | File | Description |
 |---|---|

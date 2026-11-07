@@ -14,6 +14,7 @@ vi.mock('../../../configs/Server.env', () => ({
     webOrigin: 'https://site.test',
     trustProxyHops: 1,
     clientIpHeader: undefined,
+    bffRateLimitOverrides: {},
   }),
 }));
 

@@ -26,6 +26,7 @@ Applies to flows: `sign-in`, `public-site`.
 5. Turnstile is verified server-side before any cms-api call, and fails closed; a production server never starts with the always-pass test secret (except the smoke stack's `ALLOW_TURNSTILE_TEST_SECRET=smoke`) or with a real secret and no `TURNSTILE_EXPECTED_HOSTNAME` (D21, criterion 24).
 6. Logs hold the route and error code of refused requests, never bodies, tokens, codes, cookies, emails or passwords (D21).
 7. No reviewer mode on web (D21).
+8. A production server never starts with `BFF_AUTH_RATE_LIMIT_IP` set unless `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` (smoke stack only); deploy config sets neither key, so production keeps the `auth` limit of the pipeline (ADR 0018 §2.7).
 
 ## CSP (D17)
 

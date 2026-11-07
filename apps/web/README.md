@@ -64,7 +64,8 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 - `src/configs/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
   `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
   `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
-  `CLIENT_IP_HEADER`) at runtime. An invalid value stops the server at
+  `CLIENT_IP_HEADER`, and the test-stack-only `BFF_AUTH_RATE_LIMIT_IP` and
+  `ALLOW_BFF_RATE_LIMIT_OVERRIDE`) at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
@@ -163,6 +164,7 @@ standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
 the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
 Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`,
 `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
+(smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts
