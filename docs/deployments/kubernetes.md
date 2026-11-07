@@ -170,7 +170,7 @@ containers:
       capabilities: { drop: [ALL] }
 ```
 
-- **Never set `ALLOW_TURNSTILE_TEST_SECRET`** in the web env (smoke stack only, ADR 0018 section 2.6). Web has no browser-side API calls, so it needs no Traefik route to cms-api.
+- **Never set `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP` or `ALLOW_BFF_RATE_LIMIT_OVERRIDE`** in the web env (smoke and dev stacks only, ADR 0018 sections 2.6 and 2.7). Web has no browser-side API calls, so it needs no Traefik route to cms-api.
 - **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` route) and the web pods (BFF calls through `API_INTERNAL_URL`); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
 
 ```yaml
