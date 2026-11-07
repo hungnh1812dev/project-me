@@ -1,19 +1,15 @@
 import 'server-only';
 
-import { API_ENDPOINTS } from '../../../configs/Api.endpoints';
-import { BEARER_PREFIX } from '../../../configs/Auth.constants';
-import {
-  API_TIMEOUT_MS,
-  AUTHORIZATION_HEADER,
-  JSON_MEDIA_TYPE,
-} from '../../../configs/Http.constants';
-import { getServerEnv } from '../../../configs/Server.env';
 import {
   GRAPHQL_FAILURE_CODES,
   GraphqlRequestError,
   unwrapGraphqlResponse,
   type GraphqlDocument,
-} from '../../GraphqlResponse.rules';
+} from '@/apis/GraphqlResponse.rules';
+import { API_ENDPOINTS } from '@/configs/Api.endpoints';
+import { BEARER_PREFIX } from '@/configs/Auth.constants';
+import { API_TIMEOUT_MS, AUTHORIZATION_HEADER, JSON_MEDIA_TYPE } from '@/configs/Http.constants';
+import { getServerEnv } from '@/configs/Server.env';
 
 // Anonymous unless the caller passes an access token (SPEC D14): no cookie, no client IP.
 // The page therefore holds only what the `public` role may read, and the data

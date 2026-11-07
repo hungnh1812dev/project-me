@@ -2,12 +2,12 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { API_ENDPOINTS } from '../../../configs/Api.endpoints';
+import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import {
   API_ERROR_CODES,
   BEARER_PREFIX,
   CMS_API_REFRESH_COOKIE_NAME,
-} from '../../../configs/Auth.constants';
+} from '@/configs/Auth.constants';
 import {
   ACCEPT_HEADER,
   API_TIMEOUT_MS,
@@ -22,8 +22,9 @@ import {
   REDIRECT_STATUS_MIN,
   RETRY_AFTER_HEADER,
   SECONDS_PER_MINUTE,
-} from '../../../configs/Http.constants';
-import { getServerEnv } from '../../../configs/Server.env';
+} from '@/configs/Http.constants';
+import { getServerEnv } from '@/configs/Server.env';
+
 import { BffError } from '../bff/Bff.errors';
 
 const accessTokenAnswer = z.object({ accessToken: z.string().min(1) });
@@ -169,7 +170,7 @@ async function throwTwoFactorRefusal(response: Response): Promise<never> {
 export const cmsApiClient = {
   /** Any 401 is `BFF_INVALID_CREDENTIALS`: no account enumeration. */
   async logIn(
-    credentials: { email: string; password: string },
+    credentials: { email: string; password: string; rememberMe: boolean },
     visitorIp: VisitorIp,
   ): Promise<LogInResult> {
     const response = await callCmsApi({

@@ -128,7 +128,7 @@ count).
   verification key is chosen by the `kid` header (`JWT_ACCESS_KID`).
   The JWT guard compares `tv`/`pv` with the database (see `docs/modules/access-control.md`).
 - Refresh cookie `__Secure-abyss_rt`: `HttpOnly; Secure; SameSite=Strict;
-Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
+Path=/api/v1/auth`, 30 days, host-only (no `Domain`). The raw token is never
   stored, only its SHA-256. Every refresh rotates it within its family;
   presenting an already rotated token revokes the whole family and bumps
   `accounts.token_version`.
@@ -408,6 +408,12 @@ any other `*.constants.ts`:
 - Optional override: `SETUP_SUBMIT_RATE_LIMIT_IP` replaces the `setup-submit:ip`
   limit (5 per 15 minutes per IP). Same validation and production opt-in flag;
   the smoke script and the e2e suite submit more than 5 times from one IP.
+- Optional override: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` replaces the `2fa-email:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
+  e2e suite sends more than 5 email codes from one IP.
+- Optional override: `TWO_FACTOR_MANAGE_RATE_LIMIT_IP` replaces the `2fa-manage:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
+  2FA e2e spec sets up, enables and disables more than 5 times from one IP.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's

@@ -1,5 +1,5 @@
-import { apiClient } from '../../apis/client/Api.client';
-import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
+import { apiClient } from '@/apis/client/Api.client';
+import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 
 export interface HealthResponse {
   status: string;

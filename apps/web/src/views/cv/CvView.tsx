@@ -1,7 +1,8 @@
 'use client';
 
-import { COPY } from '../../configs/Copy.constants';
-import { mainResumeOf, type CvPageData } from '../../features/cv/Cv.graphql';
+import { COPY } from '@/configs/Copy.constants';
+import { mainResumeOf, type CvPageData } from '@/features/cv/Cv.graphql';
+
 import { ContactCard } from './ContactCard';
 import { MaskedTextContext, ResumeSections } from './ResumeSections';
 import { useCvContent } from './useCvContent';

@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-What a use case may log (`warn`, `error`) without depending on Nest. The module is global, so any provider can inject `APP_LOGGER`.
+What a use case may log (`info`, `warn`, `error`) without depending on Nest. The module is global, so any provider can inject `APP_LOGGER`.
 
 ## Techniques
 

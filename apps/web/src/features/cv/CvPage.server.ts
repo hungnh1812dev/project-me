@@ -2,10 +2,11 @@ import 'server-only';
 
 import { cache } from 'react';
 
-import { BffError } from '../../apis/server/bff/Bff.errors';
-import type { BffContext } from '../../apis/server/bff/BffRoute.server';
-import { fetchGraphql } from '../../apis/server/graphql/Graphql.server';
-import { sanitizeRichtextOnServer } from '../../libs/SafeRichtext.server';
+import { BffError } from '@/apis/server/bff/Bff.errors';
+import type { BffContext } from '@/apis/server/bff/BffRoute.server';
+import { fetchGraphql } from '@/apis/server/graphql/Graphql.server';
+import { sanitizeRichtextOnServer } from '@/libs/SafeRichtext.server';
+
 import { withSetCookies } from '../session/SealedCookie.server';
 import { readWebSession } from '../session/WebSession.server';
 import { CV_PAGE_DOCUMENT, sanitizeCvRichtext, type CvPageData } from './Cv.graphql';

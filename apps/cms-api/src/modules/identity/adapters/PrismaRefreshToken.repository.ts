@@ -63,6 +63,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
       replacedById: row.replacedById,
       revokedAt: row.revokedAt,
       expiresAt: row.expiresAt,
+      rememberMe: row.rememberMe,
       account: accountFactsOf(row.account),
     };
   }

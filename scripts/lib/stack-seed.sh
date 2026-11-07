@@ -9,7 +9,7 @@
 #       runs a command inside the running cms-api container (stdin passes through)
 #   pass <label> / fail <label>
 #       report one check
-# and sets (see stack_generate_credentials) the STACK_* credentials.
+# and sets (see stack_load_accounts) the STACK_* credentials.
 
 # cms-api package scripts run through npm inside the image (no pnpm there).
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
@@ -30,17 +30,58 @@ DB_CONTAINER_NAME_FORMAT='{{.Name}}'
 
 stack_random_secret() { openssl rand -hex "$STACK_SECRET_BYTES"; }
 
-# stack_generate_credentials <domain>: throwaway owner and e2e accounts for one run.
-stack_generate_credentials() {
-  local domain="$1"
-  STACK_OWNER_EMAIL="owner@$domain"
-  STACK_OWNER_PASSWORD="$(stack_random_secret)"
-  STACK_2FA_EMAIL="e2e-2fa@$domain"
-  STACK_2FA_PASSWORD="$(stack_random_secret)"
-  STACK_READER_EMAIL="e2e-reader@$domain"
-  STACK_READER_PASSWORD="$(stack_random_secret)"
-  STACK_READER_2FA_EMAIL="e2e-reader-2fa@$domain"
-  STACK_READER_2FA_PASSWORD="$(stack_random_secret)"
+# The one list of long-lived stack account logins kept in .localEnv.agent.
+STACK_ACCOUNT_KEYS=(STACK_OWNER_EMAIL STACK_OWNER_PASSWORD STACK_2FA_EMAIL STACK_2FA_PASSWORD
+  STACK_READER_EMAIL STACK_READER_PASSWORD STACK_READER_2FA_EMAIL STACK_READER_2FA_PASSWORD)
+LOCAL_ENV_FILE_MODE="600"
+LOCAL_ENV_IGNORE_NAME=".localEnv.agent"
+
+# stack_ensure_local_env_ignored <local env file>: exits unless the file is
+# git-ignored and listed in the .dockerignore next to it.
+stack_ensure_local_env_ignored() {
+  local dir name
+  dir="$(dirname "$1")"
+  name="$(basename "$1")"
+  git -C "$dir" check-ignore -q "$name" || { echo "$name is not git-ignored." >&2; exit 1; }
+  grep -qxF "$name" "$dir/.dockerignore" || { echo "$name is not in .dockerignore." >&2; exit 1; }
+}
+
+# stack_default_account_email <key> <domain>: the email a missing *_EMAIL key gets.
+stack_default_account_email() {
+  local localpart
+  case "$1" in
+    STACK_OWNER_EMAIL) localpart="owner" ;;
+    STACK_2FA_EMAIL) localpart="e2e-2fa" ;;
+    STACK_READER_EMAIL) localpart="e2e-reader" ;;
+    STACK_READER_2FA_EMAIL) localpart="e2e-reader-2fa" ;;
+  esac
+  echo "$localpart@$2"
+}
+
+# stack_load_accounts <domain> <local env file>: sets every STACK_ACCOUNT_KEYS
+# variable from the file (read by name, never sourced). A missing key is
+# generated and appended under one dated comment; an existing key is never
+# rewritten. Prints key names only, never a value.
+stack_load_accounts() {
+  local domain="$1" file="$2" key value added=()
+  stack_ensure_local_env_ignored "$file"
+  [[ -f "$file" ]] || (umask 077 && : >"$file")
+  chmod "$LOCAL_ENV_FILE_MODE" "$file"
+  for key in "${STACK_ACCOUNT_KEYS[@]}"; do
+    value="$(grep -m1 "^$key=" "$file" || true)"
+    value="${value#"$key="}"
+    if [[ -z "$value" ]]; then
+      if [[ "$key" == *_EMAIL ]]; then value="$(stack_default_account_email "$key" "$domain")"; else value="$(stack_random_secret)"; fi
+      if ((${#added[@]} == 0)); then
+        printf '\n# %s: stack account logins added by %s (kept and reused on every stack start)\n' \
+          "$(date +%F)" "$(basename "$0")" >>"$file"
+      fi
+      printf '%s=%s\n' "$key" "$value" >>"$file"
+      added+=("$key")
+    fi
+    printf -v "$key" '%s' "$value"
+  done
+  if ((${#added[@]} > 0)); then echo "Added ${added[*]} to $(basename "$file")"; fi
 }
 
 # stack_seed_account <password> <seed:account options...>: runs the CLI in

@@ -17,6 +17,9 @@
 #                          stack as the bootstrapped owner
 #   SMOKE_NO_BUILD=1       reuse the images from the last build (only when no
 #                          product code changed since, e.g. e2e-only edits)
+#
+# The account logins (STACK_*) come from .localEnv.agent, generated once and reused
+# (ADR 0020); every other secret is generated per run and the file is read for nothing else.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -82,7 +85,7 @@ export SMOKE_JWT_ACCESS_SECRET="$(stack_random_secret)"
 export SMOKE_OTP_PEPPER="$(stack_random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(stack_random_secret)"
 export SMOKE_WEB_SESSION_SECRET="$(stack_random_secret)"
-stack_generate_credentials "$SMOKE_DOMAIN"
+stack_load_accounts "$SMOKE_DOMAIN" "$ROOT_DIR/.localEnv.agent"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 # api_exec [docker exec options...] -- <command...>: runs in the cms-api service.
@@ -180,11 +183,14 @@ in_api() {
   while [[ "$1" != "--" ]]; do fragments+=("$1"); shift; done
   shift
   output="$(printf '%s\n' "$input" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "$@" 2>&1)" || ok=0
+  # Redact first so no failure message below can write the long-lived password to the log.
+  local has_password=0
+  if [[ "$output" == *"$STACK_OWNER_PASSWORD"* ]]; then has_password=1; output="${output//$STACK_OWNER_PASSWORD/***}"; fi
+  if [[ "$has_password" == 1 ]]; then fail "$label: output contains the password"; return; fi
   if [[ "$ok" != "$want_ok" ]]; then fail "$label: exit status mismatch: $output"; return; fi
   for fragment in "${fragments[@]}"; do
     if [[ "$output" != *"$fragment"* ]]; then fail "$label: missing '$fragment' in: $output"; return; fi
   done
-  if [[ "$output" == *"$STACK_OWNER_PASSWORD"* ]]; then fail "$label: output contains the password"; return; fi
   pass "$label"
 }
 

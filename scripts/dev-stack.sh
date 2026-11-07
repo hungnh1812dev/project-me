@@ -7,7 +7,9 @@
 #   pnpm dev:stack:stop   stop the apps and remove the containers and volumes
 #   pnpm e2e:spec tests/AdminAuth.e2e.spec.ts      (E2E_STACK=dev if a smoke stack is kept too)
 # Env comes only from .localEnv.agent (created with generated dev-only values when
-# missing; key names in apps/e2e/.env.example). Logs and pids: .dev-stack/.
+# missing; key names in apps/e2e/.env.example). The account logins (STACK_*) are
+# kept there too, generated once and reused on every start (ADR 0020).
+# Logs and pids: .dev-stack/.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -74,13 +76,8 @@ api_exec() {
   (cd "$API_DIR" && env ${vars[@]+"${vars[@]}"} "$@")
 }
 
-ensure_local_env_is_ignored() {
-  git -C "$ROOT_DIR" check-ignore -q .localEnv.agent || { echo ".localEnv.agent is not git-ignored." >&2; exit 1; }
-  grep -qxF .localEnv.agent "$ROOT_DIR/.dockerignore" || { echo ".localEnv.agent is not in .dockerignore." >&2; exit 1; }
-}
-
 create_local_env() {
-  ensure_local_env_is_ignored
+  stack_ensure_local_env_ignored "$LOCAL_ENV_FILE"
   (
     umask 077
     {
@@ -106,7 +103,7 @@ ensure_web_session_secret() {
 
 load_local_env() {
   [[ -f "$LOCAL_ENV_FILE" ]] || create_local_env
-  ensure_local_env_is_ignored
+  stack_ensure_local_env_ignored "$LOCAL_ENV_FILE"
   ensure_web_session_secret
   set -a
   # shellcheck source=/dev/null
@@ -135,7 +132,8 @@ export_api_env() {
   export ALLOW_LOGIN_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN"
   export LOGIN_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" LOGIN_RATE_LIMIT_EMAIL="$RATE_LIMIT_OVERRIDE"
   export REFRESH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" SETUP_STATUS_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
-  export SETUP_SUBMIT_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
+  export SETUP_SUBMIT_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" TWO_FACTOR_EMAIL_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
+  export TWO_FACTOR_MANAGE_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
   # Cloudflare's public always-pass test secret (same value as the smoke stack).
   TURNSTILE_SECRET_KEY="$(sed -n 's/^TURNSTILE_SECRET_KEY=//p' "$ROOT_DIR/scripts/stack/cms-api.env")"
   export TURNSTILE_SECRET_KEY
@@ -236,6 +234,7 @@ start_apps() {
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
   DEV_SERVER_PORT="$WEB_PORT_DEV" \
     API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
+    BFF_AUTH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ALLOW_BFF_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN" \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
@@ -261,7 +260,7 @@ start_stack() {
   mkdir -p "$STATE_DIR"
   trap 'code=$?; if ((code != 0)); then stop_stack; fi; exit $code' EXIT
   export_api_env
-  stack_generate_credentials "$DOMAIN"
+  stack_load_accounts "$DOMAIN" "$LOCAL_ENV_FILE"
   echo "Starting Postgres and Mailpit (project abyss-dev)..."
   compose up --detach --wait --wait-timeout "$READY_TIMEOUT_SECONDS"
   export DB_PASSWORD

@@ -1,4 +1,4 @@
-import { MS_PER_SECOND } from '../../../configs/Http.constants';
+import { MS_PER_SECOND } from '@/configs/Http.constants';
 
 export interface RateLimitDecision {
   isAllowed: boolean;

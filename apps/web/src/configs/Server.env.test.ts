@@ -4,7 +4,7 @@ import {
   DEFAULT_TRUST_PROXY_HOPS,
   parseServerEnv,
   SESSION_SECRET_MIN_BYTES,
-  TURNSTILE_TEST_SECRET_OPT_IN,
+  SMOKE_STACK_OPT_IN,
 } from './Server.env';
 
 const VALID = {
@@ -27,6 +27,7 @@ describe('parseServerEnv', () => {
       turnstileExpectedHostname: undefined,
       trustProxyHops: DEFAULT_TRUST_PROXY_HOPS,
       clientIpHeader: undefined,
+      bffRateLimitOverrides: {},
     });
   });
 
@@ -99,6 +100,59 @@ describe('parseServerEnv', () => {
     expect(() => parseServerEnv({ ...VALID, TRUST_PROXY_HOPS: value })).toThrow(/TRUST_PROXY_HOPS/);
   });
 
+  describe('BFF rate limit override', () => {
+    const PRODUCTION = { ...VALID, NODE_ENV: 'production', WEB_SESSION_SECRET: 'x'.repeat(40) };
+    const WITH_HOSTNAME = { ...PRODUCTION, ...PRODUCTION_HOSTNAME };
+
+    it.each([undefined, '', ' '])('has no override when the key is %j', (value) => {
+      expect(
+        parseServerEnv({ ...VALID, BFF_AUTH_RATE_LIMIT_IP: value }).bffRateLimitOverrides,
+      ).toEqual({});
+    });
+
+    it('reads a valid override outside production without the opt-in', () => {
+      expect(
+        parseServerEnv({ ...VALID, BFF_AUTH_RATE_LIMIT_IP: '10000' }).bffRateLimitOverrides,
+      ).toEqual({
+        auth: 10000,
+      });
+    });
+
+    it.each(['0', '-1', '1.5', 'abc'])('fails on BFF_AUTH_RATE_LIMIT_IP=%s', (value) => {
+      expect(() => parseServerEnv({ ...VALID, BFF_AUTH_RATE_LIMIT_IP: value })).toThrow(
+        /BFF_AUTH_RATE_LIMIT_IP/,
+      );
+    });
+
+    it('refuses the override in production without the opt-in, naming the key', () => {
+      expect(() => parseServerEnv({ ...WITH_HOSTNAME, BFF_AUTH_RATE_LIMIT_IP: '100' })).toThrow(
+        /BFF_AUTH_RATE_LIMIT_IP/,
+      );
+    });
+
+    it('allows the override in production with the smoke opt-in', () => {
+      const env = parseServerEnv({
+        ...WITH_HOSTNAME,
+        BFF_AUTH_RATE_LIMIT_IP: '100',
+        ALLOW_BFF_RATE_LIMIT_OVERRIDE: SMOKE_STACK_OPT_IN,
+      });
+      expect(env.bffRateLimitOverrides).toEqual({ auth: 100 });
+    });
+
+    it('starts in production with neither key', () => {
+      expect(parseServerEnv(WITH_HOSTNAME).bffRateLimitOverrides).toEqual({});
+    });
+
+    it.each(['true', '1', 'Smoke'])('refuses the opt-in value %s in any environment', (value) => {
+      expect(() => parseServerEnv({ ...VALID, ALLOW_BFF_RATE_LIMIT_OVERRIDE: value })).toThrow(
+        /ALLOW_BFF_RATE_LIMIT_OVERRIDE/,
+      );
+      expect(() =>
+        parseServerEnv({ ...WITH_HOSTNAME, ALLOW_BFF_RATE_LIMIT_OVERRIDE: value }),
+      ).toThrow(/ALLOW_BFF_RATE_LIMIT_OVERRIDE/);
+    });
+  });
+
   describe('Turnstile production guard', () => {
     const PRODUCTION = { ...VALID, NODE_ENV: 'production', WEB_SESSION_SECRET: 'x'.repeat(40) };
     const TEST_SECRET = { TURNSTILE_SECRET_KEY: TURNSTILE.ALWAYS_PASS_TEST_SECRET };
@@ -111,7 +165,7 @@ describe('parseServerEnv', () => {
       const env = parseServerEnv({
         ...PRODUCTION,
         ...TEST_SECRET,
-        ALLOW_TURNSTILE_TEST_SECRET: TURNSTILE_TEST_SECRET_OPT_IN,
+        ALLOW_TURNSTILE_TEST_SECRET: SMOKE_STACK_OPT_IN,
       });
       expect(env.turnstileExpectedHostname).toBeUndefined();
     });

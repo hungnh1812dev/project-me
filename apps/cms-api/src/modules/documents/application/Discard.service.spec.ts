@@ -95,7 +95,7 @@ function build(fakes: Fakes = {}) {
     transactions as never,
     documents as never,
     activity,
-    { warn: jest.fn(), error: jest.fn() },
+    { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
     { now: () => 0 },
   );
   const service = new DiscardService(

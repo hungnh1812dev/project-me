@@ -1,6 +1,7 @@
-import { COPY } from '../../configs/Copy.constants';
-import { isMaskedField, type CvContact } from '../../features/cv/Cv.graphql';
-import { isSafeLinkTarget } from '../../utils/SafeLinkTarget.rules';
+import { COPY } from '@/configs/Copy.constants';
+import { isMaskedField, type CvContact } from '@/features/cv/Cv.graphql';
+import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
+
 import { ExternalLink, MaskedPlaceholder } from './ResumeSections';
 
 const MAX_INITIALS = 2;
@@ -102,7 +103,7 @@ export function ContactCard({
           {rows.map(({ field, isMasked, value }) => (
             <div key={field} className="contents">
               <dt className="text-muted-foreground">{COPY.cv.contact[field]}</dt>
-              <dd className="min-w-0 break-words">
+              <dd className="min-w-0 wrap-break-word">
                 {isMasked ? <MaskedPlaceholder /> : <ContactValue field={field} value={value} />}
               </dd>
             </div>

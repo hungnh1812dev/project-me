@@ -7,7 +7,7 @@ import {
   HTTP_STATUS,
   RETRY_AFTER_HEADER,
   SET_COOKIE_HEADER,
-} from '../../../configs/Http.constants';
+} from '@/configs/Http.constants';
 
 /** Every refusal of the BFF (ADR 0018 section 3): one row per code. */
 export const BFF_ERROR_CODES = {

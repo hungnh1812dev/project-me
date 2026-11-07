@@ -1,6 +1,6 @@
 import { isAxiosError } from 'axios';
 
-import { HTTP_STATUS, RETRY_AFTER_HEADER, SECONDS_PER_MINUTE } from '../../configs/Http.constants';
+import { HTTP_STATUS, RETRY_AFTER_HEADER, SECONDS_PER_MINUTE } from '@/configs/Http.constants';
 
 export type AlertTone = 'error' | 'warning';
 

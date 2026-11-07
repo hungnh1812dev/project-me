@@ -5,15 +5,16 @@ import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import type { Alert, ApiFailure } from '../../apis/client/ApiFailure.errors';
+import type { Alert, ApiFailure } from '@/apis/client/ApiFailure.errors';
 import {
   BFF_ERROR_CODES,
   LOGIN_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
-} from '../../configs/Auth.constants';
-import { COPY } from '../../configs/Copy.constants';
-import { TURNSTILE } from '../../configs/Security.constants';
+} from '@/configs/Auth.constants';
+import { COPY } from '@/configs/Copy.constants';
+import { TURNSTILE } from '@/configs/Security.constants';
+
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
 import { useEmailCode } from './useEmailCode';

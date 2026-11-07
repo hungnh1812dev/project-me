@@ -1,4 +1,4 @@
-import '../assets/styles/global.css';
+import '@/styles/global.css';
 
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
@@ -6,11 +6,11 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { connection } from 'next/server';
 
-import { AccountMenu } from '../components/layouts/AccountMenu';
-import { Providers } from '../components/layouts/AppProviders';
-import { CspNonce } from '../components/layouts/CspNonce';
-import { COPY } from '../configs/Copy.constants';
-import { NONCE_HEADER } from '../configs/Security.constants';
+import { AccountMenu } from '@/components/layouts/AccountMenu';
+import { Providers } from '@/components/layouts/AppProviders';
+import { CspNonce } from '@/components/layouts/CspNonce';
+import { COPY } from '@/configs/Copy.constants';
+import { NONCE_HEADER } from '@/configs/Security.constants';
 
 export const metadata: Metadata = { title: COPY.app.name };
 

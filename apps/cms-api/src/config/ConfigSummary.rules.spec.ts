@@ -63,6 +63,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   REFRESH_RATE_LIMIT_IP: '3106',
   SETUP_STATUS_RATE_LIMIT_IP: '3107',
   SETUP_SUBMIT_RATE_LIMIT_IP: '3108',
+  TWO_FACTOR_EMAIL_RATE_LIMIT_IP: '3109',
+  TWO_FACTOR_MANAGE_RATE_LIMIT_IP: '3110',
 };
 
 /** Boolean keys have only two valid values, so they cannot be unique. */

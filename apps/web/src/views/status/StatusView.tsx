@@ -2,8 +2,9 @@
 
 import { Button } from '@abyss/form-commons';
 
-import { BFF_BASE_PATH, BFF_ENDPOINTS } from '../../configs/Api.endpoints';
-import { COPY } from '../../configs/Copy.constants';
+import { BFF_BASE_PATH, BFF_ENDPOINTS } from '@/configs/Api.endpoints';
+import { COPY } from '@/configs/Copy.constants';
+
 import { useLiveHealth, type LiveHealthState } from './useLiveHealth';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {

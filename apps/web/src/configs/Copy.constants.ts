@@ -23,6 +23,8 @@ export const COPY = {
     description: 'Use the email and password of your Abyss account.',
     emailLabel: 'Email',
     passwordLabel: 'Password',
+    rememberMeLabel: 'Keep me signed in',
+    rememberMeHint: 'Use this only on a device you trust.',
     submit: 'Sign in',
     cancel: 'Cancel',
     humanCheck: {

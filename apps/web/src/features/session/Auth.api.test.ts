@@ -1,7 +1,8 @@
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 
-import { apiClient, createApiClient } from '../../apis/client/Api.client';
-import { BFF_BASE_PATH } from '../../configs/Api.endpoints';
+import { apiClient, createApiClient } from '@/apis/client/Api.client';
+import { BFF_BASE_PATH } from '@/configs/Api.endpoints';
+
 import { createAuthApi, PrivilegedAccessError } from './Auth.api';
 import { httpError, TEST_USER } from './Session.fixture';
 
@@ -29,9 +30,14 @@ describe('createAuthApi', () => {
     await expect(api.readSession()).resolves.toBeNull();
   });
 
-  it('maps a finished login to the visitor and posts the human check token', async () => {
+  it('maps a finished login to the visitor and posts the human check token and rememberMe', async () => {
     const { api, seen } = clientAnswering(() => ({ status: 'signed-in', user: TEST_USER }));
-    const credentials = { email: 'a@b.co', password: 'pw', humanCheckToken: 'hc' };
+    const credentials = {
+      email: 'a@b.co',
+      password: 'pw',
+      rememberMe: true,
+      humanCheckToken: 'hc',
+    };
     await expect(api.login(credentials)).resolves.toEqual({ kind: 'signed-in', user: TEST_USER });
     expect(seen[0]?.url).toBe('/auth/login');
     expect(JSON.parse(seen[0]?.data as string)).toEqual(credentials);
@@ -39,7 +45,9 @@ describe('createAuthApi', () => {
 
   it('maps a 2FA login to its methods only', async () => {
     const { api } = clientAnswering(() => ({ status: 'two-factor-required', methods: ['email'] }));
-    await expect(api.login({ email: 'a@b.co', password: 'pw' })).resolves.toEqual({
+    await expect(
+      api.login({ email: 'a@b.co', password: 'pw', rememberMe: false }),
+    ).resolves.toEqual({
       kind: 'two-factor-required',
       methods: ['email'],
     });
@@ -75,7 +83,7 @@ describe('createAuthApi', () => {
       );
       const call =
         method === 'login'
-          ? api.login({ email: 'a@b.co', password: 'pw' })
+          ? api.login({ email: 'a@b.co', password: 'pw', rememberMe: false })
           : api.verifyTwoFactor({ code: '123456' });
       await expect(call).rejects.toBeInstanceOf(PrivilegedAccessError);
     },
@@ -84,7 +92,9 @@ describe('createAuthApi', () => {
   it('lets any other failure through unchanged', async () => {
     const failure = httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' });
     const { api } = clientAnswering(() => failure);
-    await expect(api.login({ email: 'a@b.co', password: 'pw' })).rejects.toBe(failure);
+    await expect(api.login({ email: 'a@b.co', password: 'pw', rememberMe: false })).rejects.toBe(
+      failure,
+    );
   });
 });
 

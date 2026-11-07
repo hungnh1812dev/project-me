@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { TURNSTILE } from '../../../configs/Security.constants';
+
+import { TURNSTILE } from '@/configs/Security.constants';
+
 import { verifyHumanCheck } from './Turnstile.client';
 
 const env = vi.hoisted(() => ({

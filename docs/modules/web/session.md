@@ -46,11 +46,11 @@ Tests: 5 files (not listed).
 | File | Description |
 |---|---|
 | `Auth.api.ts` | Session read, login, 2FA verify, email code and logout calls to the BFF with their types (exports `LoginCredentials`, `CurrentUser`, `TwoFactorChallenge`, `TwoFactorVerification` +5) |
-| `SealedCookie.server.ts` | AES-256-GCM sealing of the two `__Host-` cookies, their one writer and clearer, and the request readers (exports `SealedWebSession`, `SealedTwoFactorChallenge`, `sealCookieValue`, `openCookieValue` +6) |
+| `SealedCookie.server.ts` | AES-256-GCM sealing of the two `__Host-` cookies, their one writer and clearer, and the request readers; the session cookie carries `Max-Age` (30 days) only when its sealed `rememberMe` is true (exports `SealedWebSession`, `SealedTwoFactorChallenge`, `sealCookieValue`, `openCookieValue` +6) |
 | `Session.fixture.tsx` | Test user and a fake auth API for tests (exports `TEST_USER`, `FakeApi`, `fakeApi` +2) |
-| `SignIn.server.ts` | The sign-in, 2FA, email-code and sign-out handlers of the BFF routes with their body schemas; seals the session and refuses privileged accounts (exports `loginBodySchema`, `emailCodeBodySchema`, `verifyBodySchema`, `logInVisitor` +3) |
+| `SignIn.server.ts` | The sign-in, 2FA, email-code and sign-out handlers of the BFF routes with their body schemas; seals the session and refuses privileged accounts; `rememberMe` comes from the login body and travels in the sealed 2FA state, never the verify body (exports `loginBodySchema`, `emailCodeBodySchema`, `verifyBodySchema`, `logInVisitor` +3) |
 | `WebSession.context.tsx` | The session context and its provider (exports `SessionStatus`, `WebSession`, `WebSessionProvider` +1) |
-| `WebSession.server.ts` | Server session read: refresh 30 s before expiry shared per refresh token, current account, privileged-account refusal (exports `WebSessionRead`, `accessExpiryOf`, `isPrivilegedAccount`, `readWebSession` +2); also `publicUserOf` and the `GET /api/v1/session` handler |
+| `WebSession.server.ts` | Server session read: refresh 30 s before expiry shared per refresh token, current account, privileged-account refusal; a refresh copies `rememberMe` into the rewritten session (exports `WebSessionRead`, `accessExpiryOf`, `isPrivilegedAccount`, `readWebSession` +2); also `publicUserOf` and the `GET /api/v1/session` handler |
 | `index.ts` | Public facade of the feature (exports `PrivilegedAccessError`, `CurrentUser`, `LoginCredentials`, `LoginOutcome` +5) |
 
 <!-- prettier-ignore-end -->

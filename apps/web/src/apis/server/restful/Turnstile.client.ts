@@ -2,13 +2,10 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import {
-  API_TIMEOUT_MS,
-  CONTENT_TYPE_HEADER,
-  JSON_MEDIA_TYPE,
-} from '../../../configs/Http.constants';
-import { TURNSTILE, type TurnstileAction } from '../../../configs/Security.constants';
-import { getServerEnv } from '../../../configs/Server.env';
+import { API_TIMEOUT_MS, CONTENT_TYPE_HEADER, JSON_MEDIA_TYPE } from '@/configs/Http.constants';
+import { TURNSTILE, type TurnstileAction } from '@/configs/Security.constants';
+import { getServerEnv } from '@/configs/Server.env';
+
 import { BffError } from '../bff/Bff.errors';
 
 const siteverifyAnswer = z.object({

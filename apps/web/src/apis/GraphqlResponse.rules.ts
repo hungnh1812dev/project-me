@@ -1,4 +1,4 @@
-import { HTTP_STATUS } from '../configs/Http.constants';
+import { HTTP_STATUS } from '@/configs/Http.constants';
 
 /** One GraphQL operation: its text and the name sent with it. */
 export interface GraphqlDocument {

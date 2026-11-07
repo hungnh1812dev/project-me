@@ -164,13 +164,16 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
     });
   }
 
-  async function login(email: string, password = PASSWORD) {
-    return http().post(LOGIN).set('X-Forwarded-For', nextIp()).send({ email, password });
+  async function login(email: string, password = PASSWORD, rememberMe?: boolean) {
+    return http()
+      .post(LOGIN)
+      .set('X-Forwarded-For', nextIp())
+      .send({ email, password, rememberMe });
   }
 
-  async function signedIn(roleSlug: string): Promise<Signed> {
+  async function signedIn(roleSlug: string, rememberMe?: boolean): Promise<Signed> {
     const account = await createAccount(roleSlug);
-    const res = await login(account.email);
+    const res = await login(account.email, PASSWORD, rememberMe);
     expect(res.status).toBe(200);
     const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
     const refreshCookie = cookies
@@ -531,23 +534,26 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       expect(errorCodeOf(again)).toBe(MANAGEMENT_ERROR_CODES.ACCOUNT_ALREADY_DISABLED);
     });
 
-    it('revoke sessions: 204, the target is signed out everywhere, audited', async () => {
-      const target = await signedIn('editor');
-      const res = await http()
-        .post(`${ACCOUNTS}/${target.documentId}/sessions/revoke`)
-        .set(bearer(admin.token));
-      expect(res.status).toBe(204);
-      expect((await http().get(ME).set(bearer(target.token))).status).toBe(401);
-      const refresh = await http()
-        .post(REFRESH)
-        .set('Origin', TEST_ADMIN_ORIGIN)
-        .set('Cookie', target.refreshCookie);
-      expect(refresh.status).toBe(401);
-      expect((await login(target.email)).status).toBe(200);
-      expect(
-        await auditRows(AUDIT_ACTIONS.ACCOUNT_SESSIONS_REVOKED, target.documentId),
-      ).toHaveLength(1);
-    });
+    it.each([true, false])(
+      'revoke sessions: 204, the target is signed out everywhere, audited (rememberMe %s)',
+      async (rememberMe) => {
+        const target = await signedIn('editor', rememberMe);
+        const res = await http()
+          .post(`${ACCOUNTS}/${target.documentId}/sessions/revoke`)
+          .set(bearer(admin.token));
+        expect(res.status).toBe(204);
+        expect((await http().get(ME).set(bearer(target.token))).status).toBe(401);
+        const refresh = await http()
+          .post(REFRESH)
+          .set('Origin', TEST_ADMIN_ORIGIN)
+          .set('Cookie', target.refreshCookie);
+        expect(refresh.status).toBe(401);
+        expect((await login(target.email)).status).toBe(200);
+        expect(
+          await auditRows(AUDIT_ACTIONS.ACCOUNT_SESSIONS_REVOKED, target.documentId),
+        ).toHaveLength(1);
+      },
+    );
   });
 
   describe('enable and resend invite (T17a)', () => {
@@ -962,7 +968,7 @@ describe('accounts & roles API + security audit (T17, §12-7, §12-18; Postgres 
       const [ok] = await auditRows(AUDIT_ACTIONS.AUTH_LOGIN_SUCCEEDED, account.documentId);
       expect(ok).toMatchObject({
         actorId: account.id,
-        metadata: { twoFactorMethod: null },
+        metadata: { twoFactorMethod: null, rememberMe: false },
       });
     });
 

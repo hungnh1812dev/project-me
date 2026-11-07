@@ -43,3 +43,5 @@ apps/cms-admin/stats.html
 
 # session-gate hook state
 .agent-state/.session-gate.json
+# break-check snapshots of the feature folder at each session end
+.agent-state/.breaks/

@@ -11,7 +11,8 @@ import {
   type ReactNode,
 } from 'react';
 
-import { apiClient } from '../../apis/client/Api.client';
+import { apiClient } from '@/apis/client/Api.client';
+
 import {
   createAuthApi,
   type AuthApi,

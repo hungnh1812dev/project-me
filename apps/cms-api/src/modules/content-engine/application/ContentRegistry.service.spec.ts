@@ -32,7 +32,7 @@ const loaded: StoredContentTypes = {
 function build(outcomes: (StoredContentTypes | Error)[]) {
   const repository = new FakeContentTypeRepository(outcomes);
   const warn = jest.fn();
-  const logger: AppLogger = { warn, error: jest.fn() };
+  const logger: AppLogger = { info: jest.fn(), warn, error: jest.fn() };
   return {
     repository,
     warn,

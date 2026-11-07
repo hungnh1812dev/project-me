@@ -11,11 +11,10 @@ import {
 } from '../../../infrastructure/database/TransactionRunner.port';
 import { VersionCache } from '../../access';
 import { AUDIT_ACTIONS, SecurityAuditService, selfActor } from '../../security-audit';
-import { isRefreshInGrace } from '../domain/Authentication.rules';
+import { isRefreshInGrace, refreshTokenTtlMsOf } from '../domain/Authentication.rules';
 import {
   REFRESH_TOKEN_BYTES,
   REFRESH_TOKEN_HASH_ALGORITHM,
-  REFRESH_TOKEN_TTL_MS,
   USER_AGENT_MAX_LENGTH,
 } from '../domain/Identity.constants';
 import {
@@ -35,6 +34,7 @@ export type RotationResult =
   | {
       readonly kind: 'rotated';
       readonly token: string;
+      readonly rememberMe: boolean;
       readonly account: RotatedAccount;
     }
   /**
@@ -84,8 +84,13 @@ export class RefreshTokenService {
    * Starts a new family for a fresh login. Returns the raw token. Pass `unit`
    * to issue it inside the caller's transaction (with its audit row).
    */
-  async issue(accountId: number, meta: ClientMeta, unit?: UnitOfWork): Promise<string> {
-    const { token } = await this.create(accountId, randomUUID(), meta, unit);
+  async issue(
+    accountId: number,
+    rememberMe: boolean,
+    meta: ClientMeta,
+    unit?: UnitOfWork,
+  ): Promise<string> {
+    const { token } = await this.create(accountId, randomUUID(), rememberMe, meta, unit);
     return token;
   }
 
@@ -114,7 +119,13 @@ export class RefreshTokenService {
         return { kind: 'invalid' };
       }
 
-      const next = await this.create(current.accountId, current.familyId, meta, unit);
+      const next = await this.create(
+        current.accountId,
+        current.familyId,
+        current.rememberMe,
+        meta,
+        unit,
+      );
       const claimed = await this.tokens.claimRotation(unit, current.id, next.id, now);
       if (!claimed) {
         // A concurrent rotation won: drop the unused new token, then judge
@@ -126,6 +137,7 @@ export class RefreshTokenService {
       return {
         kind: 'rotated',
         token: next.token,
+        rememberMe: current.rememberMe,
         account: rotatedAccountOf(account),
       };
     });
@@ -195,6 +207,7 @@ export class RefreshTokenService {
   private async create(
     accountId: number,
     familyId: string,
+    rememberMe: boolean,
     meta: ClientMeta,
     unit?: UnitOfWork,
   ): Promise<{ id: number; token: string }> {
@@ -206,7 +219,8 @@ export class RefreshTokenService {
         tokenHash: hashRefreshToken(token),
         userAgent: meta.userAgent?.slice(0, USER_AGENT_MAX_LENGTH) ?? null,
         ip: meta.ip ?? null,
-        expiresAt: new Date(this.clock.now() + REFRESH_TOKEN_TTL_MS),
+        expiresAt: new Date(this.clock.now() + refreshTokenTtlMsOf(rememberMe)),
+        rememberMe,
       },
       unit,
     );

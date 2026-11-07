@@ -154,6 +154,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
+      limitOverrideEnvKey: 'TWO_FACTOR_EMAIL_RATE_LIMIT_IP',
     },
   ],
   /**
@@ -166,6 +167,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
+      limitOverrideEnvKey: 'TWO_FACTOR_MANAGE_RATE_LIMIT_IP',
     },
   ],
   /**

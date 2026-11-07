@@ -1,8 +1,8 @@
 import type { AxiosInstance } from 'axios';
 
-import { apiFailureOf } from '../../apis/client/ApiFailure.errors';
-import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
-import { BFF_ERROR_CODES } from '../../configs/Auth.constants';
+import { apiFailureOf } from '@/apis/client/ApiFailure.errors';
+import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
+import { BFF_ERROR_CODES } from '@/configs/Auth.constants';
 
 /** The signed-in account as the BFF returns it: no token, no permission list. */
 export interface CurrentUser {
@@ -20,6 +20,7 @@ export interface HumanCheckInput {
 export interface LoginCredentials extends HumanCheckInput {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 /** A password-checked login waiting for its second step; the BFF keeps the temp token. */
