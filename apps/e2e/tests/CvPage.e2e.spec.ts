@@ -40,7 +40,7 @@ test.beforeAll(async ({ request }) => {
     data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
   });
   ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
-  const created = await request.post(apiUrl(API_PATHS.documents('resume')), {
+  const created = await request.post(apiUrl(API_PATHS.documents('cv-page')), {
     headers: ownerHeaders(),
     data: {
       values: {
@@ -51,7 +51,7 @@ test.beforeAll(async ({ request }) => {
       },
       components: {
         experiences: [{ values: { company: SECRET_COMPANY, period: '2020' } }],
-        referees: [{ values: { name: 'E2E Referee', phone: SECRET_PHONE } }],
+        references: [{ values: { name: 'E2E Referee', phone: SECRET_PHONE } }],
       },
     },
   });
@@ -60,14 +60,14 @@ test.beforeAll(async ({ request }) => {
     version: number;
   };
   resumeId = draft.documentId;
-  await request.post(apiUrl(API_PATHS.document('resume', resumeId) + '/publish'), {
+  await request.post(apiUrl(API_PATHS.document('cv-page', resumeId) + '/publish'), {
     headers: ownerHeaders(),
     data: { expectedVersion: draft.version },
   });
 });
 
 test.afterAll(async ({ request }) => {
-  const removed = await request.delete(apiUrl(API_PATHS.document('resume', resumeId)), {
+  const removed = await request.delete(apiUrl(API_PATHS.document('cv-page', resumeId)), {
     headers: ownerHeaders(),
   });
   expect(removed.status()).toBe(HTTP.NO_CONTENT);
@@ -146,6 +146,28 @@ test('a reader session refetches the CV once through the BFF and sign-out return
   await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
   expect(cvCalls).toHaveLength(1);
   expect(apiCalls).toEqual([]);
+});
+
+test('a failed signed-in refetch keeps the anonymous CV visible with an alert and the shell intact', async ({
+  page,
+}) => {
+  await page.route(`**${BFF_PATHS.CV}`, (route) =>
+    route.fulfill({ status: HTTP.BAD_GATEWAY, body: '' }),
+  );
+  await page.goto(cvUrl);
+  await headerSignIn(page).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox', { name: WEB_COPY.login.emailLabel }).fill(e2eEnv.readerEmail);
+  await dialog.getByLabel(WEB_COPY.login.passwordLabel).fill(e2eEnv.readerPassword);
+  await expect(dialog.locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
+  await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
+
+  await expect(page.getByRole('button', { name: WEB_COPY.session.signOut })).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: WEB_COPY.cv.refetchFailed }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
+  await expect(page.getByText(RESUME_POSITION)).toBeVisible();
 });
 
 test('the home page shows the status view and /status is gone', async ({ page, request }) => {

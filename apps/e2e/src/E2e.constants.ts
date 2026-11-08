@@ -58,6 +58,7 @@ export const HTTP = {
   CONFLICT: 409,
   UNSUPPORTED_MEDIA_TYPE: 415,
   SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
 } as const;
 
 /** Distinguishes this run's data from earlier runs against the same stack. */
