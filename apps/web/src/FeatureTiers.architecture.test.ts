@@ -104,6 +104,15 @@ describe('mock view', () => {
   });
 });
 
+describe('user-facing text comes from the content API', () => {
+  it('no source file imports a module named Copy.constants', () => {
+    const importers = sourceFilesIn(SRC_DIR)
+      .filter((file) => /from\s+'[^']*\/Copy\.constants'/.test(readFileSync(file, 'utf8')))
+      .map((file) => file.replace(SRC_DIR, ''));
+    expect(importers).toEqual([]);
+  });
+});
+
 // Comments describe the code, not the backlog: task and question IDs rot once
 // the backlog is archived. SPEC IDs (`D9`, `§9`) stay and are not matched.
 const BACKLOG_ID = /\b(T\d{1,3}[a-z]?|OS\d+|Q-?[A-Z]*\d+)\b/;
