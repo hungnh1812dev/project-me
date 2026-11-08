@@ -9,6 +9,7 @@ import { connection } from 'next/server';
 import { AccountMenu } from '@/components/layouts/AccountMenu';
 import { Providers } from '@/components/layouts/AppProviders';
 import { CspNonce } from '@/components/layouts/CspNonce';
+import { SiteNav } from '@/components/layouts/SiteNav';
 import { NONCE_HEADER } from '@/configs/Security.constants';
 import { LAST_RESORT_TEXT, SiteTextProvider } from '@/features/site-shell';
 import { loadSiteShell } from '@/features/site-shell/SiteShell.server';
@@ -36,12 +37,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                     {header.name ?? LAST_RESORT_TEXT.appName}
                   </Link>
                   <nav aria-label={siteText.navLabel} className="flex items-center gap-4">
-                    <Link
-                      href="/cv"
-                      className="text-muted-foreground hover:text-foreground text-sm font-medium"
-                    >
-                      {siteText.navCvLink}
-                    </Link>
+                    <SiteNav />
                     <AccountMenu />
                   </nav>
                 </div>

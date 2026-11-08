@@ -22,6 +22,7 @@ import {
   type LoginOutcome,
   type TwoFactorVerification,
 } from './Auth.api';
+import { isVisibleTo } from './RoleDisplay.rules';
 
 /** `unknown` until the session read on mount settles. */
 export type SessionStatus = 'unknown' | 'anonymous' | 'authenticated';
@@ -113,4 +114,10 @@ export function useWebSession(): WebSession {
     throw new Error('useWebSession must be used inside <WebSessionProvider>.');
   }
   return session;
+}
+
+/** Display only (D3): whether the viewer may see something that declares `requiresRole`. */
+export function useCanSee(requiresRole: string | null | undefined): boolean {
+  const { status, user } = useWebSession();
+  return isVisibleTo(requiresRole, { status, user });
 }

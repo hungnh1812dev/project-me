@@ -72,10 +72,11 @@ describe('directory dependencies', () => {
 });
 
 describe('session facade', () => {
-  it('exposes only the provider, the hook and the privileged error at runtime', () => {
+  it('exposes only the provider, the hooks and the privileged error at runtime', () => {
     expect(Object.keys(sessionFacade).sort()).toEqual([
       'PrivilegedAccessError',
       'WebSessionProvider',
+      'useCanSee',
       'useWebSession',
     ]);
   });
