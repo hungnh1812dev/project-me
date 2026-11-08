@@ -232,8 +232,9 @@ start_apps() {
   VITE_API_BASE_URL="$API_BASE_URL" DEV_SERVER_PORT="$ADMIN_PORT" \
     DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
+  # web reads APP_API_URL and WEB_REVALIDATE_SECONDS=0 (no data cache); mock text stays on in dev, so no ALLOW_MOCK_FALLBACK.
   DEV_SERVER_PORT="$WEB_PORT_DEV" \
-    API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
+    APP_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
     BFF_AUTH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ALLOW_BFF_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN" \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
@@ -278,6 +279,7 @@ print_demo_summary() {
   echo "  Web:     $WEB_ORIGIN"
   echo "  Admin:   $ADMIN_ORIGIN"
   echo "  Mailpit: $MAILPIT_URL"
+  echo "Web reads cms-api through APP_API_URL with WEB_REVALIDATE_SECONDS=0; mock page text is on."
   echo "Reviewer access is on: open the web and choose Reviewer access (needs internet for the Turnstile widget)."
   echo "Stop with: pnpm dev:stack:stop"
 }
