@@ -8,7 +8,7 @@ import {
   REMOVED_BFF_PATHS,
 } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
-import { HTTP } from '../src/E2e.constants';
+import { CV_PAGE_SLUG, HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 
 /**
@@ -40,7 +40,7 @@ test.beforeAll(async ({ request }) => {
     data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
   });
   ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
-  const created = await request.post(apiUrl(API_PATHS.documents('cv-page')), {
+  const created = await request.post(apiUrl(API_PATHS.documents(CV_PAGE_SLUG)), {
     headers: ownerHeaders(),
     data: {
       values: {
@@ -60,14 +60,14 @@ test.beforeAll(async ({ request }) => {
     version: number;
   };
   resumeId = draft.documentId;
-  await request.post(apiUrl(API_PATHS.document('cv-page', resumeId) + '/publish'), {
+  await request.post(apiUrl(API_PATHS.document(CV_PAGE_SLUG, resumeId) + '/publish'), {
     headers: ownerHeaders(),
     data: { expectedVersion: draft.version },
   });
 });
 
 test.afterAll(async ({ request }) => {
-  const removed = await request.delete(apiUrl(API_PATHS.document('cv-page', resumeId)), {
+  const removed = await request.delete(apiUrl(API_PATHS.document(CV_PAGE_SLUG, resumeId)), {
     headers: ownerHeaders(),
   });
   expect(removed.status()).toBe(HTTP.NO_CONTENT);
