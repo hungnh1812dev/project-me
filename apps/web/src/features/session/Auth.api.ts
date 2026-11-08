@@ -1,5 +1,4 @@
-import type { AxiosInstance } from 'axios';
-
+import type { ClientApi } from '@/apis/client/Api.client';
 import { apiFailureOf } from '@/apis/client/ApiFailure.errors';
 import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { BFF_ERROR_CODES } from '@/configs/Auth.constants';
@@ -66,7 +65,7 @@ async function rethrowPrivilegedRefusal<T>(call: Promise<T>): Promise<T> {
  * token or refresh cookie is readable here: the BFF keeps them in a sealed
  * HttpOnly cookie and sets it on its own responses.
  */
-export function createAuthApi(client: AxiosInstance) {
+export function createAuthApi(client: ClientApi) {
   return {
     /** The signed-in visitor, or null. */
     async readSession(): Promise<CurrentUser | null> {

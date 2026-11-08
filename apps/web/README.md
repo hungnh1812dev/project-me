@@ -97,9 +97,10 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   and tests). Its allowlist mirrors the cms-api storage sanitizer (D13): palette colour on `span`, alignment on `p`/`h1`-`h6`, and `img` only from `CLOUDINARY_IMAGE_ORIGIN` with a UUID `data-media-id`; the palette and alignments are pinned in `PublicConstants.contract.test.ts`. On the
   server use `SafeRichtext.server.ts` (`sanitizeRichtextOnServer`, DOMPurify over
   jsdom), a separate file so jsdom never reaches a client chunk.
-- `src/apis/client/Api.client.ts` is the browser Axios instance. It strips trailing
-  slashes from every request path (SPEC §6), so no proxy can answer with a
-  redirect.
+- `src/apis/client/Api.client.ts` exports `clientApi` (`get`, `post`, `put`, `patch`,
+  `delete`), the browser's only API: base fixed to the BFF path, paths from
+  `BFF_ENDPOINTS`, no token, no mock. It strips trailing slashes from every
+  request path (SPEC §6), so no proxy can answer with a redirect.
 
 Styling: Tailwind v4 through `@tailwindcss/postcss` with the form-commons theme
 (`src/assets/styles/global.css`, the only stylesheet `src/app/layout.tsx` imports; it pulls in `base.css` and `app.css`). Components use semantic

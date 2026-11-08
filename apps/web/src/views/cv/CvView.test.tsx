@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { AxiosResponse } from 'axios';
 
-import { apiClient } from '@/apis/client/Api.client';
+import { clientApi } from '@/apis/client/Api.client';
 import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { COPY } from '@/configs/Copy.constants';
 import { type CvPageData } from '@/features/cv/Cv.graphql';
@@ -52,7 +53,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('CvView', () => {
   it('shows the server data to an anonymous visitor without a request', async () => {
-    const get = vi.spyOn(apiClient, 'get');
+    const get = vi.spyOn(clientApi, 'get');
     render(
       <Wrapper api={fakeApi()}>
         <CvView initialData={SERVER_DATA} />
@@ -76,7 +77,9 @@ describe('CvView', () => {
   });
 
   it('refetches through the BFF once signed in', async () => {
-    const get = vi.spyOn(apiClient, 'get').mockResolvedValue({ status: 200, data: OWNER_DATA });
+    const get = vi
+      .spyOn(clientApi, 'get')
+      .mockResolvedValue({ status: 200, data: OWNER_DATA } as AxiosResponse);
     render(
       <Wrapper api={signedInApi()}>
         <CvView initialData={SERVER_DATA} />
@@ -90,7 +93,7 @@ describe('CvView', () => {
   });
 
   it('shows an error, not the public data, when the refetch fails', async () => {
-    vi.spyOn(apiClient, 'get').mockRejectedValue(new Error('401'));
+    vi.spyOn(clientApi, 'get').mockRejectedValue(new Error('401'));
     render(
       <Wrapper api={signedInApi()}>
         <CvView initialData={SERVER_DATA} />
@@ -101,7 +104,10 @@ describe('CvView', () => {
   });
 
   it('falls back to the server data after sign-out', async () => {
-    vi.spyOn(apiClient, 'get').mockResolvedValue({ status: 200, data: OWNER_DATA });
+    vi.spyOn(clientApi, 'get').mockResolvedValue({
+      status: 200,
+      data: OWNER_DATA,
+    } as AxiosResponse);
     render(
       <Wrapper api={signedInApi()}>
         <SignOutButton />

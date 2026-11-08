@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { apiClient } from '@/apis/client/Api.client';
+import { clientApi } from '@/apis/client/Api.client';
 
 import {
   createAuthApi,
@@ -42,7 +42,7 @@ interface SessionState {
 
 const WebSessionContext = createContext<WebSession | null>(null);
 
-const defaultAuthApi = createAuthApi(apiClient);
+const defaultAuthApi = createAuthApi(clientApi);
 
 const ANONYMOUS_STATE: SessionState = { status: 'anonymous', user: null };
 
