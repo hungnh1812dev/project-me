@@ -261,6 +261,7 @@ describe('sign-in dialog', () => {
     await user.type(screen.getByLabelText(new RegExp(login.emailLabel)), 'x@y.co');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: author.btnLoginText })).toHaveFocus();
     await user.click(screen.getByRole('button', { name: author.btnLoginText }));
     expect(screen.getByLabelText(new RegExp(login.emailLabel))).toHaveValue('');
   });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@abyss/form-commons';
 
 import { appEnv } from '../../configs/Browser.env';
@@ -14,6 +14,7 @@ export function AccountMenu() {
   const { status, user, signOut } = useWebSession();
   const text = useRequiredSiteText();
   const author = useSiteHeader()?.author;
+  const signInButtonRef = useRef<HTMLButtonElement>(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -26,10 +27,19 @@ export function AccountMenu() {
   if (status === 'anonymous' || user === null) {
     return (
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="secondary" onClick={() => setLoginOpen(true)}>
+        <Button
+          ref={signInButtonRef}
+          size="sm"
+          variant="secondary"
+          onClick={() => setLoginOpen(true)}
+        >
           {author?.btnLoginText ?? LAST_RESORT_TEXT.signIn}
         </Button>
-        <WebLoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+        <WebLoginDialog
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+          returnFocusRef={signInButtonRef}
+        />
       </div>
     );
   }

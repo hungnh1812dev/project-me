@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type RefObject } from 'react';
 import {
   Button,
   CheckboxInput,
@@ -40,14 +40,23 @@ interface LoginValues {
 export function WebLoginDialog({
   open,
   onOpenChange,
+  returnFocusRef,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Element that gets focus on close; the opener may have re-rendered since the dialog opened. */
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const siteKey = appEnv.turnstileSiteKey;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent
+        onCloseAutoFocus={(event) => {
+          if (returnFocusRef?.current == null) return;
+          event.preventDefault();
+          returnFocusRef.current.focus();
+        }}
+      >
         {siteKey === undefined ? (
           <HumanCheckUnavailable />
         ) : (

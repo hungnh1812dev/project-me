@@ -100,7 +100,7 @@ describe('CvPage mock and query', () => {
   });
 
   it('masks the phone of a reference and the company so the masked rendering shows', () => {
-    const [{ _maskedFields: maskedFields }] = CV_PAGE_MOCK.cvPageList.data as [
+    const [{ _maskedFields: maskedFields }] = CV_PAGE_MOCK.cvPageList.data as unknown as [
       { _maskedFields: string[] },
     ];
     expect(maskedFields).toEqual(
