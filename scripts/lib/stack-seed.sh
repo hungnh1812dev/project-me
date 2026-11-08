@@ -155,6 +155,7 @@ stack_export_e2e_env() {
 STACK_TOKEN_PROJECTS=(abyss-dev abyss-smoke)
 STACK_TOKEN_ENV_KEY="STACK_APP_API_TOKEN"
 STACK_TOKEN_NAME="web content (stack)"
+# Scope `*` read on purpose (WEB-2, Q-WCT1): web reads every content type; D5 and the read-only guest creator bound it.
 STACK_TOKEN_SCOPE='{"permissions":[{"subject":"*","action":"read"}]}'
 STACK_GRANT_ROLE_SLUG="guest"
 STACK_GRANT_SUBJECT="api_tokens"
