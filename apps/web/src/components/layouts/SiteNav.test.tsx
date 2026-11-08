@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import { WebSessionProvider } from '../../features/session';
 import type { AuthApi } from '../../features/session/Auth.api';
@@ -64,5 +64,16 @@ describe('SiteNav', () => {
     renderNav({ ...TEST_USER, role: 'viewer' });
     await screen.findByRole('link', { name: 'Blog' });
     expect(screen.queryByRole('link', { name: 'Library' })).not.toBeInTheDocument();
+  });
+
+  it('marks the sub menu dismissed on Escape and clears it when focus leaves', async () => {
+    renderNav({ ...TEST_USER, role: 'reader' });
+    const parent = await screen.findByRole('link', { name: 'Library' });
+    const item = parent.closest('li')!;
+    parent.focus();
+    fireEvent.keyDown(parent, { key: 'Escape' });
+    expect(item).toHaveAttribute('data-subnav-dismissed');
+    fireEvent.blur(parent, { relatedTarget: document.body });
+    expect(item).not.toHaveAttribute('data-subnav-dismissed');
   });
 });

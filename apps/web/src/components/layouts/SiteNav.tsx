@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 
 import { useCanSee } from '../../features/session';
@@ -33,9 +33,22 @@ function NavLink({ title, link }: { title: string; link: string }) {
 /** One header.nav item (or sub item): shown when the viewer may see it and its link is safe. Display only (D3). */
 function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode }) {
   const canSee = useCanSee(entry.requiresRole);
+  const [isSubNavDismissed, setIsSubNavDismissed] = useState(false);
   if (!canSee || !entry.title || !entry.link || !isSafeLinkTarget(entry.link)) return null;
+  const dismissSubNav = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') setIsSubNavDismissed(true);
+  };
+  const reopenSubNavWhenFocusLeaves = (event: FocusEvent<HTMLLIElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setIsSubNavDismissed(false);
+  };
   return (
-    <li className="group relative">
+    <li
+      className="group relative"
+      data-subnav-dismissed={isSubNavDismissed ? '' : undefined}
+      onKeyDown={dismissSubNav}
+      onBlur={reopenSubNavWhenFocusLeaves}
+      onMouseLeave={() => setIsSubNavDismissed(false)}
+    >
       <NavLink title={entry.title} link={entry.link} />
       {children}
     </li>
@@ -44,7 +57,7 @@ function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode })
 
 function SubNav({ entries }: { entries: NavEntry[] }) {
   return (
-    <ul className="border-border bg-card absolute top-full left-0 z-10 hidden min-w-40 flex-col gap-2 rounded-md border p-3 shadow-sm group-focus-within:flex group-hover:flex">
+    <ul className="border-border bg-card absolute top-full left-0 z-10 hidden min-w-40 flex-col gap-2 rounded-md border p-3 shadow-sm group-focus-within:flex group-hover:flex group-data-subnav-dismissed:hidden!">
       {entries.map((entry, index) => (
         <NavItem key={`${entry.link}-${index}`} entry={entry} />
       ))}
