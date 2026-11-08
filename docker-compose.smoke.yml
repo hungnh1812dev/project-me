@@ -151,8 +151,8 @@ services:
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
     environment:
       APP_API_URL: http://cms-api:3000/api/v1
-      # Reader-account API token; scripts/smoke.sh exports it (WCA-4). Empty until then:
-      # production web refuses to start without it.
+      # scripts/smoke.sh exports a throwaway for the first start (production web refuses to
+      # start without a token), then the reader-account token minted once cms-api is up.
       APP_API_TOKEN: ${SMOKE_APP_API_TOKEN:-}
       WEB_ORIGIN: ${SMOKE_WEB_ORIGIN:?set by scripts/smoke.sh}
       WEB_SESSION_SECRET: ${SMOKE_WEB_SESSION_SECRET:?set by scripts/smoke.sh}

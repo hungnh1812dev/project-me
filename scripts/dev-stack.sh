@@ -29,6 +29,7 @@ API_DIR="$ROOT_DIR/apps/cms-api"
 DOMAIN="domain.localhost"
 API_PREFIX="/api/v1"
 LOOPBACK="127.0.0.1"
+COMPOSE_PROJECT="abyss-dev"
 HEALTH_OK_BODY='"status":"ok"'
 TURNSTILE_TEST_SITE_KEY="1x00000000000000000000AA"
 WEB_SESSION_SECRET_KEY="WEB_SESSION_SECRET"
@@ -232,13 +233,16 @@ start_apps() {
   VITE_API_BASE_URL="$API_BASE_URL" DEV_SERVER_PORT="$ADMIN_PORT" \
     DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
+  wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
+  # The web server needs the reader-account API token, which needs cms-api up.
+  STACK_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX"
+  stack_mint_content_token "$COMPOSE_PROJECT" "$LOCAL_ENV_FILE"
   # web reads APP_API_URL and WEB_REVALIDATE_SECONDS=0 (no data cache); mock text stays on in dev, so no ALLOW_MOCK_FALLBACK.
-  DEV_SERVER_PORT="$WEB_PORT_DEV" \
+  DEV_SERVER_PORT="$WEB_PORT_DEV" APP_API_TOKEN="$STACK_APP_API_TOKEN" \
     APP_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
     BFF_AUTH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ALLOW_BFF_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN" \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
-  wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
   wait_until "cms-admin ($ADMIN_ORIGIN)" cms-admin admin_is_up
   wait_until "web ($WEB_ORIGIN)" web web_is_up
 }
