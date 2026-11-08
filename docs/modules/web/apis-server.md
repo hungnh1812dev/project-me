@@ -25,6 +25,7 @@ Everything the Next server does on behalf of the browser. `bff/` runs every `/ap
 - Visitor IP (D7): `CLIENT_IP_HEADER` when it carries an address, else the `TRUST_PROXY_HOPS`-th address from the right of `X-Forwarded-For`. The rate limiters live in the process (one per bucket, at most 10 000 keys).
 - `serverApi` (`restful/ServerApi.client.ts`) is the one transport for server calls: axios with `adapter: 'fetch'` and `maxRedirects: 0` (so `redirect: 'manual'`), `validateStatus` always true (any status is an answer, never a throw), the body read as text and parsed here. `cache` becomes `fetchOptions` (`{ next: { revalidate } }` or `{ cache: 'no-store' }`), default `DEFAULT_REVALIDATE_SECONDS`. Failures are `ServerApiError` with a code only (`NETWORK`, `TIMEOUT`, `REDIRECT`, `INVALID_BODY`); the upstream message, headers and request body never reach the error. `INVALID_BODY` is thrown only when the caller passes `needsBody: true`; otherwise an unreadable body is `undefined`. Repeated `Set-Cookie` lines are kept (`headers.getSetCookie()`).
 - Spike (axios fetch adapter against the Next data cache), 2026-11-08, Next 16.4.2, axios 1.20.0, `next build` + `next start` with a Node stub upstream that counted requests per path: a POST with an `Authorization: Bearer` header and `{ next: { revalidate: 60 } }` sent four times over four page requests gave one upstream hit; a native `fetch` control gave the same; `cache: 'no-store'` gave one hit per page request; a 302 gave `REDIRECT` and was not followed; a 300 ms timeout against a 3 s upstream gave `TIMEOUT`. Result: axios stays on the server path, no native-`fetch` fallback needed. The axios adapter passes `fetchOptions` as the `init` of `fetch(Request, init)`, which is how Next sees `next` and `cache`. Within one render Next also de-duplicates identical GET calls (request memoization).
+- Mock fallback (`restful/MockFallback.server.ts`): `fillFromMocks({ operationName, rootFields, data, reason })` is the one place that reads `mocks/MockView.ts` (guarded by `FeatureTiers.architecture.test.ts`). It fills only when `getServerEnv().isMockFallbackOn`; callers must not use it on a call made with a visitor's token.
 - Server-only files import `server-only`; this module imports no feature.
 
 ## Technologies
@@ -39,6 +40,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 
 - New refusal: one row in ADR 0018 section 3, one entry in `BFF_ERROR_CODES`.
 - New bucket or limit: `BFF_RATE_LIMITS` in `configs/Http.constants.ts` (and its override key in `BFF_RATE_LIMIT_OVERRIDE_ENV_KEYS`, `configs/Server.env.ts`). Each bucket's limiter is built on its first request with `getServerEnv().bffRateLimitOverrides[bucket]` or the default limit; the override is for test stacks only (ADR 0018 section 2.7).
+- New mock: a plain-data file in `restful/mocks/` (no imports), added to `MOCK_VIEW` under its operation name and root field.
 - New server call method, header or failure code: `restful/ServerApi.client.ts` only.
 - New env key: `configs/Server.env.ts` and `apps/web/.env.example`.
 
@@ -51,10 +53,11 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 server/ (0 files)
   bff/ (4 files)
   graphql/ (1 file)
-  restful/ (3 files)
+  restful/ (4 files)
+    mocks/ (1 file)
 ```
 
-Tests: 9 files (not listed).
+Tests: 10 files (not listed).
 
 | File | Description |
 |---|---|
@@ -64,8 +67,10 @@ Tests: 9 files (not listed).
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
 | `graphql/Graphql.server.ts` | Server GraphQL query: anonymous with the data cache, or Bearer without it |
 | `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding and fixed error codes, sent through `serverApi` |
+| `restful/MockFallback.server.ts` | TODO (exports `MOCK_FALLBACK_REASONS`, `MockFallbackReason`, `FillFromMocksInput`, `FillFromMocksResult` +1) |
 | `restful/ServerApi.client.ts` | `serverApi`: GET, POST, PUT, PATCH and DELETE over axios with the fetch adapter, data cache options, timeout, no redirect, `ServerApiError` codes |
 | `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed |
+| `restful/mocks/MockView.ts` | TODO (exports `MockView`, `MOCK_VIEW`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

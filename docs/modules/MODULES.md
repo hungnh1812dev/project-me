@@ -72,7 +72,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 | status | `apps/web/src/features/status` | `docs/modules/web/status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Health API client for the web service status card |
 | cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The CV page: sections, contact card, masked values |
 | status | `apps/web/src/views/status` | `docs/modules/web/views-status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Web status view shown on the homepage (heading, description, API health card) |
-| server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client |
+| server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | draft | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client |
 
 ## form-commons
 
