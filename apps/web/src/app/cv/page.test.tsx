@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 
 import { runContentQuery } from '../../apis/server/graphql/Graphql.server';
-import { COPY } from '../../configs/Copy.constants';
-import type { CvPageData } from '../../features/cv/Cv.graphql';
+import { CV_PAGE_MOCK } from '../../apis/server/restful/mocks/CvPage.mock';
+import type { CvPage as CvPageResult } from '../../features/cv/Cv.graphql';
 import { fakeApi, Wrapper } from '../../features/session/Session.fixture';
 import CvPage, { generateMetadata } from './page';
 
@@ -11,11 +11,12 @@ vi.mock('../../apis/server/graphql/Graphql.server', () => ({
   runContentQuery: vi.fn<typeof runContentQuery>(),
 }));
 const runContentQueryMock = vi.mocked(runContentQuery);
-const resultOf = (data: CvPageData) => ({ failedRootFields: [], data }) as never;
+const resultOf = (data: Pick<CvPageResult, 'cvPageList' | 'cvContact'>) =>
+  ({ failedRootFields: [], data: { ...data, cvPageText: CV_PAGE_MOCK.cvPageText } }) as never;
 
-const EMPTY: CvPageData = { resumeList: { data: [] }, cvContact: null };
+const EMPTY = { cvPageList: { data: [] }, cvContact: null };
 const WITH_RESUME = {
-  resumeList: {
+  cvPageList: {
     data: [
       {
         documentId: 'r1',
@@ -26,7 +27,7 @@ const WITH_RESUME = {
     ],
   },
   cvContact: null,
-} as unknown as CvPageData;
+} as unknown as Parameters<typeof resultOf>[0];
 
 async function renderPage() {
   const page = await CvPage();
@@ -48,7 +49,9 @@ describe('CvPage', () => {
   it('renders the empty state when the list is empty', async () => {
     runContentQueryMock.mockResolvedValue(resultOf(EMPTY));
     await renderPage();
-    expect(screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: CV_PAGE_MOCK.cvPageText.emptyTitle }),
+    ).toBeInTheDocument();
   });
 
   it('lets a failed load reach the error boundary', async () => {

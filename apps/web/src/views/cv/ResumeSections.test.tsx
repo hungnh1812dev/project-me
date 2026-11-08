@@ -1,12 +1,21 @@
 import { render, screen, within } from '@testing-library/react';
 
-import { COPY } from '@/configs/Copy.constants';
+import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
 import { sanitizeCvRichtext, type CvPageData, type Resume } from '@/features/cv/Cv.graphql';
 import { sanitizeRichtext } from '@/utils/SafeRichtext.rules';
 
-import { ResumeSections } from './ResumeSections';
+import { MaskedTextContext, ResumeSections } from './ResumeSections';
 
 const MASKED = '***';
+const TEXT = CV_PAGE_MOCK.cvPageText;
+
+function renderSections(resume: Resume) {
+  return render(
+    <MaskedTextContext.Provider value={TEXT.maskedValue}>
+      <ResumeSections resume={resume} text={TEXT} />
+    </MaskedTextContext.Provider>,
+  );
+}
 
 function resumeOf(overrides: Partial<Resume> = {}): Resume {
   return {
@@ -52,7 +61,7 @@ function resumeOf(overrides: Partial<Resume> = {}): Resume {
       },
     ],
     languages: [{ language: 'English', level: 'Fluent' }],
-    referees: [{ name: 'Linh Pham', role: 'Director', phone: '555-0100' }],
+    references: [{ name: 'Linh Pham', role: 'Director', phone: '555-0100' }],
     _maskedFields: [],
     ...overrides,
   };
@@ -60,18 +69,18 @@ function resumeOf(overrides: Partial<Resume> = {}): Resume {
 
 describe('ResumeSections', () => {
   it('renders every section with h2 headings in reading order', () => {
-    render(<ResumeSections resume={resumeOf()} />);
+    renderSections(resumeOf());
 
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
     expect(headings).toEqual([
-      COPY.cv.sections.summary,
-      COPY.cv.sections.skills,
-      COPY.cv.sections.experiences,
-      COPY.cv.sections.educations,
-      COPY.cv.sections.languages,
-      COPY.cv.sections.referees,
+      TEXT.sections.summary,
+      TEXT.sections.skills,
+      TEXT.sections.experiences,
+      TEXT.sections.educations,
+      TEXT.sections.languages,
+      TEXT.sections.references,
     ]);
     expect(screen.getByText('calm')).toBeInTheDocument();
     expect(screen.getByText('Northwind Labs')).toBeInTheDocument();
@@ -79,50 +88,46 @@ describe('ResumeSections', () => {
   });
 
   it('hides a section that has nothing to show', () => {
-    render(
-      <ResumeSections
-        resume={resumeOf({
-          summary: null,
-          skills: [],
-          experiences: null,
-          educations: null,
-          languages: [{ language: null, level: null }],
-          referees: null,
-        })}
-      />,
+    renderSections(
+      resumeOf({
+        summary: null,
+        skills: [],
+        experiences: null,
+        educations: null,
+        languages: [{ language: null, level: null }],
+        references: null,
+      }),
     );
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 
   it('shows the placeholder, never the raw value, for a masked path', () => {
-    const { container } = render(
-      <ResumeSections
-        resume={resumeOf({
-          summary: MASKED,
-          experiences: [{ company: MASKED, location: null, period: null, roles: null }],
-          referees: [{ name: 'Linh Pham', role: null, phone: null }],
-          _maskedFields: ['summary', 'experiences.company', 'referees.phone'],
-        })}
-      />,
+    const { container } = renderSections(
+      resumeOf({
+        summary: MASKED,
+        experiences: [{ company: MASKED, location: null, period: null, roles: null }],
+        references: [{ name: 'Linh Pham', role: null, phone: null }],
+        _maskedFields: ['summary', 'experiences.company', 'references.phone'],
+      }),
     );
-    expect(screen.getAllByText(COPY.cv.maskedValue)).toHaveLength(3);
+    expect(screen.getAllByText(TEXT.maskedValue)).toHaveLength(3);
     expect(container).not.toHaveTextContent(MASKED);
   });
 
   it('keeps an unmasked company visible next to other masked fields', () => {
-    render(<ResumeSections resume={resumeOf({ _maskedFields: ['referees.phone'] })} />);
+    renderSections(resumeOf({ _maskedFields: ['references.phone'] }));
     expect(screen.getByText('Northwind Labs')).toBeInTheDocument();
     expect(screen.queryByText('555-0100')).not.toBeInTheDocument();
-    expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
+    expect(screen.getByText(TEXT.maskedValue)).toBeInTheDocument();
   });
 
   it('links projects with accessible names and refuses an unsafe target', () => {
-    render(<ResumeSections resume={resumeOf()} />);
+    renderSections(resumeOf());
     const project = screen.getByRole('heading', { name: 'Billing core' })
       .parentElement as HTMLElement;
 
     const live = within(project).getByRole('link', {
-      name: COPY.cv.experience.liveLinkName('Billing core'),
+      name: 'Live site of Billing core',
     });
     expect(live).toHaveAttribute('href', 'https://billing.example.com');
     expect(live).toHaveAttribute('rel', 'noopener noreferrer');
@@ -135,12 +140,12 @@ describe('ResumeSections', () => {
       summary: '<p>Hi</p><img src=x onerror="window.pwned=1">',
     });
     const data: CvPageData = {
-      resumeList: { data: [dirty] },
+      cvPageList: { data: [dirty] },
       cvContact: null,
     };
-    const [clean] = sanitizeCvRichtext(data, sanitizeRichtext).resumeList.data;
+    const [clean] = sanitizeCvRichtext(data, sanitizeRichtext).cvPageList.data;
 
-    const { container } = render(<ResumeSections resume={clean!} />);
+    const { container } = renderSections(clean!);
     expect(container.querySelector('img')).toBeNull();
     expect(container.innerHTML).not.toContain('onerror');
     expect(screen.getByText('Hi')).toBeInTheDocument();

@@ -17,30 +17,55 @@ import { readWebSession } from '../session/WebSession.server';
 import {
   CV_PAGE_OPERATION_NAME,
   CV_PAGE_ROOT_FIELDS,
+  CV_PAGE_VISITOR_OPERATION_NAME,
   sanitizeCvRichtext,
+  type CvPage,
   type CvPageData,
+  type CvPageText,
 } from './Cv.graphql';
 
-const CV_PAGE_QUERY = defineContentQuery<CvPageData>({
+export const CV_PAGE_QUERY = defineContentQuery<CvPage>({
   operationName: CV_PAGE_OPERATION_NAME,
   rootFields: CV_PAGE_ROOT_FIELDS,
 });
 
+const { cvPageList, cvContact } = CV_PAGE_ROOT_FIELDS;
+
+/** The data-only query of a signed-in visitor: the same selections as `CV_PAGE_QUERY`, without the text. */
+export const CV_PAGE_VISITOR_QUERY = defineContentQuery<CvPageData>({
+  operationName: CV_PAGE_VISITOR_OPERATION_NAME,
+  rootFields: { cvPageList, cvContact },
+});
+
+export interface CvPageContent {
+  /** The public data with its richtext sanitized. */
+  data: CvPageData;
+  text: CvPageText;
+}
+
 /**
- * The public CV data with its richtext sanitized; one request per render even
- * if metadata and page both ask.
+ * The public CV data and the page text; one request per render even if
+ * metadata and page both ask. A missing contact card is a valid page; a
+ * missing list or text is a failed read.
  */
-export const loadCvPage = cache(async () => {
+export const loadCvPage = cache(async (): Promise<CvPageContent> => {
   const { data } = await runContentQuery(CV_PAGE_QUERY);
-  // A missing contact card is a valid page; a missing resume list is a failed read.
-  if (data.resumeList === null) throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.NO_DATA);
-  return sanitizeCvRichtext({ ...data, resumeList: data.resumeList }, sanitizeRichtextOnServer);
+  if (data.cvPageList === null || data.cvPageText === null) {
+    throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.NO_DATA);
+  }
+  return {
+    data: sanitizeCvRichtext(
+      { cvPageList: data.cvPageList, cvContact: data.cvContact },
+      sanitizeRichtextOnServer,
+    ),
+    text: data.cvPageText,
+  };
 });
 
 /** The CV data as the signed-in visitor: sent with their token and never cached. */
 export async function loadCvPageForSession(accessToken: string): Promise<CvPageData> {
   return sanitizeCvRichtext(
-    await runVisitorQuery(CV_PAGE_QUERY, accessToken),
+    await runVisitorQuery(CV_PAGE_VISITOR_QUERY, accessToken),
     sanitizeRichtextOnServer,
   );
 }

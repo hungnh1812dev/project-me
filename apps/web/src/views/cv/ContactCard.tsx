@@ -1,5 +1,4 @@
-import { COPY } from '@/configs/Copy.constants';
-import { isMaskedField, type CvContact } from '@/features/cv/Cv.graphql';
+import { isMaskedField, type CvContact, type CvPageText } from '@/features/cv/Cv.graphql';
 import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
 
 import { ExternalLink, MaskedPlaceholder } from './ResumeSections';
@@ -72,10 +71,12 @@ function ContactValue({ field, value }: { field: ContactField; value: string }) 
 export function ContactCard({
   contact,
   fallbackName,
+  text,
 }: {
   contact: CvContact | null;
   /** Used for the initials when the contact has no name. */
   fallbackName: string;
+  text: CvPageText['contact'];
 }) {
   if (contact === null) return null;
 
@@ -96,13 +97,13 @@ export function ContactCard({
       <Avatar contact={contact} name={name} />
       <div className="min-w-0">
         <h2 id="cv-contact-title" className="text-base font-semibold">
-          {COPY.cv.contact.title}
+          {text.title}
         </h2>
         {contact.name?.trim() ? <p className="mt-1 text-sm font-medium">{contact.name}</p> : null}
         <dl className="mt-2 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
           {rows.map(({ field, isMasked, value }) => (
             <div key={field} className="contents">
-              <dt className="text-muted-foreground">{COPY.cv.contact[field]}</dt>
+              <dt className="text-muted-foreground">{text[field]}</dt>
               <dd className="min-w-0 wrap-break-word">
                 {isMasked ? <MaskedPlaceholder /> : <ContactValue field={field} value={value} />}
               </dd>

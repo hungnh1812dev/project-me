@@ -1,3 +1,4 @@
+import { CV_PAGE_MOCK } from './CvPage.mock';
 import { SITE_SHELL_MOCK } from './SiteShell.mock';
 import { STATUS_PAGE_MOCK } from './StatusPage.mock';
 
@@ -5,6 +6,7 @@ import { STATUS_PAGE_MOCK } from './StatusPage.mock';
 export type MockView = Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 
 export const MOCK_VIEW: MockView = {
+  CvPage: CV_PAGE_MOCK,
   SiteShell: SITE_SHELL_MOCK,
   StatusPage: STATUS_PAGE_MOCK,
 };

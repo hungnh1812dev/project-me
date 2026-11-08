@@ -42,7 +42,7 @@ export interface ResumeLanguage {
   level: string | null;
 }
 
-export interface ResumeReferee {
+export interface ResumeReference {
   name: string | null;
   phone: string | null;
   role: string | null;
@@ -57,7 +57,7 @@ export interface Resume {
   experiences: ResumeExperience[] | null;
   educations: ResumeEducation[] | null;
   languages: ResumeLanguage[] | null;
-  referees: ResumeReferee[] | null;
+  references: ResumeReference[] | null;
   _maskedFields: string[];
 }
 
@@ -72,16 +72,59 @@ export interface CvContact {
   _maskedFields: string[];
 }
 
+/** Text of the CV page; `teamSize` has `{size}`, the `*LinkName` texts have `{project}`. */
+export interface CvPageText {
+  loading: string;
+  refetchFailed: string;
+  fallbackName: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  maskedValue: string;
+  contact: {
+    title: string;
+    email: string;
+    phone: string;
+    address: string;
+    linkedin: string;
+    github: string;
+  };
+  sections: {
+    summary: string;
+    skills: string;
+    experiences: string;
+    educations: string;
+    languages: string;
+    references: string;
+  };
+  experience: {
+    teamSize: string;
+    projects: string;
+    techStack: string;
+    liveLink: string;
+    repositoryLink: string;
+    liveLinkName: string;
+    repositoryLinkName: string;
+    unnamedProject: string;
+  };
+  reference: { phone: string };
+}
+
+/** What a visitor session reads: data only, no text. */
 export interface CvPageData {
-  resumeList: { data: Resume[] };
+  cvPageList: { data: Resume[] };
   cvContact: CvContact | null;
 }
 
-export const CV_PAGE_OPERATION_NAME = 'CvPage';
+export interface CvPage extends CvPageData {
+  cvPageText: CvPageText;
+}
 
-/** The newest published resume marked as main, with the contact card: each root field's text after its name. */
+export const CV_PAGE_OPERATION_NAME = 'CvPage';
+export const CV_PAGE_VISITOR_OPERATION_NAME = 'CvPageVisitor';
+
+/** The newest published main CV, the contact card and the page text: each root field's text after its name. */
 export const CV_PAGE_ROOT_FIELDS = {
-  resumeList: `(
+  cvPageList: `(
     filter: { isMain: { eq: true } }
     sort: [{ field: updatedAt, direction: DESC }]
     pageSize: 1
@@ -127,7 +170,7 @@ export const CV_PAGE_ROOT_FIELDS = {
         language
         level
       }
-      referees {
+      references {
         name
         phone
         role
@@ -148,13 +191,50 @@ export const CV_PAGE_ROOT_FIELDS = {
     }
     _maskedFields
   }`,
+  cvPageText: `{
+    loading
+    refetchFailed
+    fallbackName
+    emptyTitle
+    emptyDescription
+    maskedValue
+    contact {
+      title
+      email
+      phone
+      address
+      linkedin
+      github
+    }
+    sections {
+      summary
+      skills
+      experiences
+      educations
+      languages
+      references
+    }
+    experience {
+      teamSize
+      projects
+      techStack
+      liveLink
+      repositoryLink
+      liveLinkName
+      repositoryLinkName
+      unnamedProject
+    }
+    reference {
+      phone
+    }
+  }`,
 } as const;
 
 export function mainResumeOf(data: CvPageData): Resume | undefined {
-  return data.resumeList.data[0];
+  return data.cvPageList.data[0];
 }
 
-/** True when the API masked this field path (`referees.phone`) for the viewer. */
+/** True when the API masked this field path (`references.phone`) for the viewer. */
 export function isMaskedField(
   { _maskedFields: maskedFields }: Pick<Resume | CvContact, '_maskedFields'>,
   path: string,
@@ -180,8 +260,8 @@ function sanitizedOrNull(
 export function sanitizeCvRichtext(data: CvPageData, sanitize: RichtextSanitizer): CvPageData {
   return {
     ...data,
-    resumeList: {
-      data: data.resumeList.data.map((resume) => ({
+    cvPageList: {
+      data: data.cvPageList.data.map((resume) => ({
         ...resume,
         summary: sanitizedOrNull(resume.summary, sanitize),
         experiences:

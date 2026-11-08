@@ -3,14 +3,16 @@ import userEvent from '@testing-library/user-event';
 import type { AxiosResponse } from 'axios';
 
 import { clientApi } from '@/apis/client/Api.client';
+import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
 import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
-import { COPY } from '@/configs/Copy.constants';
-import { type CvPageData } from '@/features/cv/Cv.graphql';
+import { type CvPageData, type CvPageText } from '@/features/cv/Cv.graphql';
 import { useWebSession } from '@/features/session';
 import type { AuthApi } from '@/features/session/Auth.api';
 import { fakeApi, TEST_USER, Wrapper } from '@/features/session/Session.fixture';
 
 import { CvView } from './CvView';
+
+const TEXT: CvPageText = CV_PAGE_MOCK.cvPageText;
 
 const resume = (name: string) => ({
   documentId: 'r1',
@@ -21,21 +23,21 @@ const resume = (name: string) => ({
   experiences: null,
   educations: null,
   languages: null,
-  referees: null,
+  references: null,
   _maskedFields: [],
 });
 
 const SERVER_DATA: CvPageData = {
-  resumeList: { data: [resume('Mai Server')] },
+  cvPageList: { data: [resume('Mai Server')] },
   cvContact: null,
 };
 const OWNER_DATA: CvPageData = {
-  resumeList: { data: [resume('Mai Private')] },
+  cvPageList: { data: [resume('Mai Private')] },
   cvContact: null,
 };
 
 const MASKED_DATA: CvPageData = {
-  resumeList: {
+  cvPageList: {
     data: [{ ...resume('Mai Server'), summary: '***', _maskedFields: ['summary'] }],
   },
   cvContact: null,
@@ -56,7 +58,7 @@ describe('CvView', () => {
     const get = vi.spyOn(clientApi, 'get');
     render(
       <Wrapper api={fakeApi()}>
-        <CvView initialData={SERVER_DATA} />
+        <CvView initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
 
@@ -70,10 +72,10 @@ describe('CvView', () => {
   it('shows the empty state when no main resume exists', () => {
     render(
       <Wrapper api={fakeApi()}>
-        <CvView initialData={{ resumeList: { data: [] }, cvContact: null }} />
+        <CvView initialData={{ cvPageList: { data: [] }, cvContact: null }} text={TEXT} />
       </Wrapper>,
     );
-    expect(screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: TEXT.emptyTitle })).toBeInTheDocument();
   });
 
   it('refetches through the BFF once signed in', async () => {
@@ -82,7 +84,7 @@ describe('CvView', () => {
       .mockResolvedValue({ status: 200, data: OWNER_DATA } as AxiosResponse);
     render(
       <Wrapper api={signedInApi()}>
-        <CvView initialData={SERVER_DATA} />
+        <CvView initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
 
@@ -96,10 +98,10 @@ describe('CvView', () => {
     vi.spyOn(clientApi, 'get').mockRejectedValue(new Error('401'));
     render(
       <Wrapper api={signedInApi()}>
-        <CvView initialData={SERVER_DATA} />
+        <CvView initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(COPY.cv.refetchFailed));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(TEXT.refetchFailed));
     expect(screen.queryByText('Mai Server')).not.toBeInTheDocument();
   });
 
@@ -111,7 +113,7 @@ describe('CvView', () => {
     render(
       <Wrapper api={signedInApi()}>
         <SignOutButton />
-        <CvView initialData={SERVER_DATA} />
+        <CvView initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     await screen.findByRole('heading', { name: 'Mai Private' });
@@ -124,9 +126,9 @@ describe('CvView', () => {
   it('tells an anonymous visitor to sign in for a masked value', () => {
     render(
       <Wrapper api={fakeApi()}>
-        <CvView initialData={MASKED_DATA} />
+        <CvView initialData={MASKED_DATA} text={TEXT} />
       </Wrapper>,
     );
-    expect(screen.getByText(COPY.cv.maskedValue)).toBeInTheDocument();
+    expect(screen.getByText(TEXT.maskedValue)).toBeInTheDocument();
   });
 });
