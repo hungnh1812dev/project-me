@@ -1,8 +1,11 @@
 import { SERVER_API_FAILURE_CODES, serverApi, ServerApiError } from './ServerApi.client';
 
-vi.mock('@/configs/Server.env', () => ({
-  getServerEnv: () => ({ apiInternalUrl: 'http://api.internal/api/v1' }),
+const env = vi.hoisted(() => ({
+  appApiUrl: 'http://api.internal/api/v1',
+  revalidateOverrideSeconds: undefined as number | undefined,
 }));
+
+vi.mock('@/configs/Server.env', () => ({ getServerEnv: () => env }));
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -27,6 +30,7 @@ async function failureOf(call: Promise<unknown>): Promise<ServerApiError> {
 }
 
 beforeEach(() => {
+  env.revalidateOverrideSeconds = undefined;
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -91,6 +95,24 @@ describe('serverApi', () => {
     await serverApi.get('/things', { cache: { revalidateSeconds: 30 } });
 
     expect(sentRequest().init).toMatchObject({ next: { revalidate: 30 } });
+  });
+
+  it('replaces every revalidate value with the WEB_REVALIDATE_SECONDS override, 0 included', async () => {
+    env.revalidateOverrideSeconds = 0;
+    answer(200, '{}');
+
+    await serverApi.get('/things', { cache: { revalidateSeconds: 30 } });
+
+    expect(sentRequest().init).toMatchObject({ next: { revalidate: 0 } });
+  });
+
+  it('keeps no-store when an override is set', async () => {
+    env.revalidateOverrideSeconds = 5;
+    answer(200, '{}');
+
+    await serverApi.get('/things', { cache: 'no-store' });
+
+    expect(sentRequest().init).toMatchObject({ cache: 'no-store' });
   });
 
   it('passes no-store to fetch', async () => {

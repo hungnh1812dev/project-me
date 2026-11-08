@@ -36,7 +36,7 @@ ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN pnpm turbo run build --filter=@abyss/web
 
 # 3. Runtime: the Next.js standalone server on Node, as the numeric non-root user 1000:1000 (the base image's `node`).
-#    Server env (API_INTERNAL_URL, WEB_REVALIDATE_SECONDS) is set at run time.
+#    Server env (APP_API_URL, APP_API_TOKEN, WEB_REVALIDATE_SECONDS) is set at run time.
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -104,7 +104,7 @@ async function callCmsApi(options: CallOptions): Promise<Response> {
   let response: Response;
   try {
     // Inside the try: a token that is not a valid header value throws here.
-    response = await fetch(`${getServerEnv().apiInternalUrl}${options.path}`, {
+    response = await fetch(`${getServerEnv().appApiUrl}${options.path}`, {
       method: options.method,
       headers: requestHeaders(options),
       body: options.body === undefined ? null : JSON.stringify(options.body),

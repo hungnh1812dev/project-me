@@ -35,7 +35,7 @@ export interface ServerApiOptions {
   headers?: Record<string, string>;
   /** Sent as JSON. */
   body?: unknown;
-  /** Defaults to `DEFAULT_REVALIDATE_SECONDS`. */
+  /** Defaults to `DEFAULT_REVALIDATE_SECONDS`; `WEB_REVALIDATE_SECONDS`, when set, replaces any value (`no-store` stays). */
   cache?: ServerApiCache;
   timeoutMs?: number;
   /** When true, an answer body that is not JSON throws `INVALID_BODY`; otherwise the body is `undefined`. */
@@ -67,8 +67,9 @@ const http = axios.create({
 });
 
 /** `next` is Next's addition to `RequestInit`, unknown to axios' types. */
-function fetchOptionsOf(cache: ServerApiCache): RequestInit {
-  return cache === 'no-store' ? { cache } : { next: { revalidate: cache.revalidateSeconds } };
+function fetchOptionsOf(cache: ServerApiCache, overrideSeconds: number | undefined): RequestInit {
+  if (cache === 'no-store') return { cache };
+  return { next: { revalidate: overrideSeconds ?? cache.revalidateSeconds } };
 }
 
 function parseBody(raw: unknown, needsBody: boolean): unknown {
@@ -106,16 +107,18 @@ async function call(
   path: string,
   options: ServerApiOptions,
 ): Promise<ServerApiAnswer> {
+  const { appApiUrl, revalidateOverrideSeconds } = getServerEnv();
   let response: AxiosResponse;
   try {
     response = await http.request({
-      url: `${getServerEnv().apiInternalUrl}${path}`,
+      url: `${appApiUrl}${path}`,
       method,
       ...(options.headers === undefined ? {} : { headers: options.headers }),
       ...(options.body === undefined ? {} : { data: options.body }),
       timeout: options.timeoutMs ?? API_TIMEOUT_MS,
       fetchOptions: fetchOptionsOf(
         options.cache ?? { revalidateSeconds: DEFAULT_REVALIDATE_SECONDS },
+        revalidateOverrideSeconds,
       ),
     });
   } catch (error) {

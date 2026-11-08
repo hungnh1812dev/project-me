@@ -11,10 +11,7 @@ export const SESSION_SECRET_MIN_BYTES = 32;
 /** Proxies in front of the web server when TRUST_PROXY_HOPS is unset (D7). */
 export const DEFAULT_TRUST_PROXY_HOPS = 1;
 
-/** Used when WEB_REVALIDATE_SECONDS is unset (SPEC: 60 s in production). */
-export const DEFAULT_REVALIDATE_SECONDS = 60;
-
-/** The only value of ALLOW_TURNSTILE_TEST_SECRET and ALLOW_BFF_RATE_LIMIT_OVERRIDE: the smoke stack's production build may use a test-only setting. */
+/** The only value of ALLOW_TURNSTILE_TEST_SECRET, ALLOW_BFF_RATE_LIMIT_OVERRIDE and ALLOW_MOCK_FALLBACK: the smoke stack's production build may use a test-only setting. */
 export const SMOKE_STACK_OPT_IN = 'smoke';
 
 /** Env key that raises a BFF bucket's limit per visitor IP; test stacks only (ADR 0018 section 2.7). */
@@ -22,13 +19,20 @@ export const BFF_RATE_LIMIT_OVERRIDE_ENV_KEYS = {
   auth: 'BFF_AUTH_RATE_LIMIT_IP',
 } as const satisfies Partial<Record<keyof typeof BFF_RATE_LIMITS, string>>;
 
+/** cms-api API token (D5): `ak_live_` + base64url. */
+const API_TOKEN_PATTERN = /^ak_live_[A-Za-z0-9_-]+$/;
+
 const HOSTNAME_PATTERN = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/;
 
 export interface ServerEnv {
   /** cms-api base URL reachable from the Next server (never sent to the browser). */
-  apiInternalUrl: string;
-  /** Data cache lifetime for server fetches; 0 disables caching. */
-  revalidateSeconds: number;
+  appApiUrl: string;
+  /** cms-api API token for server content reads (WEB-2); server only, never logged. Required in production. */
+  appApiToken: string | undefined;
+  /** When set, replaces every server call's data cache lifetime; 0 disables caching. */
+  revalidateOverrideSeconds: number | undefined;
+  /** Whether a failed content read may fall back to the mock data (WEB-5). */
+  isMockFallbackOn: boolean;
   /** Exact origin of this site; the only `Origin` a state-changing BFF route accepts. */
   webOrigin: string;
   /** Key material for the sealed session cookies. */
@@ -139,31 +143,59 @@ function parseBffRateLimitOverrides(
   return overrides;
 }
 
-/** Pure and testable; throws on any invalid value. */
-export function parseServerEnv(source: EnvSource): ServerEnv {
-  const apiInternalUrl = stripTrailingSlashes(
-    requireEnv('API_INTERNAL_URL', source.API_INTERNAL_URL),
-  );
-  if (!URL.canParse(apiInternalUrl)) {
-    throw new Error('API_INTERNAL_URL must be an absolute URL.');
+function parseAppApiUrl(raw: string | undefined): string {
+  const value = stripTrailingSlashes(requireEnv('APP_API_URL', raw).trim());
+  if (!URL.canParse(value)) {
+    throw new Error('APP_API_URL must be an absolute URL.');
   }
+  return value;
+}
 
-  const rawRevalidate = source.WEB_REVALIDATE_SECONDS?.trim();
-  const revalidateSeconds =
-    rawRevalidate === undefined || rawRevalidate === ''
-      ? DEFAULT_REVALIDATE_SECONDS
-      : Number(rawRevalidate);
-  if (!Number.isInteger(revalidateSeconds) || revalidateSeconds < 0) {
+/** The message names the key and never the value. */
+function parseAppApiToken(raw: string | undefined, source: EnvSource): string | undefined {
+  const token = optionalText(raw);
+  if (token === undefined) {
+    if (source.NODE_ENV === 'production') {
+      throw new Error('APP_API_TOKEN is required in production. See .env.example.');
+    }
+    return undefined;
+  }
+  if (!API_TOKEN_PATTERN.test(token)) {
+    throw new Error('APP_API_TOKEN must be an API token (ak_live_ followed by base64url).');
+  }
+  return token;
+}
+
+function parseRevalidateOverride(raw: string | undefined): number | undefined {
+  const text = optionalText(raw);
+  if (text === undefined) return undefined;
+  const seconds = Number(text);
+  if (!Number.isInteger(seconds) || seconds < 0) {
     throw new Error('WEB_REVALIDATE_SECONDS must be a non-negative integer.');
   }
+  return seconds;
+}
 
+/** Unset or `smoke` only; outside production the fallback is always on (WEB-5). */
+function parseIsMockFallbackOn(source: EnvSource): boolean {
+  const optIn = optionalText(source.ALLOW_MOCK_FALLBACK);
+  if (optIn !== undefined && optIn !== SMOKE_STACK_OPT_IN) {
+    throw new Error(`ALLOW_MOCK_FALLBACK must be unset or ${SMOKE_STACK_OPT_IN}.`);
+  }
+  return source.NODE_ENV !== 'production' || optIn === SMOKE_STACK_OPT_IN;
+}
+
+/** Pure and testable; throws on any invalid value. */
+export function parseServerEnv(source: EnvSource): ServerEnv {
   const turnstileSecretKey = requireEnv('TURNSTILE_SECRET_KEY', source.TURNSTILE_SECRET_KEY);
   const turnstileExpectedHostname = parseExpectedHostname(source.TURNSTILE_EXPECTED_HOSTNAME);
   assertTurnstileSafeForEnvironment(turnstileSecretKey, turnstileExpectedHostname, source);
 
   return {
-    apiInternalUrl,
-    revalidateSeconds,
+    appApiUrl: parseAppApiUrl(source.APP_API_URL),
+    appApiToken: parseAppApiToken(source.APP_API_TOKEN, source),
+    revalidateOverrideSeconds: parseRevalidateOverride(source.WEB_REVALIDATE_SECONDS),
+    isMockFallbackOn: parseIsMockFallbackOn(source),
     webOrigin: parseWebOrigin(source.WEB_ORIGIN),
     sessionSecret: parseSessionSecret(source.WEB_SESSION_SECRET, source),
     turnstileSecretKey,

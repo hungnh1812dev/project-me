@@ -39,7 +39,7 @@ pnpm --filter @abyss/web dev       # http://localhost:5174
 The dev port is `DEV_SERVER_PORT` from the shell environment (default 5174; a
 `.env.local` value is loaded too late to set it). The browser never calls
 cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
-`/api` proxy. The Next server reaches cms-api through `API_INTERNAL_URL`.
+`/api` proxy. The Next server reaches cms-api through `APP_API_URL`.
 
 `@abyss/form-commons` is consumed from its `dist/`, so build it once first
 (`pnpm build` at the root does this through Turborepo's `^build`).
@@ -50,7 +50,7 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   effects, handlers, browser APIs, TanStack Query, react-hook-form or any
   `@abyss/form-commons` import (form-commons has no `'use client'` directive,
   so import it only from client components).
-- Code that reads server env or calls `API_INTERNAL_URL` imports `server-only`.
+- Code that reads server env or calls `APP_API_URL` imports `server-only`.
 - The Next server never sends, receives or stores a user token. No Server
   Actions, Route Handlers or `cookies()` for auth: the browser calls the API
   with a Bearer token held in memory.
@@ -61,8 +61,10 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   the browser bundle at build time (so they are public, never secrets) and a
   missing `NEXT_PUBLIC_TURNSTILE_SITE_KEY` fails the build. No cms-api URL is
   ever baked into the bundle.
-- `src/configs/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
-  `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
+- `src/configs/Server.env.ts` (`server-only`) reads `APP_API_URL`,
+  `APP_API_TOKEN` (required in production, `ak_live_...`, never logged or sent to the
+  browser), `WEB_REVALIDATE_SECONDS` (optional override of every call's cache lifetime),
+  `WEB_STATUS_PAGE_ENABLED`, the test-stack-only `ALLOW_MOCK_FALLBACK` and the BFF keys (`WEB_ORIGIN`,
   `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
   `CLIENT_IP_HEADER`, and the test-stack-only `BFF_AUTH_RATE_LIMIT_IP` and
   `ALLOW_BFF_RATE_LIMIT_OVERRIDE`) at runtime. An invalid value stops the server at
@@ -82,9 +84,9 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   key only).
 - `src/apis/server/graphql/Graphql.server.ts` (`server-only`) is the one way a Server Component
   reads content: `fetchGraphql(document, variables)` posts to
-  `${API_INTERNAL_URL}/graphql` with JSON headers only (no `Authorization`, no
+  `${APP_API_URL}/graphql` with JSON headers only (no `Authorization`, no
   cookie, no client IP), so the page holds what the `public` role may read.
-  Caching uses the fetch data cache, `next: { revalidate: WEB_REVALIDATE_SECONDS }`
+  Caching uses the fetch data cache, `next: { revalidate }` (the default, or the `WEB_REVALIDATE_SECONDS` override)
   (Next 16 without Cache Components; 0 turns it off). Any failure throws one
   `GraphqlRequestError` (`GraphqlResponse.rules.ts`) with the first error code,
   never the server message or the variables.
@@ -156,15 +158,15 @@ tokens only (`bg-card`, `text-muted-foreground`).
 
 ```bash
 docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key> -t abyss-web .
-docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
+docker run -e APP_API_URL=http://cms-api:3000/api/v1 -e APP_API_TOKEN=<token> -p 8080:8080 abyss-web
 ```
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
 the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
-Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`,
+Runtime env: `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
 `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
-(smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)
+(smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `ALLOW_MOCK_FALLBACK`)
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts
@@ -197,6 +199,6 @@ The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a fil
 - `next.config.ts` adds HSTS, `nosniff`, `Referrer-Policy`, `Cross-Origin-Opener-Policy: same-origin`, a deny-all `Permissions-Policy` and `X-Frame-Options: DENY` to every route.
 - The proxy matcher skips `/api/`, `/_next/static`, `/_next/image` and
   prefetches. The root layout awaits `connection()`, so every page renders per
-  request (the server data cache from `WEB_REVALIDATE_SECONDS` still applies).
+  request (the server data cache still applies).
 - `scripts/smoke.sh` asserts the headers, the nonce match and a fresh nonce
   per response.

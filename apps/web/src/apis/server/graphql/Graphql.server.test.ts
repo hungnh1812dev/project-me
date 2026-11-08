@@ -3,8 +3,8 @@ import { fetchGraphql } from './Graphql.server';
 
 vi.mock('../../../configs/Server.env', () => ({
   getServerEnv: () => ({
-    apiInternalUrl: 'http://api.internal/api/v1',
-    revalidateSeconds: 60,
+    appApiUrl: 'http://api.internal/api/v1',
+    revalidateOverrideSeconds: 60,
   }),
 }));
 

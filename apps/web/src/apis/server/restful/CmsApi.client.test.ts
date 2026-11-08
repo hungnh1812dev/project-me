@@ -3,7 +3,7 @@ import { cmsApiClient } from './CmsApi.client';
 
 vi.mock('../../../configs/Server.env', () => ({
   getServerEnv: () => ({
-    apiInternalUrl: 'http://api.internal/api/v1',
+    appApiUrl: 'http://api.internal/api/v1',
     webOrigin: 'https://site.test',
     clientIpHeader: 'cf-connecting-ip',
   }),

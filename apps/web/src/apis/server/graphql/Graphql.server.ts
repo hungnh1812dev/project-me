@@ -8,7 +8,12 @@ import {
 } from '@/apis/GraphqlResponse.rules';
 import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import { BEARER_PREFIX } from '@/configs/Auth.constants';
-import { API_TIMEOUT_MS, AUTHORIZATION_HEADER, JSON_MEDIA_TYPE } from '@/configs/Http.constants';
+import {
+  API_TIMEOUT_MS,
+  AUTHORIZATION_HEADER,
+  DEFAULT_REVALIDATE_SECONDS,
+  JSON_MEDIA_TYPE,
+} from '@/configs/Http.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
 // Anonymous unless the caller passes an access token (SPEC D14): no cookie, no client IP.
@@ -26,7 +31,7 @@ export interface GraphqlServerOptions {
 
 /**
  * Runs a GraphQL query from the Next server as the public role. Cached for
- * WEB_REVALIDATE_SECONDS through the fetch data cache (`next.revalidate`; 0
+ * DEFAULT_REVALIDATE_SECONDS (or the WEB_REVALIDATE_SECONDS override) through the fetch data cache (`next.revalidate`; 0
  * turns the cache off). With an `accessToken` it runs as that visitor and is
  * never cached, so one actor's answer cannot reach another.
  */
@@ -35,10 +40,10 @@ export async function fetchGraphql<T>(
   variables?: Record<string, unknown>,
   { accessToken }: GraphqlServerOptions = {},
 ): Promise<T> {
-  const { apiInternalUrl, revalidateSeconds } = getServerEnv();
+  const { appApiUrl, revalidateOverrideSeconds } = getServerEnv();
   let response: Response;
   try {
-    response = await fetch(`${apiInternalUrl}${API_ENDPOINTS.GRAPHQL}`, {
+    response = await fetch(`${appApiUrl}${API_ENDPOINTS.GRAPHQL}`, {
       method: 'POST',
       headers:
         accessToken === undefined
@@ -47,7 +52,7 @@ export async function fetchGraphql<T>(
       body: JSON.stringify({ ...document, variables }),
       signal: AbortSignal.timeout(API_TIMEOUT_MS),
       ...(accessToken === undefined
-        ? { next: { revalidate: revalidateSeconds } }
+        ? { next: { revalidate: revalidateOverrideSeconds ?? DEFAULT_REVALIDATE_SECONDS } }
         : { cache: 'no-store' }),
     });
   } catch {
