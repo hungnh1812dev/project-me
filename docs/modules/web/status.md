@@ -14,11 +14,11 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api.
+Holds the `StatusPage` text query and reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api.
 
 ## Techniques
 
-One fetch function and its query keys; it imports no other feature.
+One fetch function and its query keys, and the `StatusPage` query split into a client-safe `.graphql` file and a `server-only` loader (`null` when `statusPageText` failed); it imports no other feature.
 
 ## Technologies
 
@@ -26,7 +26,7 @@ Axios, TanStack Query.
 
 ## Entry points
 
-`fetchLiveHealth`, `HEALTH_QUERY_KEYS`.
+`fetchLiveHealth`, `HEALTH_QUERY_KEYS`, `loadStatusPage`.
 
 ## Where to change what
 
@@ -38,15 +38,17 @@ Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route)
 <!-- prettier-ignore-start -->
 
 ```
-status/ (2 files)
+status/ (4 files)
 ```
 
-Tests: 1 file (not listed).
+Tests: 3 files (not listed).
 
 | File | Description |
 |---|---|
 | `Health.api.ts` | Liveness call, response type and query keys (exports `HealthResponse`, `HEALTH_QUERY_KEYS`, `fetchLiveHealth`) |
 | `Health.server.ts` | Handler of `GET /api/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
+| `StatusPage.graphql.ts` | Client-safe `StatusPage` operation name, root field selection and text type (exports `StatusPageText`, `StatusPage`, `STATUS_PAGE_OPERATION_NAME`, `STATUS_PAGE_ROOT_FIELDS`) |
+| `StatusPage.server.ts` | `STATUS_PAGE_QUERY` and `loadStatusPage` (React `cache`): the page text, or `null` when `statusPageText` failed (exports `STATUS_PAGE_QUERY`, `loadStatusPage`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

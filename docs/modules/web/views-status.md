@@ -45,7 +45,7 @@ Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
-| `StatusView.tsx` | The status view: heading, description and the health card (exports `StatusView`) |
+| `StatusView.tsx` | The status view: heading, description and the health card with text from the `text` prop; the last-resort card words when it is `null` (exports `StatusView`) |
 | `useLiveHealth.ts` | Liveness state of cms-api for the card (exports `LiveHealthState`, `useLiveHealth`) |
 
 <!-- prettier-ignore-end -->
