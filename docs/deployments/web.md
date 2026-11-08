@@ -25,19 +25,19 @@ A Next.js server (standalone output) run by Node, as uid 1000, with no nginx in 
 
 Names and meaning only. Values for production: [configmaps.md](configmaps.md) section 4. Secrets: [secrets.md](secrets.md). Source of truth: `apps/web/.env.example`.
 
-| Key                           | Where                       | Meaning                                                                                                                             |
-| ----------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `API_INTERNAL_URL`            | env, required               | cms-api base URL as the web pod reaches it inside the cluster (server only)                                                         |
-| `WEB_ORIGIN`                  | env, required               | exact origin of the site, no path; the BFF accepts state-changing requests only from this `Origin`                                  |
-| `WEB_SESSION_SECRET`          | `web-secrets`, required     | key material sealing the session cookies; at least 32 bytes in production, else start fails                                         |
-| `TURNSTILE_SECRET_KEY`        | `web-secrets`, required     | Cloudflare Turnstile secret key; the BFF verifies every human check with it                                                         |
-| `TURNSTILE_EXPECTED_HOSTNAME` | env, required in production | bare lower-case hostname a Turnstile answer must carry                                                                              |
-| `TRUST_PROXY_HOPS`            | env, default 1              | proxies in front of web; the visitor IP is the Nth address from the right of `X-Forwarded-For` ([traefik.md](traefik.md) section 3) |
-| `CLIENT_IP_HEADER`            | env, optional               | header a trusted CDN sets to the visitor IP; wins over `X-Forwarded-For` when set                                                   |
-| `WEB_REVALIDATE_SECONDS`      | env, default 60             | data cache lifetime for server-side fetches; 0 disables caching                                                                     |
-| `WEB_PORT`                    | env, default 8080           | port the server listens on                                                                                                          |
+| Key                           | Where                       | Meaning                                                                                                                                               |
+| ----------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_API_URL`                 | env, required               | cms-api base URL as the web pod reaches it inside the cluster (server only); replaces `API_INTERNAL_URL`                                              |
+| `WEB_ORIGIN`                  | env, required               | exact origin of the site, no path; the BFF accepts state-changing requests only from this `Origin`                                                    |
+| `WEB_SESSION_SECRET`          | `web-secrets`, required     | key material sealing the session cookies; at least 32 bytes in production, else start fails                                                           |
+| `TURNSTILE_SECRET_KEY`        | `web-secrets`, required     | Cloudflare Turnstile secret key; the BFF verifies every human check with it                                                                           |
+| `TURNSTILE_EXPECTED_HOSTNAME` | env, required in production | bare lower-case hostname a Turnstile answer must carry                                                                                                |
+| `TRUST_PROXY_HOPS`            | env, default 1              | proxies in front of web; the visitor IP is the Nth address from the right of `X-Forwarded-For` ([traefik.md](traefik.md) section 3)                   |
+| `CLIENT_IP_HEADER`            | env, optional               | header a trusted CDN sets to the visitor IP; wins over `X-Forwarded-For` when set                                                                     |
+| `APP_API_TOKEN`               | `web-secrets`, required     | cms-api API token (`ak_live_...`) that web sends as Bearer for page content; create it with a read-only account so its reads are the `public` profile |
+| `WEB_PORT`                    | env, default 8080           | port the server listens on                                                                                                                            |
 
-Never set in deploy config (smoke and dev stacks only; production web refuses or ignores them): `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`. Removed keys to delete from the deploy repo: `NEXT_PUBLIC_API_BASE_URL`, `WEB_STATUS_PAGE_ENABLED` ([configmaps.md](configmaps.md) section 4).
+Never set in deploy config (smoke and dev stacks only; production web refuses or ignores them): `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `ALLOW_MOCK_FALLBACK`, `WEB_REVALIDATE_SECONDS` (the cache is 180 s per call without it). Removed keys to delete from the deploy repo: `NEXT_PUBLIC_API_BASE_URL`, `WEB_STATUS_PAGE_ENABLED`, `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS` ([configmaps.md](configmaps.md) section 4).
 
 ## 5. Routing (Traefik)
 
@@ -45,7 +45,7 @@ The whole `<domain>` host goes to the web Service on 8080; there is no cms-api r
 
 ## 6. Dependency on cms-api
 
-- Web reaches cms-api through `API_INTERNAL_URL` (cluster DNS, port 3000). cms-api must accept ingress from the web pods: NetworkPolicy example in [kubernetes.md](kubernetes.md) section 4 (pod label `app: web`).
+- Web reaches cms-api through `APP_API_URL` (cluster DNS, port 3000). cms-api must accept ingress from the web pods: NetworkPolicy example in [kubernetes.md](kubernetes.md) section 4 (pod label `app: web`).
 - Deploy order: cms-api first, then web ([release.md](release.md) section 2), so a new web never waits on an API still migrating.
 
 ## 7. Release, upgrade, rollback
@@ -64,7 +64,7 @@ The whole `<domain>` host goes to the web Service on 8080; there is no cms-api r
 5. `https://<domain>/api/unknown` answers 404 from web (no cms-api route on the public host).
 6. The response carries no `X-Powered-By` header.
 7. The Traefik access log shows real client IPs ([traefik.md](traefik.md) section 3).
-8. Content on the home page is current after `WEB_REVALIDATE_SECONDS` once an editor publishes a change.
+8. Content on the home page is current after 180 s (the per-call data cache) once an editor publishes a change.
 
 ## 9. What lives in the deploy repo
 

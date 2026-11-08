@@ -6,8 +6,17 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### New features
+
+- web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a local mock fallback through `MockView.ts` (WEB-1..WEB-8).
+
+### DevOps patches
+
+- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+
 ### Changes
 
+- web: spec for the content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful), page text from cms-api in three queries, per-call cache (180 s default), local mock fallback through `MockView.ts`, a role-display extension point, and `APP_API_URL` replacing `API_INTERNAL_URL` (WEB-1..WEB-8, public-site PS-1..PS-2); the public-site rules now say the homepage shows only the service status view (Q-BFF2); `site-shell` is a base web feature (web RULES "Layers").
 - root: `docs/deployments/web.md` is the DevOps deployment guide for the web service (image, env keys, routing, release, checks), linked from the DevOps runbook.
 - cms-api: every finished request leaves one log line (method, path without query, status, duration in ms), a warning above 1000 ms; the health probes are skipped (API-1).
 - root: the dev and smoke stacks keep the test account logins (`STACK_*`) in `.localEnv.agent`, generated once and reused on every start; `stack_load_accounts` replaces `stack_generate_credentials` (ADR 0020).
