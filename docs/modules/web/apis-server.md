@@ -54,7 +54,7 @@ server/ (0 files)
   bff/ (4 files)
   graphql/ (1 file)
   restful/ (4 files)
-    mocks/ (1 file)
+    mocks/ (2 files)
 ```
 
 Tests: 10 files (not listed).
@@ -70,7 +70,8 @@ Tests: 10 files (not listed).
 | `restful/MockFallback.server.ts` | TODO (exports `MOCK_FALLBACK_REASONS`, `MockFallbackReason`, `FillFromMocksInput`, `FillFromMocksResult` +1) |
 | `restful/ServerApi.client.ts` | `serverApi`: GET, POST, PUT, PATCH and DELETE over axios with the fetch adapter, data cache options, timeout, no redirect, `ServerApiError` codes |
 | `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed |
-| `restful/mocks/MockView.ts` | TODO (exports `MockView`, `MOCK_VIEW`) |
+| `restful/mocks/MockView.ts` | Mock answers by operation name and root field (exports `MockView`, `MOCK_VIEW`) |
+| `restful/mocks/SiteShell.mock.ts` | Mock text of the `SiteShell` operation: header, shared and sign-in texts (exports `SITE_SHELL_MOCK`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->
