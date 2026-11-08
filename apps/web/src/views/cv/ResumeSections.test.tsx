@@ -80,7 +80,7 @@ describe('ResumeSections', () => {
       TEXT.sections.experiences,
       TEXT.sections.educations,
       TEXT.sections.languages,
-      TEXT.sections.references,
+      TEXT.reference.title,
     ]);
     expect(screen.getByText('calm')).toBeInTheDocument();
     expect(screen.getByText('Northwind Labs')).toBeInTheDocument();

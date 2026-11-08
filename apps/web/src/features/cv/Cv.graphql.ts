@@ -94,7 +94,6 @@ export interface CvPageText {
     experiences: string;
     educations: string;
     languages: string;
-    references: string;
   };
   experience: {
     teamSize: string;
@@ -106,7 +105,7 @@ export interface CvPageText {
     repositoryLinkName: string;
     unnamedProject: string;
   };
-  reference: { phone: string };
+  reference: { title: string; phone: string };
 }
 
 /** What a visitor session reads: data only, no text. */
@@ -212,7 +211,6 @@ export const CV_PAGE_ROOT_FIELDS = {
       experiences
       educations
       languages
-      references
     }
     experience {
       teamSize
@@ -225,6 +223,7 @@ export const CV_PAGE_ROOT_FIELDS = {
       unnamedProject
     }
     reference {
+      title
       phone
     }
   }`,

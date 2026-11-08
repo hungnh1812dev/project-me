@@ -81,7 +81,6 @@ export const CV_PAGE_MOCK = {
       experiences: 'Experience',
       educations: 'Education',
       languages: 'Languages',
-      references: 'References',
     },
     experience: {
       teamSize: 'Team of {size}',
@@ -94,6 +93,7 @@ export const CV_PAGE_MOCK = {
       unnamedProject: 'Project',
     },
     reference: {
+      title: 'References',
       phone: 'Phone',
     },
   },

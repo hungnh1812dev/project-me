@@ -1,10 +1,17 @@
-import { parse, type FieldNode, type SelectionSetNode } from 'graphql';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { buildSchema, parse, validate, type FieldNode, type SelectionSetNode } from 'graphql';
 
 import { MOCK_VIEW } from '@/apis/server/restful/mocks/MockView';
 import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
 
 import { SITE_SHELL_OPERATION_NAME, SITE_SHELL_ROOT_FIELDS } from './SiteShell.graphql';
 import { SITE_SHELL_QUERY } from './SiteShell.server';
+
+// Read by path: the web app never imports cms-api code.
+const SDL_PATH = resolve(import.meta.dirname, '../../../../cms-api/content/schema.graphql');
+const schema = buildSchema(readFileSync(SDL_PATH, 'utf8'));
 
 // D18 limits of the content API.
 const MAX_ROOT_FIELDS = 5;
@@ -48,6 +55,10 @@ function mockPaths(value: unknown, prefix = ''): string[] {
 }
 
 describe('SiteShell mock and query', () => {
+  it('is valid against the generated cms-api schema', () => {
+    expect(validate(schema, parse(SITE_SHELL_QUERY.document.query))).toEqual([]);
+  });
+
   it('names its operation and is registered in the mock view', () => {
     expect(SITE_SHELL_QUERY.document.query).toContain(`query ${SITE_SHELL_OPERATION_NAME}`);
     expect(MOCK_VIEW[SITE_SHELL_OPERATION_NAME]).toBe(SITE_SHELL_MOCK);

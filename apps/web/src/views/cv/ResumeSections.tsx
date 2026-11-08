@@ -321,7 +321,7 @@ export function ReferencesSection({ resume, text }: SectionProps) {
   if (references.length === 0) return null;
   const isPhoneMasked = isMaskedField(resume, 'references.phone');
   return (
-    <Section title={text.sections.references}>
+    <Section title={text.reference.title}>
       <ul className="grid gap-4 sm:grid-cols-2">
         {references.map((reference, index) => (
           <li key={`${reference.name}-${index}`} className="text-sm">
