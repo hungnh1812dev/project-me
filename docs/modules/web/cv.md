@@ -18,7 +18,7 @@ Loads the published CV page through GraphQL on the Next server and hands it to t
 
 ## Techniques
 
-`server-only` loader wrapped in React `cache`, so metadata and page share one request per render; richtext is sanitized with DOMPurify before it leaves the server (D13). `CvPage` asks `cvPageList` (`isMain = true`, newest, one entry), `cvContact` and `cvPageText`; a failed list or text throws to `error.tsx`. The signed-in refetch uses the data-only `CvPageVisitor` (same selections, picked from `CV_PAGE_ROOT_FIELDS`, no text). `mainResumeOf` reads `cvPageList.data[0]` (Q-G7).
+`server-only` loader wrapped in React `cache`, so metadata and page share one request per render; richtext is sanitized with DOMPurify before it leaves the server (D13). `CvPage` asks `cvPageList` (`isMain = true`, newest, one entry), `cvContact` and `cvPageText`; a failed list or text throws to `error.tsx`. The signed-in refetch uses the data-only `CvPageVisitor` (same selections, picked from `CV_PAGE_ROOT_FIELDS`, no text). `mainResumeOf` reads `cvPageList.data[0]` (Q-G7). When the signed-in refetch fails, `CvView` keeps the server-rendered anonymous CV (or its empty state) under the refetch-failed alert.
 
 ## Technologies
 

@@ -94,7 +94,7 @@ describe('CvView', () => {
     expect(get).toHaveBeenCalledWith(BFF_ENDPOINTS.CV);
   });
 
-  it('shows an error, not the public data, when the refetch fails', async () => {
+  it('keeps the anonymous CV beside the alert when the refetch fails', async () => {
     vi.spyOn(clientApi, 'get').mockRejectedValue(new Error('401'));
     render(
       <Wrapper api={signedInApi()}>
@@ -102,7 +102,18 @@ describe('CvView', () => {
       </Wrapper>,
     );
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(TEXT.refetchFailed));
-    expect(screen.queryByText('Mai Server')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Mai Server' })).toBeInTheDocument();
+  });
+
+  it('shows the empty state with the alert when the refetch fails and no resume exists', async () => {
+    vi.spyOn(clientApi, 'get').mockRejectedValue(new Error('401'));
+    render(
+      <Wrapper api={signedInApi()}>
+        <CvView initialData={{ cvPageList: { data: [] }, cvContact: null }} text={TEXT} />
+      </Wrapper>,
+    );
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(TEXT.refetchFailed));
+    expect(screen.getByRole('heading', { level: 1, name: TEXT.emptyTitle })).toBeInTheDocument();
   });
 
   it('falls back to the server data after sign-out', async () => {
