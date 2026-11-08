@@ -34,7 +34,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 
 ## Entry points
 
-`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorResponse` (`bff/`); `serverApi`, `ServerApiError`, `SERVER_API_FAILURE_CODES` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `fetchGraphql(document, variables?, { accessToken? })` (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
+`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorResponse` (`bff/`); `serverApi`, `ServerApiError`, `SERVER_API_FAILURE_CODES` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `defineContentQuery`, `runContentQuery` (API token, cached, per-root-field mock fill, single-field retry when the mocks are on) and `runVisitorQuery` (visitor token, no-store, never mocked) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
 
 ## Where to change what
 
@@ -65,7 +65,7 @@ Tests: 10 files (not listed).
 | `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, human-check hook, handle, no-store |
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
-| `graphql/Graphql.server.ts` | Server GraphQL query: anonymous with the data cache, or Bearer without it |
+| `graphql/Graphql.server.ts` | Server GraphQL: `defineContentQuery` builds the document from the root fields; `runContentQuery` reads them per root field with the API token and fills the failed ones from the mocks; `runVisitorQuery` runs as one visitor, uncached |
 | `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding and fixed error codes, sent through `serverApi` |
 | `restful/MockFallback.server.ts` | TODO (exports `MOCK_FALLBACK_REASONS`, `MockFallbackReason`, `FillFromMocksInput`, `FillFromMocksResult` +1) |
 | `restful/ServerApi.client.ts` | `serverApi`: GET, POST, PUT, PATCH and DELETE over axios with the fetch adapter, data cache options, timeout, no redirect, `ServerApiError` codes |

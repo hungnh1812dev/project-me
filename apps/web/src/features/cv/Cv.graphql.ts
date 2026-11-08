@@ -1,5 +1,3 @@
-import type { GraphqlDocument } from '@/apis/GraphqlResponse.rules';
-
 export interface ResumeSkill {
   level: string | null;
   skill: string | null;
@@ -79,81 +77,78 @@ export interface CvPageData {
   cvContact: CvContact | null;
 }
 
-/** The newest published resume marked as main, with the contact card. */
-export const CV_PAGE_DOCUMENT = {
-  operationName: 'CvPage',
-  query: /* GraphQL */ `
-    query CvPage {
-      resumeList(
-        filter: { isMain: { eq: true } }
-        sort: [{ field: updatedAt, direction: DESC }]
-        pageSize: 1
-      ) {
-        data {
-          documentId
+export const CV_PAGE_OPERATION_NAME = 'CvPage';
+
+/** The newest published resume marked as main, with the contact card: each root field's text after its name. */
+export const CV_PAGE_ROOT_FIELDS = {
+  resumeList: `(
+    filter: { isMain: { eq: true } }
+    sort: [{ field: updatedAt, direction: DESC }]
+    pageSize: 1
+  ) {
+    data {
+      documentId
+      position
+      name
+      summary
+      skills {
+        level
+        skill
+      }
+      experiences {
+        company
+        location
+        period
+        roles {
           position
-          name
-          summary
-          skills {
-            level
-            skill
-          }
-          experiences {
-            company
-            location
-            period
-            roles {
-              position
-              period
-              teamSize
-              techStack
-              responsibilities
-              projects {
-                name
-                teamSize
-                role
-                liveLink
-                repositoryLink
-                techStack
-                responsibilities
-              }
-            }
-          }
-          educations {
-            degree
-            institution
-            period
-            location
-            description
-          }
-          languages {
-            language
-            level
-          }
-          referees {
+          period
+          teamSize
+          techStack
+          responsibilities
+          projects {
             name
-            phone
+            teamSize
             role
+            liveLink
+            repositoryLink
+            techStack
+            responsibilities
           }
-          _maskedFields
         }
       }
-      cvContact {
+      educations {
+        degree
+        institution
+        period
+        location
+        description
+      }
+      languages {
+        language
+        level
+      }
+      referees {
         name
-        address
         phone
-        email
-        linkedin
-        github
-        avatar {
-          url
-          alt
-        }
-        _maskedFields
+        role
       }
+      _maskedFields
     }
-  `,
-} as const satisfies GraphqlDocument;
+  }`,
+  cvContact: `{
+    name
+    address
+    phone
+    email
+    linkedin
+    github
+    avatar {
+      url
+      alt
+    }
+    _maskedFields
+  }`,
+} as const;
 
 export function mainResumeOf(data: CvPageData): Resume | undefined {
   return data.resumeList.data[0];

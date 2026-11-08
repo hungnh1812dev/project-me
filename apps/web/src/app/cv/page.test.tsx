@@ -1,15 +1,17 @@
 import { render, screen } from '@testing-library/react';
 
-import { fetchGraphql } from '../../apis/server/graphql/Graphql.server';
+import { runContentQuery } from '../../apis/server/graphql/Graphql.server';
 import { COPY } from '../../configs/Copy.constants';
 import type { CvPageData } from '../../features/cv/Cv.graphql';
 import { fakeApi, Wrapper } from '../../features/session/Session.fixture';
 import CvPage, { generateMetadata } from './page';
 
 vi.mock('../../apis/server/graphql/Graphql.server', () => ({
-  fetchGraphql: vi.fn<typeof fetchGraphql>(),
+  defineContentQuery: (definition: object) => ({ ...definition, document: {} }),
+  runContentQuery: vi.fn<typeof runContentQuery>(),
 }));
-const fetchGraphqlMock = vi.mocked(fetchGraphql);
+const runContentQueryMock = vi.mocked(runContentQuery);
+const resultOf = (data: CvPageData) => ({ failedRootFields: [], data }) as never;
 
 const EMPTY: CvPageData = { resumeList: { data: [] }, cvContact: null };
 const WITH_RESUME = {
@@ -33,24 +35,24 @@ async function renderPage() {
 
 describe('CvPage', () => {
   beforeEach(() => {
-    fetchGraphqlMock.mockReset();
+    runContentQueryMock.mockReset();
   });
 
   it('renders the name and position of the main resume', async () => {
-    fetchGraphqlMock.mockResolvedValue(WITH_RESUME);
+    runContentQueryMock.mockResolvedValue(resultOf(WITH_RESUME));
     await renderPage();
     expect(screen.getByRole('heading', { level: 1, name: 'Mai Server' })).toBeInTheDocument();
     expect(screen.getByText('Engineer')).toBeInTheDocument();
   });
 
   it('renders the empty state when the list is empty', async () => {
-    fetchGraphqlMock.mockResolvedValue(EMPTY);
+    runContentQueryMock.mockResolvedValue(resultOf(EMPTY));
     await renderPage();
     expect(screen.getByRole('heading', { level: 1, name: COPY.cv.emptyTitle })).toBeInTheDocument();
   });
 
   it('lets a failed load reach the error boundary', async () => {
-    fetchGraphqlMock.mockImplementation(() => Promise.reject(new Error('down')));
+    runContentQueryMock.mockImplementation(() => Promise.reject(new Error('down')));
     let caught: unknown;
     try {
       await CvPage();
@@ -63,20 +65,20 @@ describe('CvPage', () => {
 
 describe('generateMetadata', () => {
   beforeEach(() => {
-    fetchGraphqlMock.mockReset();
+    runContentQueryMock.mockReset();
   });
 
   it('titles the page with name and position', async () => {
-    fetchGraphqlMock.mockResolvedValue(WITH_RESUME);
+    runContentQueryMock.mockResolvedValue(resultOf(WITH_RESUME));
     await expect(generateMetadata()).resolves.toEqual({
       title: 'Mai Server - Engineer',
     });
   });
 
   it('keeps the default title when there is no resume or the load fails', async () => {
-    fetchGraphqlMock.mockResolvedValueOnce(EMPTY);
+    runContentQueryMock.mockResolvedValueOnce(resultOf(EMPTY));
     await expect(generateMetadata()).resolves.toEqual({});
-    fetchGraphqlMock.mockImplementationOnce(() => Promise.reject(new Error('down')));
+    runContentQueryMock.mockImplementationOnce(() => Promise.reject(new Error('down')));
     await expect(generateMetadata()).resolves.toEqual({});
   });
 });

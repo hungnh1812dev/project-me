@@ -1,10 +1,12 @@
-import { fetchGraphql } from '@/apis/server/graphql/Graphql.server';
+import { runContentQuery, runVisitorQuery } from '@/apis/server/graphql/Graphql.server';
 
 import { readWebSession } from '../session/WebSession.server';
 import { answerCvRead, loadCvPage } from './CvPage.server';
 
 vi.mock('../../apis/server/graphql/Graphql.server', () => ({
-  fetchGraphql: vi.fn<typeof fetchGraphql>(),
+  defineContentQuery: (definition: object) => ({ ...definition, document: {} }),
+  runContentQuery: vi.fn<typeof runContentQuery>(),
+  runVisitorQuery: vi.fn<typeof runVisitorQuery>(),
 }));
 
 vi.mock('../session/WebSession.server', () => ({
@@ -17,27 +19,38 @@ beforeEach(() => {
 
 describe('loadCvPage', () => {
   it('sanitizes richtext on the server before it reaches the page', async () => {
-    vi.mocked(fetchGraphql).mockResolvedValue({
-      resumeList: {
-        data: [
-          {
-            documentId: 'r1',
-            summary: '<p>ok</p><script>steal()</script><img src=x onerror=x()>',
-            experiences: [
-              {
-                roles: [{ responsibilities: '<a href="javascript:x()">go</a>' }],
-              },
-            ],
-          },
-        ],
+    vi.mocked(runContentQuery).mockResolvedValue({
+      failedRootFields: [],
+      data: {
+        resumeList: {
+          data: [
+            {
+              documentId: 'r1',
+              summary: '<p>ok</p><script>steal()</script><img src=x onerror=x()>',
+              experiences: [
+                {
+                  roles: [{ responsibilities: '<a href="javascript:x()">go</a>' }],
+                },
+              ],
+            },
+          ],
+        },
+        cvContact: null,
       },
-      cvContact: null,
     });
 
     const [resume] = (await loadCvPage()).resumeList.data;
 
     expect(resume?.summary).toBe('<p>ok</p>');
     expect(resume?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('<a>go</a>');
+  });
+
+  it('throws when the resume list could not be read, and accepts a missing contact card', async () => {
+    vi.mocked(runContentQuery).mockResolvedValue({
+      failedRootFields: ['resumeList'],
+      data: { resumeList: null, cvContact: null },
+    } as never);
+    await expect(loadCvPage()).rejects.toMatchObject({ code: 'NO_DATA' });
   });
 });
 
@@ -55,11 +68,11 @@ describe('answerCvRead', () => {
       accessToken: 'tok-1',
       setCookies: ['web_session=new; Path=/'],
     });
-    vi.mocked(fetchGraphql).mockResolvedValue({ resumeList: { data: [] }, cvContact: null });
+    vi.mocked(runVisitorQuery).mockResolvedValue({ resumeList: { data: [] }, cvContact: null });
 
     const response = await answerCvRead(context);
 
-    expect(vi.mocked(fetchGraphql).mock.lastCall?.[2]).toEqual({ accessToken: 'tok-1' });
+    expect(vi.mocked(runVisitorQuery).mock.lastCall?.[1]).toBe('tok-1');
     expect(await response.json()).toEqual({ resumeList: { data: [] }, cvContact: null });
     expect(response.headers.getSetCookie()).toEqual(['web_session=new; Path=/']);
   });
@@ -74,6 +87,6 @@ describe('answerCvRead', () => {
       errorCode: 'BFF_SESSION_REQUIRED',
       setCookies: ['web_session=; Max-Age=0'],
     });
-    expect(fetchGraphql).not.toHaveBeenCalled();
+    expect(runVisitorQuery).not.toHaveBeenCalled();
   });
 });

@@ -3,7 +3,14 @@ import { resolve } from 'node:path';
 
 import { buildSchema, parse, validate } from 'graphql';
 
-import { CV_PAGE_DOCUMENT } from './Cv.graphql';
+import { defineContentQuery } from '@/apis/server/graphql/Graphql.server';
+
+import { CV_PAGE_OPERATION_NAME, CV_PAGE_ROOT_FIELDS, type CvPageData } from './Cv.graphql';
+
+const CV_PAGE_DOCUMENT = defineContentQuery<CvPageData>({
+  operationName: CV_PAGE_OPERATION_NAME,
+  rootFields: CV_PAGE_ROOT_FIELDS,
+}).document;
 
 // Read by path: the web app never imports cms-api code.
 const SDL_PATH = resolve(import.meta.dirname, '../../../../cms-api/content/schema.graphql');
