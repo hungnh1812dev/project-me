@@ -38,19 +38,20 @@ function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode })
   const dismissSubNav = (event: KeyboardEvent) => {
     if (event.key === 'Escape') setIsSubNavDismissed(true);
   };
-  const reopenSubNavWhenFocusLeaves = (event: FocusEvent<HTMLLIElement>) => {
+  const reopenSubNavWhenFocusLeaves = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget)) setIsSubNavDismissed(false);
   };
   return (
-    <li
-      className="group relative"
-      data-subnav-dismissed={isSubNavDismissed ? '' : undefined}
-      onKeyDown={dismissSubNav}
-      onBlur={reopenSubNavWhenFocusLeaves}
-      onMouseLeave={() => setIsSubNavDismissed(false)}
-    >
-      <NavLink title={entry.title} link={entry.link} />
-      {children}
+    <li className="group relative" data-subnav-dismissed={isSubNavDismissed ? '' : undefined}>
+      <div
+        role="presentation"
+        onKeyDown={dismissSubNav}
+        onBlur={reopenSubNavWhenFocusLeaves}
+        onMouseLeave={() => setIsSubNavDismissed(false)}
+      >
+        <NavLink title={entry.title} link={entry.link} />
+        {children}
+      </div>
     </li>
   );
 }
