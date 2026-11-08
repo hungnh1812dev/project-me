@@ -1,11 +1,9 @@
 import { useRef, useState } from 'react';
 
-import { COPY } from '@/configs/Copy.constants';
 import type { TurnstileAction } from '@/configs/Security.constants';
+import { useRequiredSignInText } from '@/features/site-shell';
 
 import { TurnstileWidget } from './TurnstileWidget';
-
-const copy = COPY.login.humanCheck;
 
 /**
  * Owns the Turnstile token and its error for one sign-in step. `field` is the
@@ -13,6 +11,7 @@ const copy = COPY.login.humanCheck;
  * challenge: every request carries a token of its own.
  */
 export function useHumanCheck(siteKey: string, action: TurnstileAction) {
+  const copy = useRequiredSignInText().humanCheck;
   const [token, setToken] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);

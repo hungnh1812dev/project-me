@@ -30,7 +30,7 @@ Facade `index.ts`: `WebLoginDialog` (opened from the account menu).
 
 ## Where to change what
 
-Alert texts and mapping: `LoginAlerts.rules.ts` and the web copy module. The calls: `features/session` (`Auth.api.ts`).
+Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. All sign-in text comes from `useRequiredSignInText()` of `features/site-shell` (the `signInText` single type), never from `Copy.constants`. The calls: `features/session` (`Auth.api.ts`).
 
 ## Files
 

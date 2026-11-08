@@ -26,11 +26,11 @@ React (`cache`, context); `graphql` (dev, in specs).
 
 ## Entry points
 
-`SiteTextProvider`, `useSiteText`, `useSignInText`, `LAST_RESORT_TEXT`, the text types (`index.ts`, client-safe); `loadSiteShell` and `SITE_SHELL_QUERY` (server file, imported by the layout and specs only).
+`SiteTextProvider` (header, siteText, signInText), `useSiteText`, `useSignInText`, `useSiteHeader` (all `null` outside the provider), `useRequiredSiteText`, `useRequiredSignInText` (throw outside it; for the account menu and sign-in dialog), `LAST_RESORT_TEXT`, the text types (`index.ts`, client-safe); `loadSiteShell` and `SITE_SHELL_QUERY` (server file, imported by the layout and specs only).
 
 ## Where to change what
 
-A new shared text: add it to `SITE_SHELL_ROOT_FIELDS`, the type, and `SiteShell.mock.ts` together; the spec fails when they differ. Keep the D18 limits (root fields at most 5, depth 8, field nodes 500). The context holds only text.
+A new shared text: add it to `SITE_SHELL_ROOT_FIELDS`, the type, and `SiteShell.mock.ts` together; the spec fails when they differ. Keep the D18 limits (root fields at most 5, depth 8, field nodes 500). The context holds only text and the public header. Test provider: `ShellTextProvider` in `features/session/Session.fixture.tsx`, fed from `SiteShell.mock.ts`.
 
 ## Files
 

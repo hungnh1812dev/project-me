@@ -17,15 +17,14 @@ import { FormProvider, useForm } from 'react-hook-form';
 
 import type { Alert } from '@/apis/client/ApiFailure.errors';
 import { appEnv } from '@/configs/Browser.env';
-import { COPY } from '@/configs/Copy.constants';
 import { TURNSTILE } from '@/configs/Security.constants';
+import { useRequiredSignInText } from '@/features/site-shell';
 
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 import { TwoFactorStep } from './TwoFactorStep';
 import { useHumanCheck } from './useHumanCheck';
 
-const copy = COPY.login;
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface LoginValues {
@@ -60,6 +59,7 @@ export function WebLoginDialog({
 }
 
 function HumanCheckUnavailable() {
+  const copy = useRequiredSignInText();
   return (
     <DialogHeader>
       <DialogTitle>{copy.title}</DialogTitle>
@@ -70,6 +70,7 @@ function HumanCheckUnavailable() {
 
 function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void }) {
   const session = useWebSession();
+  const copy = useRequiredSignInText();
   const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.LOGIN);
   const [alert, setAlert] = useState<Alert | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
@@ -92,7 +93,9 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
       setChallenge({ methods: outcome.methods });
     },
     onError: (cause) => {
-      setAlert(loginErrorAlertOf(cause, credentialAlertOf));
+      setAlert(
+        loginErrorAlertOf(cause, copy.errors, (failure) => credentialAlertOf(failure, copy.errors)),
+      );
       form.resetField('password');
       form.resetField('rememberMe');
       form.setFocus('password');

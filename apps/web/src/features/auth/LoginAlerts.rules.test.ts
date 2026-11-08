@@ -1,16 +1,16 @@
 import { AxiosError } from 'axios';
 
-import { COPY } from '@/configs/Copy.constants';
+import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
 
 import { PrivilegedAccessError } from '../session';
-import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
+import { credentialAlertOf, loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
 
-const { errors } = COPY.login;
+const { errors } = SITE_SHELL_MOCK.signInText;
 
 describe('loginErrorAlertOf', () => {
   it('checks a privileged account before mapping the failure', () => {
     const mapFailure = vi.fn<() => string>(() => 'mapped');
-    expect(loginErrorAlertOf(new PrivilegedAccessError(), mapFailure)).toEqual({
+    expect(loginErrorAlertOf(new PrivilegedAccessError(), errors, mapFailure)).toEqual({
       tone: 'warning',
       message: errors.privileged,
     });
@@ -18,13 +18,27 @@ describe('loginErrorAlertOf', () => {
   });
 
   it('maps any other error through its failure', () => {
-    expect(loginErrorAlertOf(new AxiosError('down'), (failure) => failure.kind)).toBe('network');
+    expect(loginErrorAlertOf(new AxiosError('down'), errors, (failure) => failure.kind)).toBe(
+      'network',
+    );
+  });
+});
+
+describe('rateLimitedMessage', () => {
+  it.each([
+    [undefined, errors.rateLimited],
+    [1, 'Too many sign-in attempts. Try again in 1 second.'],
+    [59, 'Too many sign-in attempts. Try again in 59 seconds.'],
+    [60, 'Too many sign-in attempts. Try again in 1 minute.'],
+    [61, 'Too many sign-in attempts. Try again in 2 minutes.'],
+  ])('reads %s seconds as one wait message', (seconds, message) => {
+    expect(rateLimitedMessage(seconds, errors)).toBe(message);
   });
 });
 
 describe('credentialAlertOf', () => {
   const http = (errorCode: string | undefined, status = 400) =>
-    credentialAlertOf({ kind: 'http', status, errorCode });
+    credentialAlertOf({ kind: 'http', status, errorCode }, errors);
 
   it('reads BFF_INVALID_CREDENTIALS as one generic message', () => {
     expect(http('BFF_INVALID_CREDENTIALS', 401)).toEqual({
@@ -47,11 +61,11 @@ describe('credentialAlertOf', () => {
   });
 
   it('maps a rate limit to its wait and a network failure to a warning', () => {
-    expect(credentialAlertOf({ kind: 'rate-limited', retryAfterSeconds: 30 })).toEqual({
+    expect(credentialAlertOf({ kind: 'rate-limited', retryAfterSeconds: 30 }, errors)).toEqual({
       tone: 'warning',
-      message: errors.rateLimitedSeconds(30),
+      message: 'Too many sign-in attempts. Try again in 30 seconds.',
     });
-    expect(credentialAlertOf({ kind: 'network' })).toEqual({
+    expect(credentialAlertOf({ kind: 'network' }, errors)).toEqual({
       tone: 'warning',
       message: errors.network,
     });

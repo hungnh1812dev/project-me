@@ -2,12 +2,10 @@ import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { COPY } from '@/configs/Copy.constants';
-
-import { fakeApi, TEST_USER, Wrapper } from '../session/Session.fixture';
+import { fakeApi, SHELL_TEXT, TEST_USER, Wrapper } from '../session/Session.fixture';
 import { WebLoginDialog } from './WebLoginDialog';
 
-const copy = COPY.login;
+const copy = SHELL_TEXT.signInText;
 const HUMAN_CHECK_TOKEN = 'human-check-token';
 
 vi.mock('./TurnstileWidget', () => ({
