@@ -64,6 +64,7 @@ compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 pass() { echo "  ok   $1"; }
 fail() { echo "  FAIL $1" >&2; FAILURES=$((FAILURES + 1)); }
 FAILURES=0
+OWNER_EXISTS_MESSAGE="An owner account already exists"
 
 # api_exec [-e VAR=value ...] -- <command...>: runs in apps/cms-api on the host
 # (the smoke stack runs it in the container); stdin passes through.
@@ -218,11 +219,19 @@ build_prerequisites() {
   pnpm --dir "$ROOT_DIR" --filter @abyss/cms-api build
 }
 
+# owner:bootstrap refuses a second owner, so a restart on kept data is not a failure.
+bootstrap_owner_once() {
+  local out_file="$STATE_DIR/owner-bootstrap.out" status=0
+  printf '%s\n' "$STACK_OWNER_PASSWORD" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}" >"$out_file" 2>&1 || status=$?
+  cat "$out_file" >>"$STATE_DIR/migrate.log"
+  ((status == 0)) || grep -q "$OWNER_EXISTS_MESSAGE" "$out_file" || { echo "owner:bootstrap failed (see $STATE_DIR/migrate.log)." >&2; exit 1; }
+}
+
 prepare_data() {
   echo "Migrating and seeding..."
   api_exec -- npm run --silent db:migrate >>"$STATE_DIR/migrate.log" 2>&1
   api_exec -- node dist/modules/content-engine/cli/ContentMigrate.command.js >>"$STATE_DIR/migrate.log" 2>&1
-  printf '%s\n' "$STACK_OWNER_PASSWORD" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}" >>"$STATE_DIR/migrate.log" 2>&1
+  bootstrap_owner_once
   stack_seed_extra_accounts
   ((FAILURES == 0)) || { echo "Seeding failed." >&2; exit 1; }
 }
