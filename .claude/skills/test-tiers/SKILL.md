@@ -36,6 +36,22 @@ Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint
 - **security-qc:** never starts or stops a stack. Tier 1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
 - **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both, and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
 
+## Access preflight
+
+A background checker cannot answer a permission prompt: a call outside the allowlist is denied and the round is lost. So before any tier 2 or 3 run (`CHECK`, `RECHECK`, a per-unit review, `AUDIT`), qc and security-qc work out what the run needs before the first row. Tier 1 runs skip it.
+
+1. **List the needs** from the rows of the tier (on `RECHECK` also the findings and `Fix log`):
+   - commands as permission patterns (`Bash(E2E_STACK=dev pnpm e2e:spec *)`, `Bash(curl -s http://localhost:8080/*)`) and MCP tools (`mcp__chrome-devtools__*`);
+   - paths read or written outside your edit list;
+   - `.localEnv.agent` keys by name (never values); real or external values only the user has;
+   - the stack and URLs; any action that writes data on the stack (create, edit or delete content, sign-in attempts) or leaves localhost.
+2. **Probe**, read-only, seconds only: the stack answers at its URL; each key exists in `.localEnv.agent` (`grep -c '^<KEY>='`); for browser rows `list_pages` answers.
+3. **Decide.** Every pattern is in `permissions.allow` of `.claude/settings.json` or `.claude/settings.local.json`, no value is missing and every probe is green → run, no stop. Otherwise stop before the first row and report `status: preflight` with one `access:` line per need: `<pattern | key | probe> · <row IDs> · <allowed | needed | missing value | probe failed: <what>>`.
+4. **Manager:** one `AskUserQuestion` for every `needed` line (allow for this run / allow always / refuse) and every missing value. Approved patterns go in `.claude/settings.local.json` `permissions.allow` (create it if missing; never `.claude/settings.json`): "allow always" stays, "this run" is removed after that tier run. A pattern the file has that is too narrow for the need is a `needed` line too: ask to widen it, never widen it unasked. Fix what it can (stack down → start it). Then `SendMessage` the same checker: `GO` plus the refused lines; their rows go `blocked`, `Note` `access refused: <pattern>`.
+5. **Missed need mid-run:** never retry a denied call. That row `blocked`, `Note` `access: <pattern>`; finish the other rows; list it under `access:`. The manager asks, then sends `RECHECK` for those rows only.
+
+Name needs as command patterns, not one line per call: a short list the user can judge in one look.
+
 ## Progress file
 
 During any run (checklist, recheck, audit, per-unit review), qc and security-qc keep one line each in `<F>/qc-progress.md` (header `# QC progress`):

@@ -43,10 +43,11 @@ Only for a feature with more than one phase.
 ## CHECK / RECHECK
 
 1. Read `project.md` and the checklist. Take only your rows of the tier sent (on `RECHECK`: only `failed` ones, plus the `Fix log` in `<F>/current.md` and your findings file).
-2. Run the tier once for all of them. Tier 2: the `dev stack` only, never the full stack. Tier 3: the `full stack` in kept mode. Add or update e2e tests for rows that need one.
-3. Write each row's `Status` (`pass` / `failed` / `blocked`) and `Note`.
-4. Format the test files you changed (`code-standards`).
-5. Keep the stack running if `Notes` says security-qc needs it; otherwise stop it.
+2. Tier 2 or 3: access preflight (`test-tiers` "Access preflight") before the first row; stop with `status: preflight` when it says so, and go on only on the manager's `GO`.
+3. Run the tier once for all of them. Tier 2: the `dev stack` only, never the full stack. Tier 3: the `full stack` in kept mode. Add or update e2e tests for rows that need one.
+4. Write each row's `Status` (`pass` / `failed` / `blocked`) and `Note`.
+5. Format the test files you changed (`code-standards`).
+6. Keep the stack running if `Notes` says security-qc needs it; otherwise stop it.
 
 A row missing a dev-only value: add it to `.localEnv.agent` and run. A real or external value (API key, SMTP, ...): row `blocked`, key name in `Note` and `questions`.
 
@@ -72,7 +73,7 @@ A row still `failed` after the round, or `blocked`: entry under `## qc` in `<F>/
 
 ## AUDIT
 
-Full e2e suite, then the main flows of every app in the browser with a UI/UX review against `web-design-guidelines` and `ui-direction`. Findings only; no tests unless `Notes` asks; no checklist.
+Access preflight first (`test-tiers`). Full e2e suite, then the main flows of every app in the browser with a UI/UX review against `web-design-guidelines` and `ui-direction`. Findings only; no tests unless `Notes` asks; no checklist.
 
 ## Findings file
 
@@ -91,7 +92,8 @@ Full e2e suite, then the main flows of every app in the browser with a UI/UX rev
 QC REPORT
 job: <CHECKLIST | CHECK | RECHECK | AUDIT> <checkpoint | feature>
 tier: <0 | 1 | 2 | 3 | n/a>
-status: pass | findings | blocked | drafted
+status: pass | findings | blocked | drafted | preflight
+access: <one line per need (`test-tiers` "Access preflight"), or none>
 findings_file: <path, or none (deleted / not needed)>
 e2e tests changed: <paths, or none>
 e2e run: pass (<n>) | fail (details in findings file)
