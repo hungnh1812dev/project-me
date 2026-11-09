@@ -6,8 +6,8 @@ Decisions: user 2026-11-09: approve plan; build now while reviewer-console waits
 Open risks: none
 
 ## Phase 1: Build and push to the local k3d registry
-Base: f34d4a12f3d10ce8d5ed96f587a07a804a03d8cb · Phase checks: qc pending · security pending · Checkpoint: pending
-Checkpoints: LRP-A pending (checklists/LRP-A.md)
+Base: f34d4a12f3d10ce8d5ed96f587a07a804a03d8cb · Phase checks: qc pass · security pass · Checkpoint: pass (2026-11-09)
+Checkpoints: LRP-A pass (checklists/LRP-A.md, 18 rows)
 
 | ID | Title | Scope | Status | Commit |
 |---|---|---|---|---|
