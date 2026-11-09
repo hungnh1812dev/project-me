@@ -38,14 +38,15 @@ A new primitive: one file here, export it from the package `index.ts`, update th
 <!-- prettier-ignore-start -->
 
 ```
-ui/ (14 files)
+ui/ (15 files)
 ```
 
-Tests: 8 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
 | `Button.tsx` | `Button`, `buttonVariants`: button with variants and sizes |
+| `Card.tsx` | `Card`, `cardVariants`: premium surface card (padding variants, interactive hover and focus, `asChild`) |
 | `Checkbox.tsx` | `Checkbox`: Radix checkbox |
 | `Control.constants.ts` | Shared focus (3 px ring plus 1 px `focus-edge` edge, exported), focus-within, destructive focus and invalid class sets for controls |
 | `Dialog.tsx` | `Dialog` and its parts (content, header, footer, title, description, overlay) |
