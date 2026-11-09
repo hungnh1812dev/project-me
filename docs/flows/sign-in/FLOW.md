@@ -123,7 +123,7 @@ sequenceDiagram
   participant B as Browser
   participant F as web BFF /api/v1
   participant T as Cloudflare Turnstile
-  participant API as cms-api (API_INTERNAL_URL)
+  participant API as cms-api (APP_API_URL)
   U->>B: email + password (+ Keep me signed in)
   B->>F: POST /api/v1/auth/login (humanCheckToken, rememberMe?)
   F->>F: method, Origin, JSON, size, rate limit, Zod schema

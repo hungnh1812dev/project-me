@@ -1,7 +1,7 @@
 ---
 flow: public-site
 replaces: D18, §14 Q5, §14 Q-G1..Q-G7
-summary: The public CV site: CV page from published content over GraphQL, the service status card, the web BFF reads
+summary: The public site: service status on `/`, the CV from published content on `/cv`, page text from cms-api over GraphQL, the web BFF reads
 ---
 
 # Public site: spec
@@ -10,13 +10,21 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 
 ## Behaviour
 
-The public site (`domain.com`, Next.js) shows only a "Service status" view on the homepage `/` and the CV from published content on `/cv` (D21, Q-BFF2, user 2026-10-31), reached by a "CV" link in the site header (Q-WBH1, user 2026-11-05). The Next server reads content anonymously over the read-only GraphQL API (D18) on `API_INTERNAL_URL`; the browser calls only the web BFF under `/api/v1` (D21). Sensitive fields stay masked for anonymous visitors through the `public` role's field profile (D2 mechanism, [reviewer](../reviewer/RULES.md)). The full GraphQL decision is D18 in Decisions below.
+The public site (`domain.com`, Next.js) shows only a "Service status" view on the homepage `/` and the CV from published content on `/cv` (D21, Q-BFF2, user 2026-10-31), reached by a "CV" link in the site header (Q-WBH1, user 2026-11-05). The Next server reads content anonymously over the read-only GraphQL API (D18) on `APP_API_URL`; the browser calls only the web BFF under `/api/v1` (D21). Sensitive fields stay masked for anonymous visitors through the `public` role's field profile (D2 mechanism, [reviewer](../reviewer/RULES.md)). The full GraphQL decision is D18 in Decisions below.
 
 Endpoints: [api-contract.md](../../global/reference/api-contract.md) rows "GraphQL (D18)" and "Web BFF". Web rules: [apps/web/RULES.md](../../apps/web/RULES.md) "Web rules".
 
 ## Requirements
 
 D18 (Decisions below), D13 (rendering richtext), D17 (web CSP), D21 (BFF). New requirements of this flow go here with ids `PS-<n>`.
+
+- **PS-1 Query split** (user 2026-11-08, Q-WCA3, Q-WCA8, Q-WCA10; feature `web-content-api`). Fewest operations within the D18 limits (5 root fields, depth 8, 500 field nodes): each page render runs two operations, the shell and its own, through server GraphQL with `APP_API_TOKEN` (WEB-1, WEB-2); the shell answer is cached and shared by every page.
+  - `SiteShell` (root layout, every page): `header` (existing type: `name`, `nav { title link requiresRole subNavigations }`, `author { btnLoginText btnLogoutText }`; `name` is the app name, the two author texts the sign-in and sign-out buttons, planner Q-WCP4) · `siteText` (new single type: nav label, CV link, the other session texts, not-found, error page; no app name and no sign-in or sign-out label) · `signInText` (new single type: sign-in form, human check, validation, errors, two-factor step).
+  - `StatusPage` (`/`): `statusPageText` (new single type: page title and description, card texts, states, error hint, check again). The health data stays on REST through `GET /api/v1/health` (D21).
+  - `CvPage` (`/cv`): `cvPageList(filter: { isMain: { eq: true } }, sort: [{ field: updatedAt, direction: DESC }], pageSize: 1)` on the existing `cv-page` type, not `resumeList` (Q-G7, Q-WCA8) · `cvContact` · `cvPageText` (new single type: section, contact, experience and referee labels; empty, masked, loading and refetch-failed texts).
+  - `CvPageVisitor` (BFF `GET /api/v1/cv` only, not a page render; planner Q-WCP5): the `cvPageList` and `cvContact` selections of `CvPage`, no text, sent with the visitor's token, so a signed-in refetch never depends on a text type.
+  - Text field names follow the current `COPY` keys (full list: `DESIGN web-content-api`); English only (Q-WCA11). The committed query documents are the contract the user builds cms-api from; types or fields not served yet fall back to the mocks where WEB-5 allows.
+- **PS-2 States.** Where the mock fallback is off, a failed CV query shows the page error state and no published main CV the empty state, both with texts from `cvPageText` / `siteText`; when the shell text itself cannot load, the global error and not-found pages use the last-resort set (WEB-3). A failed `StatusPage` query never hides the status card, which loads no CV data (criterion 25).
 
 ## Acceptance
 
@@ -35,7 +43,7 @@ Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md
 
 | # | Question | Recommendation |
 |---|---|---|
-| Q5 | Which fields in `cv-page.json` are sensitive (masked for `public`/`reviewer` by default)? Candidates: `reference.phone`, any salary fields. | — |
+| Q5 | Which fields in `cv-page.json` are sensitive (masked for `public`/`reviewer` by default)? Candidates: `reference.phone`, any salary fields. | `references.phone` and `experiences.company` (user 2026-11-05) |
 | Q-G1 | GraphQL dependency | `graphql` (graphql-js, current stable, exact pin) in cms-api only, in-house handler; no Apollo/Yoga/`@nestjs/graphql` |
 | Q-G2 | GraphQL scope | Document reads only, queries only; admin stays on REST |
 | Q-G3 | GraphQL pagination | Offset, same as REST (Q10); cursors later if needed |
