@@ -5,7 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '../../../common/constants/Time.constants';
 import { Clock } from '../../../common/time/Clock.service';
 import { type IAppConfig } from '../../../config/AppConfig.setup';
-import { APP_CONFIG } from '../../../config/Config.constants';
+import { APP_CONFIG, OTP_ISSUE_LIMIT_OVERRIDE_ENV_KEY } from '../../../config/Config.constants';
 import {
   CORE_TRANSACTION_RUNNER,
   type TransactionRunner,
@@ -158,7 +158,7 @@ export class OtpService {
         accountId,
         new Date(now - OTP.ISSUE_WINDOW_MS),
       );
-      if (recent >= OTP.MAX_ISSUED_PER_WINDOW) throw tooManyRequests();
+      if (recent >= this.issueLimitPerWindow()) throw tooManyRequests();
 
       const issuedAt = new Date(now);
       await this.codes.expireLive(unit, accountId, purpose, issuedAt);
@@ -213,6 +213,13 @@ export class OtpService {
   /** Same HMAC work as a real check, for requests about unknown emails. */
   hashForUnknownAccount(purpose: OtpPurpose, code: string): void {
     otpHmac(this.pepper(), DUMMY_ACCOUNT_ID, purpose, code);
+  }
+
+  private issueLimitPerWindow(): number {
+    return (
+      this.config.rateLimit.limitOverrides[OTP_ISSUE_LIMIT_OVERRIDE_ENV_KEY] ??
+      OTP.MAX_ISSUED_PER_WINDOW
+    );
   }
 
   private pepper(): string {

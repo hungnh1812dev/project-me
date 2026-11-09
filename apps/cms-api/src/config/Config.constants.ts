@@ -91,7 +91,14 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
   'SETUP_SUBMIT_RATE_LIMIT_IP',
   'TWO_FACTOR_EMAIL_RATE_LIMIT_IP',
   'TWO_FACTOR_MANAGE_RATE_LIMIT_IP',
+  'ACCOUNT_INVITE_RATE_LIMIT_IP',
+  'ACCOUNT_INVITE_RATE_LIMIT_ACTOR',
+  'OTP_ISSUE_RATE_LIMIT_ACCOUNT',
 ] as const;
+
+/** The one override key no throttle rule binds: it replaces the per-account code cap in OtpService. */
+export const OTP_ISSUE_LIMIT_OVERRIDE_ENV_KEY =
+  'OTP_ISSUE_RATE_LIMIT_ACCOUNT' satisfies (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 
 export type RateLimitOverrideEnvKey = (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 

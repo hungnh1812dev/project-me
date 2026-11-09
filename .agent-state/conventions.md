@@ -48,9 +48,12 @@ App-specific facts: `conventions-backend.md` (apps/cms-api), `conventions-fronte
 - Reviewer-toggle dropped (2026-11-02): its SEC-1 checks run at launch gate LG-D.
 - Test accounts (2026-11-07, user): every test account's info (email, password, etc.) is generated once, stored in `.localEnv.agent` (noted), and reused afterwards; if the stored one exists, reuse it; if the account in use differs from the stored one, sync the account in use to the stored one where possible. Values are never printed in reports; the manager never reads them.
 - 2FA manage limit (2026-11-07, user, stack-accounts finding SA-A-qc#1): the 2FA setup/enable/disable limit (5 per 15 min per IP) has a test-stack-only override `TWO_FACTOR_MANAGE_RATE_LIMIT_IP` (raised on smoke and dev stacks); production stays at 5.
+- Invite and OTP-cap limits (2026-11-09, web-content-api feature-qc#1): test-stack-only overrides `ACCOUNT_INVITE_RATE_LIMIT_IP`, `ACCOUNT_INVITE_RATE_LIMIT_ACTOR` (per hour) and `OTP_ISSUE_RATE_LIMIT_ACCOUNT` (codes per account per hour, read by OtpService) are raised on smoke and dev stacks; production keeps 20 / 10 / 5.
 - Security checks on the dev database (2026-11-07, user): security-qc may run read-only `psql` or `docker exec` against the dev database to read rows (e.g. refresh_tokens); no writes.
 - DevOps web deploy doc (2026-11-08, user): no new feature; the doc `docs/deployments/web.md` is a one-off exception that runs without a feature folder (no `current.md`, no board). core-builder writes only that doc, `devops-runbook.md` link and a `CHANGELOG.md` Unreleased line; the commit still asks the user first.
 - Request duration log (2026-11-07, user, feature request-timing-log, API-1): cms-api writes one info line per finished request (method, path without query, status, duration ms), warn above 1000 ms; all requests except health probes; no request id; aborted requests are not logged.
+
+- Web API token scope (2026-11-08, user, feature web-content-api, Q-WCT1): the web API token keeps scope `*` read on dev, smoke and production; not narrowed to a type list; D5 and the read-only guest creator bound it.
 
 ## Gotchas
 - base-config `abyss/file-names` is opt-in: `baseEslint({ fileNames: {...} })` (options in packages/base-config/README.md); lint paths are relative to the lint cwd, so it only checks `src`, `test`, `tests` by default. Rebuild base-config (`build`) before a consumer lints.

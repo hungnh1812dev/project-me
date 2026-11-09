@@ -11,7 +11,10 @@ import {
   type RateLimitRule,
 } from '../../src/common/constants/Limits.constants';
 import { RATE_LIMIT_POLICY_METADATA, ThrottleGuard } from '../../src/common/guards/Throttle.guard';
-import { RATE_LIMIT_OVERRIDE_ENV_KEYS } from '../../src/config/Config.constants';
+import {
+  OTP_ISSUE_LIMIT_OVERRIDE_ENV_KEY,
+  RATE_LIMIT_OVERRIDE_ENV_KEYS,
+} from '../../src/config/Config.constants';
 import { ACCESS_RATE_LIMIT_POLICIES } from '../../src/modules/access/http/AccessHttp.constants';
 import { BACKUPS_RATE_LIMIT_POLICIES } from '../../src/modules/backups/http/Backups.controller';
 import { DOCUMENTS_RATE_LIMIT_POLICIES } from '../../src/modules/documents/http/DocumentsHttp.constants';
@@ -124,7 +127,7 @@ describe('rate-limit policies', () => {
 });
 
 describe('rate-limit override bindings', () => {
-  it('pins exactly today seven overrides', () => {
+  it('pins exactly today the identity overrides', () => {
     expect(rateLimitOverrideBindings).toStrictEqual({
       LOGIN_RATE_LIMIT_IP: 'login:ip',
       LOGIN_RATE_LIMIT_EMAIL: 'login:email',
@@ -136,13 +139,13 @@ describe('rate-limit override bindings', () => {
     });
   });
 
-  it('binds every env key exactly once, in identity only', () => {
+  it('binds every env key exactly once, in identity and access only (the OTP cap key binds no rule)', () => {
     const keyed = allRules.filter((rule) => rule.limitOverrideEnvKey !== undefined);
     expect(keyed.map((rule) => rule.limitOverrideEnvKey).sort()).toEqual(
-      [...RATE_LIMIT_OVERRIDE_ENV_KEYS].sort(),
+      RATE_LIMIT_OVERRIDE_ENV_KEYS.filter((key) => key !== OTP_ISSUE_LIMIT_OVERRIDE_ENV_KEY).sort(),
     );
     const outsideIdentity = Object.entries(POLICIES_BY_MODULE)
-      .filter(([moduleName]) => moduleName !== 'identity')
+      .filter(([moduleName]) => moduleName !== 'identity' && moduleName !== 'access')
       .flatMap(([, policies]) => Object.values(policies).flat())
       .filter((rule) => rule.limitOverrideEnvKey !== undefined);
     expect(outsideIdentity).toEqual([]);

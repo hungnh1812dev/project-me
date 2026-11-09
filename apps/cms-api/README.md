@@ -414,6 +414,14 @@ any other `*.constants.ts`:
 - Optional override: `TWO_FACTOR_MANAGE_RATE_LIMIT_IP` replaces the `2fa-manage:ip`
   limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
   2FA e2e spec sets up, enables and disables more than 5 times from one IP.
+- Optional override: `ACCOUNT_INVITE_RATE_LIMIT_IP` / `ACCOUNT_INVITE_RATE_LIMIT_ACTOR`
+  replace the `account-invite:ip` (20) and `account-invite:actor` (10) limits per hour.
+  Same validation and production opt-in flag; the e2e suite invites more than 10
+  accounts per hour as one owner from one IP.
+- Optional override: `OTP_ISSUE_RATE_LIMIT_ACCOUNT` replaces the cap of 5 one-time
+  codes per account per hour (the `OtpService` count, not a throttle rule). Same
+  validation and production opt-in flag; the e2e suite signs one email-code account
+  in more than 5 times an hour.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's
