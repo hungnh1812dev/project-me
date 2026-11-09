@@ -38,10 +38,10 @@ A new primitive: one file here, export it from the package `index.ts`, update th
 <!-- prettier-ignore-start -->
 
 ```
-ui/ (15 files)
+ui/ (16 files)
 ```
 
-Tests: 9 files (not listed).
+Tests: 10 files (not listed).
 
 | File | Description |
 |---|---|
@@ -59,6 +59,7 @@ Tests: 9 files (not listed).
 | `Radio.tsx` | `Radio`: radio input |
 | `Switch.tsx` | `Switch`: Radix switch |
 | `Textarea.tsx` | `Textarea`: multi-line input |
+| `Toast.tsx` | `ToastProvider`, `useToast`: Radix toast stack (4 tones, 3 visible, replace by key, pause on hover and focus) |
 | `Tooltip.tsx` | `Tooltip` and parts, `TOOLTIP_DELAY_MS` |
 
 <!-- prettier-ignore-end -->

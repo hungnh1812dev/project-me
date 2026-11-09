@@ -54,6 +54,7 @@ export const PUBLIC_API_SNAPSHOT = {
     'TextAreaInput',
     'TextInput',
     'Textarea',
+    'ToastProvider',
     'Tooltip',
     'TooltipContent',
     'TooltipTrigger',
@@ -63,6 +64,7 @@ export const PUBLIC_API_SNAPSHOT = {
     'isValidJsonText',
     'normalizeRichtextHtml',
     'richtextExtensions',
+    'useToast',
   ],
   types: [
     'BulkAction',
@@ -103,5 +105,8 @@ export const PUBLIC_API_SNAPSHOT = {
     'TablePaginationProps',
     'TextAreaInputProps',
     'TextInputProps',
+    'ToastLabels',
+    'ToastOptions',
+    'ToastTone',
   ],
 } as const;
