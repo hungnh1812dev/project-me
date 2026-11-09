@@ -1,5 +1,5 @@
 /*
- * Tailwind v4 theme for apps that compile their own Tailwind:
+ * Tailwind v4 theme (tokens and themes: D23) for apps that compile their own Tailwind:
  *   @import 'tailwindcss';
  *   @import '@abyss/form-commons/theme.css';
  */
@@ -44,10 +44,26 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-info-strong: var(--info-strong);
+  --color-nav-active: var(--nav-active);
+  --color-nav-active-foreground: var(--nav-active-foreground);
+  --color-nav-indicator: var(--nav-indicator);
+  --color-focus-edge: var(--focus-edge);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
+  --radius-control: var(--radius-control);
+  --radius-surface: var(--radius-surface);
+  --radius-item: var(--radius-item);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-primary: var(--shadow-primary);
+  --shadow-primary-hover: var(--shadow-primary-hover);
+
+  --duration-fast: var(--duration-fast);
+  --duration-base: var(--duration-base);
 
   --font-sans: var(--font-family-sans);
 }

@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-The low-level controls every app and every `forms/` component builds on, styled with the shared theme tokens.
+The low-level controls every app and every `forms/` component builds on, styled with the shared theme tokens (`src/styles/tokens.css`: `:root` default look, `[data-theme='premium']` for cms-admin, D23; `theme.css` maps them to Tailwind names such as `rounded-control`, `shadow-card`, `duration-fast`, `nav-active`).
 
 ## Techniques
 
