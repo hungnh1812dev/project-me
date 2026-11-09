@@ -136,6 +136,8 @@ describe('rate-limit override bindings', () => {
       SETUP_SUBMIT_RATE_LIMIT_IP: 'setup-submit:ip',
       TWO_FACTOR_EMAIL_RATE_LIMIT_IP: '2fa-email:ip',
       TWO_FACTOR_MANAGE_RATE_LIMIT_IP: '2fa-manage:ip',
+      PASSWORD_SUBMIT_RATE_LIMIT_IP: 'password-submit:ip',
+      PASSWORD_CHANGE_RATE_LIMIT_IP: 'password-change:ip',
     });
   });
 

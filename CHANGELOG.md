@@ -16,7 +16,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
-- cms-api: test-stack-only overrides `ACCOUNT_INVITE_RATE_LIMIT_IP`, `ACCOUNT_INVITE_RATE_LIMIT_ACTOR` and `OTP_ISSUE_RATE_LIMIT_ACCOUNT` (same opt-in as the other rate-limit overrides), raised on the smoke and dev stacks so the full e2e suite no longer hits the invite and per-account email-code limits; production defaults are unchanged.
+- cms-api: test-stack-only overrides `ACCOUNT_INVITE_RATE_LIMIT_IP`, `ACCOUNT_INVITE_RATE_LIMIT_ACTOR`, `OTP_ISSUE_RATE_LIMIT_ACCOUNT`, `PASSWORD_SUBMIT_RATE_LIMIT_IP` and `PASSWORD_CHANGE_RATE_LIMIT_IP` (same opt-in as the other rate-limit overrides), raised on the smoke and dev stacks so the full e2e suite no longer hits the invite and per-account email-code limits; production defaults are unchanged.
 - web: spec for the content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful), page text from cms-api in three queries, per-call cache (180 s default), local mock fallback through `MockView.ts`, a role-display extension point, and `APP_API_URL` replacing `API_INTERNAL_URL` (WEB-1..WEB-8, public-site PS-1..PS-2); the public-site rules now say the homepage shows only the service status view (Q-BFF2); `site-shell` is a base web feature (web RULES "Layers").
 - web: spec names the scope of the web API token: `*` `read`, created by a read-only account, on every stack and in production (WEB-2, Q-WCT1).
 - root: `docs/deployments/web.md` is the DevOps deployment guide for the web service (image, env keys, routing, release, checks), linked from the DevOps runbook.

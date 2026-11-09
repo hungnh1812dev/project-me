@@ -422,6 +422,10 @@ any other `*.constants.ts`:
   codes per account per hour (the `OtpService` count, not a throttle rule). Same
   validation and production opt-in flag; the e2e suite signs one email-code account
   in more than 5 times an hour.
+- Optional override: `PASSWORD_SUBMIT_RATE_LIMIT_IP` / `PASSWORD_CHANGE_RATE_LIMIT_IP`
+  replace the `password-submit:ip` (10, reset and set) and `password-change:ip` (5)
+  limits per 15 minutes. Same validation and production opt-in flag; the e2e suite
+  creates accounts and changes passwords more often from one IP.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's

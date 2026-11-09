@@ -124,6 +124,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 10,
       windowMs: FIFTEEN_MINUTES_MS,
+      limitOverrideEnvKey: 'PASSWORD_SUBMIT_RATE_LIMIT_IP',
     },
   ],
   /** `POST /auth/password/change`: bounds current-password guessing. */
@@ -133,6 +134,7 @@ export const IDENTITY_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 5,
       windowMs: FIFTEEN_MINUTES_MS,
+      limitOverrideEnvKey: 'PASSWORD_CHANGE_RATE_LIMIT_IP',
     },
   ],
   /** `POST /auth/2fa/verify`; each temp token also allows only 5 checks. */

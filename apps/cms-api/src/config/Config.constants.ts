@@ -94,6 +94,8 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
   'ACCOUNT_INVITE_RATE_LIMIT_IP',
   'ACCOUNT_INVITE_RATE_LIMIT_ACTOR',
   'OTP_ISSUE_RATE_LIMIT_ACCOUNT',
+  'PASSWORD_SUBMIT_RATE_LIMIT_IP',
+  'PASSWORD_CHANGE_RATE_LIMIT_IP',
 ] as const;
 
 /** The one override key no throttle rule binds: it replaces the per-account code cap in OtpService. */
