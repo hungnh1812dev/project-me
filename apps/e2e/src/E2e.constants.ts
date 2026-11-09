@@ -75,9 +75,13 @@ export const CONTENT_TYPE_NAMES = {
   'common-text': 'Common Text',
   'cv-contact': 'CV Contact',
   'cv-page': CV_PAGE_NAME,
+  'cv-page-text': 'CV Page Text',
   header: 'Header',
   profile: 'Profile',
   resume: 'Resume',
+  'sign-in-text': 'Sign In Text',
+  'site-text': 'Site Text',
+  'status-page-text': 'Status Page Text',
 } as const;
 
 /** Content type of the smoke stack with a media field and a list view. */

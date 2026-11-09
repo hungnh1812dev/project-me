@@ -299,6 +299,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+        exact: true,
       })
       .click();
     await page.getByRole('radio', { name: access.fields.some }).check();
@@ -318,6 +319,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+        exact: true,
       })
       .click();
     await expect(page.getByRole('radio', { name: access.fields.some })).toBeChecked();
@@ -340,6 +342,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(access.matrix.wildcard),
+        exact: true,
       })
       .click();
     await page.getByText(access.conditions.summary(access.matrix.actions.read)).click();

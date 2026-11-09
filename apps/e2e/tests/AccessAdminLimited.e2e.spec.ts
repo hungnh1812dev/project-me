@@ -55,6 +55,7 @@ test.describe('admin: limited by its own permissions and rank', () => {
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+        exact: true,
       })
       .click();
     for (const radio of await page.getByRole('radio').all()) {

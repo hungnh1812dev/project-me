@@ -26,7 +26,11 @@ const PUBLIC_PATHS = ['/login', '/set-password', '/reset-password'];
 const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES['common-text'],
   CONTENT_TYPE_NAMES['cv-contact'],
+  CONTENT_TYPE_NAMES['cv-page-text'],
   CONTENT_TYPE_NAMES.header,
+  CONTENT_TYPE_NAMES['sign-in-text'],
+  CONTENT_TYPE_NAMES['site-text'],
+  CONTENT_TYPE_NAMES['status-page-text'],
   CONTENT_TYPE_NAMES[CV_PAGE_SLUG],
   CONTENT_TYPE_NAMES.profile,
   CONTENT_TYPE_NAMES.resume,

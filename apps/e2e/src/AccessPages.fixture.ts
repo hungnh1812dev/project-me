@@ -33,7 +33,9 @@ const readCvPageCell = (page: Page): Locator =>
 export async function limitEditorToPositionField(page: Page): Promise<void> {
   await openRole(page, 'Editor');
   await readCvPageCell(page).check();
-  await page.getByRole('button', { name: access.matrix.detailsLabel(CV_PAGE_SLUG) }).click();
+  await page
+    .getByRole('button', { name: access.matrix.detailsLabel(CV_PAGE_SLUG), exact: true })
+    .click();
   await page.getByRole('radio', { name: access.fields.some }).check();
   await page
     .getByRole('group', { name: access.fields.readable })
