@@ -28,6 +28,7 @@
   --color-secondary: var(--secondary);
   --color-secondary-hover: var(--secondary-hover);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-border: var(--secondary-border);
   --color-success: var(--success);
   --color-success-hover: var(--success-hover);
   --color-success-foreground: var(--success-foreground);

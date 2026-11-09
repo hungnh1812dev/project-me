@@ -51,3 +51,27 @@ describe('IconButton', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 });
+
+describe('IconButton styling hooks', () => {
+  it('shares the Button radius and focus classes', () => {
+    render(
+      <IconButton label="Go">
+        <svg />
+      </IconButton>,
+    );
+    expect(screen.getByRole('button', { name: 'Go' })).toHaveClass(
+      'rounded-control',
+      'focus-visible:outline-focus-edge',
+    );
+  });
+
+  it('the disabled wrapper takes the same focus classes', () => {
+    render(
+      <IconButton label="Go" disabled>
+        <svg />
+      </IconButton>,
+    );
+    const wrapper = document.querySelector('[data-slot="icon-button-wrapper"]');
+    expect(wrapper).toHaveClass('rounded-control', 'focus-visible:outline-focus-edge');
+  });
+});

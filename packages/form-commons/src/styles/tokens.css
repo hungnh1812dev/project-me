@@ -72,6 +72,7 @@
   --secondary: var(--abyss-slate-0);
   --secondary-hover: var(--abyss-slate-100);
   --secondary-foreground: var(--abyss-slate-900);
+  --secondary-border: var(--input);
 
   /* ---- semantic: status (solid, soft background, strong text) ---- */
   --success: var(--abyss-green-600);
@@ -127,6 +128,7 @@
   --secondary: var(--abyss-slate-100);
   --secondary-hover: var(--abyss-slate-200);
   --secondary-foreground: var(--abyss-slate-700);
+  --secondary-border: var(--secondary);
 
   --destructive: var(--abyss-rose-600);
   --destructive-hover: var(--abyss-rose-700);

@@ -1,4 +1,9 @@
 export { Button, buttonVariants, type ButtonProps } from './components/ui/Button';
+export {
+  CONTROL_FOCUS_CLASSES,
+  CONTROL_FOCUS_RING_ONLY_CLASSES,
+  CONTROL_FOCUS_WITHIN_CLASSES,
+} from './components/ui/Control.constants';
 export { IconButton, type IconButtonProps } from './components/ui/IconButton';
 export { Tooltip, TooltipContent, TooltipTrigger, TOOLTIP_DELAY_MS } from './components/ui/Tooltip';
 export { Popover, PopoverContent, PopoverTrigger } from './components/ui/Popover';

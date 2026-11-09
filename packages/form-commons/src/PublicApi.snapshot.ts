@@ -3,6 +3,9 @@ export const PUBLIC_API_SNAPSHOT = {
   values: [
     'BulkActionBar',
     'Button',
+    'CONTROL_FOCUS_CLASSES',
+    'CONTROL_FOCUS_RING_ONLY_CLASSES',
+    'CONTROL_FOCUS_WITHIN_CLASSES',
     'CSP_NONCE_META_NAME',
     'Checkbox',
     'CheckboxInput',

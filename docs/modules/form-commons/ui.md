@@ -18,7 +18,7 @@ The low-level controls every app and every `forms/` component builds on, styled 
 
 ## Techniques
 
-Radix primitives wrapped with Tailwind classes merged by `cn`; variants with `class-variance-authority` (`buttonVariants`); shared focus and invalid styles in `Control.constants.ts`.
+Radix primitives wrapped with Tailwind classes merged by `cn`; variants with `class-variance-authority` (`buttonVariants`); shared focus and invalid styles in `Control.constants.ts` (the three focus sets are public, so apps reuse the same halo and edge).
 
 ## Technologies
 
@@ -47,7 +47,7 @@ Tests: 8 files (not listed).
 |---|---|
 | `Button.tsx` | `Button`, `buttonVariants`: button with variants and sizes |
 | `Checkbox.tsx` | `Checkbox`: Radix checkbox |
-| `Control.constants.ts` | Shared focus, focus-within and invalid class sets for controls |
+| `Control.constants.ts` | Shared focus (3 px ring plus 1 px `focus-edge` edge, exported), focus-within, destructive focus and invalid class sets for controls |
 | `Dialog.tsx` | `Dialog` and its parts (content, header, footer, title, description, overlay) |
 | `DropdownMenu.tsx` | `DropdownMenu` and its parts (trigger, content, item, label, separator) |
 | `IconButton.tsx` | `IconButton`: icon-only button with an accessible label |
