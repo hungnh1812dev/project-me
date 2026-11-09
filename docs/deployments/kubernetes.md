@@ -6,6 +6,7 @@ Scope in v1: one cluster per environment, Traefik as the ingress controller, **o
 
 ## 1. Cluster prerequisites
 
+- **Local k3d test deploys.** Images come from a local registry, not GHCR: see [local-registry.md](local-registry.md).
 - **Namespace.** Recommended `abyss` on every cluster (Q-OPS9). Written `<ns>` below.
 - **Image pull secret.** The GHCR packages are private, so `<ns>` needs a `kubernetes.io/dockerconfigjson` Secret `ghcr-pull`, referenced as `imagePullSecrets` by all three Deployments. Its token needs only `read:packages`; GHCR does not accept fine-grained PATs for packages, so a classic PAT with only that scope, from an account that can read the packages, is the usual choice. Check it once (**not run**):
 
