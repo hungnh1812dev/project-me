@@ -25,7 +25,7 @@ Base: f34d4a12f3d10ce8d5ed96f587a07a804a03d8cb · Head: 6389f91d
 
 ## Checkpoint LRP-A
 
-All 18 rows pass (`checklists/LRP-A.md`). Tier 3 ran against the registry on host port 5001, which the user set up because port 5000 was taken on the Mac.
+All 18 rows pass (`CHECKLIST.md`). Tier 3 ran against the registry on host port 5001, which the user set up because port 5000 was taken on the Mac.
 
 - LRP-A-10: script pushed all three images; registry lists the tag.
 - LRP-A-11: user ran the pod pull check by hand (cluster write approved by the user). Pod pulled and was deleted.
