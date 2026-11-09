@@ -67,6 +67,35 @@
   --duration-base: var(--duration-base);
 
   --font-sans: var(--font-family-sans);
+
+  --animate-overlay-in: overlay-in var(--duration-base) ease-out;
+  --animate-overlay-out: overlay-out var(--duration-base) ease-in;
+
+  --animate-fade-in: fade-in var(--duration-base) ease-out;
+  --animate-fade-out: fade-out var(--duration-base) ease-in;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
+  @keyframes overlay-out {
+    to {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
 }
 
 @layer base {
