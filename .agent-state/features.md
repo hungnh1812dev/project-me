@@ -16,6 +16,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 12 | remember-me | done (2026-11-07) | features/remember-me/ | apps/cms-api (modules/identity, prisma), apps/cms-admin (login, auth, copy), apps/web (BFF auth, session, dialog), docs/modules, apps/e2e | 5f4f6bab1a72ac1e6f6fdf2e8309e81e7f238d04 | features/remember-me/SUMMARY.md |
 | 17 | stack-accounts | done (2026-11-07) | features/stack-accounts/ | scripts/lib/stack-seed.sh, scripts/smoke.sh, scripts/dev-stack.sh, docs/guidelines/local-run.md, apps/e2e/.env.example (comments), docs/adr/0020, CHANGELOG.md | 4326fb952010add2aff7e05449f2e9d6f0f35b29 | features/stack-accounts/SUMMARY.md |
 | 18 | request-timing-log | done (Base: da34050d34b92eadca35d2adf61a15b6add5886a) | features/request-timing-log/SUMMARY.md | apps/cms-api (infrastructure/logging, common/middleware, modules/health index, App.setup.ts, test/integration), docs/modules/cms-api, docs/apps/cms-api/SPEC.md, CHANGELOG.md | da34050d34b92eadca35d2adf61a15b6add5886a | - |
+| 19 | web-content-api | done (Base: 9e7ba9fb9dd648b1f3dd0cf96d0f9dd407b3c123) | features/web-content-api/ | apps/web, apps/e2e (qc), scripts/dev-stack.sh, scripts/lib/stack-seed.sh, docker-compose.smoke.yml, docs/deployments, docs/guidelines/local-run.md, docs/modules (web, graphql), docs/apps/web patch note, CHANGELOG.md | - | features/web-content-api/SUMMARY.md |
 | 6 | reviewer-console | todo (after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 7 | backup | todo | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployments | f4c4690 | - |
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
@@ -59,3 +60,9 @@ Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (
 - web-bff-hardening: `print_demo_summary` in scripts/dev-stack.sh may still mention Reviewer access on the web (WBH-10 note) -> verify, unscheduled.
 - web-bff-hardening: ADR 0014 mentions the admin-host `/api` route move; not updated -> docs, unscheduled.
 - web-bff-hardening: planner docs not committed: 14 tracked docs (docs/apps/web, docs/flows/*, docs/global/*) span several features; `tasks/` is git-ignored by design and was left local (ADR 0018 committed as a647ead8) -> user decides which to commit.
+- web-content-api: not-found.tsx became a client component to read the context; global-error/error props use `retry` like the existing error page -> unscheduled.
+- web-content-api: `format:check` warns on docs/global/reference/canonical-values.md (uncommitted spec doc) -> unscheduled.
+- web-content-api: apps/web/.env (local, untouched) still has API_INTERNAL_URL; the user renames it to APP_API_URL -> unscheduled.
+- web-content-api: docs/apps/web/SPEC.md still names API_INTERNAL_URL (flagged by security-qc) -> planner to place, unscheduled.
+- web-content-api: start check skips when no cvPage is published: add a seed or checklist row so it runs live -> unscheduled.
+- web-content-api: `MockFallback.server.ts` row in docs/modules/web/apis-server.md has a TODO description (pre-existing) -> unscheduled.

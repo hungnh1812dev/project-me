@@ -54,6 +54,7 @@ App-specific facts: `conventions-backend.md` (apps/cms-api), `conventions-fronte
 - Request duration log (2026-11-07, user, feature request-timing-log, API-1): cms-api writes one info line per finished request (method, path without query, status, duration ms), warn above 1000 ms; all requests except health probes; no request id; aborted requests are not logged.
 
 - Web API token scope (2026-11-08, user, feature web-content-api, Q-WCT1): the web API token keeps scope `*` read on dev, smoke and production; not narrowed to a type list; D5 and the read-only guest creator bound it.
+- Anonymous CV on refetch failure (2026-11-09, user, feature web-content-api, DR1): when a CV refetch fails, the page keeps showing the anonymous CV rather than an error.
 
 ## Gotchas
 - base-config `abyss/file-names` is opt-in: `baseEslint({ fileNames: {...} })` (options in packages/base-config/README.md); lint paths are relative to the lint cwd, so it only checks `src`, `test`, `tests` by default. Rebuild base-config (`build`) before a consumer lints.
