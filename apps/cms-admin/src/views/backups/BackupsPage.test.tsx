@@ -163,7 +163,9 @@ describe('BackupsPage', () => {
     });
     // A 5xx is retried once (one second back-off) before the error shows.
     expect(await screen.findByText(copy.loadFailed, {}, { timeout: RETRY_WAIT_MS })).toBeVisible();
-    expect(screen.getByRole('button', { name: EN_TEXT.common.retry })).toBeVisible();
+    const retry = screen.getByRole('button', { name: EN_TEXT.common.retry });
+    expect(retry).toBeVisible();
+    expect(retry.closest('[data-slot="card"]')).not.toBeNull();
   });
 
   it('shows a rate-limit message with retry on a 429, without a second request', async () => {

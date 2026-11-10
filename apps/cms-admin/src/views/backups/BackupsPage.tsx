@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Card, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
 import { EmptyState, LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { useRestoreFocus } from '@components/useRestoreFocus';
 import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, useCallerAccess } from '@features/access';
 import type { BackupFile, BackupsList } from '@features/backups/Backups.api';
@@ -103,12 +104,19 @@ export function BackupsPage() {
   const backups = useBackupsQuery();
   const caller = useCallerAccess();
   const [chosen, setChosen] = useState<BackupFile | null>(null);
+  const { rememberOpener, restoreFocus } = useRestoreFocus();
+  const openDownload = (backup: BackupFile) => {
+    rememberOpener(document.activeElement);
+    setChosen(backup);
+  };
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <PageHeader title={copy.title} description={copy.description} />
       {!caller.isOwner ? (
-        <FormAlert tone="info">{copy.forbidden}</FormAlert>
+        <Card>
+          <FormAlert tone="info">{copy.forbidden}</FormAlert>
+        </Card>
       ) : backups.isPending && backups.fetchStatus === 'idle' ? (
         <Card className="grid justify-items-start gap-3">
           <p className="m-0 max-w-prose text-sm text-muted-foreground">{copy.check.hint}</p>
@@ -122,13 +130,17 @@ export function BackupsPage() {
         isBackupsNotConfigured(backups.error) ? (
           <EmptyState title={copy.notConfigured.title} hint={copy.notConfigured.hint} />
         ) : isForbidden(backups.error) ? (
-          <FormAlert tone="info">{copy.forbidden}</FormAlert>
+          <Card>
+            <FormAlert tone="info">{copy.forbidden}</FormAlert>
+          </Card>
         ) : (
-          <LoadError
-            message={isBackupsRateLimited(backups.error) ? copy.rateLimited : copy.loadFailed}
-            isRetrying={backups.isFetching}
-            onRetry={() => void backups.refetch()}
-          />
+          <Card>
+            <LoadError
+              message={isBackupsRateLimited(backups.error) ? copy.rateLimited : copy.loadFailed}
+              isRetrying={backups.isFetching}
+              onRetry={() => void backups.refetch()}
+            />
+          </Card>
         )
       ) : backups.data.data.length === 0 ? (
         <EmptyState title={copy.empty} hint={copy.emptyHint} />
@@ -154,7 +166,7 @@ export function BackupsPage() {
             <SortableSheet
               className="rounded-none border-0"
               caption={copy.tableLabel}
-              columns={columnsOf(setChosen, copy)}
+              columns={columnsOf(openDownload, copy)}
               rows={backups.data.data}
               getRowId={(backup) => backup.key}
               getRowLabel={(backup) => backup.fileName}
@@ -163,7 +175,11 @@ export function BackupsPage() {
         </>
       )}
       {chosen === null ? null : (
-        <DownloadBackupDialog backup={chosen} onClose={() => setChosen(null)} />
+        <DownloadBackupDialog
+          backup={chosen}
+          onClose={() => setChosen(null)}
+          onCloseAutoFocus={restoreFocus}
+        />
       )}
     </div>
   );

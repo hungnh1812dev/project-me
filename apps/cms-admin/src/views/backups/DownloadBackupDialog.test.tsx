@@ -88,6 +88,15 @@ describe('DownloadBackupDialog', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
+  it('returns focus to the row Download button when Esc closes the dialog', async () => {
+    await openDialog(totpOwner);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(
+      screen.getByRole('button', { name: copy.download.buttonLabel(file.fileName) }),
+    ).toHaveFocus();
+  });
+
   it('marks the code field when the code is wrong and does not navigate', async () => {
     const { dialog } = await openDialog(totpOwner, {
       [`POST ${BACKUPS.DOWNLOAD_LINKS}`]: () => ({
