@@ -35,7 +35,8 @@ interface LoginValues {
 
 /**
  * Sign-in dialog with the 2FA step. Credentials go to the BFF of this site,
- * which keeps the tokens in a sealed HttpOnly cookie; the browser never holds one. Its content unmounts on close, so each opening starts clean.
+ * which keeps the tokens in a sealed HttpOnly cookie; the browser never holds one. Each opening remounts the flow (keyed by an opening counter), so it starts clean even when
+ * the dialog reopens while the exit animation still keeps the content mounted.
  */
 export function WebLoginDialog({
   open,
@@ -48,6 +49,12 @@ export function WebLoginDialog({
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const siteKey = appEnv.turnstileSiteKey;
+  const [openingCount, setOpeningCount] = useState(open ? 1 : 0);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setOpeningCount((count) => count + 1);
+  }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -60,7 +67,7 @@ export function WebLoginDialog({
         {siteKey === undefined ? (
           <HumanCheckUnavailable />
         ) : (
-          <LoginFlow siteKey={siteKey} onClose={() => onOpenChange(false)} />
+          <LoginFlow key={openingCount} siteKey={siteKey} onClose={() => onOpenChange(false)} />
         )}
       </DialogContent>
     </Dialog>
