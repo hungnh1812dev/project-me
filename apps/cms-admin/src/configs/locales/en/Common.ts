@@ -5,6 +5,10 @@ export const COMMON_COPY = {
   retry: 'Try again',
   loadingPage: 'Loading the page',
   textLoadFailed: 'This page could not be loaded. Check your connection, then try again.',
+  toast: {
+    region: 'Notifications',
+    close: 'Dismiss notification',
+  },
 } as const;
 
 export const APP_COPY = {

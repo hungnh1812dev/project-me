@@ -1,9 +1,12 @@
+import { useToast } from '@abyss/form-commons';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { EN_TEXT } from '@configs/locales/en';
 import { deferred, type FakeHandler, type FakeReply } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
+import { AppProviders } from './AppProviders';
 
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
 const HEALTH_LIVE = `GET ${API_ENDPOINTS.HEALTH.LIVE}`;
@@ -102,5 +105,30 @@ describe('App', () => {
     await services.session.restore();
     renderApp(services);
     expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+
+  it('shows a toast fired from a screen in the notification region', async () => {
+    const { services } = createTestServices();
+    const toastTitle = 'Role saved';
+    function ToastScreen() {
+      const { showToast } = useToast();
+      return (
+        <button type="button" onClick={() => showToast({ tone: 'success', title: toastTitle })}>
+          Fire toast
+        </button>
+      );
+    }
+    render(
+      <AppProviders services={services}>
+        <ToastScreen />
+      </AppProviders>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Fire toast' }));
+
+    expect(await screen.findByText(toastTitle)).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: new RegExp(EN_TEXT.common.toast.region) }),
+    ).toBeInTheDocument();
   });
 });
