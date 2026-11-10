@@ -62,12 +62,12 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="dialog-header" className={cn('grid gap-1.5', className)} {...props} />;
 }
 
-/** Buttons: secondary left, primary right, aligned to the end. */
+/** Buttons: secondary first, primary last (left to right, top to bottom when stacked), so Tab follows the picture. */
 function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn('mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      className={cn('mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   );
