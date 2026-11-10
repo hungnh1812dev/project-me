@@ -246,7 +246,9 @@
       "closeMenu": "Close menu",
       "loading": "Loading the menu",
       "catalogError": "Could not load the content types.",
-      "retryCatalog": "Reload content types"
+      "retryCatalog": "Reload content types",
+      "welcomeTitle": "Welcome to the system",
+      "welcomeText": "Contact the administrator to be granted access."
     },
     "errors": {
       "network": "Could not reach the server. Check your connection and try again.",

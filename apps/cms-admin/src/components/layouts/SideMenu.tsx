@@ -31,6 +31,7 @@ interface MenuProps {
 
 interface MenuState {
   isReady: boolean;
+  isEmpty: boolean;
   items: readonly NavItem[];
   isCatalogLoading: boolean;
   catalogFailure: NavItemsState | undefined;
@@ -44,11 +45,15 @@ function useMenuState(nav: NavSource): MenuState {
   const items = [...nav.items, ...dataBacked.flatMap((state) => state.items)].filter((item) =>
     caller.can(item.subject, item.action),
   );
+  const isCatalogLoading = dataBacked.some((state) => state.isLoading);
+  const catalogFailure = dataBacked.find((state) => state.hasFailed);
   return {
     isReady: caller.isReady,
+    isEmpty:
+      caller.isReady && !isCatalogLoading && catalogFailure === undefined && items.length === 0,
     items: caller.isReady ? items : [],
-    isCatalogLoading: dataBacked.some((state) => state.isLoading),
-    catalogFailure: dataBacked.find((state) => state.hasFailed),
+    isCatalogLoading,
+    catalogFailure,
   };
 }
 
@@ -71,6 +76,18 @@ function SkeletonRows() {
         <div key={index} className="h-6 animate-pulse rounded bg-muted" />
       ))}
     </div>
+  );
+}
+
+function WelcomePanel() {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="grid gap-1 px-3">
+      <h2 id={headingId} className="text-sm font-semibold text-foreground">
+        {COMMON_TEXT.nav.welcomeTitle}
+      </h2>
+      <p className="text-sm text-muted-foreground">{COMMON_TEXT.nav.welcomeText}</p>
+    </section>
   );
 }
 
@@ -188,21 +205,25 @@ export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
-        <nav aria-label={COMMON_TEXT.nav.label} className="grid gap-5">
-          {menu.isReady ? (
-            NAV_SECTIONS.map((section) => (
-              <MenuSection
-                key={section.id}
-                section={section}
-                menu={menu}
-                openState={openState}
-                onNavigate={onNavigate}
-              />
-            ))
-          ) : (
-            <SkeletonRows />
-          )}
-        </nav>
+        {menu.isEmpty ? (
+          <WelcomePanel />
+        ) : (
+          <nav aria-label={COMMON_TEXT.nav.label} className="grid gap-5">
+            {menu.isReady ? (
+              NAV_SECTIONS.map((section) => (
+                <MenuSection
+                  key={section.id}
+                  section={section}
+                  menu={menu}
+                  openState={openState}
+                  onNavigate={onNavigate}
+                />
+              ))
+            ) : (
+              <SkeletonRows />
+            )}
+          </nav>
+        )}
       </div>
     </div>
   );

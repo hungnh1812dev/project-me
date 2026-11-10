@@ -95,4 +95,6 @@ export const NAV_COPY = {
   loading: 'Loading the menu',
   catalogError: 'Could not load the content types.',
   retryCatalog: 'Reload content types',
+  welcomeTitle: 'Welcome to the system',
+  welcomeText: 'Contact the administrator to be granted access.',
 } as const;

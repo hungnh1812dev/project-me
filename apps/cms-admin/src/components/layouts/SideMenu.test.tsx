@@ -69,6 +69,13 @@ async function open(
   renderApp(services);
 }
 
+const mediaReaderRole: Role = {
+  ...readerRole,
+  id: 'role_media',
+  slug: 'media-reader',
+  permissions: [{ ...readerRole.permissions[0]!, subject: 'media' }],
+};
+
 const mainNav = () => screen.getByRole('navigation', { name: nav.label });
 
 describe('SideMenu', () => {
@@ -166,6 +173,54 @@ describe('SideMenu', () => {
     expect(menu.queryByRole('heading', { name: nav.systemSettings })).not.toBeInTheDocument();
     expect(menu.queryByRole('heading', { name: nav.utilities })).not.toBeInTheDocument();
     expect(menu.queryByRole('heading', { name: nav.singleTypes })).not.toBeInTheDocument();
+  });
+
+  it('shows the Welcome panel and no nav landmark when no page is readable', async () => {
+    await open(
+      { ...TEST_USER, role: 'guest' },
+      {
+        [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 403 }),
+        [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+      },
+    );
+
+    const heading = await screen.findByRole('heading', { name: nav.welcomeTitle });
+    const panel = heading.closest('section') as HTMLElement;
+    expect(panel).toHaveAccessibleName(nav.welcomeTitle);
+    expect(within(panel).getByText(nav.welcomeText)).toBeInTheDocument();
+    expect(within(panel).queryByRole('link')).not.toBeInTheDocument();
+    expect(within(panel).queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: nav.label })).not.toBeInTheDocument();
+  });
+
+  it('shows only File Library to a caller holding only media read', async () => {
+    await open({ ...TEST_USER, role: 'media-reader' }, {}, [mediaReaderRole]);
+
+    expect(await within(mainNav()).findByRole('link', { name: nav.media })).toBeInTheDocument();
+    expect(within(mainNav()).getAllByRole('link')).toHaveLength(1);
+    expect(screen.queryByRole('heading', { name: nav.welcomeTitle })).not.toBeInTheDocument();
+  });
+
+  it('shows the skeleton and no Welcome panel while the catalog loads', async () => {
+    await open(TEST_USER, {
+      [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => new Promise(() => {}),
+    });
+
+    expect(await within(mainNav()).findByText(nav.loading)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: nav.welcomeTitle })).not.toBeInTheDocument();
+  });
+
+  it('keeps the retry row and no Welcome panel when the catalog fails for a no-access caller', async () => {
+    await open(
+      { ...TEST_USER, role: 'guest' },
+      {
+        [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 403 }),
+        [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => ({ status: 500 }),
+      },
+    );
+
+    expect(await screen.findByText(nav.catalogError)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: nav.welcomeTitle })).not.toBeInTheDocument();
   });
 
   it('holds navigation only: no Sign out or Security link', async () => {

@@ -55,7 +55,7 @@ Tests: 6 files (not listed).
 | `layouts/AppShell.tsx` | `AppShell`: signed-in layout (sticky full-height white sidebar with a soft edge shadow, side menu, sticky top bar, reviewer banner, outlet in a padded column with section gap) |
 | `layouts/AuthPageLayout.tsx` | `AuthPageLayout`: centered `Card` frame for sign-in and password pages |
 | `layouts/MobileMenu.tsx` | `MobileMenu`: the side menu in a drawer on small screens (same item styles as the sidebar) |
-| `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups; items use `rounded-item`, the active page (`aria-current`) gets `bg-nav-active` and a 3 px `bg-nav-indicator` bar |
+| `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups; when no item is readable (access ready, catalog not loading or failed) it shows the Welcome panel (`NAV_COPY.welcomeTitle`, `welcomeText`, no control, no nav landmark) in the sidebar and the sheet; items use `rounded-item`, the active page (`aria-current`) gets `bg-nav-active` and a 3 px `bg-nav-indicator` bar |
 | `layouts/TopBar.tsx` | `TopBar`: sticky blurred 64 px top bar on every width: app name and mobile menu below `md`, user menu at the right |
 | `layouts/UserMenu.tsx` | `UserMenu`, `initialsOf`: avatar menu (profile, password, security, sign out) |
 | `layouts/useNavGroupOpenState.ts` | `useNavGroupOpenState`: remembers which menu groups are open |
