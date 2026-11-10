@@ -116,6 +116,19 @@ function ToastProvider({ labels, children }: { labels: ToastLabels; children: Re
   );
 }
 
+/**
+ * Radix keeps a toast on top of the Escape layer stack whenever it re-renders, so
+ * while a toast is shown it would swallow Escape meant for an open dialog. The
+ * toast then leaves itself open and closes the dialog through its cancel button.
+ */
+function closeOpenDialog(): boolean {
+  const dialogs = document.querySelectorAll('[role="dialog"]');
+  const topDialog = dialogs[dialogs.length - 1];
+  if (!topDialog) return false;
+  topDialog.querySelector<HTMLElement>('[data-slot="dialog-close"]')?.click();
+  return true;
+}
+
 function ToastItem({
   entry,
   closeLabel,
@@ -144,6 +157,9 @@ function ToastItem({
       type={tone.type}
       duration={tone.durationMs}
       open={isOpen}
+      onEscapeKeyDown={(event) => {
+        if (closeOpenDialog()) event.preventDefault();
+      }}
       onOpenChange={(open) => {
         if (!open) onClose(id);
       }}

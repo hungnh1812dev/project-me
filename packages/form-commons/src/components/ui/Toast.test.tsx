@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from './Dialog';
 import { ToastProvider, useToast, type ToastOptions } from './Toast';
 
 const labels = { region: 'Notifications', close: 'Close notification' };
@@ -113,6 +114,28 @@ describe('Toast', () => {
     });
     await userEvent.keyboard('{Escape}');
     expect(document.querySelector('[data-slot="toast"]')).not.toBeInTheDocument();
+  });
+
+  it('closes an open dialog on Escape and keeps the toast', async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <ToastProvider labels={labels}>
+        <Trigger options={{ tone: 'success', title: 'Saved' }} />
+        <Dialog open onOpenChange={onOpenChange}>
+          <DialogContent>
+            <DialogTitle>Edit</DialogTitle>
+            <DialogDescription>Edit it</DialogDescription>
+            <DialogClose>Cancel</DialogClose>
+          </DialogContent>
+        </Dialog>
+      </ToastProvider>,
+    );
+    act(() => {
+      screen.getByRole('button', { name: 'fire', hidden: true }).click();
+    });
+    await userEvent.keyboard('{Escape}');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(document.querySelector('[data-slot="toast"]')).toBeInTheDocument();
   });
 
   it('replaces a toast shown with the same key', () => {
