@@ -1,4 +1,9 @@
-import { FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
+import {
+  CONTROL_FOCUS_RING_ONLY_CLASSES,
+  FormAlert,
+  SortableSheet,
+  type SheetColumn,
+} from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { rolePermissionsPath } from '@configs/App.routes';
 import { useScreenText, type ScreenText } from '@configs/locales';
@@ -54,7 +59,7 @@ const roleColumnsOf = (copy: RolesCopy): readonly SheetColumn<Role>[] => [
         <Link
           to={rolePermissionsPath(role.id)}
           aria-label={copy.open(role.name)}
-          className="rounded-sm font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className={`rounded-item font-medium text-primary underline-offset-4 outline-none hover:underline ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
         >
           {role.name}
         </Link>

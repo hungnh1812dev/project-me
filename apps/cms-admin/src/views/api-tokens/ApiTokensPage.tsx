@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
+import { Button, Card, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
@@ -135,7 +135,7 @@ export function ApiTokensPage() {
           </p>
         </div>
       ) : (
-        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+        <Card padding="flush" className="relative overflow-x-auto">
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}
@@ -152,7 +152,7 @@ export function ApiTokensPage() {
               copy={copy.pagination}
             />
           )}
-        </div>
+        </Card>
       )}
       <TokenFormDialog
         target={dialog}
