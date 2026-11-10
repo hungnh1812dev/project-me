@@ -52,10 +52,10 @@ Tests: 6 files (not listed).
 | `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), a loading screen throws its promise (no `use`, so no conditional-use warning); an already loaded screen renders at once; shows `LoadError` when the load fails, and its retry clears the failed loads (`retryFailedScreenText`) and loads again; optional `fallback` replaces the skeleton |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |
 | `useRestoreFocus.ts` | `useRestoreFocus`: puts focus back on the opener after a dialog closes |
-| `layouts/AppShell.tsx` | `AppShell`: signed-in layout (side menu, sticky top bar, reviewer banner, outlet in a padded column with section gap) |
+| `layouts/AppShell.tsx` | `AppShell`: signed-in layout (sticky full-height white sidebar with a soft edge shadow, side menu, sticky top bar, reviewer banner, outlet in a padded column with section gap) |
 | `layouts/AuthPageLayout.tsx` | `AuthPageLayout`: centered `Card` frame for sign-in and password pages |
-| `layouts/MobileMenu.tsx` | `MobileMenu`: the side menu in a drawer on small screens |
-| `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups |
+| `layouts/MobileMenu.tsx` | `MobileMenu`: the side menu in a drawer on small screens (same item styles as the sidebar) |
+| `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups; items use `rounded-item`, the active page (`aria-current`) gets `bg-nav-active` and a 3 px `bg-nav-indicator` bar |
 | `layouts/TopBar.tsx` | `TopBar`: sticky blurred 64 px top bar on every width: app name and mobile menu below `md`, user menu at the right |
 | `layouts/UserMenu.tsx` | `UserMenu`, `initialsOf`: avatar menu (profile, password, security, sign out) |
 | `layouts/useNavGroupOpenState.ts` | `useNavGroupOpenState`: remembers which menu groups are open |

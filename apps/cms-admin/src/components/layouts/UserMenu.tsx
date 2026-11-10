@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  CONTROL_FOCUS_RING_ONLY_CLASSES,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -56,7 +57,7 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={COMMON_TEXT.session.accountMenu(user.displayName)}
-        className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-foreground outline-none hover:bg-primary/20 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        className={`duration-fast flex size-9 items-center justify-center rounded-full bg-nav-active text-sm font-medium text-nav-active-foreground transition-colors outline-none hover:bg-muted ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         <span aria-hidden="true">{initialsOf(user.displayName, user.email)}</span>
       </DropdownMenuTrigger>

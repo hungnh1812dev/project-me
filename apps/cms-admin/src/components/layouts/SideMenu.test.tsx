@@ -185,6 +185,11 @@ describe('SideMenu', () => {
 
     await userEvent.click(link);
     expect(link).toHaveAttribute('aria-current', 'page');
+    expect(link).toHaveClass('aria-[current=page]:bg-nav-active', 'rounded-item');
+    const others = within(mainNav())
+      .getAllByRole('link')
+      .filter((other) => other !== link);
+    for (const other of others) expect(other).not.toHaveAttribute('aria-current');
   });
 
   it('shows one line with a retry when the catalog fails, then recovers', async () => {

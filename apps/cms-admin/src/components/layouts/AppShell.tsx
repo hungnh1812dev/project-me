@@ -13,7 +13,7 @@ export function AppShell({ nav }: { nav: NavSource }) {
 
   return (
     <div className="min-h-dvh bg-background md:flex md:h-dvh">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col bg-card shadow-card md:sticky md:top-0 md:flex md:h-dvh">
         <div className="px-4 py-4">
           <AppNameLink />
         </div>
