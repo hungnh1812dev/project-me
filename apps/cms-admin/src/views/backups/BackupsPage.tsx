@@ -110,12 +110,12 @@ export function BackupsPage() {
       {!caller.isOwner ? (
         <FormAlert tone="info">{copy.forbidden}</FormAlert>
       ) : backups.isPending && backups.fetchStatus === 'idle' ? (
-        <div className="grid justify-items-start gap-3">
+        <Card className="grid justify-items-start gap-3">
           <p className="m-0 max-w-prose text-sm text-muted-foreground">{copy.check.hint}</p>
           <Button type="button" onClick={() => void backups.refetch()}>
             {copy.check.button}
           </Button>
-        </div>
+        </Card>
       ) : backups.isPending ? (
         <TableSkeleton label={copy.loading} />
       ) : backups.isError ? (

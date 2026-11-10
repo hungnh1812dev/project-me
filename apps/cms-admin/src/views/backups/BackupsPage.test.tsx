@@ -92,8 +92,11 @@ describe('BackupsPage', () => {
     const { api } = await open(TEST_USER, {
       [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]),
     });
-    await screen.findByRole('button', { name: copy.check.button });
+    const checkButton = await screen.findByRole('button', { name: copy.check.button });
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
+    const card = checkButton.closest('[data-slot="card"]');
+    expect(card).toHaveAttribute('data-padding', 'default');
+    expect(within(card as HTMLElement).getByText(copy.check.hint)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: copy.check.button }));
     await screen.findByRole('table', { name: copy.tableLabel });
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
