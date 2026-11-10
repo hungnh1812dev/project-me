@@ -196,7 +196,8 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
             description={copy.rememberMeHint}
           />
           {humanCheck.field}
-          <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          {/* Stacked order is not reversed: Cancel stays above the confirm button and first in Tab order. */}
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" onClick={onClose}>
               {copy.cancel}
             </Button>

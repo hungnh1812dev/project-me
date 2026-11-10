@@ -202,7 +202,8 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
           {dirty ? (
             <p className="m-0 text-sm text-muted-foreground sm:mr-auto">{copy.role.unsaved}</p>
           ) : null}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          {/* Stacked order is not reversed: Discard stays above Save and first in Tab order. */}
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               disabled={!dirty || save.isPending}
