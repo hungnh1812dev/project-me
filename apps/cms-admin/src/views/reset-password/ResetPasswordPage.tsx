@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import { Button, CONTROL_FOCUS_RING_ONLY_CLASSES, FormAlert, TextInput } from '@abyss/form-commons';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
@@ -192,7 +192,7 @@ function ChoosePasswordStep({
       <h1
         ref={headingRef}
         tabIndex={-1}
-        className="mt-6 text-2xl font-semibold tracking-tight outline-none"
+        className={`mt-6 text-2xl font-semibold tracking-tight ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         {COMMON_TEXT.password.reset.title}
       </h1>

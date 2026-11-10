@@ -18,7 +18,7 @@ import { useNavGroupOpenState } from './useNavGroupOpenState';
 
 const SKELETON_ROW_COUNT = 3;
 
-const NAV_ITEM_CLASS = `rounded-item px-3 py-1.5 text-sm outline-none transition-colors duration-fast ${CONTROL_FOCUS_RING_ONLY_CLASSES}`;
+const NAV_ITEM_CLASS = `rounded-item px-3 py-1.5 text-sm transition-colors duration-fast ${CONTROL_FOCUS_RING_ONLY_CLASSES}`;
 
 const LINK_CLASS = `relative block break-words ${NAV_ITEM_CLASS} text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=page]:bg-nav-active aria-[current=page]:font-medium aria-[current=page]:text-nav-active-foreground aria-[current=page]:before:absolute aria-[current=page]:before:inset-y-1.5 aria-[current=page]:before:left-0 aria-[current=page]:before:w-[3px] aria-[current=page]:before:rounded-full aria-[current=page]:before:bg-nav-indicator`;
 
@@ -61,7 +61,7 @@ export function AppNameLink() {
   return (
     <Link
       to={APP_ROUTES.HOME}
-      className={`rounded-item text-sm font-semibold outline-none ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+      className={`rounded-item text-sm font-semibold ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
     >
       {COMMON_TEXT.app.name}
     </Link>

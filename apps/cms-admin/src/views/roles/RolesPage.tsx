@@ -59,7 +59,7 @@ const roleColumnsOf = (copy: RolesCopy): readonly SheetColumn<Role>[] => [
         <Link
           to={rolePermissionsPath(role.id)}
           aria-label={copy.open(role.name)}
-          className={`rounded-item font-medium text-primary underline-offset-4 outline-none hover:underline ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+          className={`rounded-item font-medium text-primary underline-offset-4 hover:underline ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
         >
           {role.name}
         </Link>

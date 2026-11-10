@@ -127,7 +127,7 @@ function ConditionsEditor({
       open={shouldForceOpen || text.trim() !== '' ? true : undefined}
     >
       <summary
-        className={`cursor-pointer rounded-item px-3 py-2 text-sm font-medium outline-none ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+        className={`cursor-pointer rounded-item px-3 py-2 text-sm font-medium ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         {copy.conditions.summary(actionLabel)}
       </summary>

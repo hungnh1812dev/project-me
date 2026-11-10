@@ -57,7 +57,7 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={COMMON_TEXT.session.accountMenu(user.displayName)}
-        className={`duration-fast flex size-9 items-center justify-center rounded-full bg-nav-active text-sm font-medium text-nav-active-foreground transition-colors outline-none hover:bg-muted ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+        className={`duration-fast flex size-9 items-center justify-center rounded-full bg-nav-active text-sm font-medium text-nav-active-foreground transition-colors hover:bg-muted ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         <span aria-hidden="true">{initialsOf(user.displayName, user.email)}</span>
       </DropdownMenuTrigger>

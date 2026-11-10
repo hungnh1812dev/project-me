@@ -9,7 +9,8 @@ export const CONTROL_FOCUS_CLASSES = `focus-visible:border-ring focus-visible:ri
 export const CONTROL_FOCUS_WITHIN_CLASSES =
   'focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:outline-solid focus-within:outline-1 focus-within:outline-focus-edge';
 
-export const CONTROL_FOCUS_RING_ONLY_CLASSES = `focus-visible:ring-[3px] focus-visible:ring-ring/50 ${FOCUS_EDGE_CLASSES}`;
+/** For links, tabs and headings that take no border: also drops the browser outline until the focus edge shows. */
+export const CONTROL_FOCUS_RING_ONLY_CLASSES = `outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${FOCUS_EDGE_CLASSES}`;
 
 /** Destructive buttons keep a rose ring and edge. */
 export const CONTROL_FOCUS_DESTRUCTIVE_CLASSES =
