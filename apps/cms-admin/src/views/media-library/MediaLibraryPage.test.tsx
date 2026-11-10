@@ -3,7 +3,7 @@ import { APP_ROUTES } from '@configs/App.routes';
 import { EN_TEXT } from '@configs/locales/en';
 import type { MediaFile } from '@features/media/Media.api';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, findToast, renderApp } from '@test/RenderApp.fixture';
+import { createTestServices, findToast, renderApp, toastToneOf } from '@test/RenderApp.fixture';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, vi } from 'vitest';
@@ -123,7 +123,8 @@ describe('MediaLibraryPage', () => {
     await userEvent.click(
       within(dialog).getByRole('button', { name: copy.uploadDialog.uploadCount(2) }),
     );
-    expect(await findToast(copy.uploadedSomeFailed(1, 2))).toBeInTheDocument();
+    await findToast(copy.uploadedSomeFailed(1, 2));
+    expect(toastToneOf(copy.uploadedSomeFailed(1, 2))).toBe('warning');
     expect(within(dialog).getByText(copy.uploadDialog.someFailed)).toBeInTheDocument();
   });
 

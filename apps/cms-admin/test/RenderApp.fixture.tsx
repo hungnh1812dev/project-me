@@ -56,3 +56,11 @@ export async function findToast(text: string) {
     return toast;
   });
 }
+
+/** The tone of the toast card showing this text. */
+export function toastToneOf(text: string) {
+  const card = Array.from(document.querySelectorAll('[data-slot="toast"]')).find((node) =>
+    node.textContent?.includes(text),
+  );
+  return card?.getAttribute('data-tone');
+}

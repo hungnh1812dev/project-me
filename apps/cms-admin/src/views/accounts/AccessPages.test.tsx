@@ -5,7 +5,13 @@ import type { Account, PermissionRow, Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { ContentType } from '@features/content-types';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import {
+  createTestServices,
+  findToast,
+  renderApp,
+  TEST_USER,
+  toastToneOf,
+} from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -252,7 +258,7 @@ describe('AccountsPage', () => {
     await user.selectOptions(roleSelect, 'Editor');
     await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
 
-    expect(await findToast(copy.accounts.invited('linh@domain.localhost'))).toBeInTheDocument();
+    expect(await findToast(copy.accounts.invited)).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     const [call] = api.callsTo(`POST ${ACCOUNTS.LIST}`);
     expect(JSON.parse(call?.data as string)).toEqual({
@@ -307,9 +313,7 @@ describe('AccountsPage', () => {
       'Editor',
     );
     await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
-    expect(
-      await findToast(copy.accounts.invitedNoEmail('linh@domain.localhost')),
-    ).toBeInTheDocument();
+    expect(await findToast(copy.accounts.invitedNoEmail)).toBeInTheDocument();
   });
 
   it('keeps the dialog open and marks the email when it is already taken', async () => {
@@ -513,7 +517,8 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(await screen.findByText(copy.errors.rankForbidden)).toBeInTheDocument();
+    await findToast(copy.errors.rankForbidden);
+    expect(toastToneOf(copy.errors.rankForbidden)).toBe('error');
   });
 
   it('resends an invite and says it was sent', async () => {
@@ -526,7 +531,8 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(await findToast(copy.accounts.resent('mai@domain.localhost'))).toBeInTheDocument();
+    await findToast(copy.accounts.resent);
+    expect(toastToneOf(copy.accounts.resent)).toBe('success');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`)).toHaveLength(1);
   });
@@ -541,9 +547,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(
-      await findToast(copy.accounts.resentNoEmail('mai@domain.localhost')),
-    ).toBeInTheDocument();
+    expect(await findToast(copy.accounts.resentNoEmail)).toBeInTheDocument();
   });
 
   it('shows a wait message from Retry-After when resend is throttled', async () => {

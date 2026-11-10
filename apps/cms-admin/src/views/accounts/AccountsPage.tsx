@@ -58,9 +58,7 @@ export function AccountsPage() {
     setInviteOpen(false);
     showToast({
       tone: account.invitationSent ? 'success' : 'warning',
-      title: account.invitationSent
-        ? copy.invited(account.email)
-        : copy.invitedNoEmail(account.email),
+      title: account.invitationSent ? copy.invited : copy.invitedNoEmail,
       key: ACCOUNT_TOAST_KEY.invited,
     });
   };

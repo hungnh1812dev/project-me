@@ -192,7 +192,7 @@ function ConfirmDialog({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const text = action === 'discard' ? copy.discardDialog : copy.unpublishDialog;
   return (
-    <Dialog open={open} onOpenChange={(open) => (open ? undefined : onCancel())}>
+    <Dialog open={open} onOpenChange={(isOpen) => (isOpen ? undefined : onCancel())}>
       <DialogContent
         onOpenAutoFocus={(event) => {
           event.preventDefault();

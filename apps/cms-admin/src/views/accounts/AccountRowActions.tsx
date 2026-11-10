@@ -54,8 +54,8 @@ export function AccountRowActions({
   const resend = useMutation({
     mutationFn: () => api.resendInvite(account.id),
     onSuccess: (result) => {
-      if (result.invitationSent) notify('success', copy.resent(account.email));
-      else notify('warning', copy.resentNoEmail(account.email));
+      if (result.invitationSent) notify('success', copy.resent);
+      else notify('warning', copy.resentNoEmail);
     },
     onError: (cause) => {
       const error = toAccessError(cause, access);

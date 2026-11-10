@@ -291,8 +291,8 @@
       "enabled": "SAMPLE is enabled and can sign in again.",
       "enabledInvited": "SAMPLE is enabled. They have not set a password yet, so resend the invite if they need a new code.",
       "alreadyEnabled": "That account is no longer disabled. The list is updated.",
-      "resent": "New invitation sent to SAMPLE. Earlier codes no longer work.",
-      "resentNoEmail": "A new code was created for SAMPLE, but the email could not be sent. They can ask for a code on the Set password page.",
+      "resent": "New invitation sent. Earlier codes no longer work.",
+      "resentNoEmail": "A new code was created, but the email could not be sent. They can ask for a code on the Set password page.",
       "notInvited": "That account already set a password, so there is nothing to resend. The list is updated.",
       "pagination": {
         "label": "Accounts pages",
@@ -302,8 +302,8 @@
       },
       "disable": "Disable",
       "disableLabel": "Disable SAMPLE",
-      "invited": "Invitation sent to SAMPLE. They choose a password with the code from the email.",
-      "invitedNoEmail": "The account for SAMPLE was created, but the invitation email could not be sent. They can ask for a code on the Set password page.",
+      "invited": "Invitation sent. They choose a password with the code from the email.",
+      "invitedNoEmail": "The account was created, but the invitation email could not be sent. They can ask for a code on the Set password page.",
       "disabled": "SAMPLE is disabled and was signed out everywhere.",
       "alreadyDisabled": "That account was already disabled. The list is updated.",
       "gone": "That account no longer exists. The list is updated."
