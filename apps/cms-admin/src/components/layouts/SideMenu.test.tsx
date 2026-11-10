@@ -295,4 +295,45 @@ describe('MobileMenu', () => {
     await userEvent.click(await screen.findByRole('button', { name: nav.closeMenu }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  describe('for a caller who can read no page', () => {
+    const openAsGuest = () =>
+      open(
+        { ...TEST_USER, role: 'guest' },
+        {
+          [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 403 }),
+          [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+        },
+      );
+
+    it('shows the Welcome panel inside the Menu sheet', async () => {
+      await openAsGuest();
+      await userEvent.click(screen.getByRole('button', { name: nav.menu }));
+      const sheet = await screen.findByRole('dialog');
+
+      expect(
+        await within(sheet).findByRole('heading', { name: nav.welcomeTitle }),
+      ).toBeInTheDocument();
+      expect(within(sheet).getByText(nav.welcomeText)).toBeInTheDocument();
+      expect(within(sheet).queryByRole('navigation', { name: nav.label })).not.toBeInTheDocument();
+    });
+
+    it('keeps the app-name link, Menu button and user menu in the shell', async () => {
+      await openAsGuest();
+      await screen.findByRole('heading', { name: nav.welcomeTitle });
+
+      expect(screen.getAllByRole('link', { name: EN_TEXT.app.name }).length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: nav.menu })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('shows the nav landmark and the Menu button together for an owner', async () => {
+    await open();
+
+    expect(await within(mainNav()).findByRole('link', { name: 'Blog Post' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: nav.menu })).toBeInTheDocument();
+  });
 });
