@@ -202,6 +202,8 @@ returns to the trigger. Compose `DialogContent`, `DialogHeader`,
 `DialogTitle` (required for accessibility), `DialogDescription` and
 `DialogFooter` (secondary left, primary right, end-aligned). Put a
 `DialogClose` Cancel button in the footer; there is no corner close button.
+The content closes at once; only the overlay fades, and it takes no clicks
+while it fades.
 
 ## Internals for a new input
 
