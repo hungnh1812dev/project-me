@@ -66,6 +66,7 @@ Read the page with `take_snapshot`. Take a screenshot only for the visual review
 3. At most 3 attempts per failing spec; then it is either a finding or a row `blocked` with the error. Stop tuning.
 4. One final run when specs pass: tier 2 the rows' specs; tier 3 the full suite. At most 3 full-stack runs per tier run.
 5. Redirect runs to a scratchpad file; read only `tail -n 40` or the failing block.
+6. Waiting (stack start, e2e run): start it with `run_in_background`, then wait in bounded steps, each one command under 170 s (`timeout 170 sh -c 'until <done check>; do sleep 15; done'`); never an open `until` / `pgrep` / `sleep` loop, never end your turn to wait. A log with no new line for 10 min → `blocked` with its tail.
 
 ## Unresolved issues
 

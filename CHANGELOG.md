@@ -36,6 +36,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: `session-gate` keeps its state under the project root, so a session that changes folder no longer forks it.
 - root: `session-gate` takes the first non-zero context size as the session baseline; a 0 read at the first dispatch counted the whole startup context as growth and broke checklist sessions after about 2k tokens of work.
 - root: the manager breaks a session only when `session-gate` denies a dispatch, at a board `Breaks:` point, or after a passed checkpoint or closed feature, never on its own estimate.
+- root: qc, security-qc and the builders wait on a long command in bounded steps under 170 s (no open `until` / `pgrep` / `sleep` loop, no turn ended to wait) and report `blocked` after 10 min with no new log line; the manager names the usual length of a tier 2 or 3 checker run.
 - root: qc and security-qc run an access preflight before every tier 2 or 3 run: they list the commands, MCP tools, `.localEnv.agent` keys and stack actions the rows need, probe the stack, and stop with `status: preflight` when something is not allowed yet; the manager asks the user once, then sends `GO` (`test-tiers` "Access preflight").
 - root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
 
