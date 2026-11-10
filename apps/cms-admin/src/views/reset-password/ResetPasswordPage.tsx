@@ -77,11 +77,7 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
         {COMMON_TEXT.password.reset.requestDescription}
       </p>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {error !== null ? (
             <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
@@ -206,11 +202,7 @@ function ChoosePasswordStep({
           : COMMON_TEXT.password.reset.codeSent(email)}
       </p>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {error !== null ? (
             <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
