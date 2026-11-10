@@ -50,16 +50,19 @@ demo_enable_reviewer() {
   fi
 }
 
-# demo_post_json <path> <body>: POST as the owner. Sets DEMO_RESPONSE_BODY and
-# DEMO_RESPONSE_STATUS; the body is only ever shown for these content calls.
-demo_post_json() {
+# demo_send_json <method> <path> <body>: sends JSON as the owner. Sets
+# DEMO_RESPONSE_BODY and DEMO_RESPONSE_STATUS; the body is only ever shown for
+# these content calls.
+demo_send_json() {
   local response
   response="$(printf 'Authorization: Bearer %s\n' "$DEMO_OWNER_TOKEN" | curl -sS --max-time "$DEMO_REQUEST_TIMEOUT_SECONDS" \
-    -w "\n$DEMO_HTTP_STATUS_FORMAT" -X POST -H @- -H 'Content-Type: application/json' \
-    --data-binary "$2" "$(demo_api_url "$1")")"
+    -w "\n$DEMO_HTTP_STATUS_FORMAT" -X "$1" -H @- -H 'Content-Type: application/json' \
+    --data-binary "$3" "$(demo_api_url "$2")")"
   DEMO_RESPONSE_STATUS="${response##*$'\n'}"
   DEMO_RESPONSE_BODY="${response%$'\n'*}"
 }
+
+demo_post_json() { demo_send_json POST "$1" "$2"; }
 
 # demo_json_field <json> <field>: prints one top-level field of a JSON text.
 demo_json_field() {
@@ -87,4 +90,46 @@ demo_seed_content() {
       return 1
     fi
   done
+}
+
+# Used by `dev-stack.sh seed` (an opt-in extra on a running dev stack, so specs that expect
+# an empty library or an empty collection keep working): one media file and one document
+# that is published and then edited, so it holds a draft that differs from the published copy.
+DEMO_MEDIA_PATH="/media"
+DEMO_SEED_DOCUMENT_SLUG="resume"
+DEMO_SEED_DRAFT_VALUES='{"summary":"<p>Edited after publishing, so this document holds a draft.</p>"}'
+DEMO_SEED_MEDIA_NAME="seed-image.png"
+DEMO_SEED_MEDIA_ALT="Seed image"
+DEMO_SEED_MEDIA_MIME="image/png"
+# A 1x1 PNG.
+DEMO_SEED_MEDIA_BASE64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
+# demo_seed_media: uploads one image (multipart: a `file` part and an `alt` field).
+demo_seed_media() {
+  local image_file status
+  image_file="$(mktemp)"
+  printf '%s' "$DEMO_SEED_MEDIA_BASE64" | base64 -d >"$image_file"
+  status="$(printf 'Authorization: Bearer %s\n' "$DEMO_OWNER_TOKEN" | curl -sS --max-time "$DEMO_REQUEST_TIMEOUT_SECONDS" \
+    -o /dev/null -w "$DEMO_HTTP_STATUS_FORMAT" -X POST -H @- \
+    -F "alt=$DEMO_SEED_MEDIA_ALT" -F "file=@$image_file;filename=$DEMO_SEED_MEDIA_NAME;type=$DEMO_SEED_MEDIA_MIME" \
+    "$(demo_api_url "$DEMO_MEDIA_PATH")")"
+  rm -f "$image_file"
+  if [[ "$status" != 2* ]]; then
+    echo "Seed: uploading the media file failed (HTTP $status)." >&2
+    return 1
+  fi
+}
+
+# demo_seed_document_with_draft: creates and publishes the sample document, then saves an edit.
+demo_seed_document_with_draft() {
+  local document_id version path
+  demo_post_json "$DEMO_DOCUMENTS_PATH/$DEMO_SEED_DOCUMENT_SLUG" "$(cat "$DEMO_CONTENT_DIR/$DEMO_SEED_DOCUMENT_SLUG$DEMO_CONTENT_EXTENSION")"
+  [[ "$DEMO_RESPONSE_STATUS" == 2* ]] || { echo "Seed: creating the document failed (HTTP $DEMO_RESPONSE_STATUS)." >&2; return 1; }
+  document_id="$(demo_json_field "$DEMO_RESPONSE_BODY" documentId)"
+  version="$(demo_json_field "$DEMO_RESPONSE_BODY" version)"
+  path="$DEMO_DOCUMENTS_PATH/$DEMO_SEED_DOCUMENT_SLUG/$document_id"
+  demo_post_json "$path/$DEMO_PUBLISH_SEGMENT" "{\"expectedVersion\":$version}"
+  [[ "$DEMO_RESPONSE_STATUS" == 2* ]] || { echo "Seed: publishing the document failed (HTTP $DEMO_RESPONSE_STATUS)." >&2; return 1; }
+  demo_send_json PUT "$path" "{\"version\":$version,\"values\":$DEMO_SEED_DRAFT_VALUES}"
+  [[ "$DEMO_RESPONSE_STATUS" == 2* ]] || { echo "Seed: saving the draft failed (HTTP $DEMO_RESPONSE_STATUS)." >&2; return 1; }
 }

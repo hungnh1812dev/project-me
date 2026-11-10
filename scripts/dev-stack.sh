@@ -308,9 +308,22 @@ demo() {
   print_demo_summary
 }
 
+# seed: adds one media file and one document with a draft to a running dev stack.
+seed() {
+  load_local_env
+  export_api_env
+  stack_load_accounts "$DOMAIN" "$LOCAL_ENV_FILE"
+  api_is_ready || { echo "The dev stack is not running (pnpm dev:stack)." >&2; exit 1; }
+  demo_sign_in_owner
+  demo_seed_media
+  demo_seed_document_with_draft
+  echo "Seeded one media file and one '$DEMO_SEED_DOCUMENT_SLUG' document with a draft."
+}
+
 case "${1:-start}" in
   start) start_stack ;;
   demo) demo ;;
+  seed) seed ;;
   stop) load_local_env; stop_stack; echo "Dev stack stopped." ;;
-  *) echo "Usage: dev-stack.sh [start|demo|stop]" >&2; exit 2 ;;
+  *) echo "Usage: dev-stack.sh [start|demo|seed|stop]" >&2; exit 2 ;;
 esac

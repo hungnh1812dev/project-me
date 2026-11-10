@@ -30,6 +30,7 @@ Part of the [project spec](../../../SPEC.md). Reference: definitions and values 
 ```bash
 pnpm install
 pnpm demo                       # whole product on the dev stack + reviewer access on + sample content (ADR 0011); stop: pnpm dev:stack:stop
+pnpm dev:stack:seed             # on a running dev stack: one media file and one "resume" document with a draft (opt-in; a fresh stack stays empty)
 pnpm turbo run build            # builds @abyss/form-commons dist/ first, then apps
 pnpm turbo run lint typecheck
 pnpm turbo run test             # unit + integration (Testcontainers needs Docker)
