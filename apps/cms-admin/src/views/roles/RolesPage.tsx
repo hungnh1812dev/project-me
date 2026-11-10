@@ -1,10 +1,11 @@
 import {
+  Card,
   CONTROL_FOCUS_RING_ONLY_CLASSES,
   FormAlert,
   SortableSheet,
   type SheetColumn,
 } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { EmptyState, LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { rolePermissionsPath } from '@configs/App.routes';
 import { useScreenText, type ScreenText } from '@configs/locales';
 import type { Role } from '@features/access/Access.api';
@@ -35,15 +36,18 @@ export function RolesPage() {
           />
         )
       ) : roles.data.length === 0 ? (
-        <p className="m-0 text-sm text-muted-foreground">{copy.empty}</p>
+        <EmptyState title={copy.empty} />
       ) : (
-        <SortableSheet
-          caption={copy.tableLabel}
-          columns={roleColumnsOf(copy)}
-          rows={roles.data}
-          getRowId={(role) => role.id}
-          getRowLabel={(role) => role.name}
-        />
+        <Card padding="flush" className="relative overflow-x-auto">
+          <SortableSheet
+            className="rounded-none border-0"
+            caption={copy.tableLabel}
+            columns={roleColumnsOf(copy)}
+            rows={roles.data}
+            getRowId={(role) => role.id}
+            getRowLabel={(role) => role.name}
+          />
+        </Card>
       )}
     </div>
   );

@@ -69,6 +69,26 @@ export function TableSkeleton({ label }: { label: string }) {
   );
 }
 
+/** Nothing to show yet, or a feature not configured: a title, an optional hint and icon in a card. */
+export function EmptyState({
+  title,
+  hint,
+  icon,
+}: {
+  title: ReactNode;
+  hint?: ReactNode;
+  /** Decorative icon above the title; the caller sets `aria-hidden`. */
+  icon?: ReactNode;
+}) {
+  return (
+    <Card className="grid justify-items-start gap-1">
+      {icon}
+      <p className="m-0 text-sm font-medium">{title}</p>
+      {hint === undefined ? null : <p className="m-0 text-sm text-muted-foreground">{hint}</p>}
+    </Card>
+  );
+}
+
 /** Failed load with a retry. */
 export function LoadError({
   message,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Card, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { EmptyState, LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, useCallerAccess } from '@features/access';
 import type { BackupFile, BackupsList } from '@features/backups/Backups.api';
@@ -120,12 +120,7 @@ export function BackupsPage() {
         <TableSkeleton label={copy.loading} />
       ) : backups.isError ? (
         isBackupsNotConfigured(backups.error) ? (
-          <div className="grid justify-items-start gap-1">
-            <p className="m-0 font-medium">{copy.notConfigured.title}</p>
-            <p className="m-0 max-w-prose text-sm text-muted-foreground">
-              {copy.notConfigured.hint}
-            </p>
-          </div>
+          <EmptyState title={copy.notConfigured.title} hint={copy.notConfigured.hint} />
         ) : isForbidden(backups.error) ? (
           <FormAlert tone="info">{copy.forbidden}</FormAlert>
         ) : (
@@ -136,10 +131,7 @@ export function BackupsPage() {
           />
         )
       ) : backups.data.data.length === 0 ? (
-        <div className="grid justify-items-start gap-1">
-          <p className="m-0 font-medium">{copy.empty}</p>
-          <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
-        </div>
+        <EmptyState title={copy.empty} hint={copy.emptyHint} />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">

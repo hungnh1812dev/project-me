@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Button, Card, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { EmptyState, LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
 import { useRestoreFocus } from '@components/useRestoreFocus';
@@ -115,10 +115,7 @@ export function AccountsPage() {
       ) : page > lastPage ? (
         <TableSkeleton label={copy.loading} />
       ) : accounts.data.data.length === 0 ? (
-        <div className="grid justify-items-start gap-1">
-          <p className="m-0 font-medium">{copy.empty}</p>
-          <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
-        </div>
+        <EmptyState title={copy.empty} hint={copy.emptyHint} />
       ) : (
         <Card padding="flush" className="relative overflow-x-auto">
           <SortableSheet

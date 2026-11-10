@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Button, Card, IconButton, MediaDetails, MediaPreview } from '@abyss/form-commons';
+import { EmptyState } from '@components/PageStates';
 import { useScreenText } from '@configs/locales';
 import { ExternalLink, ImageIcon, Pencil, Replace, Trash2 } from 'lucide-react';
 
@@ -102,16 +103,6 @@ function GridSkeleton() {
   );
 }
 
-function EmptyState({ title, hint }: { title: string; hint: string | undefined }) {
-  return (
-    <Card className="grid justify-items-start gap-1">
-      <ImageIcon aria-hidden="true" className="size-6 text-muted-foreground" />
-      <p className="m-0 text-sm font-medium">{title}</p>
-      {hint === undefined ? null : <p className="m-0 text-sm text-muted-foreground">{hint}</p>}
-    </Card>
-  );
-}
-
 /** Responsive cards of library files, with loading, error and empty states. */
 export function MediaGrid({
   files,
@@ -127,7 +118,14 @@ export function MediaGrid({
   const cardLabels = { previewFallback: copy.previewFallback, videoBadge: copy.videoBadge };
   if (error !== undefined && error !== null) return <>{error}</>;
   if (isLoading) return <GridSkeleton />;
-  if (files.length === 0) return <EmptyState title={emptyTitle} hint={emptyHint} />;
+  if (files.length === 0)
+    return (
+      <EmptyState
+        title={emptyTitle}
+        hint={emptyHint}
+        icon={<ImageIcon aria-hidden="true" className="size-6 text-muted-foreground" />}
+      />
+    );
 
   return (
     <ul aria-label={copy.grid.label} className={GRID_CLASSES}>
