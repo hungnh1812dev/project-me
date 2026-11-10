@@ -164,7 +164,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await expect(emailSetup.getByText(security.twoFactor.emailWarning)).toBeVisible();
   const setupCode = await waitForCode(context, e2eEnv.twoFactorEmail, seenBeforeSetup);
   await confirm(emailSetup, security.fields.emailCode, setupCode, security.emailSetup.submit);
-  await expect(page.getByText(security.twoFactor.enabledEmail)).toBeVisible();
+  await expect(toast(page, security.twoFactor.enabledEmail)).toBeVisible();
   await signOutFromUserMenu(page);
 
   // Login 3: the challenge dialog mails the code by itself.
@@ -252,7 +252,7 @@ async function turnTwoFactorOff(page: Page, context: BrowserContext): Promise<vo
       changes.password,
     );
   }
-  await expect(page.getByText(security.twoFactor.disabled)).toBeVisible();
+  await expect(toast(page, security.twoFactor.disabled)).toBeVisible();
 }
 
 async function restoreStoredPassword(page: Page): Promise<void> {
