@@ -4,6 +4,7 @@ import { ADMIN_COPY, MEDIA_ALT_MAX_LENGTH } from '../src/Apps.contract';
 import { RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { fakeMediaApi, PNG_BASE64 } from '../src/FakeMediaApi.fixture';
+import { toast } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.media;
@@ -14,7 +15,8 @@ const TEXT_FILE_NAME = `e2e-media-${RUN_ID}.txt`;
 const ALT_TEXT = `E2E alt ${RUN_ID}`;
 const ALT_PADDING = 'a';
 
-const card = (page: Page) => page.getByRole('listitem').filter({ hasText: FILE_NAME });
+const card = (page: Page) =>
+  page.getByRole('main').getByRole('listitem').filter({ hasText: FILE_NAME });
 
 const dialogCopy = copy.uploadDialog;
 
@@ -70,7 +72,7 @@ test.describe.serial('owner: media library', () => {
     await dialog.getByRole('button', { name: dialogCopy.upload, exact: true }).click();
     await dialog.getByRole('button', { name: dialogCopy.close, exact: true }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByText(copy.uploaded(1))).toBeVisible();
+    await expect(toast(page, copy.uploaded(1))).toBeVisible();
     await expect(card(page)).toBeVisible();
   });
 
@@ -101,7 +103,7 @@ test.describe.serial('owner: media library', () => {
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel(copy.altDialog.label).fill(ALT_TEXT);
     await dialog.getByRole('button', { name: copy.altDialog.save }).click();
-    await expect(page.getByText(copy.altDialog.saved(FILE_NAME))).toBeVisible();
+    await expect(toast(page, copy.altDialog.saved(FILE_NAME))).toBeVisible();
     await expect(dialog).toBeHidden();
 
     await editButton.click();
@@ -135,7 +137,7 @@ test.describe.serial('owner: media library', () => {
     await page.getByRole('button', { name: copy.deleteLabel(FILE_NAME) }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: copy.deleteDialog.submit(FILE_NAME) }).click();
-    await expect(page.getByText(copy.deleteDialog.deleted(FILE_NAME))).toBeVisible();
+    await expect(toast(page, copy.deleteDialog.deleted(FILE_NAME))).toBeVisible();
     await expect(card(page)).toHaveCount(0);
   });
 });

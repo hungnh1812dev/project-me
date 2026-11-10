@@ -11,7 +11,7 @@ import { ADMIN_COPY, APP_ROUTES } from '../src/Apps.contract';
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
 import { SLOW_STATE_TIMEOUT_MS, TWO_FACTOR_TEST_TIMEOUT_MS } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { labelStartingWith } from '../src/Locators.fixture';
+import { labelStartingWith, toast } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import {
   accountMenuTrigger,
@@ -110,7 +110,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   const first = await freshTotpCode(secret, undefined);
   changes.lastTotpStep = first.step;
   await confirm(setup, security.fields.totpCode, first.code, security.totpSetup.submit);
-  await expect(page.getByText(security.twoFactor.enabledTotp)).toBeVisible({
+  await expect(toast(page, security.twoFactor.enabledTotp)).toBeVisible({
     timeout: SLOW_STATE_TIMEOUT_MS,
   });
   await expect(page.getByText(security.twoFactor.statusTotp)).toBeVisible({
@@ -152,7 +152,7 @@ test('an account turns on TOTP, signs in with it, switches to email codes and ch
   await expect(disable).toBeVisible();
   await expect(disable.getByLabel(labelStartingWith(security.fields.totpCode))).toBeVisible();
   await confirm(disable, security.fields.totpCode, third.code, security.disable.submit);
-  await expect(page.getByText(security.twoFactor.disabled)).toBeVisible();
+  await expect(toast(page, security.twoFactor.disabled)).toBeVisible();
 
   // Email codes: the warning shows, the first code arrives by email.
   changes.isTwoFactorTouched = true;
