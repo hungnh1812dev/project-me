@@ -10,6 +10,7 @@ skills:
   - code-standards
   - commit-convention
   - test-tiers
+  - local-env
   - ui-direction
 ---
 

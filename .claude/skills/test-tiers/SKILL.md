@@ -1,6 +1,6 @@
 ---
 name: test-tiers
-description: How much runtime testing a unit or checklist needs - tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs, who starts which stack, the checklist format, and the agent-local env file `.localEnv.agent`. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc.
+description: How much runtime testing a unit or checklist needs - tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs and who starts which stack. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc. Checklist format, access preflight and progress file - `checklist-runs`; `.localEnv.agent` and git in scratch copies - `local-env`.
 ---
 
 # Test Tiers
@@ -36,50 +36,6 @@ Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint
 - **security-qc:** never starts or stops a stack. Tier 1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
 - **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both, and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
 
-## Access preflight
-
-A background checker cannot answer a permission prompt: a call outside the allowlist is denied and the round is lost. So before any tier 2 or 3 run (`CHECK`, `RECHECK`, a per-unit review, `AUDIT`), qc and security-qc work out what the run needs before the first row. Tier 1 runs skip it.
-
-1. **List the needs** from the rows of the tier (on `RECHECK` also the findings and `Fix log`):
-   - commands as permission patterns (`Bash(E2E_STACK=dev pnpm e2e:spec *)`, `Bash(curl -s http://localhost:8080/*)`) and MCP tools (`mcp__chrome-devtools__*`);
-   - paths read or written outside your edit list;
-   - `.localEnv.agent` keys by name (never values); real or external values only the user has;
-   - the stack and URLs; any action that writes data on the stack (create, edit or delete content, sign-in attempts) or leaves localhost.
-2. **Probe**, read-only, seconds only: the stack answers at its URL; each key exists in `.localEnv.agent` (`grep -c '^<KEY>='`); for browser rows `list_pages` answers.
-3. **Decide.** Every pattern is in `permissions.allow` of `.claude/settings.json` or `.claude/settings.local.json`, no value is missing and every probe is green → run, no stop. Otherwise stop before the first row and report `status: preflight` with one `access:` line per need: `<pattern | key | probe> · <row IDs> · <allowed | needed | missing value | probe failed: <what>>`.
-4. **Manager:** one `AskUserQuestion` for every `needed` line (allow for this run / allow always / refuse) and every missing value. Approved patterns go in `.claude/settings.local.json` `permissions.allow` (create it if missing; never `.claude/settings.json`): "allow always" stays, "this run" is removed after that tier run. A pattern the file has that is too narrow for the need is a `needed` line too: ask to widen it, never widen it unasked. Fix what it can (stack down → start it). Then `SendMessage` the same checker: `GO` plus the refused lines; their rows go `blocked`, `Note` `access refused: <pattern>`.
-5. **Missed need mid-run:** never retry a denied call. That row `blocked`, `Note` `access: <pattern>`; finish the other rows; list it under `access:`. The manager asks, then sends `RECHECK` for those rows only.
-
-Name needs as command patterns, not one line per call: a short list the user can judge in one look.
-
-## Progress file
-
-During any run (checklist, recheck, audit, per-unit review), qc and security-qc keep one line each in `<F>/qc-progress.md` (header `# QC progress`):
-
-`<agent name> | <command> <target> tier=<n> | <date +%H:%M> | rows <done>/<total> | <current step, a few words>`
-
-- Write it at start, then at least every 25 minutes; each update must differ from the previous one (rows done or step). Remove your line when you return your report.
-- Manager: reads only this file while a checker runs, whenever it regains control or the user asks for status, and gives the user that line. A line older than 50 minutes, or two updates 25+ minutes apart that are the same → `TaskStop` that agent, tell the user, and dispatch a fresh one only on the user's word.
-
-## Checklists
-
-One format for the planner's table under each checkpoint in the phases file, the merged copy `<F>/checklists/<checkpoint>.md`, and the feature's `<F>/CHECKLIST.md` (`<F>` = `.agent-state/features/<feature>/`, the `in-progress` row of `.agent-state/features.md`).
-
-```markdown
-# Checklist - <checkpoint | feature>
-Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHECK tier=<n>>
-
-| ID | Description | Input | Expected output | Checker | Method | Source | Status | Note |
-|---|---|---|---|---|---|---|---|---|
-| CLG-1 | Init container uses DB keys only | LG-db-1 | `docker compose ... config api-init` lists only `NODE_ENV`, `DB_*` | qc | T3 cli | planner | pass | - |
-```
-
-- `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<1-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).
-- **Phase checkpoint:** its own rows plus the rows of the phase's older checkpoints in an old plan (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows, the full e2e suite at tier 3 and the feature diff review; with one phase, a copy of its phase checklist.
-- Order: planner writes → qc copies, merges, adds its rows → security-qc adds its rows → tier runs.
-- Each checker writes `Status` and `Note` of its own rows only (both parts of a `both` row; it passes only when both do). No row is ever deleted; one that no longer applies keeps a `Note` saying why and still needs `pass`.
-- Done = every row `pass`.
-
 ## Missing commands
 
 From `project.md` `Commands:`. When one is missing:
@@ -87,20 +43,3 @@ From `project.md` `Commands:`. When one is missing:
 - No `dev stack`: tier 2 runs on the `full stack`; say so in the report. If this keeps happening, the manager suggests a dev-stack task.
 - No `full stack`: tier 3 runs the local production build if `project.md` has a command for it; otherwise `blocked`.
 - No e2e runner: tiers 2 and 3 are manual or CLI checks; the report says so.
-
-## Env files and `.localEnv.agent`
-
-No agent reads or writes `.env*` files (except `.env.example`). Local dev values go in `.localEnv.agent` at the repo root:
-- dev-only throwaway values (generated secrets, local URLs, test keys); real secrets and production values come from the user;
-- before creating it: `git check-ignore -q .localEnv.agent` succeeds and any `.dockerignore` (or image build ignore file) lists it; otherwise a builder adds the ignore lines and records it, qc and security-qc report `blocked`;
-- never `git add` it, copy it into an image, or print its values;
-- key names only go in the matching `.env.example`;
-- builders, qc and security-qc create, read and edit it, and add missing dev-only values there without asking the user (qc and security-qc note who, when and why on each change); security-qc reports a finding if it is tracked or holds a value that looks real.
-- qc and security-qc have full read and write permission on it (user decision); they work from it only (the e2e owner login values live there); any edit carries a note so other agents do not overwrite it.
-
-## Git in scratch copies
-
-A worktree shares the repo's `.git/config`, so `git config` inside it changes the identity of every later commit in the repo.
-- Never run `git config` (any scope) in the repo or in a worktree of it.
-- A test commit in a scratch copy: `git -c user.name=agent -c user.email=agent@localhost commit ...`.
-- Remove a scratch worktree with `git worktree remove <path>` before you report.
