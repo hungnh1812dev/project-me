@@ -47,16 +47,16 @@ Tests: 6 files (not listed).
 | File | Description |
 |---|---|
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
-| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton`, `LoadError`: page title and loading/error states |
+| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton` (neutral rows in a flush `Card`), `LoadError`: page title and loading/error states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
 | `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), a loading screen throws its promise (no `use`, so no conditional-use warning); an already loaded screen renders at once; shows `LoadError` when the load fails, and its retry clears the failed loads (`retryFailedScreenText`) and loads again; optional `fallback` replaces the skeleton |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |
 | `useRestoreFocus.ts` | `useRestoreFocus`: puts focus back on the opener after a dialog closes |
-| `layouts/AppShell.tsx` | `AppShell`: signed-in layout (side menu, top bar, reviewer banner, outlet) |
-| `layouts/AuthPageLayout.tsx` | `AuthPageLayout`: centered layout for sign-in and password pages |
+| `layouts/AppShell.tsx` | `AppShell`: signed-in layout (side menu, sticky top bar, reviewer banner, outlet in a padded column with section gap) |
+| `layouts/AuthPageLayout.tsx` | `AuthPageLayout`: centered `Card` frame for sign-in and password pages |
 | `layouts/MobileMenu.tsx` | `MobileMenu`: the side menu in a drawer on small screens |
 | `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups |
-| `layouts/TopBar.tsx` | `TopBar`: top bar on every width: app name and mobile menu below `md`, user menu at the right |
+| `layouts/TopBar.tsx` | `TopBar`: sticky blurred 64 px top bar on every width: app name and mobile menu below `md`, user menu at the right |
 | `layouts/UserMenu.tsx` | `UserMenu`, `initialsOf`: avatar menu (profile, password, security, sign out) |
 | `layouts/useNavGroupOpenState.ts` | `useNavGroupOpenState`: remembers which menu groups are open |
 

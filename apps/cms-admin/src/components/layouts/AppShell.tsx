@@ -12,7 +12,7 @@ export function AppShell({ nav }: { nav: NavSource }) {
   const isReviewer = useCurrentUser()?.role === REVIEWER_ROLE_SLUG;
 
   return (
-    <div className="min-h-dvh md:flex md:h-dvh">
+    <div className="min-h-dvh bg-background md:flex md:h-dvh">
       <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
         <div className="px-4 py-4">
           <AppNameLink />
@@ -22,7 +22,7 @@ export function AppShell({ nav }: { nav: NavSource }) {
       <div className="min-w-0 flex-1 md:overflow-y-auto">
         <TopBar nav={nav} />
         {isReviewer ? <ReviewerBanner /> : null}
-        <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+        <main className="mx-auto flex max-w-5xl flex-col gap-6 p-6 lg:gap-8 lg:p-8">
           <Outlet />
         </main>
       </div>
