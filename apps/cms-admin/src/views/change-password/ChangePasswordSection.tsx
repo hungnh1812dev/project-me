@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import { Button, Card, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { PASSWORD_LENGTH } from '@configs/Auth.constants';
 import { COMMON_TEXT, useScreenText, type ScreenText } from '@configs/locales';
 import {
@@ -91,57 +91,60 @@ export function ChangePasswordSection() {
   });
 
   return (
-    <section
-      aria-labelledby="password-heading"
-      className="grid gap-4 rounded-md border border-border bg-card p-5"
-    >
-      <div className="grid gap-1">
-        <h2 id="password-heading" className="text-base font-semibold">
-          {copy.changePassword.title}
-        </h2>
-        <p className="text-sm text-muted-foreground">{copy.changePassword.description}</p>
-      </div>
-      <FormProvider {...form}>
-        <form noValidate onSubmit={(event) => void onSubmit(event)} className="grid max-w-sm gap-4">
-          {alert !== null ? <FormAlert tone={alert.tone}>{alert.message}</FormAlert> : null}
-          {/* Hidden username so password managers update the right entry. */}
-          <input
-            type="email"
-            name="username"
-            autoComplete="username"
-            value={user?.email ?? ''}
-            readOnly
-            hidden
-          />
-          <TextInput<ChangeValues>
-            name="currentPassword"
-            label={copy.fields.currentPassword}
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-          <TextInput<ChangeValues>
-            name="newPassword"
-            label={COMMON_TEXT.password.newPasswordLabel}
-            description={COMMON_TEXT.password.newPasswordHint}
-            type="password"
-            autoComplete="new-password"
-            required
-          />
-          <TextInput<ChangeValues>
-            name="confirmPassword"
-            label={COMMON_TEXT.password.confirmPasswordLabel}
-            type="password"
-            autoComplete="new-password"
-            required
-          />
-          <div>
-            <Button type="submit" variant="primary" loading={change.isPending}>
-              {copy.changePassword.submit}
-            </Button>
-          </div>
-        </form>
-      </FormProvider>
-    </section>
+    <Card asChild className="grid gap-4">
+      <section aria-labelledby="password-heading">
+        <div className="grid gap-1">
+          <h2 id="password-heading" className="text-base font-semibold">
+            {copy.changePassword.title}
+          </h2>
+          <p className="text-sm text-muted-foreground">{copy.changePassword.description}</p>
+        </div>
+        <FormProvider {...form}>
+          <form
+            noValidate
+            onSubmit={(event) => void onSubmit(event)}
+            className="grid max-w-sm gap-4"
+          >
+            {alert !== null ? <FormAlert tone={alert.tone}>{alert.message}</FormAlert> : null}
+            {/* Hidden username so password managers update the right entry. */}
+            <input
+              type="email"
+              name="username"
+              autoComplete="username"
+              value={user?.email ?? ''}
+              readOnly
+              hidden
+            />
+            <TextInput<ChangeValues>
+              name="currentPassword"
+              label={copy.fields.currentPassword}
+              type="password"
+              autoComplete="current-password"
+              required
+            />
+            <TextInput<ChangeValues>
+              name="newPassword"
+              label={COMMON_TEXT.password.newPasswordLabel}
+              description={COMMON_TEXT.password.newPasswordHint}
+              type="password"
+              autoComplete="new-password"
+              required
+            />
+            <TextInput<ChangeValues>
+              name="confirmPassword"
+              label={COMMON_TEXT.password.confirmPasswordLabel}
+              type="password"
+              autoComplete="new-password"
+              required
+            />
+            <div>
+              <Button type="submit" variant="primary" loading={change.isPending}>
+                {copy.changePassword.submit}
+              </Button>
+            </div>
+          </form>
+        </FormProvider>
+      </section>
+    </Card>
   );
 }

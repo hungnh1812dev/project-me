@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
+import { Button, Card, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, useCallerAccess } from '@features/access';
@@ -158,7 +158,7 @@ export function BackupsPage() {
           {backups.data.data.some((backup) => backup.fileName.endsWith(ENCRYPTED_EXTENSION)) ? (
             <FormAlert tone="info">{copy.encryptedNote}</FormAlert>
           ) : null}
-          <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+          <Card padding="flush" className="relative overflow-x-auto">
             <SortableSheet
               className="rounded-none border-0"
               caption={copy.tableLabel}
@@ -167,7 +167,7 @@ export function BackupsPage() {
               getRowId={(backup) => backup.key}
               getRowLabel={(backup) => backup.fileName}
             />
-          </div>
+          </Card>
         </>
       )}
       {chosen === null ? null : (

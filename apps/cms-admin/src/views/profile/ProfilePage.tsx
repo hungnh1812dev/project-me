@@ -1,3 +1,4 @@
+import { Card } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
 
@@ -19,14 +20,16 @@ export function ProfilePage() {
         <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
         <p className="text-sm text-muted-foreground">{copy.description}</p>
       </div>
-      <dl className="grid max-w-md gap-4 rounded-md border border-border bg-card p-5">
-        {rows.map((row) => (
-          <div key={row.label} className="grid gap-1">
-            <dt className="text-sm text-muted-foreground">{row.label}</dt>
-            <dd className="text-sm font-medium">{row.value}</dd>
-          </div>
-        ))}
-      </dl>
+      <Card asChild className="grid max-w-md gap-4">
+        <dl>
+          {rows.map((row) => (
+            <div key={row.label} className="grid gap-1">
+              <dt className="text-sm text-muted-foreground">{row.label}</dt>
+              <dd className="text-sm font-medium">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </Card>
     </div>
   );
 }

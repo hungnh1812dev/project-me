@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
+import { Button, Card, FormAlert, type FormAlertTone } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 import { useCurrentUser, useSession } from '@features/auth';
 
@@ -46,82 +46,81 @@ export function TwoFactorSection() {
   const method = user.twoFactorEnabled ? user.twoFactorMethod : null;
 
   return (
-    <section
-      aria-labelledby="two-factor-heading"
-      className="grid gap-4 rounded-md border border-border bg-card p-5"
-    >
-      <div className="grid gap-1">
-        <h2 id="two-factor-heading" className="text-base font-semibold">
-          {copy.title}
-        </h2>
-        <p className="text-sm text-muted-foreground">{copy.description}</p>
-      </div>
+    <Card asChild className="grid gap-4">
+      <section aria-labelledby="two-factor-heading">
+        <div className="grid gap-1">
+          <h2 id="two-factor-heading" className="text-base font-semibold">
+            {copy.title}
+          </h2>
+          <p className="text-sm text-muted-foreground">{copy.description}</p>
+        </div>
 
-      {notice !== null ? <FormAlert tone={notice.tone}>{notice.message}</FormAlert> : null}
+        {notice !== null ? <FormAlert tone={notice.tone}>{notice.message}</FormAlert> : null}
 
-      <dl className="flex items-center gap-3 text-sm">
-        <dt className="text-muted-foreground">{copy.statusLabel}</dt>
-        <dd>
-          <span
-            className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${
-              method === null
-                ? 'bg-muted text-muted-foreground'
-                : 'bg-success-soft text-success-strong'
-            }`}
-          >
-            {method === 'totp'
-              ? copy.statusTotp
-              : method === 'email'
-                ? copy.statusEmail
-                : copy.statusOff}
-          </span>
-        </dd>
-      </dl>
+        <dl className="flex items-center gap-3 text-sm">
+          <dt className="text-muted-foreground">{copy.statusLabel}</dt>
+          <dd>
+            <span
+              className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${
+                method === null
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-success-soft text-success-strong'
+              }`}
+            >
+              {method === 'totp'
+                ? copy.statusTotp
+                : method === 'email'
+                  ? copy.statusEmail
+                  : copy.statusOff}
+            </span>
+          </dd>
+        </dl>
 
-      {method === null ? (
-        <>
-          <p className="text-sm">{copy.offHint}</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <Button onClick={() => setDialog('totp')}>{copy.setUpTotp}</Button>
-            <Button variant="link" className="h-auto px-0" onClick={() => setDialog('email')}>
-              {copy.emailInstead}
-            </Button>
-          </div>
-        </>
-      ) : (
-        <>
-          {method === 'email' ? <FormAlert tone="warning">{copy.emailWarning}</FormAlert> : null}
-          <div>
-            <Button variant="warning" onClick={() => setDialog('disable')}>
-              {copy.turnOff}
-            </Button>
-          </div>
-        </>
-      )}
+        {method === null ? (
+          <>
+            <p className="text-sm">{copy.offHint}</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Button onClick={() => setDialog('totp')}>{copy.setUpTotp}</Button>
+              <Button variant="link" className="h-auto px-0" onClick={() => setDialog('email')}>
+                {copy.emailInstead}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            {method === 'email' ? <FormAlert tone="warning">{copy.emailWarning}</FormAlert> : null}
+            <div>
+              <Button variant="warning" onClick={() => setDialog('disable')}>
+                {copy.turnOff}
+              </Button>
+            </div>
+          </>
+        )}
 
-      {dialog === 'totp' ? (
-        <TotpSetupDialog
-          onClose={close}
-          onDone={() => void settle({ tone: 'success', message: copy.enabledTotp })}
-          onStateChanged={onStateChanged}
-        />
-      ) : null}
-      {dialog === 'email' ? (
-        <EmailTwoFactorDialog
-          email={user.email}
-          onClose={close}
-          onDone={() => void settle({ tone: 'success', message: copy.enabledEmail })}
-          onStateChanged={onStateChanged}
-        />
-      ) : null}
-      {dialog === 'disable' && method !== null ? (
-        <DisableTwoFactorDialog
-          method={method}
-          onClose={close}
-          onDone={() => void settle({ tone: 'success', message: copy.disabled })}
-          onStateChanged={onStateChanged}
-        />
-      ) : null}
-    </section>
+        {dialog === 'totp' ? (
+          <TotpSetupDialog
+            onClose={close}
+            onDone={() => void settle({ tone: 'success', message: copy.enabledTotp })}
+            onStateChanged={onStateChanged}
+          />
+        ) : null}
+        {dialog === 'email' ? (
+          <EmailTwoFactorDialog
+            email={user.email}
+            onClose={close}
+            onDone={() => void settle({ tone: 'success', message: copy.enabledEmail })}
+            onStateChanged={onStateChanged}
+          />
+        ) : null}
+        {dialog === 'disable' && method !== null ? (
+          <DisableTwoFactorDialog
+            method={method}
+            onClose={close}
+            onDone={() => void settle({ tone: 'success', message: copy.disabled })}
+            onStateChanged={onStateChanged}
+          />
+        ) : null}
+      </section>
+    </Card>
   );
 }
