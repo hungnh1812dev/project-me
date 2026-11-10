@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Button, Card, FormAlert, type FormAlertTone } from '@abyss/form-commons';
+import { Button, Card, FormAlert, useToast, type ToastTone } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 import { useCurrentUser, useSession } from '@features/auth';
 
@@ -7,8 +7,10 @@ import { DisableTwoFactorDialog, EmailTwoFactorDialog, TotpSetupDialog } from '.
 
 type OpenDialog = 'totp' | 'email' | 'disable' | null;
 
+const TWO_FACTOR_TOAST_KEY = 'two-factor-outcome';
+
 interface Notice {
-  tone: FormAlertTone;
+  tone: ToastTone;
   message: string;
 }
 
@@ -19,7 +21,7 @@ export function TwoFactorSection() {
   const user = useCurrentUser();
   const session = useSession();
   const [dialog, setDialog] = useState<OpenDialog>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const { showToast } = useToast();
 
   const close = useCallback(() => setDialog(null), []);
 
@@ -27,14 +29,14 @@ export function TwoFactorSection() {
   const settle = useCallback(
     async (next: Notice) => {
       setDialog(null);
-      setNotice(next);
+      showToast({ tone: next.tone, title: next.message, key: TWO_FACTOR_TOAST_KEY });
       try {
         await session.reloadUser();
       } catch {
         // The interceptor signs out if the session is gone; nothing else to do.
       }
     },
-    [session],
+    [session, showToast],
   );
 
   const onStateChanged = useCallback(
@@ -54,8 +56,6 @@ export function TwoFactorSection() {
           </h2>
           <p className="text-sm text-muted-foreground">{copy.description}</p>
         </div>
-
-        {notice !== null ? <FormAlert tone={notice.tone}>{notice.message}</FormAlert> : null}
 
         <dl className="flex items-center gap-3 text-sm">
           <dt className="text-muted-foreground">{copy.statusLabel}</dt>
