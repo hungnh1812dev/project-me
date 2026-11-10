@@ -37,8 +37,9 @@ interface DocumentActionsProps {
 
 /**
  * The action row under the form: Save, and for a saved draft-and-publish
- * document Publish, Unpublish and Discard (SPEC §16.4). Secondary actions on
- * the left, the primary one on the right. Unpublish and Discard confirm first.
+ * document Publish, Unpublish and Discard (SPEC §16.4). The destructive Discard
+ * sits apart at the left end, secondary actions then the one primary on the
+ * right (ADM-6). Unpublish and Discard confirm first.
  */
 export function DocumentActions({
   slug,
@@ -116,6 +117,17 @@ export function DocumentActions({
   return (
     <fieldset className="m-0 flex min-w-0 flex-wrap justify-end gap-2 border-0 p-0">
       <legend className="sr-only">{copy.group}</legend>
+      {canDiscard ? (
+        <Button
+          type="button"
+          variant="destructive"
+          className="mr-auto"
+          disabled={state !== PUBLISH_STATE.MODIFIED || busy}
+          onClick={(event) => askToConfirm('discard', event.currentTarget)}
+        >
+          {copy.discard}
+        </Button>
+      ) : null}
       {hasLifecycle && holds('unpublish') ? (
         <Button
           type="button"
@@ -124,16 +136,6 @@ export function DocumentActions({
           onClick={(event) => askToConfirm('unpublish', event.currentTarget)}
         >
           {copy.unpublish}
-        </Button>
-      ) : null}
-      {canDiscard ? (
-        <Button
-          type="button"
-          variant="destructive"
-          disabled={state !== PUBLISH_STATE.MODIFIED || busy}
-          onClick={(event) => askToConfirm('discard', event.currentTarget)}
-        >
-          {copy.discard}
         </Button>
       ) : null}
       <Button
