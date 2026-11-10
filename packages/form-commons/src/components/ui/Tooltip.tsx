@@ -33,7 +33,7 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          'bg-foreground text-background rounded-item shadow-overlay data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out z-50 max-w-xs px-2.5 py-1.5 text-xs motion-reduce:animate-none',
+          'bg-foreground text-background rounded-item shadow-overlay z-50 max-w-xs px-2.5 py-1.5 text-xs',
           className,
         )}
         {...props}
