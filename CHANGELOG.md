@@ -34,6 +34,8 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: `session-gate` breaks the manager session past 95K tokens of context, under the 100K prompt size Haiku bills at 5x.
 - root: `session-gate` names the in-progress feature and its `Next:` line at session start, so the manager skips scanning state.
 - root: `session-gate` keeps its state under the project root, so a session that changes folder no longer forks it.
+- root: `session-gate` takes the first non-zero context size as the session baseline; a 0 read at the first dispatch counted the whole startup context as growth and broke checklist sessions after about 2k tokens of work.
+- root: the manager breaks a session only when `session-gate` denies a dispatch, at a board `Breaks:` point, or after a passed checkpoint or closed feature, never on its own estimate.
 - root: qc and security-qc run an access preflight before every tier 2 or 3 run: they list the commands, MCP tools, `.localEnv.agent` keys and stack actions the rows need, probe the stack, and stop with `status: preflight` when something is not allowed yet; the manager asks the user once, then sends `GO` (`test-tiers` "Access preflight").
 - root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
 
