@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, IconButton, MediaDetails, MediaPreview } from '@abyss/form-commons';
+import { Button, Card, IconButton, MediaDetails, MediaPreview } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 import { ExternalLink, ImageIcon, Pencil, Replace, Trash2 } from 'lucide-react';
 
@@ -89,14 +89,13 @@ function GridSkeleton() {
       <span className="sr-only">{copy.loading}</span>
       <ul aria-hidden="true" className={GRID_CLASSES}>
         {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
-          <li
-            key={index}
-            className="grid grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3"
-          >
-            <div className="h-(--size-media-card-preview) animate-pulse rounded-md bg-muted" />
-            <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-            <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-          </li>
+          <Card key={index} asChild padding="compact">
+            <li className="grid grid-cols-[minmax(0,1fr)] gap-3">
+              <div className="h-(--size-media-card-preview) animate-pulse rounded-item bg-muted" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+            </li>
+          </Card>
         ))}
       </ul>
     </div>
@@ -105,11 +104,11 @@ function GridSkeleton() {
 
 function EmptyState({ title, hint }: { title: string; hint: string | undefined }) {
   return (
-    <div className="grid justify-items-start gap-1 rounded-md border border-dashed border-border bg-card p-6">
+    <Card className="grid justify-items-start gap-1">
       <ImageIcon aria-hidden="true" className="size-6 text-muted-foreground" />
       <p className="m-0 text-sm font-medium">{title}</p>
       {hint === undefined ? null : <p className="m-0 text-sm text-muted-foreground">{hint}</p>}
-    </div>
+    </Card>
   );
 }
 
@@ -135,17 +134,19 @@ export function MediaGrid({
       {files.map((file) => (
         <li key={file.id} className="min-w-0">
           {mode === 'pick' ? (
-            <button
-              type="button"
-              aria-label={copy.picker.select(file.fileName)}
-              onClick={() => onSelect?.(file)}
-              className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <MediaPreview file={file} height="card" labels={cardLabels} />
-              <MediaDetails file={file} />
-            </button>
+            <Card asChild padding="compact" isInteractive>
+              <button
+                type="button"
+                aria-label={copy.picker.select(file.fileName)}
+                onClick={() => onSelect?.(file)}
+                className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)] gap-3 text-left"
+              >
+                <MediaPreview file={file} height="card" labels={cardLabels} />
+                <MediaDetails file={file} />
+              </button>
+            </Card>
           ) : (
-            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 rounded-md border border-border bg-card p-3">
+            <Card padding="compact" className="grid grid-cols-[minmax(0,1fr)] gap-3">
               <MediaPreview
                 file={file}
                 height="card"
@@ -153,7 +154,7 @@ export function MediaGrid({
                 actions={<CardActions file={file} actions={actions} />}
               />
               <MediaDetails file={file} />
-            </div>
+            </Card>
           )}
         </li>
       ))}

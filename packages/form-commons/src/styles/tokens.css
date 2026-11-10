@@ -99,6 +99,7 @@
   --radius-item: var(--radius);
   --shadow-card: none;
   --shadow-card-hover: none;
+  --shadow-bar-top: 0 -1px 0 0 var(--border);
   --shadow-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-primary: none;
   --shadow-primary-hover: none;
@@ -143,6 +144,7 @@
   --radius-item: 0.5rem;
   --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
   --shadow-card-hover: 0 8px 20px -6px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.06);
+  --shadow-bar-top: 0 -6px 16px -8px rgb(15 23 42 / 0.12);
   --shadow-overlay: 0 12px 32px -8px rgb(15 23 42 / 0.18), 0 4px 10px -4px rgb(15 23 42 / 0.08);
   --shadow-primary: 0 4px 12px -2px color-mix(in oklab, var(--abyss-indigo-600) 35%, transparent);
   --shadow-primary-hover: 0 6px 16px -2px

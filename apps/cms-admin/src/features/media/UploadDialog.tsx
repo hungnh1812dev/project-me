@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import {
   Button,
+  Card,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -300,7 +301,7 @@ export function UploadDialog({
                 }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={onDrop}
-                className={`grid justify-items-start gap-2 rounded-md border border-dashed p-4 ${
+                className={`grid justify-items-start gap-2 rounded-item border border-dashed p-4 ${
                   isDragging ? 'border-primary bg-muted' : 'border-border'
                 }`}
               >
@@ -330,20 +331,22 @@ export function UploadDialog({
             ) : null}
             {hasList ? (
               <div className="grid gap-2">
-                <ul
-                  aria-label={copy.listLabel}
-                  className="m-0 max-h-80 list-none overflow-y-auto rounded-md border border-border bg-card p-0"
-                >
-                  {items.map((item) => (
-                    <UploadRow
-                      key={item.id}
-                      item={item}
-                      canEdit={!isStarted || item.status === 'failed'}
-                      onRemove={() => queue.remove(item.id)}
-                      onRetry={() => queue.retry(item.id)}
-                    />
-                  ))}
-                </ul>
+                <Card asChild padding="flush">
+                  <ul
+                    aria-label={copy.listLabel}
+                    className="m-0 max-h-80 list-none overflow-y-auto p-0"
+                  >
+                    {items.map((item) => (
+                      <UploadRow
+                        key={item.id}
+                        item={item}
+                        canEdit={!isStarted || item.status === 'failed'}
+                        onRemove={() => queue.remove(item.id)}
+                        onRetry={() => queue.retry(item.id)}
+                      />
+                    ))}
+                  </ul>
+                </Card>
                 {isStarted ? (
                   <ProgressBar label={copy.totalLabel} percent={batchPercent} />
                 ) : (

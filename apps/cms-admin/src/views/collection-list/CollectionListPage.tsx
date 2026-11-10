@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   BulkActionBar,
   Button,
+  Card,
   FormAlert,
   SortableSheet,
   TablePagination,
@@ -200,7 +201,7 @@ export function CollectionListPage() {
               }}
             />
           ) : null}
-          <div className="min-w-0 rounded-md border border-border bg-card">
+          <Card padding="flush" className="min-w-0 overflow-hidden">
             <SortableSheet
               className="rounded-none border-0"
               caption={list.tableLabel(displayName)}
@@ -232,7 +233,7 @@ export function CollectionListPage() {
                 }}
               />
             )}
-          </div>
+          </Card>
         </div>
       )}
       <BulkDeleteDialog

@@ -264,16 +264,18 @@ function DocumentForm({
           <DynamicFormRenderer fields={fields} masked={masked} />
         </fieldset>
         {readOnly ? null : (
-          <DocumentActions
-            slug={slug}
-            record={record}
-            draftAndPublish={draftAndPublish}
-            rootFieldNames={rootFieldNames}
-            isFormDirty={form.formState.isDirty}
-            isSaving={save.isPending}
-            onNotice={onNotice}
-            onFailure={showActionFailure}
-          />
+          <div className="sticky bottom-0 z-10 rounded-t-surface bg-card px-4 py-3 shadow-bar-top">
+            <DocumentActions
+              slug={slug}
+              record={record}
+              draftAndPublish={draftAndPublish}
+              rootFieldNames={rootFieldNames}
+              isFormDirty={form.formState.isDirty}
+              isSaving={save.isPending}
+              onNotice={onNotice}
+              onFailure={showActionFailure}
+            />
+          </div>
         )}
       </form>
       {conflict !== null && mergeOpen ? (

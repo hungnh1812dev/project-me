@@ -59,6 +59,7 @@
 
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-bar-top: var(--shadow-bar-top);
   --shadow-overlay: var(--shadow-overlay);
   --shadow-primary: var(--shadow-primary);
   --shadow-primary-hover: var(--shadow-primary-hover);
