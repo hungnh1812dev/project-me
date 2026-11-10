@@ -18,7 +18,7 @@ The editor page for one document of a content type (`/content/:slug/new`, `/cont
 
 ## Techniques
 
-The form comes from `features/content` (`DynamicFormRenderer`, `Document.form`). Conflict merge: `conflictDetailsOf` reads the 409 body, `mergeReducer` holds the per-field choice (server or mine), `buildResolvedTree` builds the tree to resend; masked fields never take a side. A new conflict during the merge starts the choices over. Lifecycle actions (`DocumentActions`) show per the caller's permissions (`useCallerAccess`, `canWriteEveryField` for Discard) and the document's `publishState`; Publish needs a clean form, Unpublish and Discard confirm; a 409 version conflict keeps the notice and offers Reload (no refetch, which would drop it), `DOCUMENT_NOT_MODIFIED` refetches. Presence polls with a heartbeat (`PRESENCE_HEARTBEAT_MS`).
+The form comes from `features/content` (`DynamicFormRenderer`, `Document.form`). Conflict merge: `conflictDetailsOf` reads the 409 body, `mergeReducer` holds the per-field choice (server or mine), `buildResolvedTree` builds the tree to resend; masked fields never take a side. A new conflict during the merge starts the choices over. Saved, Published, Unpublished and Discarded show a success toast (`useToast`, one key per action); form and conflict errors stay inline (`FormAlert`). Lifecycle actions (`DocumentActions`) show per the caller's permissions (`useCallerAccess`, `canWriteEveryField` for Discard) and the document's `publishState`; Publish needs a clean form, Unpublish and Discard confirm; a 409 version conflict keeps the inline error and offers Reload (no refetch, which would drop it), `DOCUMENT_NOT_MODIFIED` refetches. Presence polls with a heartbeat (`PRESENCE_HEARTBEAT_MS`).
 
 ## Technologies
 

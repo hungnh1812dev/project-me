@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  useToast,
 } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 import type { PermissionAction } from '@features/access';
@@ -17,6 +18,8 @@ import { toSaveError } from '@features/content/Content.errors';
 import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+const LIFECYCLE_TOAST_KEY = 'document-lifecycle';
 
 type ConfirmedAction = 'unpublish' | 'discard';
 
@@ -29,7 +32,6 @@ interface DocumentActionsProps {
   rootFieldNames: readonly string[];
   isFormDirty: boolean;
   isSaving: boolean;
-  onNotice: (notice: string | null) => void;
   onFailure: (failure: unknown) => void;
 }
 
@@ -45,12 +47,12 @@ export function DocumentActions({
   rootFieldNames,
   isFormDirty,
   isSaving,
-  onNotice,
   onFailure,
 }: DocumentActionsProps) {
   const content = useScreenText('content');
   const copy = content.content.actions;
   const api = useContentApi();
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
   const access = useCallerAccess();
   const [confirming, setConfirming] = useState<ConfirmedAction | null>(null);
@@ -85,18 +87,23 @@ export function DocumentActions({
       else await api.discardDocument(slug, documentId, version);
       return action;
     },
-    onMutate: () => onNotice(null),
     onSuccess: async (action) => {
       setConfirming(null);
       await refetch();
-      onNotice(
-        { publish: copy.published, unpublish: copy.unpublished, discard: copy.discarded }[action],
-      );
+      showToast({
+        tone: 'success',
+        title: {
+          publish: copy.published,
+          unpublish: copy.unpublished,
+          discard: copy.discarded,
+        }[action],
+        key: LIFECYCLE_TOAST_KEY,
+      });
     },
     onError: async (failure) => {
       setConfirming(null);
       onFailure(failure);
-      // A refetch changes the version and would drop this notice with the form.
+      // A refetch changes the version and remounts the form, which would drop the error shown with it.
       if (!toSaveError(failure, content).conflict) await refetch();
     },
   });

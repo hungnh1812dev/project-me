@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, FormAlert } from '@abyss/form-commons';
+import { Button, FormAlert, useToast } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { contentEditPath } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
@@ -23,6 +23,8 @@ import { DocumentActions } from './DocumentActions';
 import { maskedPathsOf, visibleEntries } from './Merge.reducer';
 import { PresenceBanner } from './PresenceBanner';
 
+const DOCUMENT_TOAST_KEY = { saved: 'document-saved' } as const;
+
 /**
  * `/content/:slug/new` and `/content/:slug/:documentId`: the dynamic
  * form of one document's draft. Creating goes to the edit route; saving an
@@ -32,8 +34,6 @@ export function DocumentEditPage() {
   const copy = useScreenText('content').content;
   const { slug = '', documentId } = useParams();
   const api = useContentApi();
-  // Held here: the form remounts when a save brings a new version.
-  const [notice, setNotice] = useState<string | null>(null);
   const type = useQuery({
     queryKey: CONTENT_QUERY_KEYS.type(slug),
     queryFn: () => api.getContentType(slug),
@@ -121,8 +121,6 @@ export function DocumentEditPage() {
           rootFieldNames={rootFieldNames}
           record={draft.data ?? null}
           onReload={() => void draft.refetch()}
-          notice={notice}
-          onNotice={setNotice}
         />
       )}
     </div>
@@ -136,8 +134,6 @@ function DocumentForm({
   rootFieldNames,
   record,
   onReload,
-  notice,
-  onNotice,
 }: {
   slug: string;
   fields: FieldNode[];
@@ -145,12 +141,11 @@ function DocumentForm({
   rootFieldNames: readonly string[];
   record: DocumentRecord | null;
   onReload: () => void;
-  notice: string | null;
-  onNotice: (notice: string | null) => void;
 }) {
   const content = useScreenText('content');
   const copy = content.content;
   const api = useContentApi();
+  const { showToast } = useToast();
   const readOnly = useCurrentUser()?.role === REVIEWER_ROLE_SLUG;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -161,6 +156,9 @@ function DocumentForm({
   const [conflict, setConflict] = useState<ConflictDetails | null>(null);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeError, setMergeError] = useState<string | null>(null);
+
+  const showSavedToast = () =>
+    showToast({ tone: 'success', title: copy.saved, key: DOCUMENT_TOAST_KEY.saved });
 
   const save = useMutation({
     mutationFn: (values: FormValues) => {
@@ -176,6 +174,7 @@ function DocumentForm({
     },
     onSuccess: async (written) => {
       setError(null);
+      showSavedToast();
       if (record === null) {
         void navigate(contentEditPath(slug, written.documentId), {
           replace: true,
@@ -185,10 +184,8 @@ function DocumentForm({
       await queryClient.invalidateQueries({
         queryKey: CONTENT_QUERY_KEYS.draft(slug, record.documentId),
       });
-      onNotice(copy.saved);
     },
     onError: (failure) => {
-      onNotice(null);
       setError(toSaveError(failure, content));
       const details = conflictDetailsOf(failure);
       // Only worth a merge when there is a difference the role may see.
@@ -210,7 +207,7 @@ function DocumentForm({
       await queryClient.invalidateQueries({
         queryKey: CONTENT_QUERY_KEYS.draft(slug, record?.documentId ?? ''),
       });
-      onNotice(copy.saved);
+      showSavedToast();
     },
     onError: (failure) => {
       const details = conflictDetailsOf(failure);
@@ -225,7 +222,6 @@ function DocumentForm({
   });
 
   const showActionFailure = (failure: unknown) => {
-    onNotice(null);
     setError(toSaveError(failure, content));
     setConflict(null);
     setMergeOpen(false);
@@ -237,7 +233,6 @@ function DocumentForm({
         noValidate
         className="grid gap-6"
         onSubmit={(event) => {
-          onNotice(null);
           void form.handleSubmit((values) => save.mutate(values))(event);
         }}
       >
@@ -258,7 +253,6 @@ function DocumentForm({
             ) : null}
           </div>
         )}
-        {notice === null ? null : <FormAlert tone="success">{notice}</FormAlert>}
         {/* A reviewer reads only: inputs are disabled and there is no Save. */}
         <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
           <DynamicFormRenderer fields={fields} masked={masked} />
@@ -272,7 +266,6 @@ function DocumentForm({
               rootFieldNames={rootFieldNames}
               isFormDirty={form.formState.isDirty}
               isSaving={save.isPending}
-              onNotice={onNotice}
               onFailure={showActionFailure}
             />
           </div>

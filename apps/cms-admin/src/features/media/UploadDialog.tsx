@@ -151,18 +151,28 @@ function UploadRow({
   );
 }
 
+/** What the queue holds besides the uploaded files, for a parent that reports the batch. */
+export interface UploadOutcome {
+  failedCount: number;
+}
+
 /** Hands the parent the files that reached the library and were not reported before. */
 function reportNewlyUploaded(
   items: readonly UploadItem[],
   reportedIds: Set<string>,
-  onUploaded: (files: MediaFile[]) => void,
+  onUploaded: (files: MediaFile[], outcome: UploadOutcome) => void,
 ) {
   const fresh = items.filter(
     (item) => item.status === 'done' && item.media && !reportedIds.has(item.id),
   );
   if (fresh.length === 0) return;
   for (const item of fresh) reportedIds.add(item.id);
-  onUploaded(fresh.flatMap((item) => (item.media ? [item.media] : [])));
+  onUploaded(
+    fresh.flatMap((item) => (item.media ? [item.media] : [])),
+    {
+      failedCount: items.filter((item) => item.status === 'failed').length,
+    },
+  );
 }
 
 /**
@@ -184,7 +194,7 @@ export function UploadDialog({
   send?: SendFile;
   /** Files dropped outside the dialog; each new array is added once when the dialog is open. */
   initialFiles?: readonly File[] | undefined;
-  onUploaded: (files: MediaFile[]) => void;
+  onUploaded: (files: MediaFile[], outcome: UploadOutcome) => void;
   open: boolean;
   onClose: () => void;
   onCloseAutoFocus?: (event: Event) => void;

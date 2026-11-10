@@ -600,6 +600,7 @@
     "description": "Images, PDFs and videos you can attach to documents. Uploaded images are re-encoded and lose their location data.",
     "upload": "Upload files",
     "uploaded": "SAMPLE files uploaded.",
+    "uploadedSomeFailed": "SAMPLE of undefined files uploaded. The rest failed.",
     "replaced": "SAMPLE replaced.",
     "loading": "Loading media files",
     "loadFailed": "Could not load the file library.",
