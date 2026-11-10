@@ -109,7 +109,7 @@ function ToastProvider({ labels, children }: { labels: ToastLabels; children: Re
         <ToastPrimitive.Viewport
           label={`${labels.region} ({hotkey})`}
           data-slot="toast-viewport"
-          className="fixed top-4 left-1/2 z-[100] m-0 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 list-none flex-col-reverse gap-2 p-0 outline-none sm:right-4 sm:left-auto sm:translate-x-0"
+          className="fixed top-20 left-1/2 z-[100] m-0 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 list-none flex-col-reverse gap-2 p-0 outline-none sm:right-4 sm:left-auto sm:translate-x-0"
         />
       </ToastPrimitive.Provider>
     </ToastContext.Provider>
