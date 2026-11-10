@@ -117,7 +117,7 @@ describe('Toast', () => {
   });
 
   it('closes an open dialog on Escape and keeps the toast', async () => {
-    const onOpenChange = vi.fn();
+    const onOpenChange = vi.fn<(open: boolean) => void>();
     render(
       <ToastProvider labels={labels}>
         <Trigger options={{ tone: 'success', title: 'Saved' }} />
