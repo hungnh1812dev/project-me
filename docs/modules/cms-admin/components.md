@@ -30,7 +30,7 @@ React 19, react-router, `@abyss/form-commons` (Radix-based primitives), `lucide-
 
 ## Where to change what
 
-A new menu item: add the page to `views/Views.registry.ts` and its section in `NavSections.constants.ts`; the side menu needs no change. A component only one page uses stays in that page's `views/` folder.
+A new menu item: add the page to `views/Views.registry.ts` and its section in `NavSections.constants.ts`; the side menu needs no change. A component only one page uses stays in that page's `views/` folder. A list or grid with nothing to show renders `EmptyState` from `PageStates.tsx` (a `Card` with a title, an optional hint and an optional decorative icon; ADM-7) in place of the table or grid; a new empty case passes its own copy and needs no new component. A forbidden notice or failed load stays `FormAlert` / `LoadError`, outside any `Card`.
 
 ## Files
 
@@ -42,12 +42,12 @@ components/ (6 files)
   layouts/ (7 files)
 ```
 
-Tests: 6 files (not listed).
+Tests: 7 files (not listed).
 
 | File | Description |
 |---|---|
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
-| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton` (neutral rows in a flush `Card`), `LoadError`: page title and loading/error states |
+| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton` (neutral rows in a flush `Card`), `LoadError`, `EmptyState` (title, optional hint and icon in a `Card`): page title and loading, error and empty states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
 | `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), a loading screen throws its promise (no `use`, so no conditional-use warning); an already loaded screen renders at once; shows `LoadError` when the load fails, and its retry clears the failed loads (`retryFailedScreenText`) and loads again; optional `fallback` replaces the skeleton |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |

@@ -38,6 +38,7 @@ Generated from each `**D<n> <Title>.**` paragraph; D1–D15 are the fixes for re
 | D20 | Backup download | [flows/backups/SPEC.md](../flows/backups/SPEC.md) |
 | D21 | Web BFF and web hardening | [apps/web/SPEC.md](../apps/web/SPEC.md) |
 | D22 | Remember me | [flows/sign-in/SPEC.md](../flows/sign-in/SPEC.md) |
+| D23 | cms-admin premium theme | [apps/cms-admin/SPEC.md](../apps/cms-admin/SPEC.md) |
 <!-- prettier-ignore-end -->
 <!-- decision-index:end -->
 
