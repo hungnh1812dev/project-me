@@ -27,14 +27,30 @@ Tiers 2 and 3 start from a green tier 1.
 | Feature checklist | the tiers its rows hold, lowest first |
 | One unit (builder's checks, per-unit security-qc review) | the lowest that can show it, 1 to 3 |
 
-Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint: each row runs only at the tier in its `Method`. Take the tiers present in the checklist (all its rows, whatever checkpoint they came from), lowest first; run every tier 1 row in **one** tier 1 run, then every tier 2 row in one tier 2 run, then every tier 3 row in one tier 3 run (one stack start each), qc first, then security-qc on the same stack. A tier no row holds is not run (rows only at T1 and T2 → tier 1 then tier 2, no tier 3). A failed row does not stop higher tiers; its fix is re-checked in a later run of its own tier.
+Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint: each row runs only at the tier in its `Method`. Take the tiers present in the checklist (all its rows, whatever checkpoint they came from), lowest first; run every tier 1 row in **one** tier 1 run, then every tier 2 row in one tier 2 run, then every tier 3 row in one tier 3 run (one stack start each), qc first, then security-qc on the same stack. A tier no row holds is not run (rows only at T1 and T2 → tier 1 then tier 2, no tier 3). A failed row does not stop higher tiers; its fix is re-checked in a later run of its own tier (tier 3: "Tier 3 re-test rounds" below).
+
+## Tier 3 re-test rounds
+
+- **Gate run:** the first tier 3 run of a phase checkpoint or a feature checklist: a fresh `full stack` (images built, its own stack checks), every tier 3 row, the full e2e suite, browser rows on that same kept stack.
+- **Re-test round:** each later tier 3 run of the same checklist after a fix (`RECHECK tier=3`). The gate run's stack stays up between rounds; a stack that died is started fresh. qc takes the **fix kind** of the fix commits since the last green round, the first that fits:
+
+| Fix kind | The fix commits change | Re-test round |
+|---|---|---|
+| `stack` | anything in "Tier 3 is required when" above or `Tier 3 also when` in `project.md` | a fresh run, as the gate run |
+| `app` | product code of one or more apps or packages, nothing of `stack` | a fresh run; once `project.md` has an `in-place rebuild` command: rebuild and recreate only the changed apps on the kept stack, then the full suite on it with the `e2e single spec` command |
+| `test-only` | only the e2e test package | the **retry set** on the kept stack with the `e2e single spec` command: the failed specs plus every spec that imports a changed shared e2e file (outside the spec files); no rebuild, no restart |
+
+- qc writes the fix kind and what it ran in the row `Note`: `retry set: <specs>`, `in-place: <apps>, full suite` or `fresh`.
+- **Flaky failure:** a spec failure that does not come back in 2 unchanged reruns of that spec on the same stack. qc records it as a flaky finding (qc owns the spec); the full-suite row passes with `Note` `flaky: <spec>, finding <id>`. Every flaky finding is fixed, and its spec green on a fresh run, before the feature close.
+- **Shared with the feature checklist:** when the feature checklist starts on the same commit as the last phase checkpoint's green tier 3 run (no commit between), its full-suite row takes that result (`Note` `same HEAD <hash> as checkpoint <id>`) and its other tier 3 rows run on that kept stack. Any commit between: a gate run.
+- Why this keeps coverage: every checklist still ends with the full suite green on the images of its final commit, and the stack checks green on a fresh stack no `stack` fix came after; a data problem only a fresh database shows is caught by the next gate run.
 
 ## Who does what
 
 - **Builder:** writes the unit's tier and reason in `Checks needed` (`worker-flow`).
-- **qc:** starts and stops the stack for its checklist runs. It may add a higher-tier row when the diff touches a tier 3 area; it never lowers a row's tier.
+- **qc:** starts and stops the stack for its checklist runs, keeps it up between tier 3 re-test rounds and picks each round's fix kind. It may add a higher-tier row when the diff touches a tier 3 area; it never lowers a row's tier.
 - **security-qc:** never starts or stops a stack. Tier 1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
-- **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both, and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
+- **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both (a tier 3 stack stays up while a failed row waits for its re-test round), and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
 
 ## Missing commands
 
