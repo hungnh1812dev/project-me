@@ -81,7 +81,7 @@ function PaletteItem({ type, icon: Icon, label, onPick }: PaletteItemProps) {
       <Button
         type="button"
         size="sm"
-        className="min-w-0 flex-1 justify-start"
+        className="flex-1 justify-start whitespace-nowrap"
         onClick={() => onPick(type)}
       >
         <Icon aria-hidden="true" />

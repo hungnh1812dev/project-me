@@ -12,6 +12,7 @@ import {
   closestCenter,
   DndContext,
   DragOverlay,
+  KeyboardCode,
   KeyboardSensor,
   PointerSensor,
   pointerWithin,
@@ -21,6 +22,7 @@ import {
   type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
+  type KeyboardCoordinateGetter,
   type UniqueIdentifier,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
@@ -114,6 +116,48 @@ const innermostCollision: CollisionDetection = (args) => {
   return [...within].sort((a, b) => area(a) - area(b));
 };
 
+const ARROW_DIRECTIONS: Record<string, { x: number; y: number }> = {
+  [KeyboardCode.Up]: { x: 0, y: -1 },
+  [KeyboardCode.Down]: { x: 0, y: 1 },
+  [KeyboardCode.Left]: { x: -1, y: 0 },
+  [KeyboardCode.Right]: { x: 1, y: 0 },
+};
+
+/**
+ * A palette item is not itself a droppable, which the sortable getter needs to move on, so its arrow keys
+ * step to the nearest enabled place in that direction (rows, lists and empty component boxes alike);
+ * a dragged field keeps the sortable getter.
+ */
+export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
+  const { active, collisionRect, droppableRects, droppableContainers, over } = args.context;
+  const direction = ARROW_DIRECTIONS[event.code];
+  if (active === null || !isPaletteId(active.id)) {
+    return sortableKeyboardCoordinates(event, args);
+  }
+  if (direction === undefined || !collisionRect) return undefined;
+  event.preventDefault();
+  const from = {
+    x: collisionRect.left + collisionRect.width / 2,
+    y: collisionRect.top + collisionRect.height / 2,
+  };
+  let nearest: { x: number; y: number; distance: number } | null = null;
+  for (const container of droppableContainers.getEnabled()) {
+    const rect = droppableRects.get(container.id);
+    if (rect === undefined || container.id === over?.id) continue;
+    const centre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    const step = (centre.x - from.x) * direction.x + (centre.y - from.y) * direction.y;
+    if (step <= 0) continue;
+    const distance = Math.hypot(centre.x - from.x, centre.y - from.y);
+    if (nearest === null || distance < nearest.distance) nearest = { ...centre, distance };
+  }
+  return nearest === null
+    ? undefined
+    : {
+        x: nearest.x - collisionRect.width / 2,
+        y: nearest.y - collisionRect.height / 2,
+      };
+};
+
 const DragTargetsContext = createContext<ReadonlySet<ListOwnerId> | null>(null);
 
 /** Whether the list takes the item being dragged; true while nothing is dragged. */
@@ -146,7 +190,7 @@ export function SchemaDragContext({
   const focusHandleOf = useRef<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: builderKeyboardCoordinates }),
   );
   const allowedOwners = useMemo(
     () => (activeId === null ? null : allowedOwnersOf(tree, activeId)),

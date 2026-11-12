@@ -172,6 +172,32 @@ describe('SchemaDragContext by keyboard', () => {
   });
 });
 
+describe('palette drag by keyboard into an empty component box', () => {
+  beforeEach(stubLayoutByDocumentOrder);
+  afterEach(() => vi.restoreAllMocks());
+
+  it('reaches the box even when a top-level field follows it', async () => {
+    renderInApp(
+      createTestServices().services,
+      <Harness
+        steps={[
+          [null, 'component'],
+          [null, 'string'],
+        ]}
+      />,
+    );
+    screen.getByRole('button', { name: copy.dnd.paletteHandle(copy.fieldTypes.boolean) }).focus();
+    await userEvent.keyboard(' ');
+    const listLabel = copy.fields.listLabel('f1');
+    for (let step = 0; step < 12 && !announcement()?.includes(listLabel); step += 1) {
+      await userEvent.keyboard('{ArrowUp}');
+    }
+    expect(announcement()).toContain(listLabel);
+    await userEvent.keyboard(' ');
+    expect(screen.getByRole('list', { name: listLabel })).toBeInTheDocument();
+  });
+});
+
 describe('drop places', () => {
   const threeLevels = build(
     [null, 'component'],
