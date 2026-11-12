@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+
 import { expect, test } from '@playwright/test';
 
 import { inviteAccount } from '../src/Accounts.fixture';
@@ -82,5 +84,49 @@ test.describe('content-types validate route (owner only)', () => {
     expect(forbidden.status()).toBe(HTTP.FORBIDDEN);
     const forbiddenBadBody = await post({ nonsense: true }, editor);
     expect(forbiddenBadBody.status()).toBe(HTTP.FORBIDDEN);
+  });
+});
+
+const SCHEMA_DIR = new URL('../../cms-api/content/schemas/', import.meta.url);
+const COLLISION_RULE = 'identifier.collision';
+const RENAMED_SLUGS = ['module-sign-in', 'module-page-status'];
+const RETIRED_SLUGS = ['sign-in-text', 'status-page-text'];
+
+test.describe('content-types validate route against the schema files (owner only)', () => {
+  test('every schema file is valid in update mode; renamed slugs collide, retired slugs are free', async ({
+    request,
+  }) => {
+    const owner = bearer(await ownerApiToken(request));
+    const post = async (definition: unknown, mode: string) => {
+      const answer = await request.post(apiUrl(API_PATHS.CONTENT_TYPES_VALIDATE), {
+        data: { definition, mode },
+        headers: owner,
+      });
+      expect(answer.status()).toBe(HTTP.OK);
+      return (await answer.json()) as ValidateAnswer;
+    };
+
+    const files = readdirSync(SCHEMA_DIR).filter((name) => name.endsWith('.json'));
+    expect(files).toEqual(expect.arrayContaining(RENAMED_SLUGS.map((slug) => `${slug}.json`)));
+    for (const file of files) {
+      const definition = JSON.parse(readFileSync(new URL(file, SCHEMA_DIR), 'utf8')) as {
+        slug: string;
+      };
+      expect(await post(definition, 'update'), file).toEqual({ valid: true, errors: [] });
+    }
+
+    for (const slug of RENAMED_SLUGS) {
+      const answer = await post({ ...validDefinition, slug }, 'create');
+      expect(answer.valid).toBe(false);
+      const collision = answer.errors.find((error) => error.rule === COLLISION_RULE);
+      expect(collision?.message).toContain(slug);
+      expect(JSON.stringify(answer)).not.toMatch(/table|fields\[/i);
+    }
+    for (const slug of RETIRED_SLUGS) {
+      expect(await post({ ...validDefinition, slug }, 'create')).toEqual({
+        valid: true,
+        errors: [],
+      });
+    }
   });
 });

@@ -718,3 +718,159 @@ test.describe('schema builder canvas (owner only)', () => {
     });
   }
 });
+
+const IMPORT_CAP = 500;
+const ERROR_COUNT = /^\d+ errors?$/;
+const IMPORT_DEPTH_CAP = 5;
+const OVER_CAP_NESTING = 1550;
+const DEEP_NESTING = 400;
+const PLAIN_FIELD = { name: 'leaf', type: 'text' };
+
+/** `levels` components inside each other, one plain field in the innermost. */
+const nestedComponents = (levels: number): unknown => {
+  let inner: unknown = PLAIN_FIELD;
+  for (let level = 0; level < levels; level += 1) {
+    inner = { name: `box${level}`, type: 'component', fields: [inner] };
+  }
+  return inner;
+};
+
+const definitionText = (fields: unknown[]) =>
+  JSON.stringify({
+    slug: 'deep-type',
+    displayName: 'Deep',
+    kind: 'collection',
+    draftAndPublish: false,
+    fields,
+  });
+
+test.describe('schema builder end to end and limits (owner only)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: DESKTOP.width, height: TALL_HEIGHT });
+    await signInAsOwner(page);
+    await openBuilder(page);
+  });
+
+  test('import, add by pointer and keyboard drag, rename, fix an error, export, guard clears', async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    page.on('pageerror', (error) => consoleErrors.push(error.message));
+    const bodies: Record<string, unknown>[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes(VALIDATE_PATH_PART) && request.method() === 'POST') {
+        bodies.push(request.postDataJSON() as Record<string, unknown>);
+      }
+    });
+    const handle = (type: string) =>
+      page.getByRole('button', { name: copy.dnd.paletteHandle(type), exact: true });
+
+    await importText(page, readSchema(CV_PAGE_FILE));
+    await expect(validCheck(page)).toBeVisible();
+
+    // Pointer: a palette item into the skills component, onto its first row.
+    const skillsList = page.getByRole('list', { name: copy.fields.listLabel('skills') });
+    await dragWithPointer(
+      page,
+      handle(SHORT_TYPE),
+      skillsList.getByRole('button', { name: copy.row.select('level'), exact: true }),
+      0.3,
+    );
+    await expect(nameInput(page)).toHaveValue('field1');
+    await expect(
+      skillsList.getByRole('button', { name: copy.row.select('field1'), exact: true }),
+    ).toBeVisible();
+    // Keyboard: a second palette item onto the top level, then into a component with Move to.
+    const edits = page.getByRole('button', { name: /^Edit / });
+    const before = await edits.count();
+    await dragByKeyboard(page, copy.dnd.paletteHandle(SHORT_TYPE), 'ArrowDown', /in Fields\./);
+    await expect(announcement(page)).toContainText(`${SHORT_TYPE} dropped at`);
+    await expect(edits).toHaveCount(before + 1);
+    const added = 'extra';
+    await nameInput(page).fill(added);
+    await page.getByRole('button', { name: copy.row.moveTo(added), exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page
+      .getByRole('menuitem', { name: copy.row.moveToComponent('languages'), exact: true })
+      .press('Enter');
+    await expect(
+      page
+        .getByRole('list', { name: copy.fields.listLabel('languages') })
+        .getByRole('button', { name: copy.row.select(added), exact: true }),
+    ).toBeVisible();
+
+    // Rename, break and fix.
+    await editButton(page, 'field1').click();
+    await nameInput(page).fill('Bad Name');
+    await expect(page.getByText(copy.validation.errorCount(1))).toBeVisible();
+    await expect(editButton(page, 'Bad Name').getByText(copy.row.hasErrors)).toBeVisible();
+    await expect(page.getByRole('button', { name: copy.export.download })).toBeDisabled();
+    await nameInput(page).fill('badge');
+    await expect(validCheck(page)).toBeVisible();
+
+    const download = page.getByRole('button', { name: copy.export.download });
+    await expect(download).toBeEnabled();
+    const [saved] = await Promise.all([page.waitForEvent('download'), download.click()]);
+    const exported = JSON.parse(readFileSync(await saved.path(), 'utf8')) as {
+      fields: { name: string; fields?: { name: string }[] }[];
+    };
+    const children = (name: string) =>
+      exported.fields.find((field) => field.name === name)?.fields?.map((field) => field.name);
+    expect(children('skills')).toContain('badge');
+    expect(children('languages')).toContain('extra');
+    for (const body of bodies) expect(Object.keys(body).sort()).toEqual(['definition', 'mode']);
+
+    // The export cleared the guard: a menu link leaves without a question.
+    await page
+      .getByRole('navigation', { name: nav.label })
+      .getByRole('link', { name: nav.accounts })
+      .click();
+    await expect(page).toHaveURL(/\/accounts$/);
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test('a file over the field cap is refused and the work stays; deep nesting shows errors, never a blank page', async ({
+    page,
+  }) => {
+    await importText(page, readSchema(CV_PAGE_FILE));
+    await expect(validCheck(page)).toBeVisible();
+    const failures: string[] = [];
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message.slice(0, 300)));
+    page.on('response', (response) => {
+      if (response.status() >= 500) failures.push(`${response.status()} ${response.url()}`);
+    });
+
+    const flat = Array.from({ length: IMPORT_CAP + 1 }, (_, index) => ({
+      name: `f${index}`,
+      type: 'text',
+    }));
+    let dialog = await importText(page, definitionText(flat));
+    await expect(dialog.getByText(copy.import.refusal.tooManyFields(IMPORT_CAP))).toBeVisible();
+    await dialog.getByRole('button', { name: copy.import.cancel }).click();
+    await expect(slugInput(page)).toHaveValue(CV_PAGE_SLUG);
+
+    // Past depth 3: loads, the check names the problem on a row.
+    dialog = await importText(page, definitionText([nestedComponents(IMPORT_DEPTH_CAP - 1)]));
+    await expect(dialog).toBeHidden();
+    await expect(slugInput(page)).toHaveValue('deep-type');
+    await expect(page.getByText(ERROR_COUNT).first()).toBeVisible();
+    await expect(validCheck(page)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: copy.export.download })).toBeDisabled();
+
+    // Extreme nesting is refused (by count or by depth), never a crash, and the work stays.
+    dialog = await importText(page, definitionText([nestedComponents(OVER_CAP_NESTING)]));
+    await expect(dialog.getByText(copy.import.refusal.tooManyFields(IMPORT_CAP))).toBeVisible();
+    await dialog.getByRole('button', { name: copy.import.cancel }).click();
+    dialog = await importText(page, definitionText([nestedComponents(DEEP_NESTING)]));
+    await expect(dialog.getByText(copy.import.refusal.tooDeep(IMPORT_DEPTH_CAP))).toBeVisible();
+    await dialog.getByRole('button', { name: copy.import.cancel }).click();
+    await expect(page.getByRole('heading', { level: 1, name: copy.title })).toBeVisible();
+    await expect(slugInput(page)).toHaveValue('deep-type');
+    expect(pageErrors).toEqual([]);
+    expect(failures).toEqual([]);
+  });
+});
