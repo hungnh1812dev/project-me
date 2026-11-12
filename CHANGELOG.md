@@ -20,6 +20,9 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- cms-api: `POST /content-types/validate` (owner only) checks a content type definition against the registered types and returns the errors of the submitted definition; it stores nothing (flow schema-builder, SB-10).
+- cms-admin: the owner-only schema builder page `/schema-builder` with a field palette, canvas, property panel, live check, JSON import and copy or download; adds the `@dnd-kit` dependency (flow schema-builder, SB-1..SB-14).
+- cms-admin, cms-api: spec for the schema builder: an owner-only cms-admin page (`/schema-builder`) that creates or updates a content type schema with a drag-and-drop field palette and canvas (components up to 3 levels), a property panel, live checks through a new owner-only `POST /content-types/validate`, and copy or download of the JSON file; nothing is written on the server, `content:generate` stays a manual step; `@dnd-kit` added to cms-admin only (flow schema-builder, SB-1..SB-14, D24; Q-SB1..Q-SB5 answered by the user 2026-11-12, as recommended).
 - cms-admin: spec for the premium SaaS look: indigo primary with a soft coloured shadow, rose destructive, slate zoning, rounded cards without hard borders, sticky sidebar with an active indicator, sticky header, toasts for action outcomes, a 3 px focus halo with a solid edge, 200/300 ms transitions; tokens stay in form-commons with a `premium` theme block, web keeps its look (ADM-1..ADM-10, D23).
 - cms-admin: spec: a dialog closes at once; only its backdrop fades out and takes no clicks while it fades (ADM-9).
 - cms-admin: spec: the sidebar shows only the pages the role may read; a role with no read permission sees a Welcome sidebar ("Welcome to the system", "Contact the administrator to be granted access."); no API change, reviewer role out of scope (ADM-11).

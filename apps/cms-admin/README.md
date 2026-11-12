@@ -12,6 +12,7 @@ Features (`src/features/`):
 - `content`: dynamic document form, collection list with bulk actions, conflict merge, presence.
 - `reviewer`: reviewer switch, sessions log and the read-only reviewer mode.
 - `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item always shows for the owner; the page reads the list only when the owner presses "Check backups" (the server throttles it per actor), and then shows the not-configured state when the storage keys are unset.
+- `views/schema-builder`: owner-only schema builder page (`/schema-builder`): a drag-and-drop field canvas, property panel and live check through `POST /content-types/validate`; it only exports the schema JSON (copy or download) and writes nothing on the server (flow schema-builder).
 - `status`: status page that calls `GET /api/v1/health/live`.
 
 ## Auth (D14)
