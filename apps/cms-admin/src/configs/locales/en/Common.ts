@@ -9,6 +9,12 @@ export const COMMON_COPY = {
     region: 'Notifications',
     close: 'Dismiss notification',
   },
+  leaveDialog: {
+    title: 'Leave this page?',
+    description: 'Your changes are not saved. If you leave now, they are lost.',
+    stay: 'Stay on this page',
+    leave: 'Leave without saving',
+  },
 } as const;
 
 export const APP_COPY = {

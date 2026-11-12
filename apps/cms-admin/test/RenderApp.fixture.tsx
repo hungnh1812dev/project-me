@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { createApiClient } from '@apis/client/Api.client';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { QueryClient } from '@tanstack/react-query';
@@ -44,6 +45,15 @@ export function renderApp(services: ReturnType<typeof createAppServices>, route 
       <MemoryRouter initialEntries={[route]}>
         <App />
       </MemoryRouter>
+    </AppProviders>,
+  );
+}
+
+/** One component inside the app providers and a router, with no routes of the app around it. */
+export function renderInApp(services: ReturnType<typeof createAppServices>, ui: ReactNode) {
+  return render(
+    <AppProviders services={services}>
+      <MemoryRouter>{ui}</MemoryRouter>
     </AppProviders>,
   );
 }

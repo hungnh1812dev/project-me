@@ -14,6 +14,7 @@ import { useCallerAccess } from '@features/access/useCallerAccess';
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Link, NavLink } from 'react-router';
 
+import { useGuardedLinkClick } from './LeaveGuard';
 import { useNavGroupOpenState } from './useNavGroupOpenState';
 
 const SKELETON_ROW_COUNT = 3;
@@ -58,9 +59,11 @@ function useMenuState(nav: NavSource): MenuState {
 }
 
 export function AppNameLink() {
+  const handleClick = useGuardedLinkClick();
   return (
     <Link
       to={APP_ROUTES.HOME}
+      onClick={(event) => handleClick(event, APP_ROUTES.HOME)}
       className={`rounded-item text-sm font-semibold ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
     >
       {COMMON_TEXT.app.name}
@@ -92,11 +95,17 @@ function WelcomePanel() {
 }
 
 function ItemList({ items, onNavigate }: MenuProps & { items: readonly NavItem[] }) {
+  const handleClick = useGuardedLinkClick();
   return (
     <ul className="grid gap-0.5">
       {items.map((item) => (
         <li key={item.path}>
-          <NavLink to={item.path} title={item.label} onClick={onNavigate} className={LINK_CLASS}>
+          <NavLink
+            to={item.path}
+            title={item.label}
+            onClick={(event) => handleClick(event, item.path, onNavigate)}
+            className={LINK_CLASS}
+          >
             {item.label}
           </NavLink>
         </li>

@@ -1,11 +1,12 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { EN_TEXT } from '@configs/locales/en';
 import type { CurrentUser } from '@features/auth/Auth.slice';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, renderApp, renderInApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { initialsOf } from './UserMenu';
+import { LeaveGuardProvider, useLeaveGuard } from './LeaveGuard';
+import { initialsOf, UserMenu } from './UserMenu';
 
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
 const session = EN_TEXT.session;
@@ -85,5 +86,48 @@ describe('UserMenu', () => {
       await screen.findByRole('heading', { level: 1, name: EN_TEXT.login.title }),
     ).toBeVisible();
     expect(api.callsTo(`POST ${LOGOUT}`)).toHaveLength(1);
+  });
+
+  describe('with a page holding unsaved work', () => {
+    function UnsavedPage() {
+      useLeaveGuard(true);
+      return <UserMenu />;
+    }
+
+    async function openGuarded() {
+      const harness = createTestServices({
+        [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
+        [`GET ${ME}`]: () => ({ status: 200, data: TEST_USER }),
+        [`POST ${LOGOUT}`]: () => ({ status: 204 }),
+      });
+      await harness.services.session.restore();
+      renderInApp(
+        harness.services,
+        <LeaveGuardProvider>
+          <UnsavedPage />
+        </LeaveGuardProvider>,
+      );
+      await userEvent.click(
+        await screen.findByRole('button', { name: session.accountMenu(TEST_USER.displayName) }),
+      );
+      await userEvent.click(screen.getByRole('menuitem', { name: session.signOut }));
+      return harness;
+    }
+
+    it('keeps the session when the user stays', async () => {
+      const { api } = await openGuarded();
+      await userEvent.click(
+        await screen.findByRole('button', { name: EN_TEXT.common.leaveDialog.stay }),
+      );
+      expect(api.callsTo(`POST ${LOGOUT}`)).toHaveLength(0);
+    });
+
+    it('signs out when the user leaves', async () => {
+      const { api } = await openGuarded();
+      await userEvent.click(
+        await screen.findByRole('button', { name: EN_TEXT.common.leaveDialog.leave }),
+      );
+      await vi.waitFor(() => expect(api.callsTo(`POST ${LOGOUT}`)).toHaveLength(1));
+    });
   });
 });

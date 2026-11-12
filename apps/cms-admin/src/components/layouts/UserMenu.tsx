@@ -14,6 +14,8 @@ import { COMMON_TEXT } from '@configs/locales';
 import { useCurrentUser, useSession } from '@features/auth';
 import { Link } from 'react-router';
 
+import { useConfirmLeave, useGuardedLinkClick } from './LeaveGuard';
+
 const ACCOUNT_LINKS = [
   { path: APP_ROUTES.PROFILE, label: COMMON_TEXT.session.profileLink, isForReviewer: true },
   {
@@ -49,6 +51,8 @@ export function UserMenu() {
   const user = useCurrentUser();
   const session = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const confirmLeave = useConfirmLeave();
+  const handleLinkClick = useGuardedLinkClick();
   if (!user) return null;
   const isReviewer = user.role === REVIEWER_ROLE_SLUG;
   const links = ACCOUNT_LINKS.filter((link) => !isReviewer || link.isForReviewer);
@@ -70,7 +74,9 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {links.map((link) => (
           <DropdownMenuItem key={link.path} asChild>
-            <Link to={link.path}>{link.label}</Link>
+            <Link to={link.path} onClick={(event) => handleLinkClick(event, link.path)}>
+              {link.label}
+            </Link>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
@@ -78,9 +84,12 @@ export function UserMenu() {
           disabled={isSigningOut}
           aria-busy={isSigningOut}
           onSelect={() => {
-            setIsSigningOut(true);
-            // The session ends either way; this component then unmounts.
-            void session.signOut();
+            void confirmLeave().then((isConfirmed) => {
+              if (!isConfirmed) return;
+              setIsSigningOut(true);
+              // The session ends either way; this component then unmounts.
+              void session.signOut();
+            });
           }}
         >
           {COMMON_TEXT.session.signOut}
