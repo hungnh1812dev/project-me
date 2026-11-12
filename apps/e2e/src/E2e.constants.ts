@@ -79,9 +79,9 @@ export const CONTENT_TYPE_NAMES = {
   header: 'Header',
   profile: 'Profile',
   resume: 'Resume',
-  'sign-in-text': 'Sign In Text',
+  'module-page-status': 'Module Page Status',
+  'module-sign-in': 'Module Sign In',
   'site-text': 'Site Text',
-  'status-page-text': 'Status Page Text',
 } as const;
 
 /** Content type of the smoke stack with a media field and a list view. */

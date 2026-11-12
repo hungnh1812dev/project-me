@@ -28,9 +28,9 @@ const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES['cv-contact'],
   CONTENT_TYPE_NAMES['cv-page-text'],
   CONTENT_TYPE_NAMES.header,
-  CONTENT_TYPE_NAMES['sign-in-text'],
+  CONTENT_TYPE_NAMES['module-page-status'],
+  CONTENT_TYPE_NAMES['module-sign-in'],
   CONTENT_TYPE_NAMES['site-text'],
-  CONTENT_TYPE_NAMES['status-page-text'],
   CONTENT_TYPE_NAMES[CV_PAGE_SLUG],
   CONTENT_TYPE_NAMES.profile,
   CONTENT_TYPE_NAMES.resume,
@@ -40,6 +40,7 @@ const EXPECTED_OWNER_NAV = [
   nav.apiTokens,
   nav.reviewer,
   ADMIN_COPY.access.nav.backups,
+  ADMIN_COPY.schemaBuilder.title,
 ];
 
 test.describe('anonymous', () => {

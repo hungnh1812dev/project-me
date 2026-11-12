@@ -177,7 +177,9 @@ test.describe.serial('media chain: upload to richtext to public read, replace, d
     await dialog()
       .getByRole('button', { name: /^Upload/ })
       .click();
-    await expect(page.getByText(new RegExp(`${STEM}_[0-9a-f]{8}\\.png replaced\\.`))).toBeVisible({
+    await expect(
+      page.getByText(new RegExp(`${STEM}_[0-9a-f]{8}\\.png replaced\\.`)).first(),
+    ).toBeVisible({
       timeout: UPLOAD_SETTLE_MS,
     });
     const replacedItem = await mediaItem();
