@@ -404,7 +404,7 @@ export function schemaTreeReducer(tree: SchemaTree, action: SchemaTreeAction): S
       }
       const held =
         value === undefined
-          ? tree.heldKeys.filter((held) => held !== key)
+          ? tree.heldKeys.filter((heldKey) => heldKey !== key)
           : tree.heldKeys.includes(key)
             ? tree.heldKeys
             : [...tree.heldKeys, key];
