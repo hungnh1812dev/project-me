@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import { Button, CONTROL_FOCUS_RING_ONLY_CLASSES, FormAlert, TextInput } from '@abyss/form-commons';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
@@ -77,11 +77,7 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
         {COMMON_TEXT.password.reset.requestDescription}
       </p>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {error !== null ? (
             <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}
@@ -196,7 +192,7 @@ function ChoosePasswordStep({
       <h1
         ref={headingRef}
         tabIndex={-1}
-        className="mt-6 text-2xl font-semibold tracking-tight outline-none"
+        className={`mt-6 text-2xl font-semibold tracking-tight ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         {COMMON_TEXT.password.reset.title}
       </h1>
@@ -206,11 +202,7 @@ function ChoosePasswordStep({
           : COMMON_TEXT.password.reset.codeSent(email)}
       </p>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {error !== null ? (
             <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}

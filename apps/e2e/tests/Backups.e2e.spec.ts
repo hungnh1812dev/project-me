@@ -185,6 +185,19 @@ test.describe('backup download dialog', () => {
     await expect(dialog).toBeHidden();
   });
 
+  test('2FA owner: Esc closes the dialog and focus returns to the row button', async ({ page }) => {
+    await stubList(page, HTTP.OK, fixtureList());
+    await stubOwnerWithTwoFactor(page);
+    await signInAsOwner(page);
+    const dialog = await openDialog(page);
+    await expect(dialog.getByLabel(security.fields.currentPassword)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole('button', { name: copy.download.buttonLabel(FILE_SOON) }),
+    ).toBeFocused();
+  });
+
   test('2FA owner: validation, wrong code, wrong password, rate limit, success', async ({
     page,
   }) => {

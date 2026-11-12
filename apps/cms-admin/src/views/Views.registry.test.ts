@@ -11,4 +11,9 @@ describe('view nav items', () => {
 
     expect(unknownSections).toEqual([]);
   });
+
+  it('ask for read permission, so a page the caller cannot read has no item', () => {
+    expect(APP_NAV.items.length).toBeGreaterThan(0);
+    expect(APP_NAV.items.filter((item) => item.action !== 'read')).toEqual([]);
+  });
 });

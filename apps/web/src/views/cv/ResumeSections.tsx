@@ -1,8 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react';
 
-import { COPY } from '@/configs/Copy.constants';
 import {
   isMaskedField,
+  type CvPageText,
   type Resume,
   type ResumeEducation,
   type ResumeExperience,
@@ -10,6 +10,12 @@ import {
   type ResumeRole,
 } from '@/features/cv/Cv.graphql';
 import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
+import { formatText } from '@/utils/TextTemplate.rules';
+
+interface SectionProps {
+  resume: Resume;
+  text: CvPageText;
+}
 
 const LINK_CLASS = 'text-primary underline-offset-4 hover:underline';
 const SECTION_TITLE_CLASS = 'text-lg font-semibold tracking-tight';
@@ -17,12 +23,13 @@ const MUTED_CLASS = 'text-sm text-muted-foreground';
 const RICHTEXT_CLASS =
   'text-sm leading-6 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_li]:mt-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_p+p]:mt-2 [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5';
 
-/** The text a masked value shows; CvView swaps it for a reviewer session. */
-export const MaskedTextContext = createContext<string>(COPY.cv.maskedValue);
+/** The text a masked value shows; CvView provides it from the page text. */
+export const MaskedTextContext = createContext<string | null>(null);
 
 /** Stands in for a value the visitor's role may not read. */
 export function MaskedPlaceholder() {
   const text = useContext(MaskedTextContext);
+  if (text === null) throw new Error('MaskedPlaceholder needs a MaskedTextContext provider');
   return (
     <span className="bg-muted text-muted-foreground rounded-sm px-1.5 py-0.5 text-sm italic">
       {text}
@@ -81,11 +88,11 @@ function techStackOf(value: unknown): string[] {
   return Array.isArray(value) ? value.filter(hasText) : [];
 }
 
-function TechStack({ value }: { value: unknown }) {
+function TechStack({ value, label }: { value: unknown; label: string }) {
   const items = techStackOf(value);
   if (items.length === 0) return null;
   return (
-    <ul aria-label={COPY.cv.experience.techStack} className="mt-2 flex flex-wrap gap-1.5">
+    <ul aria-label={label} className="mt-2 flex flex-wrap gap-1.5">
       {items.map((item, index) => (
         <li
           key={`${item}-${index}`}
@@ -98,11 +105,11 @@ function TechStack({ value }: { value: unknown }) {
   );
 }
 
-export function SummarySection({ resume }: { resume: Resume }) {
+export function SummarySection({ resume, text }: SectionProps) {
   const isMasked = isMaskedField(resume, 'summary');
   if (!isMasked && !hasText(resume.summary)) return null;
   return (
-    <Section title={COPY.cv.sections.summary}>
+    <Section title={text.sections.summary}>
       {isMasked || !hasText(resume.summary) ? (
         <MaskedPlaceholder />
       ) : (
@@ -112,11 +119,11 @@ export function SummarySection({ resume }: { resume: Resume }) {
   );
 }
 
-export function SkillsSection({ resume }: { resume: Resume }) {
+export function SkillsSection({ resume, text }: SectionProps) {
   const skills = nonEmpty(resume.skills).filter((entry) => hasText(entry.skill));
   if (skills.length === 0) return null;
   return (
-    <Section title={COPY.cv.sections.skills}>
+    <Section title={text.sections.skills}>
       <ul className="flex flex-wrap gap-2">
         {skills.map((entry, index) => (
           <li
@@ -134,15 +141,17 @@ export function SkillsSection({ resume }: { resume: Resume }) {
   );
 }
 
-function ProjectItem({ project }: { project: ResumeProject }) {
-  const name = project.name ?? COPY.cv.experience.unnamedProject;
+function ProjectItem({ project, text }: { project: ResumeProject; text: CvPageText }) {
+  const name = project.name ?? text.experience.unnamedProject;
   return (
     <li className="mt-4">
       <h4 className="text-sm font-medium">{name}</h4>
       <p className={MUTED_CLASS}>
         {[
           hasText(project.role) ? project.role : null,
-          project.teamSize === null ? null : COPY.cv.experience.teamSize(project.teamSize),
+          project.teamSize === null
+            ? null
+            : formatText(text.experience.teamSize, { size: project.teamSize }),
         ]
           .filter(Boolean)
           .join(' · ')}
@@ -150,21 +159,24 @@ function ProjectItem({ project }: { project: ResumeProject }) {
       {hasText(project.liveLink) || hasText(project.repositoryLink) ? (
         <p className="mt-1 flex flex-wrap gap-x-4 text-sm">
           {hasText(project.liveLink) ? (
-            <ExternalLink href={project.liveLink} label={COPY.cv.experience.liveLinkName(name)}>
-              {COPY.cv.experience.liveLink}
+            <ExternalLink
+              href={project.liveLink}
+              label={formatText(text.experience.liveLinkName, { project: name })}
+            >
+              {text.experience.liveLink}
             </ExternalLink>
           ) : null}
           {hasText(project.repositoryLink) ? (
             <ExternalLink
               href={project.repositoryLink}
-              label={COPY.cv.experience.repositoryLinkName(name)}
+              label={formatText(text.experience.repositoryLinkName, { project: name })}
             >
-              {COPY.cv.experience.repositoryLink}
+              {text.experience.repositoryLink}
             </ExternalLink>
           ) : null}
         </p>
       ) : null}
-      <TechStack value={project.techStack} />
+      <TechStack value={project.techStack} label={text.experience.techStack} />
       {hasText(project.responsibilities) ? (
         <div className="mt-2">
           <Richtext html={project.responsibilities} />
@@ -174,7 +186,7 @@ function ProjectItem({ project }: { project: ResumeProject }) {
   );
 }
 
-function RoleItem({ role }: { role: ResumeRole }) {
+function RoleItem({ role, text }: { role: ResumeRole; text: CvPageText }) {
   const projects = nonEmpty(role.projects);
   return (
     <li className="mt-4">
@@ -182,12 +194,14 @@ function RoleItem({ role }: { role: ResumeRole }) {
       <p className={MUTED_CLASS}>
         {[
           hasText(role.period) ? role.period : null,
-          role.teamSize === null ? null : COPY.cv.experience.teamSize(role.teamSize),
+          role.teamSize === null
+            ? null
+            : formatText(text.experience.teamSize, { size: role.teamSize }),
         ]
           .filter(Boolean)
           .join(' · ')}
       </p>
-      <TechStack value={role.techStack} />
+      <TechStack value={role.techStack} label={text.experience.techStack} />
       {hasText(role.responsibilities) ? (
         <div className="mt-2">
           <Richtext html={role.responsibilities} />
@@ -196,7 +210,7 @@ function RoleItem({ role }: { role: ResumeRole }) {
       {projects.length > 0 ? (
         <ul className="border-border mt-2 border-l pl-4">
           {projects.map((project, index) => (
-            <ProjectItem key={`${project.name}-${index}`} project={project} />
+            <ProjectItem key={`${project.name}-${index}`} project={project} text={text} />
           ))}
         </ul>
       ) : null}
@@ -207,9 +221,11 @@ function RoleItem({ role }: { role: ResumeRole }) {
 function ExperienceItem({
   experience,
   isCompanyMasked,
+  text,
 }: {
   experience: ResumeExperience;
   isCompanyMasked: boolean;
+  text: CvPageText;
 }) {
   const roles = nonEmpty(experience.roles);
   return (
@@ -223,7 +239,7 @@ function ExperienceItem({
       {roles.length > 0 ? (
         <ul>
           {roles.map((role, index) => (
-            <RoleItem key={`${role.position}-${index}`} role={role} />
+            <RoleItem key={`${role.position}-${index}`} role={role} text={text} />
           ))}
         </ul>
       ) : null}
@@ -231,18 +247,19 @@ function ExperienceItem({
   );
 }
 
-export function ExperienceSection({ resume }: { resume: Resume }) {
+export function ExperienceSection({ resume, text }: SectionProps) {
   const experiences = nonEmpty(resume.experiences);
   if (experiences.length === 0) return null;
   const isCompanyMasked = isMaskedField(resume, 'experiences.company');
   return (
-    <Section title={COPY.cv.sections.experiences}>
+    <Section title={text.sections.experiences}>
       <ul>
         {experiences.map((experience, index) => (
           <ExperienceItem
             key={`${experience.company}-${index}`}
             experience={experience}
             isCompanyMasked={isCompanyMasked}
+            text={text}
           />
         ))}
       </ul>
@@ -266,11 +283,11 @@ function EducationItem({ education }: { education: ResumeEducation }) {
   );
 }
 
-export function EducationSection({ resume }: { resume: Resume }) {
+export function EducationSection({ resume, text }: SectionProps) {
   const educations = nonEmpty(resume.educations);
   if (educations.length === 0) return null;
   return (
-    <Section title={COPY.cv.sections.educations}>
+    <Section title={text.sections.educations}>
       <ul>
         {educations.map((education, index) => (
           <EducationItem key={`${education.degree}-${index}`} education={education} />
@@ -280,11 +297,11 @@ export function EducationSection({ resume }: { resume: Resume }) {
   );
 }
 
-export function LanguagesSection({ resume }: { resume: Resume }) {
+export function LanguagesSection({ resume, text }: SectionProps) {
   const languages = nonEmpty(resume.languages).filter((entry) => hasText(entry.language));
   if (languages.length === 0) return null;
   return (
-    <Section title={COPY.cv.sections.languages}>
+    <Section title={text.sections.languages}>
       <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
         {languages.map((entry, index) => (
           <li key={`${entry.language}-${index}`}>
@@ -299,21 +316,23 @@ export function LanguagesSection({ resume }: { resume: Resume }) {
   );
 }
 
-export function RefereesSection({ resume }: { resume: Resume }) {
-  const referees = nonEmpty(resume.referees);
-  if (referees.length === 0) return null;
-  const isPhoneMasked = isMaskedField(resume, 'referees.phone');
+export function ReferencesSection({ resume, text }: SectionProps) {
+  const references = nonEmpty(resume.references);
+  if (references.length === 0) return null;
+  const isPhoneMasked = isMaskedField(resume, 'references.phone');
   return (
-    <Section title={COPY.cv.sections.referees}>
+    <Section title={text.reference.title}>
       <ul className="grid gap-4 sm:grid-cols-2">
-        {referees.map((referee, index) => (
-          <li key={`${referee.name}-${index}`} className="text-sm">
-            <p className="font-medium">{referee.name}</p>
-            {hasText(referee.role) ? <p className="text-muted-foreground">{referee.role}</p> : null}
-            {isPhoneMasked || hasText(referee.phone) ? (
+        {references.map((reference, index) => (
+          <li key={`${reference.name}-${index}`} className="text-sm">
+            <p className="font-medium">{reference.name}</p>
+            {hasText(reference.role) ? (
+              <p className="text-muted-foreground">{reference.role}</p>
+            ) : null}
+            {isPhoneMasked || hasText(reference.phone) ? (
               <p>
-                <span className="text-muted-foreground">{COPY.cv.referee.phone}: </span>
-                {isPhoneMasked ? <MaskedPlaceholder /> : referee.phone}
+                <span className="text-muted-foreground">{text.reference.phone}: </span>
+                {isPhoneMasked ? <MaskedPlaceholder /> : reference.phone}
               </p>
             ) : null}
           </li>
@@ -324,15 +343,15 @@ export function RefereesSection({ resume }: { resume: Resume }) {
 }
 
 /** Every resume section in reading order; an empty one renders nothing. */
-export function ResumeSections({ resume }: { resume: Resume }) {
+export function ResumeSections({ resume, text }: SectionProps) {
   return (
     <>
-      <SummarySection resume={resume} />
-      <SkillsSection resume={resume} />
-      <ExperienceSection resume={resume} />
-      <EducationSection resume={resume} />
-      <LanguagesSection resume={resume} />
-      <RefereesSection resume={resume} />
+      <SummarySection resume={resume} text={text} />
+      <SkillsSection resume={resume} text={text} />
+      <ExperienceSection resume={resume} text={text} />
+      <EducationSection resume={resume} text={text} />
+      <LanguagesSection resume={resume} text={text} />
+      <ReferencesSection resume={resume} text={text} />
     </>
   );
 }

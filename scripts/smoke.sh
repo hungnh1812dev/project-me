@@ -35,6 +35,7 @@ for section_file in routing security-headers cors init-container database-roles 
   source "$ROOT_DIR/scripts/smoke/$section_file.sh"
 done
 COMPOSE_FILE="$ROOT_DIR/docker-compose.smoke.yml"
+COMPOSE_PROJECT="abyss-smoke"
 DEFAULT_DOMAIN="domain.localhost"
 DEFAULT_HTTP_PORT="8080"
 DEFAULT_TIMEOUT_SECONDS="180"
@@ -85,6 +86,10 @@ export SMOKE_JWT_ACCESS_SECRET="$(stack_random_secret)"
 export SMOKE_OTP_PEPPER="$(stack_random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(stack_random_secret)"
 export SMOKE_WEB_SESSION_SECRET="$(stack_random_secret)"
+# The web image refuses to start in production without an API token, but the real one can only
+# be minted once cms-api and the accounts exist. The first start gets a well-formed throwaway
+# that cms-api does not know; check_content_token swaps in the minted one (WCA-4).
+export SMOKE_APP_API_TOKEN="ak_live_$(stack_random_secret)"
 stack_load_accounts "$SMOKE_DOMAIN" "$ROOT_DIR/.localEnv.agent"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
@@ -174,6 +179,22 @@ in_init() {
   pass "$label"
 }
 
+# check_content_token: mints the reader-account API token for the web container (stack-seed.sh),
+# runs the start check, then recreates web with it.
+check_content_token() {
+  echo "Content API token for the web container"
+  STACK_API_URL="$SMOKE_API_BASE_URL"
+  STACK_API_CURL_ARGS=(--resolve "$ADMIN_HOST:$SMOKE_HTTP_PORT:$LOOPBACK")
+  if ! stack_mint_content_token "$COMPOSE_PROJECT" "$ROOT_DIR/.localEnv.agent"; then
+    fail "content API token minted and checked"
+    return
+  fi
+  pass "content API token minted and checked"
+  export SMOKE_APP_API_TOKEN="$STACK_APP_API_TOKEN"
+  compose up --detach --no-build --no-deps --force-recreate --wait --wait-timeout "$TIMEOUT_SECONDS" web >/dev/null 2>&1 \
+    && web_home_ready && pass "web restarted with the content token" || fail "web restarted with the content token"
+}
+
 # in_api <label> <stdin text> <expect success: 1|0> <expected fragments...> -- <command...>
 # Runs a command in the cms-api container; output must contain every fragment.
 in_api() {
@@ -248,6 +269,7 @@ check_init_container
 check_database_roles
 check_owner_setup
 check_migrations_again
+check_content_token
 check_auth
 check_two_factor
 check_mail

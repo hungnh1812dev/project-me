@@ -7,5 +7,5 @@ export type {
   TwoFactorChallenge,
   TwoFactorVerification,
 } from './Auth.api';
-export { useWebSession, WebSessionProvider } from './WebSession.context';
+export { useCanSee, useWebSession, WebSessionProvider } from './WebSession.context';
 export type { WebSession } from './WebSession.context';

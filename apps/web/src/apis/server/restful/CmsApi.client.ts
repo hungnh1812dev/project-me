@@ -10,7 +10,6 @@ import {
 } from '@/configs/Auth.constants';
 import {
   ACCEPT_HEADER,
-  API_TIMEOUT_MS,
   AUTHORIZATION_HEADER,
   CONTENT_TYPE_HEADER,
   COOKIE_HEADER,
@@ -19,13 +18,18 @@ import {
   HTTP_STATUS,
   JSON_MEDIA_TYPE,
   ORIGIN_HEADER,
-  REDIRECT_STATUS_MIN,
   RETRY_AFTER_HEADER,
   SECONDS_PER_MINUTE,
 } from '@/configs/Http.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
 import { BffError } from '../bff/Bff.errors';
+import {
+  SERVER_API_FAILURE_CODES,
+  serverApi,
+  ServerApiError,
+  type ServerApiAnswer,
+} from './ServerApi.client';
 
 const accessTokenAnswer = z.object({ accessToken: z.string().min(1) });
 const twoFactorRequiredAnswer = z.object({
@@ -68,29 +72,33 @@ interface CallOptions {
   body?: unknown;
 }
 
-function isTimeout(error: unknown): boolean {
-  return error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
-}
-
-function requestHeaders(options: CallOptions): Headers {
+function requestHeaders(options: CallOptions): Record<string, string> {
   const { webOrigin, clientIpHeader } = getServerEnv();
-  const headers = new Headers({ [ACCEPT_HEADER]: JSON_MEDIA_TYPE });
-  if (options.body !== undefined) headers.set(CONTENT_TYPE_HEADER, JSON_MEDIA_TYPE);
+  const headers: Record<string, string> = { [ACCEPT_HEADER]: JSON_MEDIA_TYPE };
+  if (options.body !== undefined) headers[CONTENT_TYPE_HEADER] = JSON_MEDIA_TYPE;
   if (options.visitorIp !== undefined) {
-    headers.set(FORWARDED_FOR_HEADER, options.visitorIp);
-    if (clientIpHeader !== undefined) headers.set(clientIpHeader, options.visitorIp);
+    headers[FORWARDED_FOR_HEADER] = options.visitorIp;
+    if (clientIpHeader !== undefined) headers[clientIpHeader] = options.visitorIp;
   }
   if (options.accessToken !== undefined) {
-    headers.set(AUTHORIZATION_HEADER, `${BEARER_PREFIX}${options.accessToken}`);
+    headers[AUTHORIZATION_HEADER] = `${BEARER_PREFIX}${options.accessToken}`;
   }
   if (options.refreshToken !== undefined) {
-    headers.set(COOKIE_HEADER, `${CMS_API_REFRESH_COOKIE_NAME}=${options.refreshToken}`);
-    headers.set(ORIGIN_HEADER, webOrigin);
+    headers[COOKIE_HEADER] = `${CMS_API_REFRESH_COOKIE_NAME}=${options.refreshToken}`;
+    headers[ORIGIN_HEADER] = webOrigin;
   }
   return headers;
 }
 
-function retryAfterSecondsOf(response: Response): number {
+/**
+ * axios silently strips CR and LF from a header value, so a malformed token
+ * would reach cms-api altered. `Headers` throws on it, as `fetch` did.
+ */
+function validatedHeadersOf(options: CallOptions): Record<string, string> {
+  return Object.fromEntries(new Headers(requestHeaders(options)));
+}
+
+function retryAfterSecondsOf(response: ServerApiAnswer): number {
   const seconds = Number(response.headers.get(RETRY_AFTER_HEADER));
   return Number.isInteger(seconds) && seconds > 0 ? seconds : SECONDS_PER_MINUTE;
 }
@@ -100,59 +108,55 @@ function retryAfterSecondsOf(response: Response): number {
  * itself: no answer, a timeout, a redirect, a 429 and a 5xx. The 2xx and the
  * other 4xx come back for the calling method to judge.
  */
-async function callCmsApi(options: CallOptions): Promise<Response> {
-  let response: Response;
+async function callCmsApi(options: CallOptions): Promise<ServerApiAnswer> {
+  let response: ServerApiAnswer;
   try {
     // Inside the try: a token that is not a valid header value throws here.
-    response = await fetch(`${getServerEnv().apiInternalUrl}${options.path}`, {
-      method: options.method,
-      headers: requestHeaders(options),
-      body: options.body === undefined ? null : JSON.stringify(options.body),
-      redirect: 'manual',
+    const send = options.method === 'GET' ? serverApi.get : serverApi.post;
+    response = await send(options.path, {
+      headers: validatedHeadersOf(options),
+      ...(options.body === undefined ? {} : { body: options.body }),
       cache: 'no-store',
-      signal: AbortSignal.timeout(API_TIMEOUT_MS),
     });
   } catch (error) {
-    throw new BffError(isTimeout(error) ? 'BFF_UPSTREAM_TIMEOUT' : 'BFF_UPSTREAM_FAILED');
+    const isTimeout =
+      error instanceof ServerApiError && error.code === SERVER_API_FAILURE_CODES.TIMEOUT;
+    throw new BffError(isTimeout ? 'BFF_UPSTREAM_TIMEOUT' : 'BFF_UPSTREAM_FAILED');
   }
   if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
     throw BffError.rateLimited(retryAfterSecondsOf(response));
   }
-  const isRedirect =
-    response.status >= REDIRECT_STATUS_MIN && response.status < HTTP_STATUS.BAD_REQUEST;
-  if (isRedirect || response.status >= HTTP_STATUS.SERVER_ERROR_MIN) {
-    throw new BffError('BFF_UPSTREAM_FAILED');
-  }
+  if (response.status >= HTTP_STATUS.SERVER_ERROR_MIN) throw new BffError('BFF_UPSTREAM_FAILED');
   return response;
 }
 
-async function parseAnswer<T>(response: Response, schema: z.ZodType<T>): Promise<T> {
-  const parsed = schema.safeParse(await response.json().catch(() => undefined));
+function parseAnswer<T>(response: ServerApiAnswer, schema: z.ZodType<T>): T {
+  const parsed = schema.safeParse(response.body);
   if (!parsed.success) throw new BffError('BFF_UPSTREAM_FAILED');
   return parsed.data;
 }
 
-async function errorCodeOf(response: Response): Promise<string | undefined> {
-  const parsed = errorAnswer.safeParse(await response.json().catch(() => undefined));
+function errorCodeOf(response: ServerApiAnswer): string | undefined {
+  const parsed = errorAnswer.safeParse(response.body);
   return parsed.success ? parsed.data.errorCode : undefined;
 }
 
 /** The refresh token among the `Set-Cookie` lines, by name only; an emptied cookie is none. */
-function refreshTokenOf(response: Response): string | undefined {
+function refreshTokenOf(response: ServerApiAnswer): string | undefined {
   const prefix = `${CMS_API_REFRESH_COOKIE_NAME}=`;
   const line = response.headers.getSetCookie().find((cookie) => cookie.startsWith(prefix));
   const value = line?.slice(prefix.length).split(';')[0]?.trim();
   return value === undefined || value === '' ? undefined : value;
 }
 
-function expectStatus(response: Response, status: number): void {
+function expectStatus(response: ServerApiAnswer, status: number): void {
   if (response.status !== status) throw new BffError('BFF_UPSTREAM_FAILED');
 }
 
 /** A second-step 401 maps by cms-api's code; any other refusal is an upstream failure. */
-async function throwTwoFactorRefusal(response: Response): Promise<never> {
+function throwTwoFactorRefusal(response: ServerApiAnswer): never {
   if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-    const errorCode = await errorCodeOf(response);
+    const errorCode = errorCodeOf(response);
     if (errorCode === API_ERROR_CODES.INVALID_2FA_CODE) {
       throw new BffError('BFF_INVALID_TWO_FACTOR_CODE');
     }
@@ -182,10 +186,7 @@ export const cmsApiClient = {
     if (response.status === HTTP_STATUS.UNAUTHORIZED) throw new BffError('BFF_INVALID_CREDENTIALS');
     expectStatus(response, HTTP_STATUS.OK);
     const refreshToken = refreshTokenOf(response);
-    const answer = await parseAnswer(
-      response,
-      z.union([accessTokenAnswer, twoFactorRequiredAnswer]),
-    );
+    const answer = parseAnswer(response, z.union([accessTokenAnswer, twoFactorRequiredAnswer]));
     if ('requires2FA' in answer) {
       return { kind: 'two-factor-required', tempToken: answer.tempToken, methods: answer.methods };
     }
@@ -203,7 +204,7 @@ export const cmsApiClient = {
       body: input,
     });
     if (response.status !== HTTP_STATUS.OK) return throwTwoFactorRefusal(response);
-    const { accessToken } = await parseAnswer(response, accessTokenAnswer);
+    const { accessToken } = parseAnswer(response, accessTokenAnswer);
     return { accessToken, refreshToken: refreshTokenOf(response) };
   },
 
@@ -227,7 +228,7 @@ export const cmsApiClient = {
     });
     if (response.status === HTTP_STATUS.UNAUTHORIZED) return null;
     expectStatus(response, HTTP_STATUS.OK);
-    const { accessToken } = await parseAnswer(response, accessTokenAnswer);
+    const { accessToken } = parseAnswer(response, accessTokenAnswer);
     return { accessToken, refreshToken: refreshTokenOf(response) };
   },
 
@@ -266,7 +267,7 @@ export const cmsApiClient = {
         visitorIp: undefined,
       });
       if (response.status !== HTTP_STATUS.OK) return false;
-      return (await parseAnswer(response, healthAnswer)).status === HEALTH_STATUS_OK;
+      return parseAnswer(response, healthAnswer).status === HEALTH_STATUS_OK;
     } catch {
       return false;
     }

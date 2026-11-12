@@ -6,8 +6,28 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### New features
+
+- scripts: build and push the three app images to a local k3d registry ([local-registry.md](docs/deployments/local-registry.md)).
+- scripts: `pnpm dev:stack:seed` adds one media file and one document with a draft to a running dev stack, so the media and diff screens can be checked at tier 2.
+- web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a local mock fallback through `MockView.ts` (WEB-1..WEB-8).
+- cms-admin: premium SaaS look (indigo primary, rounded cards, sticky sidebar and header, soft focus halo) and toasts for the outcomes of content, media, access and security actions (ADM-1..ADM-10).
+- form-commons: theme tokens for the premium look, a `Card` component and a `Toast` provider; web is unchanged.
+
+### DevOps patches
+
+- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped; create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+
 ### Changes
 
+- cms-admin: spec for the premium SaaS look: indigo primary with a soft coloured shadow, rose destructive, slate zoning, rounded cards without hard borders, sticky sidebar with an active indicator, sticky header, toasts for action outcomes, a 3 px focus halo with a solid edge, 200/300 ms transitions; tokens stay in form-commons with a `premium` theme block, web keeps its look (ADM-1..ADM-10, D23).
+- cms-admin: spec: a dialog closes at once; only its backdrop fades out and takes no clicks while it fades (ADM-9).
+- cms-admin: spec: the sidebar shows only the pages the role may read; a role with no read permission sees a Welcome sidebar ("Welcome to the system", "Contact the administrator to be granted access."); no API change, reviewer role out of scope (ADM-11).
+- cms-admin: spec: empty states (no rows yet, backups not configured) sit in a card like the loading skeleton; forbidden and load-error notices stay alerts outside cards (ADM-7).
+- cms-api: test-stack-only overrides `ACCOUNT_INVITE_RATE_LIMIT_IP`, `ACCOUNT_INVITE_RATE_LIMIT_ACTOR`, `OTP_ISSUE_RATE_LIMIT_ACCOUNT`, `PASSWORD_SUBMIT_RATE_LIMIT_IP` and `PASSWORD_CHANGE_RATE_LIMIT_IP` (same opt-in as the other rate-limit overrides), raised on the smoke and dev stacks so the full e2e suite no longer hits the invite and per-account email-code limits; production defaults are unchanged.
+- web: spec for the content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful), page text from cms-api in three queries, per-call cache (180 s default), local mock fallback through `MockView.ts`, a role-display extension point, and `APP_API_URL` replacing `API_INTERNAL_URL` (WEB-1..WEB-8, public-site PS-1..PS-2); the public-site rules now say the homepage shows only the service status view (Q-BFF2); `site-shell` is a base web feature (web RULES "Layers").
+- web: spec names the scope of the web API token: `*` `read`, created by a read-only account, on every stack and in production (WEB-2, Q-WCT1).
+- root: `docs/deployments/web.md` is the DevOps deployment guide for the web service (image, env keys, routing, release, checks), linked from the DevOps runbook.
 - cms-api: every finished request leaves one log line (method, path without query, status, duration in ms), a warning above 1000 ms; the health probes are skipped (API-1).
 - root: the dev and smoke stacks keep the test account logins (`STACK_*`) in `.localEnv.agent`, generated once and reused on every start; `stack_load_accounts` replaces `stack_generate_credentials` (ADR 0020).
 - cms-api, cms-admin, web: a ticked "Keep me signed in" keeps the sign-in for 30 days (sliding); an unticked one ends with the browser session; existing sessions get 30 days at their next rotation.
@@ -21,6 +41,12 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: `session-gate` breaks the manager session past 95K tokens of context, under the 100K prompt size Haiku bills at 5x.
 - root: `session-gate` names the in-progress feature and its `Next:` line at session start, so the manager skips scanning state.
 - root: `session-gate` keeps its state under the project root, so a session that changes folder no longer forks it.
+- root: `session-gate` takes the first non-zero context size as the session baseline; a 0 read at the first dispatch counted the whole startup context as growth and broke checklist sessions after about 2k tokens of work.
+- root: the manager breaks a session only when `session-gate` denies a dispatch, at a board `Breaks:` point, or after a passed checkpoint or closed feature, never on its own estimate.
+- root: qc, security-qc and the builders wait on a long command in bounded steps under 170 s (no open `until` / `pgrep` / `sleep` loop, no turn ended to wait) and report `blocked` after 10 min with no new log line; the manager names the usual length of a tier 2 or 3 checker run.
+- root: `test-tiers` keeps only the tiers, when each runs, who does what and missing commands; the checklist format, access preflight and progress file move to `checklist-runs` (planner, qc, security-qc), `.localEnv.agent` and scratch git to `local-env` (builders, qc, security-qc), and the manager's preflight and progress steps to `manager.md`, so the manager and builders preload about 1.1–1.3k fewer tokens.
+- root: the planner writes `SPEC`, `PLAN`, `DESIGN` and phase or feature `REPLAN` changes as a draft in `.agent-state/drafts/<name>/` (`.claude/bin/draft start`), revises it in place and reports a summary instead of the drafted text; the manager shows `draft diff --stat` and, on the user's word, runs `draft apply` (refused when a repo file changed since the start; `draft rebase` merges it in 3-way) or `draft drop`.
+- root: qc and security-qc run an access preflight before every tier 2 or 3 run: they list the commands, MCP tools, `.localEnv.agent` keys and stack actions the rows need, probe the stack, and stop with `status: preflight` when something is not allowed yet; the manager asks the user once, then sends `GO` (`test-tiers` "Access preflight").
 - root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
 
 ## 0.1.0 (2026-11-05)

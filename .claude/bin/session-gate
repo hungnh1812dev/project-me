@@ -9,7 +9,7 @@
 Only dispatches in the manager's format are checked (first word TASK, BATCH, REQUEST, CHECKLIST, CHECK,
 RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Rules, per session:
 - Size: a dispatch is denied once the context is over CONTEXT_LIMIT tokens (Haiku bills prompts over
-  100K at 5x), or over MIN_GROWTH past the baseline (the context at the first checked dispatch) when the
+  100K at 5x), or over MIN_GROWTH past the baseline (the context at the first checked dispatch that reads a size) when the
   baseline is already near the limit. A fresh session starts at +0, so it never loops.
 - Before a checklist: a qc / security-qc CHECKLIST or CHECK (checklist mode) is denied when the session
   already ran other jobs and its context grew more than CHECKLIST_LIMIT tokens.
@@ -147,10 +147,14 @@ def pre_tool_use(event, state):
         return deny_tier(job, target)
     session = state.setdefault(event["session_id"], {"jobs": 0, "mode": None})
     size = context_tokens(event["transcript_path"])
-    session.setdefault("baseline", size)
+    # The transcript may not hold the first turn's usage yet (size 0); a 0 baseline would count the
+    # whole startup context as growth, so take the first non-zero size instead.
+    if size and not session.get("baseline"):
+        session["baseline"] = size
+    baseline = session.get("baseline", size)
     session["at"] = time.time()
-    growth = size - session["baseline"]
-    limit = max(CONTEXT_LIMIT, session["baseline"] + MIN_GROWTH)
+    growth = size - baseline
+    limit = max(CONTEXT_LIMIT, baseline + MIN_GROWTH)
     if session["jobs"] and size > limit:
         return deny(f"context is {size // 1000}k tokens (limit {limit // 1000}k)")
     mode = session["mode"]

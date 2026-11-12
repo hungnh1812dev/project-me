@@ -3,7 +3,7 @@ import type { ScreenText } from '@configs/locales';
 import type { Account } from '@features/access/Access.api';
 import { formatDate } from '@utils/DateFormat.rules';
 
-import { AccountRowActions, type RowNotice } from './AccountRowActions';
+import { AccountRowActions } from './AccountRowActions';
 
 const STATUS_CLASS: Record<Account['status'], string> = {
   invited: 'bg-info-soft text-info-strong',
@@ -17,7 +17,6 @@ interface AccountColumnsOptions {
   canEnable: boolean;
   canResend: boolean;
   text: ScreenText<'access'>;
-  onNotice: (notice: RowNotice) => void;
   onDisable: (account: Account, opener: HTMLElement) => void;
 }
 
@@ -28,7 +27,6 @@ export function accountColumns({
   canEnable,
   canResend,
   text,
-  onNotice,
   onDisable,
 }: AccountColumnsOptions): SheetColumn<Account>[] {
   const copy = text.access.accounts;
@@ -38,12 +36,7 @@ export function accountColumns({
     align: 'right',
     renderCell: (account) => (
       <>
-        <AccountRowActions
-          account={account}
-          canEnable={canEnable}
-          canResend={canResend}
-          onNotice={onNotice}
-        />
+        <AccountRowActions account={account} canEnable={canEnable} canResend={canResend} />
         {canEnable && account.manageable && account.status !== 'disabled' ? (
           <Button
             type="button"

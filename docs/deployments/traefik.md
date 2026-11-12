@@ -16,7 +16,7 @@ Rules that matter:
 
 - **Never StripPrefix.** cms-api serves under `/api/v1`; the router passes the path through untouched.
 - **`/api` must win over the cms-admin catch-all on the admin host, and match the whole path segment** (`PathRegexp`, not `PathPrefix`, because `/api-tokens` is an admin SPA route). Set explicit `priority` values (below) instead of relying on rule length.
-- **No cms-api route on `<domain>`** (ADR 0018): web has no browser-side API calls; its Node server reaches cms-api through `API_INTERNAL_URL` inside the cluster. `<domain>/api/v1/*` is the web BFF and any other `<domain>/api/*` answers 404 from web. Traefik already sends the whole `<domain>` host to web, so this needs no deploy-repo change.
+- **No cms-api route on `<domain>`** (ADR 0018): web has no browser-side API calls; its Node server reaches cms-api through `APP_API_URL` inside the cluster. `<domain>/api/v1/*` is the web BFF and any other `<domain>/api/*` answers 404 from web. Traefik already sends the whole `<domain>` host to web, so this needs no deploy-repo change.
 - cms-admin and cms-api share the origin `https://admin.<domain>` (the refresh cookie `__Secure-abyss_rt` is host-only, `Path=/api/v1/auth`), and that origin is the only CORS origin. Web is a different origin and holds its own sealed session cookies set by its BFF.
 - TLS terminates at Traefik (`websecure`); nothing in the apps speaks TLS. Add a `web` entrypoint redirect to HTTPS.
 - **No redirect on `/api/v1/*`** (section 4).

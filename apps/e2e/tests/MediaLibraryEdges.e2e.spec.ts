@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { ADMIN_COPY, MEDIA_DEFAULT_PAGE_SIZE } from '../src/Apps.contract';
 import { HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { toast } from '../src/Locators.fixture';
 import { pngOf } from '../src/Png.fixture';
 import { signInAs } from '../src/Session.fixture';
 import { insertLibraryFiles } from '../src/SmokeDatabase.client';
@@ -93,7 +94,7 @@ test.describe.serial('owner: file library edge states with the real API', () => 
       .getByRole('dialog')
       .getByRole('button', { name: copy.deleteDialog.submit(name) })
       .click();
-    await expect(page.getByText(copy.deleteDialog.deleted(name))).toBeVisible();
+    await expect(toast(page, copy.deleteDialog.deleted(name))).toBeVisible();
     await expect(cards(page)).toHaveCount(MEDIA_DEFAULT_PAGE_SIZE);
   });
 
@@ -157,7 +158,8 @@ test.describe.serial('owner: file library edge states with the real API', () => 
     await dialog.getByRole('button', { name: /^Upload/ }).click();
     const stem = nameOf(2).replace(/\.png$/, '');
     await expect(
-      page.getByText(
+      toast(
+        page,
         new RegExp(`^${stem}_[0-9a-f]{8}\\.png ${copy.replaced('').trim().replace('.', '\\.')}$`),
       ),
     ).toBeVisible({

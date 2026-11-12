@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Renders the public CV from the server data, and refetches it with the visitor's token when someone is signed in ([public-site flow](../../flows/public-site/FLOW.md)).
+Renders the public CV from the server data and the page text (`cvPageText`, passed as props from `app/cv/page.tsx`), and refetches it with the visitor's token when someone is signed in ([public-site flow](../../flows/public-site/FLOW.md)).
 
 ## Techniques
 

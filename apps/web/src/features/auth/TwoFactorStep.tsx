@@ -12,15 +12,14 @@ import {
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
 } from '@/configs/Auth.constants';
-import { COPY } from '@/configs/Copy.constants';
 import { TURNSTILE } from '@/configs/Security.constants';
+import { useRequiredSignInText, type SignInText } from '@/features/site-shell';
 
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
 import { useEmailCode } from './useEmailCode';
 import { useHumanCheck } from './useHumanCheck';
 
-const copy = COPY.login.twoFactor;
 const CODE_PATTERN = new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`);
 
 interface CodeValues {
@@ -32,16 +31,16 @@ function methodOf(methods: readonly string[]): TwoFactorMethod | undefined {
 }
 
 /** Failure -> alert, or 'expired' when the challenge is gone. */
-function alertOf(failure: ApiFailure): Alert | 'expired' {
-  const shared = sharedFailureAlertOf(failure);
+function alertOf(failure: ApiFailure, text: SignInText): Alert | 'expired' {
+  const shared = sharedFailureAlertOf(failure, text.errors);
   if (shared !== null) return shared;
   if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.TWO_FACTOR_EXPIRED) {
     return 'expired';
   }
   if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.INVALID_TWO_FACTOR_CODE) {
-    return { tone: 'error', message: copy.errors.invalidCode };
+    return { tone: 'error', message: text.twoFactor.invalidCode };
   }
-  return { tone: 'error', message: COPY.login.errors.unexpected };
+  return { tone: 'error', message: text.errors.unexpected };
 }
 
 /**
@@ -62,11 +61,12 @@ export function TwoFactorStep({
   onExpired: () => void;
   onDone: () => void;
 }) {
+  const copy = useRequiredSignInText().twoFactor;
   const method = methodOf(challenge.methods);
   if (method === undefined) {
     return (
       <div className="grid gap-4">
-        <FormAlert tone="error">{copy.errors.unsupportedMethod}</FormAlert>
+        <FormAlert tone="error">{copy.unsupportedMethod}</FormAlert>
         <div className="flex justify-end">
           <Button type="button" variant="secondary" onClick={onCancel}>
             {copy.cancel}
@@ -100,6 +100,8 @@ function CodeForm({
   onDone: () => void;
 }) {
   const session = useWebSession();
+  const text = useRequiredSignInText();
+  const copy = text.twoFactor;
   const [alert, setAlert] = useState<Alert | null>(null);
   const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.TWO_FACTOR);
   // The emailed code goes out as soon as the first check passes; the next
@@ -112,7 +114,7 @@ function CodeForm({
         }
       : () => Promise.resolve(),
     (failure) => {
-      if (alertOf(failure) === 'expired') onExpired();
+      if (alertOf(failure, text) === 'expired') onExpired();
     },
     method !== 'email' || humanCheck.hasToken,
   );
@@ -129,7 +131,7 @@ function CodeForm({
     mutationFn: session.completeTwoFactor,
     onSuccess: onDone,
     onError: (cause) => {
-      const mapped = loginErrorAlertOf(cause, alertOf);
+      const mapped = loginErrorAlertOf(cause, text.errors, (failure) => alertOf(failure, text));
       if (mapped === 'expired') {
         onExpired();
         return;
@@ -147,7 +149,8 @@ function CodeForm({
     verify.mutate({ code: values.code.trim(), humanCheckToken });
   });
 
-  const sendAlert = method === 'email' && email.failure !== null ? alertOf(email.failure) : null;
+  const sendAlert =
+    method === 'email' && email.failure !== null ? alertOf(email.failure, text) : null;
   const shown = alert ?? (sendAlert === 'expired' ? null : sendAlert);
   const wasResent = method === 'email' && email.sentCount > 1 && shown === null;
 
@@ -192,7 +195,8 @@ function CodeForm({
           </p>
         ) : null}
         {humanCheck.field}
-        <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        {/* Stacked order is not reversed: Cancel stays above the confirm button and first in Tab order. */}
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onCancel}>
             {copy.cancel}
           </Button>

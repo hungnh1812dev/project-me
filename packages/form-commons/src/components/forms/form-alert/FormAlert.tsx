@@ -24,7 +24,7 @@ export function FormAlert({ tone, children }: FormAlertProps) {
   return (
     <p
       role={URGENT_TONES.has(tone) ? 'alert' : 'status'}
-      className={`rounded-md px-3 py-2 text-sm ${TONE_CLASS[tone]}`}
+      className={`rounded-item px-3 py-2 text-sm ${TONE_CLASS[tone]}`}
     >
       {children}
     </p>

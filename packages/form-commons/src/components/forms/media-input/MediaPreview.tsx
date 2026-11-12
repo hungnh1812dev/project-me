@@ -88,7 +88,7 @@ function MediaPreview({ file, height, labels, actions, className }: MediaPreview
       {actions === undefined ? null : (
         <div
           data-slot="media-preview-actions"
-          className="[&_button]:border-border [&_button]:bg-card absolute top-2 right-2 flex gap-1 [&_button]:rounded-full [&_button]:border [&_button]:shadow-sm"
+          className="[&_button]:bg-card [&_button]:shadow-overlay absolute top-2 right-2 flex gap-1 [&_button]:rounded-full"
         >
           {actions}
         </div>

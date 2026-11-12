@@ -8,8 +8,9 @@ Rules of this flow only. Rules it shares with other flows are in the files under
 
 1. GraphQL authz is the REST read path, not a copy: `DocumentAuthGuard`, then `DocumentsQueryService` unchanged; no other data path (D18).
 2. Keep the GraphQL limits, introspection off in production and `Cache-Control: no-store` (D18).
-3. The homepage shows the CV and the service status card; the card renders even when the CV fails to load (D21, criterion 25).
+3. The homepage `/` shows only the service status view and loads no CV data; the CV is served on `/cv` (D21, Q-BFF2, criterion 25).
 4. The web shows the published `cv-page` with `isMain = true`, the newest `updatedAt` if several (Q-G7).
+5. Page content reads use `APP_API_TOKEN`, whose read profile is the `public` role's and no wider; sensitive fields stay masked on cached pages (WEB-2, Q5).
 
 ## Must never
 

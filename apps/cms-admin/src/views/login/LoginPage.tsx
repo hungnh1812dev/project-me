@@ -156,11 +156,7 @@ export function LoginPage() {
         </div>
       ) : null}
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {notice !== undefined ? (
             <FormAlert tone={NOTICE_TONE[notice]}>{noticeCopyOf(copy)[notice]}</FormAlert>
           ) : null}

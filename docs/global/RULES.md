@@ -66,6 +66,11 @@ Applies to flows: `content-editing`, `public-site`.
 1. Sanitize richtext on the server when it is written (`sanitize-html` allowlist) and again on web when it is rendered (DOMPurify) (D13, criterion 14).
 2. No global "XSS pipe" that rewrites all input (D13).
 
+## Design tokens and themes (D23)
+
+- Every colour, radius, shadow and duration value lives once, in form-commons `src/styles/tokens.css`: primitives (raw scales, never used by components), then semantic tokens per theme (`:root` default, `[data-theme='<name>']` blocks); `theme.css` maps semantic tokens to Tailwind names. Apps and form-commons components read semantic tokens only.
+- An app picks its theme with `data-theme` on `<html>` (cms-admin: `premium`; web: the default). A new semantic token gets a value in every theme block, the default equal to the look the default apps have today.
+
 ## Versions, change log, DevOps patches
 
 1. Every release has a [CHANGELOG.md](../../CHANGELOG.md) entry with the repo version, the version of each app and package, and its features, changes, fixes and DevOps patches ([FLOW.md](FLOW.md) "Versions and change log").

@@ -16,6 +16,8 @@ const DESKTOP = { width: 1280, height: 800 };
 const TABLET = { width: 768, height: 900 };
 const PHONE = { width: 375, height: 700 };
 
+// Every content type of the stack: the six seeded ones plus site, sign-in, status page and CV page text.
+const EXPECTED_CONTENT_TYPE_COUNT = 10;
 const REVIEWER_ROLE = 'reviewer';
 const EDITOR_ROLE = 'editor';
 
@@ -110,14 +112,14 @@ test.describe('side menu', () => {
     await expect(menuButton(page)).toBeFocused();
   });
 
-  test('the content links carry the six display names, never a slug, and open /content/<slug>', async ({
+  test('the content links carry the display names, never a slug, and open /content/<slug>', async ({
     page,
   }) => {
     await page.setViewportSize(DESKTOP);
     await signInAsOwner(page);
     const menu = mainMenu(page);
     const entries = Object.entries(CONTENT_TYPE_NAMES);
-    expect(entries).toHaveLength(6);
+    expect(entries).toHaveLength(EXPECTED_CONTENT_TYPE_COUNT);
     for (const [slug, name] of entries) {
       await expect(menu.getByRole('link', { name, exact: true })).toHaveAttribute(
         'href',

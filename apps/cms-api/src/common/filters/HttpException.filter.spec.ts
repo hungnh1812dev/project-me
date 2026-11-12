@@ -40,7 +40,8 @@ describe('HttpExceptionFilter', () => {
       message: 'Taken.',
       requestId: 'req-1',
     });
-    expect(res.setHeader).not.toHaveBeenCalled();
+    expect(res.setHeader).toHaveBeenCalledTimes(1);
+    expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store');
   });
 
   it('answers a DomainError the same way', () => {
@@ -75,7 +76,8 @@ describe('HttpExceptionFilter', () => {
         retryAfterSeconds: 7,
       }),
     );
-    expect(other.setHeader).not.toHaveBeenCalled();
+    expect(other.setHeader).not.toHaveBeenCalledWith('Retry-After', expect.anything());
+    expect(other.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store');
   });
 
   it('answers an unknown error as a generic 500', () => {
@@ -112,7 +114,7 @@ describe('HttpExceptionFilter', () => {
 
     it('discards the unread body after a 401 without closing the socket', () => {
       const { res, isDiscarded, req } = discardsBodyAfterAnswer(new UnauthorizedException());
-      expect(res.setHeader).not.toHaveBeenCalled();
+      expect(res.setHeader).toHaveBeenCalledTimes(1);
       expect(isDiscarded).toBe(true);
       expect(req.destroy).not.toHaveBeenCalled();
     });

@@ -1,6 +1,6 @@
 ---
 flow: public-site
-modules: apps/cms-api/src/modules/graphql, apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, apps/cms-api/src/modules/health, apps/web/src/features/cv, apps/web/src/views/cv, apps/web/src/features/status, apps/web/src/views/status, apps/web/src/features/session
+modules: apps/cms-api/src/modules/graphql, apps/web/src/apis/server, apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, apps/cms-api/src/modules/health, apps/web/src/features/cv, apps/web/src/views/cv, apps/web/src/features/status, apps/web/src/views/status, apps/web/src/features/session
 ---
 
 # Public site: flow
@@ -10,14 +10,14 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 ## Actors
 
 - **Visitor**: anonymous, or signed in on the web site ([sign-in](../sign-in/FLOW.md)).
-- **web server (Next.js)**: renders pages, runs the BFF, reads cms-api on `API_INTERNAL_URL`.
+- **web server (Next.js)**: renders pages, runs the BFF, reads cms-api on `APP_API_URL`.
 - **cms-api graphql**: the read-only GraphQL API.
 
 ## Steps
 
 1. The visitor opens `/cv`; the Next server renders the CV with a per-request CSP nonce (D17). A signed-in visitor's view reads it again through `GET /api/v1/cv` (D21).
-2. The server posts a GraphQL query to `/api/v1/graphql` anonymously; cms-api applies limits, builds the schema for the actor's readable types and resolves through `DocumentsQueryService` (masked).
-3. Next.js caches the answer for `WEB_REVALIDATE_SECONDS`.
+2. The server posts the page's GraphQL operations (PS-1) to `/api/v1/graphql` with `APP_API_TOKEN` (WEB-2); cms-api applies limits, builds the schema for the actor's readable types and resolves through `DocumentsQueryService` (masked).
+3. Next.js caches each answer for its own revalidate seconds (default 180 s, WEB-4); where WEB-5 allows, a failed or empty root field comes from the mocks.
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
 5. The homepage `/` shows only the status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2).
 
@@ -29,8 +29,8 @@ sequenceDiagram
   participant X as Graphql.executor
   participant RS as Document.resolver
   participant Q as DocumentsQueryService
-  W->>M: POST /api/v1/graphql (anonymous, API_INTERNAL_URL)
-  M->>DA: no Authorization header: public actor
+  W->>M: POST /api/v1/graphql (APP_API_TOKEN, APP_API_URL)
+  M->>DA: Bearer API token: public-profile scope
   DA->>X: execute(query, variables, actor)
   X->>X: parse + limits (2000 tokens, depth 8, 5 roots, 500 nodes)
   X->>X: schema for the actor's readable types (hidden = unknown), validate
@@ -39,7 +39,7 @@ sequenceDiagram
   Q-->>RS: serialized, masked record
   RS-->>X: data
   X-->>W: data + errors (REST error codes), no-store
-  Note over W: cached by Next.js for WEB_REVALIDATE_SECONDS
+  Note over W: cached by Next.js per call (default 180 s)
 ```
 
 ## Modules in this flow
@@ -50,6 +50,7 @@ sequenceDiagram
 | Module | Role in this flow | Doc |
 |---|---|---|
 | `apps/cms-api/src/modules/graphql` | Read-only GraphQL endpoint over document reads (D18) | [graphql.md](../../modules/graphql.md) |
+| `apps/web/src/apis/server` | Server RESTful and GraphQL layers: API token, per-call cache, mock fallback (WEB-1..WEB-5) | [apis-server.md](../../modules/web/apis-server.md) |
 | `apps/cms-api/src/modules/documents` | `DocumentsQueryService`, the one read path | [documents.md](../../modules/cms-api/documents.md) |
 | `apps/cms-api/src/modules/access` | Document auth guard, public field profile, masking | [access-control.md](../../modules/access-control.md) |
 | `apps/cms-api/src/modules/health` | Health endpoints behind the status card | [health.md](../../modules/cms-api/health.md) |

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
-import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { Button, Card, FormAlert, SortableSheet, useToast } from '@abyss/form-commons';
+import { EmptyState, LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
 import { useRestoreFocus } from '@components/useRestoreFocus';
@@ -15,10 +15,10 @@ import { accountColumns } from './Account.columns';
 import { DisableAccountDialog, type DisableOutcome } from './DisableAccountDialog';
 import { InviteDialog } from './InviteDialog';
 
-interface Notice {
-  tone: FormAlertTone;
-  message: string;
-}
+const ACCOUNT_TOAST_KEY = {
+  invited: 'account-invited',
+  disabled: 'account-disabled',
+} as const;
 
 /** `/accounts`: who can sign in; invite and disable. */
 export function AccountsPage() {
@@ -31,7 +31,7 @@ export function AccountsPage() {
   const me = useCurrentUser();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [disabling, setDisabling] = useState<Account | null>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const { showToast } = useToast();
   const headingRef = useRef<HTMLDivElement>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
 
@@ -48,34 +48,34 @@ export function AccountsPage() {
     canEnable: canDisable,
     canResend: canInvite,
     text,
-    onNotice: setNotice,
     onDisable: (account, opener) => {
       rememberOpener(opener);
-      setNotice(null);
       setDisabling(account);
     },
   });
 
   const onInvited = (account: InvitedAccount) => {
     setInviteOpen(false);
-    setNotice(
-      account.invitationSent
-        ? { tone: 'success', message: copy.invited(account.email) }
-        : { tone: 'warning', message: copy.invitedNoEmail(account.email) },
-    );
+    showToast({
+      tone: account.invitationSent ? 'success' : 'warning',
+      title: account.invitationSent ? copy.invited : copy.invitedNoEmail,
+      key: ACCOUNT_TOAST_KEY.invited,
+    });
   };
 
   const onDisabled = (account: Account, outcome: DisableOutcome) => {
     setDisabling(null);
     if (outcome === 'gone') rememberOpener(null);
-    setNotice(
-      outcome === 'disabled'
-        ? { tone: 'success', message: copy.disabled(account.displayName) }
-        : {
-            tone: 'info',
-            message: outcome === 'gone' ? copy.gone : copy.alreadyDisabled,
-          },
-    );
+    showToast({
+      tone: outcome === 'disabled' ? 'success' : 'info',
+      title:
+        outcome === 'disabled'
+          ? copy.disabled(account.displayName)
+          : outcome === 'gone'
+            ? copy.gone
+            : copy.alreadyDisabled,
+      key: ACCOUNT_TOAST_KEY.disabled,
+    });
   };
 
   return (
@@ -90,7 +90,6 @@ export function AccountsPage() {
               variant="primary"
               onClick={(event) => {
                 rememberOpener(event.currentTarget);
-                setNotice(null);
                 setInviteOpen(true);
               }}
             >
@@ -99,7 +98,6 @@ export function AccountsPage() {
           ) : null
         }
       />
-      {notice === null ? null : <FormAlert tone={notice.tone}>{notice.message}</FormAlert>}
       {accounts.isPending ? (
         <TableSkeleton label={copy.loading} />
       ) : accounts.isError ? (
@@ -115,12 +113,9 @@ export function AccountsPage() {
       ) : page > lastPage ? (
         <TableSkeleton label={copy.loading} />
       ) : accounts.data.data.length === 0 ? (
-        <div className="grid justify-items-start gap-1">
-          <p className="m-0 font-medium">{copy.empty}</p>
-          <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
-        </div>
+        <EmptyState title={copy.empty} hint={copy.emptyHint} />
       ) : (
-        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+        <Card padding="flush" className="relative overflow-x-auto">
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}
@@ -135,7 +130,7 @@ export function AccountsPage() {
             onPage={setPage}
             copy={copy.pagination}
           />
-        </div>
+        </Card>
       )}
       <InviteDialog
         open={inviteOpen}

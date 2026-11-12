@@ -12,6 +12,7 @@ The entry point for deploying Abyss: who owns what, what still blocks the first 
 | PostgreSQL, roles, TLS                          | [database.md](database.md)     |
 | Off-site bucket, nightly job, restore drill     | [backups.md](backups.md)       |
 | Versions, deploy order, checks, rollback        | [release.md](release.md)       |
+| Web service (FE): build, env, routing, checks   | [web.md](web.md)               |
 
 Decisions behind them: D7, D14, D17 ([global decisions](../global/DECISIONS.md)), D19 ([cms-api](../apps/cms-api/SPEC.md)), D20 ([backups flow](../flows/backups/SPEC.md)), ADR 0012, 0013, 0014; the launch gate: [global flows](../global/FLOW.md) "Launch gate".
 

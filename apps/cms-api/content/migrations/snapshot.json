@@ -272,6 +272,153 @@
         ]
       }
     },
+    "cv-page-text": {
+      "hash": "4d80617f8918a7413923072ad9179b9536f7723388596156648dd1b16ceeed59",
+      "definition": {
+        "slug": "cv-page-text",
+        "displayName": "CV Page Text",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "loading",
+            "type": "text"
+          },
+          {
+            "name": "refetchFailed",
+            "type": "text"
+          },
+          {
+            "name": "fallbackName",
+            "type": "text"
+          },
+          {
+            "name": "emptyTitle",
+            "type": "text"
+          },
+          {
+            "name": "emptyDescription",
+            "type": "text"
+          },
+          {
+            "name": "maskedValue",
+            "type": "text"
+          },
+          {
+            "name": "contact",
+            "type": "component",
+            "component": "cvPageTextContact",
+            "fields": [
+              {
+                "name": "title",
+                "type": "text"
+              },
+              {
+                "name": "email",
+                "type": "text"
+              },
+              {
+                "name": "phone",
+                "type": "text"
+              },
+              {
+                "name": "address",
+                "type": "text"
+              },
+              {
+                "name": "linkedin",
+                "type": "text"
+              },
+              {
+                "name": "github",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "sections",
+            "type": "component",
+            "component": "cvPageTextSections",
+            "fields": [
+              {
+                "name": "summary",
+                "type": "text"
+              },
+              {
+                "name": "skills",
+                "type": "text"
+              },
+              {
+                "name": "experiences",
+                "type": "text"
+              },
+              {
+                "name": "educations",
+                "type": "text"
+              },
+              {
+                "name": "languages",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "experience",
+            "type": "component",
+            "component": "cvPageTextExperience",
+            "fields": [
+              {
+                "name": "teamSize",
+                "type": "text"
+              },
+              {
+                "name": "projects",
+                "type": "text"
+              },
+              {
+                "name": "techStack",
+                "type": "text"
+              },
+              {
+                "name": "liveLink",
+                "type": "text"
+              },
+              {
+                "name": "repositoryLink",
+                "type": "text"
+              },
+              {
+                "name": "liveLinkName",
+                "type": "text"
+              },
+              {
+                "name": "repositoryLinkName",
+                "type": "text"
+              },
+              {
+                "name": "unnamedProject",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "reference",
+            "type": "component",
+            "component": "cvPageTextReference",
+            "fields": [
+              {
+                "name": "title",
+                "type": "text"
+              },
+              {
+                "name": "phone",
+                "type": "text"
+              }
+            ]
+          }
+        ]
+      }
+    },
     "header": {
       "hash": "63afa258c8d0be1e60acb1bc5cdceb163dcafbfb031c9938fe5525ac44ef8c74",
       "definition": {
@@ -550,6 +697,327 @@
                 "type": "text"
               }
             ]
+          }
+        ]
+      }
+    },
+    "sign-in-text": {
+      "hash": "c27e2228e20561cdb619f2ff21019ea2a03b34a410616a7a71dfcf0d7b47b9df",
+      "definition": {
+        "slug": "sign-in-text",
+        "displayName": "Sign In Text",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "title",
+            "type": "text"
+          },
+          {
+            "name": "description",
+            "type": "text"
+          },
+          {
+            "name": "emailLabel",
+            "type": "text"
+          },
+          {
+            "name": "passwordLabel",
+            "type": "text"
+          },
+          {
+            "name": "rememberMeLabel",
+            "type": "text"
+          },
+          {
+            "name": "rememberMeHint",
+            "type": "text"
+          },
+          {
+            "name": "submit",
+            "type": "text"
+          },
+          {
+            "name": "cancel",
+            "type": "text"
+          },
+          {
+            "name": "humanCheck",
+            "type": "component",
+            "component": "signInHumanCheck",
+            "fields": [
+              {
+                "name": "loading",
+                "type": "text"
+              },
+              {
+                "name": "required",
+                "type": "text"
+              },
+              {
+                "name": "expired",
+                "type": "text"
+              },
+              {
+                "name": "failed",
+                "type": "text"
+              },
+              {
+                "name": "unavailable",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "validation",
+            "type": "component",
+            "component": "signInValidation",
+            "fields": [
+              {
+                "name": "emailRequired",
+                "type": "text"
+              },
+              {
+                "name": "emailInvalid",
+                "type": "text"
+              },
+              {
+                "name": "passwordRequired",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "errors",
+            "type": "component",
+            "component": "signInErrors",
+            "fields": [
+              {
+                "name": "invalidCredentials",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedSecondsOne",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedSecondsOther",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedMinutesOne",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedMinutesOther",
+                "type": "text"
+              },
+              {
+                "name": "rateLimited",
+                "type": "text"
+              },
+              {
+                "name": "network",
+                "type": "text"
+              },
+              {
+                "name": "unexpected",
+                "type": "text"
+              },
+              {
+                "name": "humanCheckFailed",
+                "type": "text"
+              },
+              {
+                "name": "humanCheckUnavailable",
+                "type": "text"
+              },
+              {
+                "name": "privileged",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "twoFactor",
+            "type": "component",
+            "component": "signInTwoFactor",
+            "fields": [
+              {
+                "name": "title",
+                "type": "text"
+              },
+              {
+                "name": "totpDescription",
+                "type": "text"
+              },
+              {
+                "name": "emailDescription",
+                "type": "text"
+              },
+              {
+                "name": "emailWarning",
+                "type": "text"
+              },
+              {
+                "name": "totpLabel",
+                "type": "text"
+              },
+              {
+                "name": "emailLabel",
+                "type": "text"
+              },
+              {
+                "name": "totpHint",
+                "type": "text"
+              },
+              {
+                "name": "emailHint",
+                "type": "text"
+              },
+              {
+                "name": "codeInvalid",
+                "type": "text"
+              },
+              {
+                "name": "submit",
+                "type": "text"
+              },
+              {
+                "name": "cancel",
+                "type": "text"
+              },
+              {
+                "name": "resend",
+                "type": "text"
+              },
+              {
+                "name": "resent",
+                "type": "text"
+              },
+              {
+                "name": "expired",
+                "type": "text"
+              },
+              {
+                "name": "invalidCode",
+                "type": "text"
+              },
+              {
+                "name": "unsupportedMethod",
+                "type": "text"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "site-text": {
+      "hash": "731099f9b3f2a5f459e2bbaa89a3066e28797d36d9cde27d41bd728107571853",
+      "definition": {
+        "slug": "site-text",
+        "displayName": "Site Text",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "navLabel",
+            "type": "text"
+          },
+          {
+            "name": "navCvLink",
+            "type": "text"
+          },
+          {
+            "name": "openCms",
+            "type": "text"
+          },
+          {
+            "name": "signOutFailed",
+            "type": "text"
+          },
+          {
+            "name": "signedInAs",
+            "type": "text"
+          },
+          {
+            "name": "notFoundTitle",
+            "type": "text"
+          },
+          {
+            "name": "notFoundDescription",
+            "type": "text"
+          },
+          {
+            "name": "errorTitle",
+            "type": "text"
+          },
+          {
+            "name": "errorDescription",
+            "type": "text"
+          },
+          {
+            "name": "errorRetry",
+            "type": "text"
+          }
+        ]
+      }
+    },
+    "status-page-text": {
+      "hash": "ad7408bf77d0de81cf0f5ec51a874cbab4965269e372b59f9c82a3f06c5270d2",
+      "definition": {
+        "slug": "status-page-text",
+        "displayName": "Status Page Text",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "title",
+            "type": "text"
+          },
+          {
+            "name": "description",
+            "type": "text"
+          },
+          {
+            "name": "cardTitle",
+            "type": "text"
+          },
+          {
+            "name": "cardDescription",
+            "type": "text"
+          },
+          {
+            "name": "endpointLabel",
+            "type": "text"
+          },
+          {
+            "name": "lastCheckedLabel",
+            "type": "text"
+          },
+          {
+            "name": "notCheckedYet",
+            "type": "text"
+          },
+          {
+            "name": "stateChecking",
+            "type": "text"
+          },
+          {
+            "name": "stateOk",
+            "type": "text"
+          },
+          {
+            "name": "stateError",
+            "type": "text"
+          },
+          {
+            "name": "errorHint",
+            "type": "text"
+          },
+          {
+            "name": "checkAgain",
+            "type": "text"
           }
         ]
       }

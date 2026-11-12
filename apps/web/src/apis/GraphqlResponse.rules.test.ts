@@ -1,6 +1,7 @@
 import {
   GraphqlRequestError,
   isUnauthenticatedGraphqlError,
+  readGraphqlRootFields,
   unwrapGraphqlResponse,
 } from './GraphqlResponse.rules';
 
@@ -66,5 +67,26 @@ describe('isUnauthenticatedGraphqlError', () => {
     ['a plain Error', new Error('boom')],
   ])('is false for %s', (_name, error) => {
     expect(isUnauthenticatedGraphqlError(error)).toBe(false);
+  });
+});
+
+describe('readGraphqlRootFields', () => {
+  it('keeps the data of a partial answer and reports the first error code', () => {
+    expect(
+      readGraphqlRootFields(200, {
+        data: { a: 1, b: null },
+        errors: [{ extensions: { code: 'X' } }],
+      }),
+    ).toEqual({ data: { a: 1, b: null }, errorCode: 'X', status: 200 });
+  });
+
+  it('gives no data for a non-200 answer or a body without a data object', () => {
+    expect(readGraphqlRootFields(500, { data: { a: 1 } }).data).toBeNull();
+    expect(readGraphqlRootFields(200, { errors: [{}] })).toMatchObject({
+      data: null,
+      errorCode: 'UNKNOWN_ERROR',
+    });
+    expect(readGraphqlRootFields(200, 'nope').data).toBeNull();
+    expect(readGraphqlRootFields(200, { data: [1] }).data).toBeNull();
   });
 });

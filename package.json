@@ -23,6 +23,7 @@
     "dev:stack": "bash scripts/dev-stack.sh start",
     "demo": "bash scripts/dev-stack.sh demo",
     "dev:stack:stop": "bash scripts/dev-stack.sh stop",
+    "dev:stack:seed": "bash scripts/dev-stack.sh seed",
     "start:dev": "pnpm --parallel --filter @abyss/cms-api --filter @abyss/cms-admin --filter @abyss/web dev",
     "start:cms-admin": "pnpm --filter @abyss/cms-admin dev",
     "start:web": "pnpm --filter @abyss/web dev",

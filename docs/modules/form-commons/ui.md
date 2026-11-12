@@ -14,11 +14,11 @@ Flows: none yet.
 
 ## Purpose
 
-The low-level controls every app and every `forms/` component builds on, styled with the shared theme tokens.
+The low-level controls every app and every `forms/` component builds on, styled with the shared theme tokens (`src/styles/tokens.css`: `:root` default look, `[data-theme='premium']` for cms-admin, D23; `theme.css` maps them to Tailwind names such as `rounded-control`, `shadow-card`, `duration-fast`, `nav-active`).
 
 ## Techniques
 
-Radix primitives wrapped with Tailwind classes merged by `cn`; variants with `class-variance-authority` (`buttonVariants`); shared focus and invalid styles in `Control.constants.ts`.
+Radix primitives wrapped with Tailwind classes merged by `cn`; variants with `class-variance-authority` (`buttonVariants`); shared focus and invalid styles in `Control.constants.ts` (the three focus sets are public, so apps reuse the same halo and edge).
 
 ## Technologies
 
@@ -38,16 +38,17 @@ A new primitive: one file here, export it from the package `index.ts`, update th
 <!-- prettier-ignore-start -->
 
 ```
-ui/ (14 files)
+ui/ (16 files)
 ```
 
-Tests: 8 files (not listed).
+Tests: 10 files (not listed).
 
 | File | Description |
 |---|---|
 | `Button.tsx` | `Button`, `buttonVariants`: button with variants and sizes |
+| `Card.tsx` | `Card`, `cardVariants`: premium surface card (padding variants, interactive hover and focus, `asChild`) |
 | `Checkbox.tsx` | `Checkbox`: Radix checkbox |
-| `Control.constants.ts` | Shared focus, focus-within and invalid class sets for controls |
+| `Control.constants.ts` | Shared focus (3 px ring plus 1 px `focus-edge` edge, exported), focus-within, destructive focus and invalid class sets for controls |
 | `Dialog.tsx` | `Dialog` and its parts (content, header, footer, title, description, overlay) |
 | `DropdownMenu.tsx` | `DropdownMenu` and its parts (trigger, content, item, label, separator) |
 | `IconButton.tsx` | `IconButton`: icon-only button with an accessible label |
@@ -58,6 +59,7 @@ Tests: 8 files (not listed).
 | `Radio.tsx` | `Radio`: radio input |
 | `Switch.tsx` | `Switch`: Radix switch |
 | `Textarea.tsx` | `Textarea`: multi-line input |
+| `Toast.tsx` | `ToastProvider`, `useToast`: Radix toast stack (4 tones, 3 visible, replace by key, pause on hover and focus) |
 | `Tooltip.tsx` | `Tooltip` and parts, `TOOLTIP_DELAY_MS` |
 
 <!-- prettier-ignore-end -->

@@ -1,7 +1,6 @@
 import type { AxiosAdapter, InternalAxiosRequestConfig } from 'axios';
 
-import { apiClient, createApiClient } from '@/apis/client/Api.client';
-import { BFF_BASE_PATH } from '@/configs/Api.endpoints';
+import { clientApi, type ClientApi } from '@/apis/client/Api.client';
 
 import { createAuthApi, PrivilegedAccessError } from './Auth.api';
 import { httpError, TEST_USER } from './Session.fixture';
@@ -15,7 +14,14 @@ function clientAnswering(respond: (config: InternalAxiosRequestConfig) => unknow
       ? Promise.reject(result)
       : Promise.resolve({ data: result, status: 200, statusText: 'OK', headers: {}, config });
   };
-  return { api: createAuthApi(createApiClient(BFF_BASE_PATH, { adapter })), seen };
+  const client: ClientApi = {
+    get: (path, options) => clientApi.get(path, { ...options, adapter }),
+    post: (path, body, options) => clientApi.post(path, body, { ...options, adapter }),
+    put: (path, body, options) => clientApi.put(path, body, { ...options, adapter }),
+    patch: (path, body, options) => clientApi.patch(path, body, { ...options, adapter }),
+    delete: (path, options) => clientApi.delete(path, { ...options, adapter }),
+  };
+  return { api: createAuthApi(client), seen };
 }
 
 describe('createAuthApi', () => {
@@ -95,19 +101,5 @@ describe('createAuthApi', () => {
     await expect(api.login({ email: 'a@b.co', password: 'pw', rememberMe: false })).rejects.toBe(
       failure,
     );
-  });
-});
-
-describe('apiClient', () => {
-  it('is based on the BFF path, sends no cookie flag and holds no Authorization default', () => {
-    expect(apiClient.defaults.baseURL).toBe(BFF_BASE_PATH);
-    expect(apiClient.defaults.withCredentials).toBeUndefined();
-    const headers = apiClient.defaults.headers as unknown as Record<string, unknown>;
-    const sections = [headers, ...Object.values(headers)];
-    expect(
-      sections.some(
-        (section) => typeof section === 'object' && section !== null && 'Authorization' in section,
-      ),
-    ).toBe(false);
   });
 });

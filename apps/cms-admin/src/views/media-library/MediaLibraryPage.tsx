@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
-import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
+import { Button, FormAlert, useToast } from '@abyss/form-commons';
 import { LoadError, PageHeader } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useRestoreFocus } from '@components/useRestoreFocus';
@@ -18,7 +18,7 @@ import { MEDIA_QUERY_KEY, useMediaQuery } from '@features/media/Media.queries';
 import { useMediaApi } from '@features/media/MediaApi.context';
 import { MediaFilters, type MediaFiltersValue } from '@features/media/MediaFilters';
 import { MediaGrid } from '@features/media/MediaGrid';
-import { UploadDialog } from '@features/media/UploadDialog';
+import { UploadDialog, type UploadOutcome } from '@features/media/UploadDialog';
 import type { SendFile } from '@features/media/useUploadQueue';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
@@ -39,10 +39,13 @@ interface LibraryQuery extends MediaFiltersValue {
   page: number;
 }
 
-interface Notice {
-  tone: FormAlertTone;
-  message: string;
-}
+const MEDIA_TOAST_KEY = {
+  uploaded: 'media-uploaded',
+  replaced: 'media-replaced',
+  altSaved: 'media-alt-saved',
+  deleted: 'media-deleted',
+  gone: 'media-gone',
+} as const;
 
 /** Reads the URL query; a missing or invalid value falls back to its default. */
 function readQuery(params: URLSearchParams): LibraryQuery {
@@ -90,7 +93,7 @@ export function MediaLibraryPage() {
   const [editing, setEditing] = useState<MediaFile | null>(null);
   const [deleting, setDeleting] = useState<MediaFile | null>(null);
   const [replacing, setReplacing] = useState<MediaFile | null>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const { showToast } = useToast();
   const headingRef = useRef<HTMLDivElement>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -114,16 +117,22 @@ export function MediaLibraryPage() {
 
   const open = (opener: HTMLElement, next: () => void) => {
     rememberOpener(opener);
-    setNotice(null);
     next();
   };
 
   const refreshLibrary = () => void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
 
-  const onUploaded = (files: MediaFile[]) => {
+  const onUploaded = (files: MediaFile[], { failedCount }: UploadOutcome) => {
     refreshLibrary();
     if (page !== FIRST_PAGE) setPage(FIRST_PAGE);
-    setNotice({ tone: 'success', message: copy.uploaded(files.length) });
+    showToast({
+      tone: failedCount > 0 ? 'warning' : 'success',
+      title:
+        failedCount > 0
+          ? copy.uploadedSomeFailed(files.length, files.length + failedCount)
+          : copy.uploaded(files.length),
+      key: MEDIA_TOAST_KEY.uploaded,
+    });
   };
 
   const sendReplacement: SendFile = (file, onProgress, signal) =>
@@ -133,7 +142,6 @@ export function MediaLibraryPage() {
     event.preventDefault();
     const files = Array.from(event.dataTransfer.files);
     if (!canCreate || files.length === 0) return;
-    setNotice(null);
     setDroppedFiles(files);
     setIsUploadOpen(true);
   };
@@ -156,7 +164,6 @@ export function MediaLibraryPage() {
   return (
     <div ref={headingRef} className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <PageHeader title={copy.title} description={copy.description} />
-      {notice === null ? null : <FormAlert tone={notice.tone}>{notice.message}</FormAlert>}
       <div className="flex flex-wrap items-end gap-3">
         <div className="min-w-0 flex-1">
           <MediaFilters
@@ -244,7 +251,11 @@ export function MediaLibraryPage() {
           refreshLibrary();
           const [replaced] = files;
           if (replaced !== undefined) {
-            setNotice({ tone: 'success', message: copy.replaced(replaced.fileName) });
+            showToast({
+              tone: 'success',
+              title: copy.replaced(replaced.fileName),
+              key: MEDIA_TOAST_KEY.replaced,
+            });
           }
         }}
       />
@@ -253,14 +264,15 @@ export function MediaLibraryPage() {
         onClose={() => setEditing(null)}
         onSaved={(file) => {
           setEditing(null);
-          setNotice({
+          showToast({
             tone: 'success',
-            message: copy.altDialog.saved(file.fileName),
+            title: copy.altDialog.saved(file.fileName),
+            key: MEDIA_TOAST_KEY.altSaved,
           });
         }}
         onGone={() => {
           setEditing(null);
-          setNotice({ tone: 'info', message: copy.errors.gone });
+          showToast({ tone: 'info', title: copy.errors.gone, key: MEDIA_TOAST_KEY.gone });
         }}
         onCloseAutoFocus={restoreFocus}
       />
@@ -270,14 +282,15 @@ export function MediaLibraryPage() {
         onDone={(file, outcome) => {
           setDeleting(null);
           rememberOpener(null); // the file's card is gone, so focus goes to the heading
-          setNotice(
-            outcome === 'deleted'
-              ? {
-                  tone: 'success',
-                  message: copy.deleteDialog.deleted(file.fileName),
-                }
-              : { tone: 'info', message: copy.errors.gone },
-          );
+          if (outcome === 'deleted') {
+            showToast({
+              tone: 'success',
+              title: copy.deleteDialog.deleted(file.fileName),
+              key: MEDIA_TOAST_KEY.deleted,
+            });
+          } else {
+            showToast({ tone: 'info', title: copy.errors.gone, key: MEDIA_TOAST_KEY.gone });
+          }
         }}
         onCloseAutoFocus={restoreFocus}
       />

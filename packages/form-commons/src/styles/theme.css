@@ -1,5 +1,5 @@
 /*
- * Tailwind v4 theme for apps that compile their own Tailwind:
+ * Tailwind v4 theme (tokens and themes: D23) for apps that compile their own Tailwind:
  *   @import 'tailwindcss';
  *   @import '@abyss/form-commons/theme.css';
  */
@@ -28,6 +28,7 @@
   --color-secondary: var(--secondary);
   --color-secondary-hover: var(--secondary-hover);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-border: var(--secondary-border);
   --color-success: var(--success);
   --color-success-hover: var(--success-hover);
   --color-success-foreground: var(--success-foreground);
@@ -44,12 +45,67 @@
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
   --color-info-strong: var(--info-strong);
+  --color-nav-active: var(--nav-active);
+  --color-nav-active-foreground: var(--nav-active-foreground);
+  --color-nav-indicator: var(--nav-indicator);
+  --color-focus-edge: var(--focus-edge);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
+  --radius-control: var(--radius-control);
+  --radius-surface: var(--radius-surface);
+  --radius-item: var(--radius-item);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-bar-top: var(--shadow-bar-top);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-primary: var(--shadow-primary);
+  --shadow-primary-hover: var(--shadow-primary-hover);
+
+  --duration-fast: var(--duration-fast);
+  --duration-base: var(--duration-base);
 
   --font-sans: var(--font-family-sans);
+
+  --animate-overlay-in: overlay-in var(--duration-base) ease-out;
+  --animate-overlay-out: overlay-out var(--duration-base) ease-in;
+
+  --animate-toast-in: toast-in var(--duration-base) ease-out;
+  --animate-toast-out: fade-out var(--duration-fast) ease-in;
+
+  --animate-fade-in: fade-in var(--duration-base) ease-out;
+  --animate-fade-out: fade-out var(--duration-base) ease-in;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      translate: 0 -8px;
+    }
+  }
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
+  @keyframes overlay-out {
+    to {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
 }
 
 @layer base {

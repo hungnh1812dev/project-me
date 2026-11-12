@@ -65,3 +65,6 @@ export const RATE_LIMIT_MAX_KEYS = 10_000;
 
 /** First status of a redirect; the server never follows one. */
 export const REDIRECT_STATUS_MIN = 300;
+
+/** Data cache lifetime of a server call that sets none (WEB-4). */
+export const DEFAULT_REVALIDATE_SECONDS = 180;

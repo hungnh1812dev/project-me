@@ -72,10 +72,11 @@ describe('directory dependencies', () => {
 });
 
 describe('session facade', () => {
-  it('exposes only the provider, the hook and the privileged error at runtime', () => {
+  it('exposes only the provider, the hooks and the privileged error at runtime', () => {
     expect(Object.keys(sessionFacade).sort()).toEqual([
       'PrivilegedAccessError',
       'WebSessionProvider',
+      'useCanSee',
       'useWebSession',
     ]);
   });
@@ -91,6 +92,24 @@ describe('test fixtures', () => {
     const importers = sourceFilesIn(SRC_DIR).filter((file) =>
       /from\s+'[^']*\.fixture(\.tsx?)?'/.test(readFileSync(file, 'utf8')),
     );
+    expect(importers).toEqual([]);
+  });
+});
+
+describe('mock view', () => {
+  it('is imported by MockFallback.server.ts only', () => {
+    const importers = sourceFilesIn(SRC_DIR)
+      .filter((file) => /from\s+'[^']*\/MockView'/.test(readFileSync(file, 'utf8')))
+      .map((file) => file.replace(SRC_DIR, ''));
+    expect(importers).toEqual(['/apis/server/restful/MockFallback.server.ts']);
+  });
+});
+
+describe('user-facing text comes from the content API', () => {
+  it('no source file imports a module named Copy.constants', () => {
+    const importers = sourceFilesIn(SRC_DIR)
+      .filter((file) => /from\s+'[^']*\/Copy\.constants'/.test(readFileSync(file, 'utf8')))
+      .map((file) => file.replace(SRC_DIR, ''));
     expect(importers).toEqual([]);
   });
 });

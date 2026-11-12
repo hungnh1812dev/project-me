@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, FormAlert } from '@abyss/form-commons';
+import { Button, Card, FormAlert } from '@abyss/form-commons';
 import { COMMON_TEXT } from '@configs/locales';
 
 /** Skeleton rows shown while a table loads. */
@@ -41,7 +41,7 @@ export function PageHeader({
 export function TitleSkeleton({ label }: { label: string }) {
   return (
     <>
-      <span aria-hidden="true" className="block h-8 w-48 animate-pulse rounded bg-muted" />
+      <span aria-hidden="true" className="block h-8 w-48 animate-pulse rounded-item bg-muted" />
       <span className="sr-only">{label}</span>
     </>
   );
@@ -50,21 +50,42 @@ export function TitleSkeleton({ label }: { label: string }) {
 /** Rows of grey bars shaped like the table that is loading. */
 export function TableSkeleton({ label }: { label: string }) {
   return (
-    <div
+    <Card
+      padding="flush"
       aria-busy="true"
       aria-live="polite"
-      className="grid gap-px overflow-hidden rounded-md border border-border bg-border"
+      className="grid gap-px overflow-hidden"
     >
       <span className="sr-only">{label}</span>
       <div className="h-10 bg-muted" />
       {Array.from({ length: TABLE_SKELETON_ROWS }, (_, index) => (
         <div key={index} className="flex items-center gap-4 bg-card px-3 py-3">
-          <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-1/6 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-1/6 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-1/3 animate-pulse rounded-item bg-muted" />
+          <div className="h-4 w-1/6 animate-pulse rounded-item bg-muted" />
+          <div className="h-4 w-1/6 animate-pulse rounded-item bg-muted" />
         </div>
       ))}
-    </div>
+    </Card>
+  );
+}
+
+/** Nothing to show yet, or a feature not configured: a title, an optional hint and icon in a card. */
+export function EmptyState({
+  title,
+  hint,
+  icon,
+}: {
+  title: ReactNode;
+  hint?: ReactNode;
+  /** Decorative icon above the title; the caller sets `aria-hidden`. */
+  icon?: ReactNode;
+}) {
+  return (
+    <Card className="grid justify-items-start gap-1">
+      {icon}
+      <p className="m-0 text-sm font-medium">{title}</p>
+      {hint === undefined ? null : <p className="m-0 text-sm text-muted-foreground">{hint}</p>}
+    </Card>
   );
 }
 

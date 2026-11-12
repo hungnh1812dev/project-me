@@ -18,6 +18,7 @@ import { countActiveRefreshTokens } from '../src/SmokeDatabase.client';
 test.describe.configure({ retries: 0 });
 
 const login = WEB_COPY.login;
+const withCount = (template: string, count: number) => template.replace('{count}', String(count));
 const headerSignIn = (page: Page) =>
   page.getByRole('button', { name: WEB_COPY.session.signIn, exact: true });
 const dialog = (page: Page) => page.getByRole('dialog');
@@ -360,7 +361,9 @@ test('a rate-limited sign-in names the wait in seconds or minutes, and an offlin
     }),
   );
   await fillCredentials(page, e2eEnv.readerEmail, 'x');
-  await expect(dialog(page).getByText(login.errors.rateLimitedSeconds(30))).toBeVisible();
+  await expect(
+    dialog(page).getByText(withCount(login.errors.rateLimitedSecondsOther, 30)),
+  ).toBeVisible();
 
   await page.unroute(loginRoute);
   await page.route(loginRoute, (route) =>
@@ -373,7 +376,9 @@ test('a rate-limited sign-in names the wait in seconds or minutes, and an offlin
   await dialog(page).getByLabel(login.passwordLabel).fill('x');
   await waitForHumanCheck(page);
   await dialog(page).getByRole('button', { name: login.submit }).click();
-  await expect(dialog(page).getByText(login.errors.rateLimitedMinutes(2))).toBeVisible();
+  await expect(
+    dialog(page).getByText(withCount(login.errors.rateLimitedMinutesOther, 2)),
+  ).toBeVisible();
 
   await page.unroute(loginRoute);
   await page.route(loginRoute, (route) => route.fulfill({ status: 429, json: rateLimitedBody }));
@@ -412,7 +417,7 @@ test('the code step: a dead temp token returns to the credentials with a notice,
   );
   await waitForHumanCheck(page);
   await step.getByRole('button', { name: login.twoFactor.resend }).click();
-  await expect(step.getByText(login.errors.rateLimitedSeconds(45))).toBeVisible();
+  await expect(step.getByText(withCount(login.errors.rateLimitedSecondsOther, 45))).toBeVisible();
 
   await page.route(`**${BFF_PATHS.AUTH.TWO_FACTOR_VERIFY}`, (route) =>
     route.fulfill({

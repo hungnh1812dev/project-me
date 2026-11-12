@@ -4,6 +4,8 @@ export const MEDIA_COPY = {
     'Images, PDFs and videos you can attach to documents. Uploaded images are re-encoded and lose their location data.',
   upload: 'Upload files',
   uploaded: (count: number) => (count === 1 ? '1 file uploaded.' : `${count} files uploaded.`),
+  uploadedSomeFailed: (done: number, total: number) =>
+    `${done} of ${total} files uploaded. The rest failed.`,
   replaced: (name: string) => `${name} replaced.`,
   loading: 'Loading media files',
   loadFailed: 'Could not load the file library.',

@@ -5,7 +5,7 @@ import type { ApiToken, PermissionRow, Role } from '@features/access/Access.api'
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { ContentType } from '@features/content-types';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -208,7 +208,7 @@ describe('ApiTokensPage', () => {
     await user.type(name, 'Site build');
     const listCalls = api.callsTo(`GET ${API_TOKENS.LIST}`).length;
     await user.click(within(dialog).getByRole('button', { name: copy.tokenForm.submitEdit }));
-    expect(await screen.findByText(copy.apiTokens.alreadyExpired)).toBeInTheDocument();
+    expect(await findToast(copy.apiTokens.alreadyExpired)).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     await waitFor(() =>
       expect(api.callsTo(`GET ${API_TOKENS.LIST}`).length).toBeGreaterThan(listCalls),
@@ -296,7 +296,7 @@ describe('ApiTokensPage', () => {
 
     await user.click(within(reveal).getByRole('button', { name: copy.tokenReveal.done }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    expect(await screen.findByText(copy.apiTokens.created('Website build'))).toBeInTheDocument();
+    expect(await findToast(copy.apiTokens.created('Website build'))).toBeInTheDocument();
     expect(screen.queryByText(RAW_TOKEN)).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain(RAW_TOKEN);
 
@@ -393,7 +393,7 @@ describe('ApiTokensPage', () => {
     await user.clear(name);
     await user.type(name, 'Site build');
     await user.click(within(dialog).getByRole('button', { name: copy.tokenForm.submitEdit }));
-    expect(await screen.findByText(copy.apiTokens.updated('Site build'))).toBeInTheDocument();
+    expect(await findToast(copy.apiTokens.updated('Site build'))).toBeInTheDocument();
     const [call] = api.callsTo(`PATCH ${API_TOKENS.ONE('tok_build')}`);
     expect(JSON.parse(call?.data as string)).toEqual({ name: 'Site build' });
   });
@@ -420,7 +420,7 @@ describe('ApiTokensPage', () => {
     dialog = await screen.findByRole('dialog');
     await user.click(within(dialog).getByRole('checkbox', { name: 'Read page' }));
     await user.click(within(dialog).getByRole('button', { name: copy.tokenForm.submitEdit }));
-    await screen.findByText(copy.apiTokens.updated('Website build'));
+    await findToast(copy.apiTokens.updated('Website build'));
     const [call] = api.callsTo(`PATCH ${API_TOKENS.ONE('tok_build')}`);
     expect(JSON.parse(call?.data as string)).toEqual({
       scope: {
@@ -452,7 +452,7 @@ describe('ApiTokensPage', () => {
         name: copy.revokeToken.submit('Website build'),
       }),
     );
-    expect(await screen.findByText(copy.apiTokens.revoked('Website build'))).toBeInTheDocument();
+    expect(await findToast(copy.apiTokens.revoked('Website build'))).toBeInTheDocument();
     expect(api.callsTo(`POST ${API_TOKENS.REVOKE('tok_build')}`)).toHaveLength(1);
   });
 
@@ -475,7 +475,7 @@ describe('ApiTokensPage', () => {
         name: copy.revokeToken.submit('Website build'),
       }),
     );
-    expect(await screen.findByText(copy.apiTokens.alreadyRevoked)).toBeInTheDocument();
+    expect(await findToast(copy.apiTokens.alreadyRevoked)).toBeInTheDocument();
   });
 
   it('shows the API tokens link only to roles that can read them', async () => {

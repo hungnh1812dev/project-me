@@ -26,7 +26,7 @@ React context, Axios (base `/api/v1`).
 
 ## Entry points
 
-Facade `index.ts`: `WebSessionProvider`, `useWebSession`, `PrivilegedAccessError` and the session types.
+Facade `index.ts`: `WebSessionProvider`, `useWebSession`, `useCanSee` (role display rule, WEB-7: add `requiresRole` to anything shown and gate it with the hook), `PrivilegedAccessError` and the session types.
 
 ## Where to change what
 
@@ -38,18 +38,19 @@ Server side (BFF, D21, ADR 0018 section 4): `SealedCookie.server.ts` is the only
 <!-- prettier-ignore-start -->
 
 ```
-session/ (7 files)
+session/ (8 files)
 ```
 
-Tests: 5 files (not listed).
+Tests: 6 files (not listed).
 
 | File | Description |
 |---|---|
 | `Auth.api.ts` | Session read, login, 2FA verify, email code and logout calls to the BFF with their types (exports `LoginCredentials`, `CurrentUser`, `TwoFactorChallenge`, `TwoFactorVerification` +5) |
+| `RoleDisplay.rules.ts` | `isVisibleTo(requiresRole, viewer)`: whether a page, nav item or section that declares a role shows to the viewer; display only, never access control (D3) (exports `RoleViewer`, `isVisibleTo`) |
 | `SealedCookie.server.ts` | AES-256-GCM sealing of the two `__Host-` cookies, their one writer and clearer, and the request readers; the session cookie carries `Max-Age` (30 days) only when its sealed `rememberMe` is true (exports `SealedWebSession`, `SealedTwoFactorChallenge`, `sealCookieValue`, `openCookieValue` +6) |
 | `Session.fixture.tsx` | Test user and a fake auth API for tests (exports `TEST_USER`, `FakeApi`, `fakeApi` +2) |
 | `SignIn.server.ts` | The sign-in, 2FA, email-code and sign-out handlers of the BFF routes with their body schemas; seals the session and refuses privileged accounts; `rememberMe` comes from the login body and travels in the sealed 2FA state, never the verify body (exports `loginBodySchema`, `emailCodeBodySchema`, `verifyBodySchema`, `logInVisitor` +3) |
-| `WebSession.context.tsx` | The session context and its provider (exports `SessionStatus`, `WebSession`, `WebSessionProvider` +1) |
+| `WebSession.context.tsx` | The session context and its provider plus `useCanSee`, the role display hook (exports `SessionStatus`, `WebSession`, `WebSessionProvider` +2) |
 | `WebSession.server.ts` | Server session read: refresh 30 s before expiry shared per refresh token, current account, privileged-account refusal; a refresh copies `rememberMe` into the rewritten session (exports `WebSessionRead`, `accessExpiryOf`, `isPrivilegedAccount`, `readWebSession` +2); also `publicUserOf` and the `GET /api/v1/session` handler |
 | `index.ts` | Public facade of the feature (exports `PrivilegedAccessError`, `CurrentUser`, `LoginCredentials`, `LoginOutcome` +5) |
 

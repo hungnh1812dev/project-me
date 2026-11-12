@@ -1,0 +1,56 @@
+{
+  "slug": "status-page-text",
+  "displayName": "Status Page Text",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "title",
+      "type": "text"
+    },
+    {
+      "name": "description",
+      "type": "text"
+    },
+    {
+      "name": "cardTitle",
+      "type": "text"
+    },
+    {
+      "name": "cardDescription",
+      "type": "text"
+    },
+    {
+      "name": "endpointLabel",
+      "type": "text"
+    },
+    {
+      "name": "lastCheckedLabel",
+      "type": "text"
+    },
+    {
+      "name": "notCheckedYet",
+      "type": "text"
+    },
+    {
+      "name": "stateChecking",
+      "type": "text"
+    },
+    {
+      "name": "stateOk",
+      "type": "text"
+    },
+    {
+      "name": "stateError",
+      "type": "text"
+    },
+    {
+      "name": "errorHint",
+      "type": "text"
+    },
+    {
+      "name": "checkAgain",
+      "type": "text"
+    }
+  ]
+}

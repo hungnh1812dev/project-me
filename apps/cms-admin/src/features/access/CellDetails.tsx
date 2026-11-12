@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Textarea } from '@abyss/form-commons';
+import { CONTROL_FOCUS_RING_ONLY_CLASSES, Textarea } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 
 import type { ContentType } from '../content-types';
@@ -123,10 +123,12 @@ function ConditionsEditor({
   const errorId = `${id}-error`;
   return (
     <details
-      className="group rounded-md border border-border bg-card"
+      className="group rounded-item bg-muted"
       open={shouldForceOpen || text.trim() !== '' ? true : undefined}
     >
-      <summary className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <summary
+        className={`cursor-pointer rounded-item px-3 py-2 text-sm font-medium ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+      >
         {copy.conditions.summary(actionLabel)}
       </summary>
       <div className="grid gap-1.5 px-3 pb-3">

@@ -1,0 +1,48 @@
+{
+  "slug": "site-text",
+  "displayName": "Site Text",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "navLabel",
+      "type": "text"
+    },
+    {
+      "name": "navCvLink",
+      "type": "text"
+    },
+    {
+      "name": "openCms",
+      "type": "text"
+    },
+    {
+      "name": "signOutFailed",
+      "type": "text"
+    },
+    {
+      "name": "signedInAs",
+      "type": "text"
+    },
+    {
+      "name": "notFoundTitle",
+      "type": "text"
+    },
+    {
+      "name": "notFoundDescription",
+      "type": "text"
+    },
+    {
+      "name": "errorTitle",
+      "type": "text"
+    },
+    {
+      "name": "errorDescription",
+      "type": "text"
+    },
+    {
+      "name": "errorRetry",
+      "type": "text"
+    }
+  ]
+}

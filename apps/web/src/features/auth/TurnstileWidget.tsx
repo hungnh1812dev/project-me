@@ -5,10 +5,8 @@ import Script from 'next/script';
 
 import './Turnstile.client';
 
-import { COPY } from '@/configs/Copy.constants';
 import { TURNSTILE, type TurnstileAction } from '@/configs/Security.constants';
-
-const copy = COPY.login.humanCheck;
+import { useRequiredSignInText } from '@/features/site-shell';
 
 /**
  * Cloudflare Turnstile. The script loads only while this component is
@@ -32,6 +30,7 @@ export function TurnstileWidget({
   onToken: (token: string) => void;
   onExpired: () => void;
 }) {
+  const copy = useRequiredSignInText().humanCheck;
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   const [ready, setReady] = useState(

@@ -1,16 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@abyss/form-commons';
 
 import { appEnv } from '../../configs/Browser.env';
-import { COPY } from '../../configs/Copy.constants';
 import { WebLoginDialog } from '../../features/auth';
 import { useWebSession } from '../../features/session';
+import { LAST_RESORT_TEXT, useRequiredSiteText, useSiteHeader } from '../../features/site-shell';
+import { formatText } from '../../utils/TextTemplate.rules';
 
 /** Header controls: sign in, or the account name with Open CMS and sign out. */
 export function AccountMenu() {
   const { status, user, signOut } = useWebSession();
+  const text = useRequiredSiteText();
+  const author = useSiteHeader()?.author;
+  const signInButtonRef = useRef<HTMLButtonElement>(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
@@ -23,10 +27,19 @@ export function AccountMenu() {
   if (status === 'anonymous' || user === null) {
     return (
       <div className="flex items-center gap-2">
-        <Button size="sm" variant="secondary" onClick={() => setLoginOpen(true)}>
-          {COPY.session.signIn}
+        <Button
+          ref={signInButtonRef}
+          size="sm"
+          variant="secondary"
+          onClick={() => setLoginOpen(true)}
+        >
+          {author?.btnLoginText ?? LAST_RESORT_TEXT.signIn}
         </Button>
-        <WebLoginDialog open={loginOpen} onOpenChange={setLoginOpen} />
+        <WebLoginDialog
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+          returnFocusRef={signInButtonRef}
+        />
       </div>
     );
   }
@@ -34,11 +47,11 @@ export function AccountMenu() {
   return (
     <div className="flex items-center gap-2">
       <span className="text-muted-foreground hidden max-w-48 truncate text-sm sm:inline">
-        {COPY.session.signedInAs(user.displayName)}
+        {formatText(text.signedInAs, { name: user.displayName })}
       </span>
       {appEnv.adminUrl !== undefined ? (
         <Button asChild size="sm" variant="secondary">
-          <a href={appEnv.adminUrl}>{COPY.session.openCms}</a>
+          <a href={appEnv.adminUrl}>{text.openCms}</a>
         </Button>
       ) : null}
       <Button
@@ -53,11 +66,11 @@ export function AccountMenu() {
             .finally(() => setSigningOut(false));
         }}
       >
-        {COPY.session.signOut}
+        {author?.btnLogoutText ?? LAST_RESORT_TEXT.signOut}
       </Button>
       {signOutFailed ? (
         <p role="alert" className="text-destructive-strong text-sm">
-          {COPY.session.signOutFailed}
+          {text.signOutFailed}
         </p>
       ) : null}
     </div>

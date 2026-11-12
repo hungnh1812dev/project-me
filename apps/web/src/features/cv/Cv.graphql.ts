@@ -1,5 +1,3 @@
-import type { GraphqlDocument } from '@/apis/GraphqlResponse.rules';
-
 export interface ResumeSkill {
   level: string | null;
   skill: string | null;
@@ -44,7 +42,7 @@ export interface ResumeLanguage {
   level: string | null;
 }
 
-export interface ResumeReferee {
+export interface ResumeReference {
   name: string | null;
   phone: string | null;
   role: string | null;
@@ -59,7 +57,7 @@ export interface Resume {
   experiences: ResumeExperience[] | null;
   educations: ResumeEducation[] | null;
   languages: ResumeLanguage[] | null;
-  referees: ResumeReferee[] | null;
+  references: ResumeReference[] | null;
   _maskedFields: string[];
 }
 
@@ -74,92 +72,168 @@ export interface CvContact {
   _maskedFields: string[];
 }
 
+/** Text of the CV page; `teamSize` has `{size}`, the `*LinkName` texts have `{project}`. */
+export interface CvPageText {
+  loading: string;
+  refetchFailed: string;
+  fallbackName: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  maskedValue: string;
+  contact: {
+    title: string;
+    email: string;
+    phone: string;
+    address: string;
+    linkedin: string;
+    github: string;
+  };
+  sections: {
+    summary: string;
+    skills: string;
+    experiences: string;
+    educations: string;
+    languages: string;
+  };
+  experience: {
+    teamSize: string;
+    projects: string;
+    techStack: string;
+    liveLink: string;
+    repositoryLink: string;
+    liveLinkName: string;
+    repositoryLinkName: string;
+    unnamedProject: string;
+  };
+  reference: { title: string; phone: string };
+}
+
+/** What a visitor session reads: data only, no text. */
 export interface CvPageData {
-  resumeList: { data: Resume[] };
+  cvPageList: { data: Resume[] };
   cvContact: CvContact | null;
 }
 
-/** The newest published resume marked as main, with the contact card. */
-export const CV_PAGE_DOCUMENT = {
-  operationName: 'CvPage',
-  query: /* GraphQL */ `
-    query CvPage {
-      resumeList(
-        filter: { isMain: { eq: true } }
-        sort: [{ field: updatedAt, direction: DESC }]
-        pageSize: 1
-      ) {
-        data {
-          documentId
-          position
-          name
-          summary
-          skills {
-            level
-            skill
-          }
-          experiences {
-            company
-            location
-            period
-            roles {
-              position
-              period
-              teamSize
-              techStack
-              responsibilities
-              projects {
-                name
-                teamSize
-                role
-                liveLink
-                repositoryLink
-                techStack
-                responsibilities
-              }
-            }
-          }
-          educations {
-            degree
-            institution
-            period
-            location
-            description
-          }
-          languages {
-            language
-            level
-          }
-          referees {
-            name
-            phone
-            role
-          }
-          _maskedFields
-        }
-      }
-      cvContact {
-        name
-        address
-        phone
-        email
-        linkedin
-        github
-        avatar {
-          url
-          alt
-        }
-        _maskedFields
-      }
-    }
-  `,
-} as const satisfies GraphqlDocument;
-
-export function mainResumeOf(data: CvPageData): Resume | undefined {
-  return data.resumeList.data[0];
+export interface CvPage extends CvPageData {
+  cvPageText: CvPageText;
 }
 
-/** True when the API masked this field path (`referees.phone`) for the viewer. */
+export const CV_PAGE_OPERATION_NAME = 'CvPage';
+export const CV_PAGE_VISITOR_OPERATION_NAME = 'CvPageVisitor';
+
+/** The newest published main CV, the contact card and the page text: each root field's text after its name. */
+export const CV_PAGE_ROOT_FIELDS = {
+  cvPageList: `(
+    filter: { isMain: { eq: true } }
+    sort: [{ field: updatedAt, direction: DESC }]
+    pageSize: 1
+  ) {
+    data {
+      documentId
+      position
+      name
+      summary
+      skills {
+        level
+        skill
+      }
+      experiences {
+        company
+        location
+        period
+        roles {
+          position
+          period
+          teamSize
+          techStack
+          responsibilities
+          projects {
+            name
+            teamSize
+            role
+            liveLink
+            repositoryLink
+            techStack
+            responsibilities
+          }
+        }
+      }
+      educations {
+        degree
+        institution
+        period
+        location
+        description
+      }
+      languages {
+        language
+        level
+      }
+      references {
+        name
+        phone
+        role
+      }
+      _maskedFields
+    }
+  }`,
+  cvContact: `{
+    name
+    address
+    phone
+    email
+    linkedin
+    github
+    avatar {
+      url
+      alt
+    }
+    _maskedFields
+  }`,
+  cvPageText: `{
+    loading
+    refetchFailed
+    fallbackName
+    emptyTitle
+    emptyDescription
+    maskedValue
+    contact {
+      title
+      email
+      phone
+      address
+      linkedin
+      github
+    }
+    sections {
+      summary
+      skills
+      experiences
+      educations
+      languages
+    }
+    experience {
+      teamSize
+      projects
+      techStack
+      liveLink
+      repositoryLink
+      liveLinkName
+      repositoryLinkName
+      unnamedProject
+    }
+    reference {
+      title
+      phone
+    }
+  }`,
+} as const;
+
+export function mainResumeOf(data: CvPageData): Resume | undefined {
+  return data.cvPageList.data[0];
+}
+
+/** True when the API masked this field path (`references.phone`) for the viewer. */
 export function isMaskedField(
   { _maskedFields: maskedFields }: Pick<Resume | CvContact, '_maskedFields'>,
   path: string,
@@ -185,8 +259,8 @@ function sanitizedOrNull(
 export function sanitizeCvRichtext(data: CvPageData, sanitize: RichtextSanitizer): CvPageData {
   return {
     ...data,
-    resumeList: {
-      data: data.resumeList.data.map((resume) => ({
+    cvPageList: {
+      data: data.cvPageList.data.map((resume) => ({
         ...resume,
         summary: sanitizedOrNull(resume.summary, sanitize),
         experiences:

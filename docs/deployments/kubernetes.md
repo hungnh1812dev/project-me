@@ -6,6 +6,7 @@ Scope in v1: one cluster per environment, Traefik as the ingress controller, **o
 
 ## 1. Cluster prerequisites
 
+- **Local k3d test deploys.** Images come from a local registry, not GHCR: see [local-registry.md](local-registry.md).
 - **Namespace.** Recommended `abyss` on every cluster (Q-OPS9). Written `<ns>` below.
 - **Image pull secret.** The GHCR packages are private, so `<ns>` needs a `kubernetes.io/dockerconfigjson` Secret `ghcr-pull`, referenced as `imagePullSecrets` by all three Deployments. Its token needs only `read:packages`; GHCR does not accept fine-grained PATs for packages, so a classic PAT with only that scope, from an account that can read the packages, is the usual choice. Check it once (**not run**):
 
@@ -148,13 +149,12 @@ containers:
     ports:
       - { name: http, containerPort: 8080 }
     env:
-      - { name: API_INTERNAL_URL, value: 'http://cms-api.<ns>.svc.cluster.local:3000/api/v1' }
-      - { name: WEB_REVALIDATE_SECONDS, value: '60' }
+      - { name: APP_API_URL, value: 'http://cms-api.<ns>.svc.cluster.local:3000/api/v1' }
       - { name: WEB_ORIGIN, value: 'https://<domain>' }
       - { name: TURNSTILE_EXPECTED_HOSTNAME, value: '<domain>' }
       - { name: TRUST_PROXY_HOPS, value: '1' }
     envFrom:
-      - secretRef: { name: web-secrets } # WEB_SESSION_SECRET, TURNSTILE_SECRET_KEY
+      - secretRef: { name: web-secrets } # WEB_SESSION_SECRET, TURNSTILE_SECRET_KEY, APP_API_TOKEN
     livenessProbe:
       tcpSocket: { port: http }
       initialDelaySeconds: 10
@@ -170,8 +170,8 @@ containers:
       capabilities: { drop: [ALL] }
 ```
 
-- **Never set `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP` or `ALLOW_BFF_RATE_LIMIT_OVERRIDE`** in the web env (smoke and dev stacks only, ADR 0018 sections 2.6 and 2.7). Web has no browser-side API calls, so it needs no Traefik route to cms-api.
-- **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` route) and the web pods (BFF calls through `API_INTERNAL_URL`); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
+- **Never set `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `ALLOW_MOCK_FALLBACK` or `WEB_REVALIDATE_SECONDS`** in the web env (smoke and dev stacks only, ADR 0018 sections 2.6 and 2.7). Web has no browser-side API calls, so it needs no Traefik route to cms-api.
+- **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` route) and the web pods (BFF and content calls through `APP_API_URL`); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
 
 ```yaml
 apiVersion: networking.k8s.io/v1

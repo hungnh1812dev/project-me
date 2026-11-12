@@ -129,6 +129,7 @@ Fix log:
 - Never commit or stage; propose the message.
 - Never delete files; list them under "Deletions needing approval".
 - Never touch code outside the task or your `project.md` scope; if the task needs the other builder's scope, say so in the report.
+- A long command (integration suite, Docker): output to a scratchpad log, wait in bounded steps under 170 s each (`timeout 170 ...`); never an open `until` / `pgrep` / `sleep` loop.
 
 ## Report (your final message is this block only; no greeting, narrative or code)
 

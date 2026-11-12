@@ -1,19 +1,49 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../configs/Copy.constants';
-import RootLayout from './layout';
+import { SITE_SHELL_MOCK } from '../apis/server/restful/mocks/SiteShell.mock';
+import { loadSiteShell } from '../features/site-shell/SiteShell.server';
+import RootLayout, { generateMetadata } from './layout';
 
 vi.mock('next/headers', () => ({ headers: () => Promise.resolve(new Headers()) }));
 vi.mock('next/server', () => ({ connection: () => Promise.resolve() }));
+vi.mock('../features/site-shell/SiteShell.server', () => ({
+  loadSiteShell: vi.fn<typeof loadSiteShell>(),
+}));
 vi.mock('../components/layouts/AccountMenu', () => ({ AccountMenu: () => <div>menu</div> }));
 vi.mock('../components/layouts/AppProviders', () => ({
   Providers: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 vi.mock('../components/layouts/CspNonce', () => ({ CspNonce: () => null }));
 
+beforeEach(() => {
+  vi.mocked(loadSiteShell).mockResolvedValue({
+    ...SITE_SHELL_MOCK,
+    header: { ...SITE_SHELL_MOCK.header, nav: [] },
+  });
+});
+
 describe('RootLayout', () => {
-  it('links the header to the CV page', async () => {
+  it('shows the brand, nav label and CV link from the shell text', async () => {
     render(await RootLayout({ children: <p>page</p> }), { container: document.documentElement });
-    expect(screen.getByRole('link', { name: COPY.nav.cv })).toHaveAttribute('href', '/cv');
+    expect(screen.getByRole('link', { name: SITE_SHELL_MOCK.header.name })).toHaveAttribute(
+      'href',
+      '/',
+    );
+    expect(
+      screen.getByRole('navigation', { name: SITE_SHELL_MOCK.siteText.navLabel }),
+    ).toBeVisible();
+    expect(screen.getByRole('link', { name: SITE_SHELL_MOCK.siteText.navCvLink })).toHaveAttribute(
+      'href',
+      '/cv',
+    );
+  });
+
+  it('titles the page with the brand', async () => {
+    expect(await generateMetadata()).toEqual({ title: SITE_SHELL_MOCK.header.name });
+  });
+
+  it('throws when the shell cannot load, so no page renders without its text', async () => {
+    vi.mocked(loadSiteShell).mockRejectedValue(new Error('no shell'));
+    await expect(RootLayout({ children: null })).rejects.toThrow('no shell');
   });
 });

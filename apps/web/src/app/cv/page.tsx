@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 
-import { loadCvPage, mainResumeOf } from '../../features/cv';
+import { mainResumeOf } from '../../features/cv';
+import { loadCvPage } from '../../features/cv/CvPage.server';
 import { CvView } from '../../views/cv/CvView';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const resume = mainResumeOf(await loadCvPage());
+    const resume = mainResumeOf((await loadCvPage()).data);
     if (!resume?.name) return {};
     return {
       title: resume.position ? `${resume.name} - ${resume.position}` : resume.name,
@@ -17,5 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CvPage() {
-  return <CvView initialData={await loadCvPage()} />;
+  const { data, text } = await loadCvPage();
+  return <CvView initialData={data} text={text} />;
 }

@@ -2,9 +2,15 @@ import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { COPY } from '../../configs/Copy.constants';
 import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, httpError, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
+import {
+  fakeApi,
+  httpError,
+  SHELL_TEXT,
+  TEST_USER,
+  Wrapper,
+} from '../../features/session/Session.fixture';
+import { formatText } from '../../utils/TextTemplate.rules';
 import { AccountMenu } from './AccountMenu';
 
 const humanCheck = vi.hoisted(() => ({ solves: true, tokensIssued: 0, siteKey: 'site-key' }));
@@ -35,7 +41,10 @@ beforeEach(() => {
   humanCheck.siteKey = 'site-key';
 });
 
-const login = COPY.login;
+const login = SHELL_TEXT.signInText;
+const { siteText } = SHELL_TEXT;
+const { author } = SHELL_TEXT.header;
+const signedInAs = (name: string) => formatText(siteText.signedInAs, { name });
 
 async function openDialog(api = fakeApi()) {
   const user = userEvent.setup();
@@ -44,7 +53,7 @@ async function openDialog(api = fakeApi()) {
       <AccountMenu />
     </Wrapper>,
   );
-  await user.click(await screen.findByRole('button', { name: COPY.session.signIn }));
+  await user.click(await screen.findByRole('button', { name: author.btnLoginText }));
   return { user, api };
 }
 
@@ -69,9 +78,7 @@ describe('sign-in dialog', () => {
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
-    expect(
-      await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.login).toHaveBeenCalledWith({
       email: 'owner@example.com',
@@ -79,7 +86,7 @@ describe('sign-in dialog', () => {
       rememberMe: false,
       humanCheckToken: 'login-token-1',
     });
-    expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 
   it('shows one generic message for wrong credentials and clears the password', async () => {
@@ -103,7 +110,9 @@ describe('sign-in dialog', () => {
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
-    expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.rateLimitedMinutes(2));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Too many sign-in attempts. Try again in 2 minutes.',
+    );
   });
 
   it.each([
@@ -136,9 +145,7 @@ describe('sign-in dialog', () => {
     expect(api.verifyTwoFactor).not.toHaveBeenCalled();
     await user.type(code, '123456');
     await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
-    expect(
-      await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
     expect(api.verifyTwoFactor).toHaveBeenCalledWith({
       code: '123456',
       humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
@@ -160,7 +167,7 @@ describe('sign-in dialog', () => {
     await fillCredentials(user);
     await user.type(await screen.findByLabelText(new RegExp(login.twoFactor.totpLabel)), '000000');
     await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(login.twoFactor.errors.invalidCode);
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.twoFactor.invalidCode);
   });
 
   it('returns to the password step when the temp token expired', async () => {
@@ -246,9 +253,7 @@ describe('sign-in dialog', () => {
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      login.twoFactor.errors.unsupportedMethod,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.twoFactor.unsupportedMethod);
   });
 
   it('closes on Esc and starts clean when reopened', async () => {
@@ -256,7 +261,8 @@ describe('sign-in dialog', () => {
     await user.type(screen.getByLabelText(new RegExp(login.emailLabel)), 'x@y.co');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: COPY.session.signIn }));
+    expect(screen.getByRole('button', { name: author.btnLoginText })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: author.btnLoginText }));
     expect(screen.getByLabelText(new RegExp(login.emailLabel))).toHaveValue('');
   });
 });
@@ -301,7 +307,7 @@ describe('human check', () => {
         <AccountMenu />
       </Wrapper>,
     );
-    await screen.findByRole('button', { name: COPY.session.signIn });
+    await screen.findByRole('button', { name: author.btnLoginText });
     expect(screen.queryByRole('button', { name: /reviewer/i })).not.toBeInTheDocument();
   });
 });
@@ -314,9 +320,7 @@ describe('privileged accounts', () => {
     const { user } = await openDialog(api);
     await fillCredentials(user);
     expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.privileged);
-    expect(
-      screen.queryByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(signedInAs(TEST_USER.displayName))).not.toBeInTheDocument();
   });
 
   it('refuses a privileged account at the 2FA step too', async () => {
@@ -349,9 +353,9 @@ describe('account menu', () => {
         <AccountMenu />
       </Wrapper>,
     );
-    await user.click(await screen.findByRole('button', { name: COPY.session.signOut }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.session.signOutFailed);
-    expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: author.btnLogoutText }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(siteText.signOutFailed);
+    expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 
   it('shows the signed-in actor after a silent refresh and signs out', async () => {
@@ -364,11 +368,9 @@ describe('account menu', () => {
         <AccountMenu />
       </Wrapper>,
     );
-    expect(
-      await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: COPY.session.signOut }));
-    expect(await screen.findByRole('button', { name: COPY.session.signIn })).toBeInTheDocument();
+    expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: author.btnLogoutText }));
+    expect(await screen.findByRole('button', { name: author.btnLoginText })).toBeInTheDocument();
     expect(api.logout).toHaveBeenCalledTimes(1);
   });
 
@@ -381,7 +383,7 @@ describe('account menu', () => {
         <AccountMenu />
       </Wrapper>,
     );
-    await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName));
-    expect(screen.queryByRole('link', { name: COPY.session.openCms })).not.toBeInTheDocument();
+    await screen.findByText(signedInAs(TEST_USER.displayName));
+    expect(screen.queryByRole('link', { name: siteText.openCms })).not.toBeInTheDocument();
   });
 });
