@@ -3,6 +3,9 @@ import { COMPONENT_FIELD_TYPE, type FieldTypeName } from './FieldTypes.registry'
 /** Components nest at most this deep (canonical-values "Component depth"). */
 export const MAX_COMPONENT_DEPTH = 3;
 
+/** An import with more fields (all levels together) is refused: the editor renders every row, so a huge file would freeze the tab. */
+export const MAX_IMPORT_FIELDS = 500;
+
 const FIELD_NAME_PREFIX = 'field';
 const COPY_SUFFIX = '_copy';
 

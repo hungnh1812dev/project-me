@@ -9,7 +9,12 @@ import {
   parseSchemaJson,
   serializeSchemaTree,
 } from './SchemaJson.rules';
-import { createNewSchemaTree, schemaTreeReducer, type SchemaTree } from './SchemaTree.reducer';
+import {
+  createNewSchemaTree,
+  MAX_IMPORT_FIELDS,
+  schemaTreeReducer,
+  type SchemaTree,
+} from './SchemaTree.reducer';
 
 const SCHEMAS_DIR = join(__dirname, '../../../../cms-api/content/schemas');
 const schemaFiles = readdirSync(SCHEMAS_DIR).filter((name) => name.endsWith('.json'));
@@ -210,5 +215,27 @@ describe('error paths', () => {
     expect(formatErrorPath(['fields', 5, 'fields', 2, 'name'])).toBe('fields[5].fields[2].name');
     expect(formatErrorPath(['slug'])).toBe('slug');
     expect(formatErrorPath([])).toBe('');
+  });
+
+  it('refuses more fields than the cap across all levels, and accepts exactly the cap', () => {
+    const flat = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({ name: `f${index}`, type: 'string' }));
+    const nested = (count: number) => ({
+      slug: 'a',
+      fields: [{ name: 'box', type: 'component', fields: flat(count - 1) }],
+    });
+    expect(parseSchemaJson(JSON.stringify({ slug: 'a', fields: flat(MAX_IMPORT_FIELDS) })).ok).toBe(
+      true,
+    );
+    expect(
+      parseSchemaJson(JSON.stringify({ slug: 'a', fields: flat(MAX_IMPORT_FIELDS + 1) })),
+    ).toEqual({
+      ok: false,
+      refusal: 'tooManyFields',
+    });
+    expect(parseSchemaJson(JSON.stringify(nested(MAX_IMPORT_FIELDS + 1)))).toEqual({
+      ok: false,
+      refusal: 'tooManyFields',
+    });
   });
 });

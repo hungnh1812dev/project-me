@@ -1,15 +1,17 @@
 import { COMPONENT_FIELD_TYPE } from './FieldTypes.registry';
-import type {
-  ImportedField,
-  ImportedTree,
-  OptionalFieldKey,
-  OptionalTypeKey,
-  SchemaField,
-  SchemaTree,
+import {
+  MAX_IMPORT_FIELDS,
+  type ImportedField,
+  type ImportedTree,
+  type OptionalFieldKey,
+  type OptionalTypeKey,
+  type SchemaField,
+  type SchemaTree,
 } from './SchemaTree.reducer';
 
 /** Why an import is refused; the screen copy maps each to one message (SB-3). */
-export type ImportRefusal = 'notJson' | 'notObject' | 'fieldsMissing' | 'fieldNotObject';
+export type ImportRefusal =
+  'notJson' | 'notObject' | 'fieldsMissing' | 'fieldNotObject' | 'tooManyFields';
 
 export type ImportResult = { ok: true; tree: ImportedTree } | { ok: false; refusal: ImportRefusal };
 
@@ -113,6 +115,21 @@ function importField(raw: unknown): ImportedField {
   };
 }
 
+/** Fields of all levels, counting stops once the import cap is passed. */
+function exceedsFieldCap(fields: readonly unknown[], counted = { total: 0 }): boolean {
+  for (const field of fields) {
+    counted.total += 1;
+    if (counted.total > MAX_IMPORT_FIELDS) return true;
+    if (
+      isPlainObject(field) &&
+      Array.isArray(field.fields) &&
+      exceedsFieldCap(field.fields, counted)
+    )
+      return true;
+  }
+  return false;
+}
+
 /** Builds the editor tree from pasted or picked text; refuses with one reason (SB-3). */
 export function parseSchemaJson(text: string): ImportResult {
   let parsed: unknown;
@@ -123,6 +140,7 @@ export function parseSchemaJson(text: string): ImportResult {
   }
   if (!isPlainObject(parsed)) return { ok: false, refusal: 'notObject' };
   if (!Array.isArray(parsed.fields)) return { ok: false, refusal: 'fieldsMissing' };
+  if (exceedsFieldCap(parsed.fields)) return { ok: false, refusal: 'tooManyFields' };
   try {
     const { known, unknownKeys } = splitKeys(parsed, TYPE_STRING_KEYS, TYPE_BOOLEAN_KEYS);
     const { slug, ...optional } = known;

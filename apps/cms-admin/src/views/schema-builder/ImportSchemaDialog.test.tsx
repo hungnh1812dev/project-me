@@ -4,6 +4,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { ImportSchemaDialog } from './ImportSchemaDialog';
+import { MAX_IMPORT_FIELDS } from './SchemaTree.reducer';
 
 const copy = EN_TEXT.schemaBuilder.import;
 
@@ -28,6 +29,17 @@ describe('ImportSchemaDialog', () => {
     ['a list', '[]', copy.refusal.notObject],
     ['no fields list', '{"slug":"a"}', copy.refusal.fieldsMissing],
     ['a field that is not an object', '{"slug":"a","fields":[1]}', copy.refusal.fieldNotObject],
+    [
+      'more fields than the cap',
+      JSON.stringify({
+        slug: 'a',
+        fields: Array.from({ length: MAX_IMPORT_FIELDS + 1 }, (_, i) => ({
+          name: `f${i}`,
+          type: 'string',
+        })),
+      }),
+      copy.refusal.tooManyFields(MAX_IMPORT_FIELDS),
+    ],
   ])('refuses %s with one message and loads nothing', async (_name, text, message) => {
     const { onLoad, onClose } = show();
     await screen.findByRole('dialog');

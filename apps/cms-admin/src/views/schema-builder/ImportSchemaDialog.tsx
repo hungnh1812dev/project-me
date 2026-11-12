@@ -4,7 +4,7 @@ import { Modal, ModalActions } from '@components/Modal';
 import { useScreenText } from '@configs/locales';
 
 import { parseSchemaJson } from './SchemaJson.rules';
-import type { ImportedTree } from './SchemaTree.reducer';
+import { MAX_IMPORT_FIELDS, type ImportedTree } from './SchemaTree.reducer';
 
 interface ImportSchemaDialogProps {
   onLoad: (tree: ImportedTree) => void;
@@ -36,7 +36,11 @@ export function ImportSchemaDialog({ onLoad, onClose, onCloseAutoFocus }: Import
     }
     const result = parseSchemaJson(text);
     if (!result.ok) {
-      setMessage(copy.refusal[result.refusal]);
+      setMessage(
+        result.refusal === 'tooManyFields'
+          ? copy.refusal.tooManyFields(MAX_IMPORT_FIELDS)
+          : copy.refusal[result.refusal],
+      );
       return;
     }
     onLoad(result.tree);

@@ -18,7 +18,7 @@ The owner builds a content type definition as a field tree and exports it as JSO
 
 ## Techniques
 
-One pure reducer owns the tree: ids are client-only, depth (3 levels) and the per-type key set (SB-8) are kept here; every other rule is left to the cms-api validator (D24). Refused actions return the same state object.
+One pure reducer owns the tree: ids are client-only, depth (3 levels) and the per-type key set (SB-8) are kept here; every other rule is left to the cms-api validator (D24). Refused actions return the same state object. An import above `MAX_IMPORT_FIELDS` fields (all levels) is refused with `tooManyFields`, so a huge file cannot freeze the tab.
 
 ## Technologies
 

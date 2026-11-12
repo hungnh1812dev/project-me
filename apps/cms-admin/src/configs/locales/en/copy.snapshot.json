@@ -1158,7 +1158,8 @@
         "notJson": "This text is not valid JSON.",
         "notObject": "The JSON must be an object with the content type keys, not a list or a value.",
         "fieldsMissing": "The content type has no \"fields\" list. Add \"fields\": [] and try again.",
-        "fieldNotObject": "Every entry of a \"fields\" list must be an object."
+        "fieldNotObject": "Every entry of a \"fields\" list must be an object.",
+        "tooManyFields": "This file has more than SAMPLE fields. Split it into smaller content types or components and import them one at a time."
       }
     },
     "validation": {
