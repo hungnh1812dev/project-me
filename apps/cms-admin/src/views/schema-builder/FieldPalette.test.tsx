@@ -12,9 +12,19 @@ describe('FieldPalette', () => {
   it('lists one item per field type and reports the pick', async () => {
     const onPick = vi.fn<(fieldType: FieldTypeName) => void>();
     renderInApp(createTestServices().services, <FieldPalette canAddComponent onPick={onPick} />);
-    expect(screen.getAllByRole('button')).toHaveLength(FIELD_TYPES.length);
+    expect(screen.getAllByRole('button')).toHaveLength(FIELD_TYPES.length * 2);
     await userEvent.click(screen.getByRole('button', { name: copy.fieldTypes.date }));
     expect(onPick).toHaveBeenCalledWith('date');
+  });
+
+  it('gives every item a drag handle named after its type', () => {
+    renderInApp(
+      createTestServices().services,
+      <FieldPalette canAddComponent onPick={vi.fn<(fieldType: FieldTypeName) => void>()} />,
+    );
+    expect(
+      screen.getByRole('button', { name: copy.dnd.paletteHandle(copy.fieldTypes.date) }),
+    ).toBeInTheDocument();
   });
 
   it('leaves Component out where it would be too deep', () => {
@@ -23,7 +33,7 @@ describe('FieldPalette', () => {
       <FieldPalette canAddComponent={false} onPick={vi.fn<(fieldType: FieldTypeName) => void>()} />,
     );
     expect(screen.queryByRole('button', { name: copy.fieldTypes.component })).toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(FIELD_TYPES.length - 1);
+    expect(screen.getAllByRole('button')).toHaveLength((FIELD_TYPES.length - 1) * 2);
   });
 });
 

@@ -1067,7 +1067,7 @@
       "addField": "Add field",
       "addFieldTo": "Add field to SAMPLE",
       "paletteHeading": "Field types",
-      "paletteHint": "Pick a type to add it at the end of the top level.",
+      "paletteHint": "Pick a type to add it at the end of the top level, or drag it to a place in the fields.",
       "listLabel": "Fields of SAMPLE",
       "rootListLabel": "Fields"
     },
@@ -1093,6 +1093,18 @@
         "cancel": "Keep it",
         "confirm": "Delete SAMPLE"
       }
+    },
+    "dnd": {
+      "instructions": "To move a field, focus its drag handle and press space or enter. Use the arrow keys to choose a place, space or enter to drop it there, and escape to cancel.",
+      "fieldHandle": "Drag SAMPLE",
+      "paletteHandle": "Drag SAMPLE into the fields",
+      "place": "position SAMPLE of undefined in undefined",
+      "pickedUp": "Picked up SAMPLE.",
+      "over": "SAMPLE is over undefined.",
+      "overNothing": "SAMPLE is not over a place that can take it.",
+      "dropped": "SAMPLE dropped at undefined.",
+      "droppedNowhere": "SAMPLE was not dropped on a place that can take it. Nothing changed.",
+      "cancelled": "Dragging SAMPLE cancelled. Nothing changed."
     },
     "property": {
       "heading": "Field properties",

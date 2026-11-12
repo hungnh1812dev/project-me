@@ -33,7 +33,8 @@ export const SCHEMA_BUILDER_COPY = {
     addField: 'Add field',
     addFieldTo: (name: string) => `Add field to ${name}`,
     paletteHeading: 'Field types',
-    paletteHint: 'Pick a type to add it at the end of the top level.',
+    paletteHint:
+      'Pick a type to add it at the end of the top level, or drag it to a place in the fields.',
     listLabel: (name: string) => `Fields of ${name}`,
     rootListLabel: 'Fields',
   },
@@ -62,6 +63,21 @@ export const SCHEMA_BUILDER_COPY = {
       cancel: 'Keep it',
       confirm: (name: string) => `Delete ${name}`,
     },
+  },
+  dnd: {
+    instructions:
+      'To move a field, focus its drag handle and press space or enter. Use the arrow keys to choose a place, space or enter to drop it there, and escape to cancel.',
+    fieldHandle: (name: string) => `Drag ${name}`,
+    paletteHandle: (typeLabel: string) => `Drag ${typeLabel} into the fields`,
+    place: (position: number, count: number, listLabel: string) =>
+      `position ${position} of ${count} in ${listLabel}`,
+    pickedUp: (name: string) => `Picked up ${name}.`,
+    over: (name: string, place: string) => `${name} is over ${place}.`,
+    overNothing: (name: string) => `${name} is not over a place that can take it.`,
+    dropped: (name: string, place: string) => `${name} dropped at ${place}.`,
+    droppedNowhere: (name: string) =>
+      `${name} was not dropped on a place that can take it. Nothing changed.`,
+    cancelled: (name: string) => `Dragging ${name} cancelled. Nothing changed.`,
   },
   property: {
     heading: 'Field properties',

@@ -167,7 +167,8 @@ function updateField(
   );
 }
 
-function findParentId(
+/** The list owner holding a field (`null` for the top level); undefined when the field is not in the tree. */
+export function findParentId(
   fields: readonly SchemaField[],
   id: string,
   parentId: ListOwnerId = null,
@@ -180,7 +181,7 @@ function findParentId(
   return undefined;
 }
 
-function listOf(tree: SchemaTree, ownerId: ListOwnerId): readonly SchemaField[] | undefined {
+export function listOf(tree: SchemaTree, ownerId: ListOwnerId): readonly SchemaField[] | undefined {
   if (ownerId === null) return tree.fields;
   const owner = findField(tree.fields, ownerId);
   return owner && isComponent(owner) ? owner.fields : undefined;

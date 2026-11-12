@@ -23,6 +23,7 @@ import type { FieldTypeName } from './FieldTypes.registry';
 import { ImportSchemaDialog } from './ImportSchemaDialog';
 import { PropertyPanel } from './PropertyPanel';
 import { SchemaCanvas } from './SchemaCanvas';
+import { SchemaDragContext } from './SchemaDragContext';
 import { fieldIdOfErrorPath, serializeSchemaTree, type LocatedError } from './SchemaJson.rules';
 import {
   canPlaceComponentIn,
@@ -111,8 +112,13 @@ export function SchemaBuilderPage() {
   );
   const selectedField =
     selectedFieldId === null ? null : (findField(tree.fields, selectedFieldId) ?? null);
-  const addToList = (parentId: ListOwnerId, fieldType: FieldTypeName) =>
-    dispatch({ type: 'addField', parentId, index: Number.POSITIVE_INFINITY, fieldType });
+  const addToList = (
+    parentId: ListOwnerId,
+    fieldType: FieldTypeName,
+    index = Number.POSITIVE_INFINITY,
+  ) => dispatch({ type: 'addField', parentId, index, fieldType });
+  const moveField = (fieldId: string, parentId: ListOwnerId, index: number) =>
+    dispatch({ type: 'moveField', fieldId, parentId, index });
 
   const keyErrors = (key: string) =>
     !check.isResultCurrent
@@ -164,148 +170,153 @@ export function SchemaBuilderPage() {
           {startActions}
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
-          <div className="grid gap-6">
-            <Card className="grid gap-4">
-              <h2 className="m-0 text-base font-semibold">{copy.typeKeys.heading}</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label={copy.typeKeys.slug}
-                  description={copy.typeKeys.slugHint}
-                  error={keyErrors('slug')}
-                >
-                  {(control) => (
-                    <Input
-                      {...control}
-                      value={tree.slug}
-                      autoComplete="off"
-                      spellCheck={false}
-                      onChange={(event) =>
-                        dispatch({ type: 'setTypeKey', key: 'slug', value: event.target.value })
-                      }
-                    />
-                  )}
-                </Field>
-                <Field label={copy.typeKeys.displayName} error={keyErrors('displayName')}>
-                  {(control) => (
-                    <Input
-                      {...control}
-                      value={tree.displayName ?? ''}
-                      onChange={(event) =>
-                        dispatch({
-                          type: 'setTypeKey',
-                          key: 'displayName',
-                          value: event.target.value,
-                        })
-                      }
-                    />
-                  )}
-                </Field>
-                <Field label={copy.typeKeys.kind} error={keyErrors('kind')}>
-                  {(control) => (
-                    <NativeSelect
-                      {...control}
-                      value={kind}
-                      onChange={(event) =>
-                        dispatch({ type: 'setTypeKey', key: 'kind', value: event.target.value })
-                      }
-                    >
-                      {kindValues.map((value) => (
-                        <option key={value} value={value}>
-                          {value in copy.typeKeys.kindOptions
-                            ? copy.typeKeys.kindOptions[
-                                value as keyof typeof copy.typeKeys.kindOptions
-                              ]
-                            : value}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  )}
-                </Field>
-                <div className="grid content-start gap-1.5">
-                  <div className="flex items-center gap-2 sm:pt-7">
-                    <Checkbox
-                      id="schema-draft-and-publish"
-                      checked={tree.draftAndPublish ?? true}
-                      onCheckedChange={(checked) =>
-                        dispatch({
-                          type: 'setTypeKey',
-                          key: 'draftAndPublish',
-                          value: checked === true,
-                        })
-                      }
-                    />
-                    <Label htmlFor="schema-draft-and-publish">
-                      {copy.typeKeys.draftAndPublish}
-                    </Label>
-                  </div>
-                  <p className="m-0 text-sm text-muted-foreground">
-                    {copy.typeKeys.draftAndPublishHint}
-                  </p>
-                  {keyErrors('draftAndPublish') === undefined ? null : (
-                    <p className="m-0 text-sm text-destructive-strong">
-                      {keyErrors('draftAndPublish')}
+        <SchemaDragContext
+          tree={tree}
+          onAdd={addToList}
+          onMove={moveField}
+          onSelect={setSelectedFieldId}
+        >
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+            <div className="grid gap-6">
+              <Card className="grid gap-4">
+                <h2 className="m-0 text-base font-semibold">{copy.typeKeys.heading}</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label={copy.typeKeys.slug}
+                    description={copy.typeKeys.slugHint}
+                    error={keyErrors('slug')}
+                  >
+                    {(control) => (
+                      <Input
+                        {...control}
+                        value={tree.slug}
+                        autoComplete="off"
+                        spellCheck={false}
+                        onChange={(event) =>
+                          dispatch({ type: 'setTypeKey', key: 'slug', value: event.target.value })
+                        }
+                      />
+                    )}
+                  </Field>
+                  <Field label={copy.typeKeys.displayName} error={keyErrors('displayName')}>
+                    {(control) => (
+                      <Input
+                        {...control}
+                        value={tree.displayName ?? ''}
+                        onChange={(event) =>
+                          dispatch({
+                            type: 'setTypeKey',
+                            key: 'displayName',
+                            value: event.target.value,
+                          })
+                        }
+                      />
+                    )}
+                  </Field>
+                  <Field label={copy.typeKeys.kind} error={keyErrors('kind')}>
+                    {(control) => (
+                      <NativeSelect
+                        {...control}
+                        value={kind}
+                        onChange={(event) =>
+                          dispatch({ type: 'setTypeKey', key: 'kind', value: event.target.value })
+                        }
+                      >
+                        {kindValues.map((value) => (
+                          <option key={value} value={value}>
+                            {value in copy.typeKeys.kindOptions
+                              ? copy.typeKeys.kindOptions[
+                                  value as keyof typeof copy.typeKeys.kindOptions
+                                ]
+                              : value}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    )}
+                  </Field>
+                  <div className="grid content-start gap-1.5">
+                    <div className="flex items-center gap-2 sm:pt-7">
+                      <Checkbox
+                        id="schema-draft-and-publish"
+                        checked={tree.draftAndPublish ?? true}
+                        onCheckedChange={(checked) =>
+                          dispatch({
+                            type: 'setTypeKey',
+                            key: 'draftAndPublish',
+                            value: checked === true,
+                          })
+                        }
+                      />
+                      <Label htmlFor="schema-draft-and-publish">
+                        {copy.typeKeys.draftAndPublish}
+                      </Label>
+                    </div>
+                    <p className="m-0 text-sm text-muted-foreground">
+                      {copy.typeKeys.draftAndPublishHint}
                     </p>
-                  )}
+                    {keyErrors('draftAndPublish') === undefined ? null : (
+                      <p className="m-0 text-sm text-destructive-strong">
+                        {keyErrors('draftAndPublish')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </Card>
-            <Card className="grid gap-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="m-0 text-base font-semibold">{copy.fields.heading}</h2>
-                <p className="m-0 text-sm text-muted-foreground tabular-nums">
-                  {copy.fields.count(tree.fields.length)}
-                </p>
-              </div>
-              <SchemaCanvas
+              </Card>
+              <Card className="grid gap-4">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="m-0 text-base font-semibold">{copy.fields.heading}</h2>
+                  <p className="m-0 text-sm text-muted-foreground tabular-nums">
+                    {copy.fields.count(tree.fields.length)}
+                  </p>
+                </div>
+                <SchemaCanvas
+                  tree={tree}
+                  selectedFieldId={selectedField?.id ?? null}
+                  errors={currentErrors}
+                  onSelect={setSelectedFieldId}
+                  onAdd={addToList}
+                  onMove={moveField}
+                  onDuplicate={(fieldId) => dispatch({ type: 'duplicateField', fieldId })}
+                  onDelete={(fieldId) => dispatch({ type: 'deleteField', fieldId })}
+                />
+              </Card>
+            </div>
+            <div className="grid gap-6">
+              <PropertyPanel
                 tree={tree}
-                selectedFieldId={selectedField?.id ?? null}
+                field={selectedField}
                 errors={currentErrors}
-                onSelect={setSelectedFieldId}
-                onAdd={addToList}
-                onMove={(fieldId, parentId, index) =>
-                  dispatch({ type: 'moveField', fieldId, parentId, index })
+                onSetKey={(fieldId, key, value) =>
+                  dispatch({ type: 'setFieldKey', fieldId, key, value })
                 }
-                onDuplicate={(fieldId) => dispatch({ type: 'duplicateField', fieldId })}
-                onDelete={(fieldId) => dispatch({ type: 'deleteField', fieldId })}
+                onChangeType={(fieldId, fieldType) =>
+                  dispatch({ type: 'changeFieldType', fieldId, fieldType })
+                }
               />
-            </Card>
-          </div>
-          <div className="grid gap-6">
-            <PropertyPanel
-              tree={tree}
-              field={selectedField}
-              errors={currentErrors}
-              onSetKey={(fieldId, key, value) =>
-                dispatch({ type: 'setFieldKey', fieldId, key, value })
-              }
-              onChangeType={(fieldId, fieldType) =>
-                dispatch({ type: 'changeFieldType', fieldId, fieldType })
-              }
-            />
-            <Card>
-              <FieldPalette
-                canAddComponent={canPlaceComponentIn(tree, null)}
-                onPick={(fieldType) => addToList(null, fieldType)}
+              <Card>
+                <FieldPalette
+                  canAddComponent={canPlaceComponentIn(tree, null)}
+                  onPick={(fieldType) => addToList(null, fieldType)}
+                />
+              </Card>
+              <ValidationPanel
+                tree={tree}
+                status={check.status}
+                validation={check.validation}
+                onRetry={check.retry}
+                onSelectField={setSelectedFieldId}
               />
-            </Card>
-            <ValidationPanel
-              tree={tree}
-              status={check.status}
-              validation={check.validation}
-              onRetry={check.retry}
-              onSelectField={setSelectedFieldId}
-            />
-            <ExportPanel
-              key={workId}
-              tree={tree}
-              status={check.status}
-              validation={check.validation}
-              isResultCurrent={check.isResultCurrent}
-              onExported={() => dispatch({ type: 'snapshotTaken' })}
-            />
+              <ExportPanel
+                key={workId}
+                tree={tree}
+                status={check.status}
+                validation={check.validation}
+                isResultCurrent={check.isResultCurrent}
+                onExported={() => dispatch({ type: 'snapshotTaken' })}
+              />
+            </div>
           </div>
-        </div>
+        </SchemaDragContext>
       )}
       <ConfirmDialog
         open={pendingStart !== null}

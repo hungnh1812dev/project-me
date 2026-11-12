@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,8 @@ interface FieldRowProps {
   isLast: boolean;
   /** Lists other than the field's own that can take it (`moveTargetsOf`). */
   moveTargets: readonly MoveTarget[];
+  /** The drag handle of this row, built by the canvas (SB-5). */
+  dragHandle?: ReactNode;
   onSelect: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -40,6 +43,7 @@ export function FieldRow({
   isFirst,
   isLast,
   moveTargets,
+  dragHandle,
   onSelect,
   onMoveUp,
   onMoveDown,
@@ -65,6 +69,7 @@ export function FieldRow({
         isSelected ? 'border-primary bg-nav-active' : 'border-border bg-card'
       }`}
     >
+      {dragHandle}
       <button
         type="button"
         data-field-select={field.id}
