@@ -1,4 +1,6 @@
-import { SERVER_API_FAILURE_CODES, serverApi, ServerApiError } from './ServerApi.client';
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+
+import { serverApi } from './ServerApi.client';
 
 const env = vi.hoisted(() => ({
   appApiUrl: 'http://api.internal/api/v1',
@@ -20,13 +22,13 @@ function sentRequest(): { request: Request; init: Record<string, unknown> | unde
   return { request, init };
 }
 
-async function failureOf(call: Promise<unknown>): Promise<ServerApiError> {
+async function failureOf(call: Promise<unknown>): Promise<WebApiError> {
   const error = await call.then(
     () => undefined,
     (thrown: unknown) => thrown,
   );
-  expect(error).toBeInstanceOf(ServerApiError);
-  return error as ServerApiError;
+  expect(error).toBeInstanceOf(WebApiError);
+  return error as WebApiError;
 }
 
 beforeEach(() => {
@@ -130,7 +132,8 @@ describe('serverApi', () => {
 
     const error = await failureOf(serverApi.get('/things'));
 
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.REDIRECT);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.REDIRECT);
+    expect(error.statusCode).toBe(302);
     expect(sentRequest().request.redirect).toBe('manual');
   });
 
@@ -150,7 +153,8 @@ describe('serverApi', () => {
       serverApi.post('/things', { headers: { Authorization: 'Bearer token' }, body: { pw: 'x' } }),
     );
 
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.NETWORK);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.NETWORK);
+    expect(error.retryable).toBe(false);
     expect(JSON.stringify([error.message, error.stack])).not.toMatch(/secret-host|Bearer|"pw"/);
   });
 
@@ -164,7 +168,9 @@ describe('serverApi', () => {
 
     const error = await failureOf(serverApi.get('/things', { timeoutMs: 20 }));
 
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.TIMEOUT);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.TIMEOUT);
+    expect(error.source).toBe(API_ERROR_SOURCES.CMS_API_REST);
+    expect(error.retryable).toBe(true);
   });
 
   it('leaves the body undefined when the answer has none or is not JSON', async () => {
@@ -178,10 +184,21 @@ describe('serverApi', () => {
   it('gives INVALID_BODY for an unreadable body only when the caller needs one', async () => {
     answer(200, '<html>not json</html>');
     const error = await failureOf(serverApi.get('/things', { needsBody: true }));
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.INVALID_BODY);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.INVALID_BODY);
 
     answer(200);
     const empty = await failureOf(serverApi.get('/things', { needsBody: true }));
-    expect(empty.code).toBe(SERVER_API_FAILURE_CODES.INVALID_BODY);
+    expect(empty.errorCode).toBe(API_ERROR_CODES.SERVER_API.INVALID_BODY);
+  });
+
+  it('logs each failure once, with codes only', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    fetchMock.mockRejectedValue(new TypeError('fetch failed: secret-host'));
+
+    await failureOf(serverApi.get('/things'));
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('[api-error] cms-api-rest NETWORK - -');
+    warn.mockRestore();
   });
 });

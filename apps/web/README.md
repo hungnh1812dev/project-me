@@ -87,8 +87,8 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   `${APP_API_URL}/graphql` with JSON headers only (no `Authorization`, no
   cookie, no client IP), so the page holds what the `public` role may read.
   Caching uses the fetch data cache, `next: { revalidate }` (the default, or the `WEB_REVALIDATE_SECONDS` override)
-  (Next 16 without Cache Components; 0 turns it off). Any failure throws one
-  `GraphqlRequestError` (`GraphqlResponse.rules.ts`) with the first error code,
+  (Next 16 without Cache Components; 0 turns it off). Any failure of a visitor-token read throws one
+  `WebApiError` (`GraphqlResponse.rules.ts`, source `cms-api-graphql`, `operation` the operation name),
   never the server message or the variables.
 - `src/apis/client/Graphql.client.ts`: `requestGraphql(document, variables, accessToken)`
   for the browser, over the Axios instance, with the Bearer token from

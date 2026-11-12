@@ -75,7 +75,10 @@ describe('loadCvPage', () => {
           [failed]: null,
         },
       } as never);
-      await expect(loadCvPage()).rejects.toMatchObject({ code: 'NO_DATA' });
+      await expect(loadCvPage()).rejects.toMatchObject({
+        errorCode: 'NO_DATA',
+        source: 'cms-api-graphql',
+      });
     },
   );
 });

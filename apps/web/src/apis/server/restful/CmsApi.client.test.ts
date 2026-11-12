@@ -1,6 +1,8 @@
 // @vitest-environment node
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+
 import { cmsApiClient } from './CmsApi.client';
-import { SERVER_API_FAILURE_CODES, serverApi, ServerApiError } from './ServerApi.client';
+import { serverApi } from './ServerApi.client';
 
 vi.mock('../../../configs/Server.env', () => ({
   getServerEnv: () => ({
@@ -76,12 +78,14 @@ describe('every call', () => {
   });
 
   it.each([
-    [SERVER_API_FAILURE_CODES.NETWORK, 'BFF_UPSTREAM_FAILED'],
-    [SERVER_API_FAILURE_CODES.TIMEOUT, 'BFF_UPSTREAM_TIMEOUT'],
-    [SERVER_API_FAILURE_CODES.REDIRECT, 'BFF_UPSTREAM_FAILED'],
-    [SERVER_API_FAILURE_CODES.INVALID_BODY, 'BFF_UPSTREAM_FAILED'],
+    [API_ERROR_CODES.SERVER_API.NETWORK, 'BFF_UPSTREAM_FAILED'],
+    [API_ERROR_CODES.SERVER_API.TIMEOUT, 'BFF_UPSTREAM_TIMEOUT'],
+    [API_ERROR_CODES.SERVER_API.REDIRECT, 'BFF_UPSTREAM_FAILED'],
+    [API_ERROR_CODES.SERVER_API.INVALID_BODY, 'BFF_UPSTREAM_FAILED'],
   ])('maps the transport failure %s to %s', async (failure, mapped) => {
-    vi.spyOn(serverApi, 'post').mockRejectedValue(new ServerApiError(failure));
+    vi.spyOn(serverApi, 'post').mockRejectedValue(
+      new WebApiError({ source: API_ERROR_SOURCES.CMS_API_REST, errorCode: failure }),
+    );
     expect(await errorCodeOf(cmsApiClient.logOut('rt', IP))).toBe(mapped);
   });
 

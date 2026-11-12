@@ -3,31 +3,19 @@ import 'server-only';
 import axios, { isAxiosError, type AxiosResponse } from 'axios';
 
 import {
+  API_ERROR_CODES,
+  API_ERROR_SOURCES,
+  logApiError,
+  WebApiError,
+  type ApiErrorCode,
+} from '@/apis/WebApi.errors';
+import {
   API_TIMEOUT_MS,
   DEFAULT_REVALIDATE_SECONDS,
   HTTP_STATUS,
   REDIRECT_STATUS_MIN,
 } from '@/configs/Http.constants';
 import { getServerEnv } from '@/configs/Server.env';
-
-/** Why a call gave no answer. Any HTTP status, 4xx and 5xx included, is an answer. */
-export const SERVER_API_FAILURE_CODES = {
-  NETWORK: 'NETWORK',
-  TIMEOUT: 'TIMEOUT',
-  REDIRECT: 'REDIRECT',
-  INVALID_BODY: 'INVALID_BODY',
-} as const;
-
-export type ServerApiFailureCode =
-  (typeof SERVER_API_FAILURE_CODES)[keyof typeof SERVER_API_FAILURE_CODES];
-
-/** Carries the code only: never the upstream message, the request body or a header. */
-export class ServerApiError extends Error {
-  constructor(readonly code: ServerApiFailureCode) {
-    super(`Server API call failed: ${code}`);
-    this.name = 'ServerApiError';
-  }
-}
 
 export type ServerApiCache = { revalidateSeconds: number } | 'no-store';
 
@@ -72,15 +60,27 @@ function fetchOptionsOf(cache: ServerApiCache, overrideSeconds: number | undefin
   return { next: { revalidate: overrideSeconds ?? cache.revalidateSeconds } };
 }
 
+/** Why a call gave no answer; any HTTP status, 4xx and 5xx included, is an answer. Logged here, once. */
+function failure(errorCode: ApiErrorCode, statusCode?: number): WebApiError {
+  const error = new WebApiError({
+    source: API_ERROR_SOURCES.CMS_API_REST,
+    errorCode,
+    statusCode,
+    retryable: errorCode === API_ERROR_CODES.SERVER_API.TIMEOUT,
+  });
+  logApiError(error);
+  return error;
+}
+
 function parseBody(raw: unknown, needsBody: boolean): unknown {
   if (typeof raw !== 'string' || raw === '') {
-    if (needsBody) throw new ServerApiError(SERVER_API_FAILURE_CODES.INVALID_BODY);
+    if (needsBody) throw failure(API_ERROR_CODES.SERVER_API.INVALID_BODY);
     return undefined;
   }
   try {
     return JSON.parse(raw);
   } catch {
-    if (needsBody) throw new ServerApiError(SERVER_API_FAILURE_CODES.INVALID_BODY);
+    if (needsBody) throw failure(API_ERROR_CODES.SERVER_API.INVALID_BODY);
     return undefined;
   }
 }
@@ -95,10 +95,10 @@ function headersOf(response: AxiosResponse): Headers {
   return headers;
 }
 
-function failureOf(error: unknown): ServerApiError {
+function failureOf(error: unknown): WebApiError {
   const isTimeout = isAxiosError(error) && TIMEOUT_AXIOS_CODES.has(error.code);
-  return new ServerApiError(
-    isTimeout ? SERVER_API_FAILURE_CODES.TIMEOUT : SERVER_API_FAILURE_CODES.NETWORK,
+  return failure(
+    isTimeout ? API_ERROR_CODES.SERVER_API.TIMEOUT : API_ERROR_CODES.SERVER_API.NETWORK,
   );
 }
 
@@ -125,7 +125,7 @@ async function call(
     throw failureOf(error);
   }
   if (response.status >= REDIRECT_STATUS_MIN && response.status < HTTP_STATUS.BAD_REQUEST) {
-    throw new ServerApiError(SERVER_API_FAILURE_CODES.REDIRECT);
+    throw failure(API_ERROR_CODES.SERVER_API.REDIRECT, response.status);
   }
   return {
     status: response.status,

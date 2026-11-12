@@ -2,6 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 
+import { API_ERROR_CODES as WEB_API_ERROR_CODES, WebApiError } from '@/apis/WebApi.errors';
 import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import {
   API_ERROR_CODES,
@@ -24,12 +25,7 @@ import {
 import { getServerEnv } from '@/configs/Server.env';
 
 import { BffError } from '../bff/Bff.errors';
-import {
-  SERVER_API_FAILURE_CODES,
-  serverApi,
-  ServerApiError,
-  type ServerApiAnswer,
-} from './ServerApi.client';
+import { serverApi, type ServerApiAnswer } from './ServerApi.client';
 
 const accessTokenAnswer = z.object({ accessToken: z.string().min(1) });
 const twoFactorRequiredAnswer = z.object({
@@ -120,7 +116,7 @@ async function callCmsApi(options: CallOptions): Promise<ServerApiAnswer> {
     });
   } catch (error) {
     const isTimeout =
-      error instanceof ServerApiError && error.code === SERVER_API_FAILURE_CODES.TIMEOUT;
+      error instanceof WebApiError && error.errorCode === WEB_API_ERROR_CODES.SERVER_API.TIMEOUT;
     throw new BffError(isTimeout ? 'BFF_UPSTREAM_TIMEOUT' : 'BFF_UPSTREAM_FAILED');
   }
   if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {

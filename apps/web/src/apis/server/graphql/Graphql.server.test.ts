@@ -1,5 +1,4 @@
-import { GraphqlRequestError } from '../../GraphqlResponse.rules';
-import { ServerApiError } from '../restful/ServerApi.client';
+import { API_ERROR_SOURCES, WebApiError } from '../../WebApi.errors';
 import { defineContentQuery, runContentQuery, runVisitorQuery } from './Graphql.server';
 
 const env = vi.hoisted(() => {
@@ -24,6 +23,14 @@ vi.mock('../restful/ServerApi.client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../restful/ServerApi.client')>()),
   serverApi: { post: postMock },
 }));
+
+function restFailure(errorCode: 'NETWORK' | 'TIMEOUT'): WebApiError {
+  return new WebApiError({
+    source: API_ERROR_SOURCES.CMS_API_REST,
+    errorCode,
+    retryable: errorCode === 'TIMEOUT',
+  });
+}
 
 const mockView = vi.hoisted(() => ({ Page: {} }));
 vi.mock('../restful/mocks/MockView', () => ({ MOCK_VIEW: mockView }));
@@ -152,7 +159,7 @@ describe('runContentQuery', () => {
   });
 
   it('never throws on a transport failure and never prints the token', async () => {
-    postMock.mockRejectedValue(new ServerApiError('NETWORK'));
+    postMock.mockRejectedValue(restFailure('NETWORK'));
 
     const result = await runContentQuery(PAGE);
 
@@ -163,7 +170,7 @@ describe('runContentQuery', () => {
   it('reports a timeout as the mock reason', async () => {
     env.isMockFallbackOn = true;
     mockView.Page = { alpha: { title: 'mock' }, beta: { items: [] } };
-    postMock.mockRejectedValue(new ServerApiError('TIMEOUT'));
+    postMock.mockRejectedValue(restFailure('TIMEOUT'));
 
     await runContentQuery(PAGE);
 
@@ -189,17 +196,21 @@ describe('runVisitorQuery', () => {
     postMock.mockResolvedValue(answer(200, { errors: [{ extensions: { code: 'BAD_INPUT' } }] }));
 
     await expect(runVisitorQuery(PAGE, 'visitor-token')).rejects.toMatchObject({
-      code: 'BAD_INPUT',
+      source: 'cms-api-graphql',
+      errorCode: 'UNKNOWN_ERROR',
+      upstreamErrorCode: 'BAD_INPUT',
+      operation: 'Page',
     });
     expect(postMock).toHaveBeenCalledTimes(1);
   });
 
   it('turns a transport failure into the typed error without the token', async () => {
-    postMock.mockRejectedValue(new ServerApiError('NETWORK'));
+    postMock.mockRejectedValue(restFailure('NETWORK'));
 
     const error = await runVisitorQuery(PAGE, 'visitor-token').catch((caught: unknown) => caught);
 
-    expect(error).toBeInstanceOf(GraphqlRequestError);
+    expect(error).toBeInstanceOf(WebApiError);
+    expect(error).toMatchObject({ errorCode: 'NETWORK_ERROR', source: 'cms-api-graphql' });
     expect(JSON.stringify(error)).not.toContain('visitor-token');
     expect((error as Error).message).not.toContain('visitor-token');
   });

@@ -2,7 +2,6 @@ import 'server-only';
 
 import { cache } from 'react';
 
-import { GRAPHQL_FAILURE_CODES, GraphqlRequestError } from '@/apis/GraphqlResponse.rules';
 import { BffError } from '@/apis/server/bff/Bff.errors';
 import type { BffContext } from '@/apis/server/bff/BffRoute.server';
 import {
@@ -10,6 +9,7 @@ import {
   runContentQuery,
   runVisitorQuery,
 } from '@/apis/server/graphql/Graphql.server';
+import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from '@/apis/WebApi.errors';
 import { sanitizeRichtextOnServer } from '@/libs/SafeRichtext.server';
 
 import { withSetCookies } from '../session/SealedCookie.server';
@@ -51,7 +51,13 @@ export interface CvPageContent {
 export const loadCvPage = cache(async (): Promise<CvPageContent> => {
   const { data } = await runContentQuery(CV_PAGE_QUERY);
   if (data.cvPageList === null || data.cvPageText === null) {
-    throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.NO_DATA);
+    const error = new WebApiError({
+      source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
+      errorCode: API_ERROR_CODES.GRAPHQL.NO_DATA,
+      operation: CV_PAGE_OPERATION_NAME,
+    });
+    logApiError(error);
+    throw error;
   }
   return {
     data: sanitizeCvRichtext(

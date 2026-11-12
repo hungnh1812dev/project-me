@@ -2,8 +2,8 @@ import 'server-only';
 
 import { cache } from 'react';
 
-import { GRAPHQL_FAILURE_CODES, GraphqlRequestError } from '@/apis/GraphqlResponse.rules';
 import { defineContentQuery, runContentQuery } from '@/apis/server/graphql/Graphql.server';
+import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from '@/apis/WebApi.errors';
 
 import {
   SITE_SHELL_OPERATION_NAME,
@@ -22,6 +22,14 @@ export const SITE_SHELL_QUERY = defineContentQuery<SiteShell>({
  */
 export const loadSiteShell = cache(async (): Promise<SiteShell> => {
   const { data, failedRootFields } = await runContentQuery(SITE_SHELL_QUERY);
-  if (failedRootFields.length > 0) throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.NO_DATA);
+  if (failedRootFields.length > 0) {
+    const error = new WebApiError({
+      source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
+      errorCode: API_ERROR_CODES.GRAPHQL.NO_DATA,
+      operation: SITE_SHELL_OPERATION_NAME,
+    });
+    logApiError(error);
+    throw error;
+  }
   return data as SiteShell;
 });

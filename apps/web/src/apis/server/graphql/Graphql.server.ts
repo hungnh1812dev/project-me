@@ -1,19 +1,14 @@
 import 'server-only';
 
 import {
-  GRAPHQL_FAILURE_CODES,
-  GraphqlRequestError,
+  graphqlFailureOf,
   readGraphqlRootFields,
   unwrapGraphqlResponse,
   type GraphqlDocument,
 } from '@/apis/GraphqlResponse.rules';
 import { fillFromMocks, type MockFallbackReason } from '@/apis/server/restful/MockFallback.server';
-import {
-  SERVER_API_FAILURE_CODES,
-  serverApi,
-  ServerApiError,
-  type ServerApiCache,
-} from '@/apis/server/restful/ServerApi.client';
+import { serverApi, type ServerApiCache } from '@/apis/server/restful/ServerApi.client';
+import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from '@/apis/WebApi.errors';
 import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import { BEARER_PREFIX } from '@/configs/Auth.constants';
 import {
@@ -98,6 +93,13 @@ async function readRootFields(
   try {
     const { status, body } = await postDocument(document, headers, cache);
     const read = readGraphqlRootFields(status, body);
+    const failure = graphqlFailureOf(
+      status,
+      read.errorCode,
+      read.data !== null,
+      document.operationName,
+    );
+    if (failure !== undefined) logApiError(failure);
     if (read.data !== null) {
       return { data: read.data, reason: read.errorCode === undefined ? 'empty' : 'graphql-error' };
     }
@@ -105,7 +107,7 @@ async function readRootFields(
     return { data: null, reason: read.errorCode === undefined ? 'empty' : 'graphql-error' };
   } catch (error) {
     const isTimeout =
-      error instanceof ServerApiError && error.code === SERVER_API_FAILURE_CODES.TIMEOUT;
+      error instanceof WebApiError && error.errorCode === API_ERROR_CODES.SERVER_API.TIMEOUT;
     return { data: null, reason: isTimeout ? 'timeout' : 'network' };
   }
 }
@@ -162,22 +164,34 @@ export async function runContentQuery<T>(query: ContentQuery<T>): Promise<Conten
 
 /**
  * Runs a page query as one signed-in visitor: their Bearer token only, never
- * cached, never mocked. Any failure throws `GraphqlRequestError`.
+ * cached, never mocked. Any failure throws `WebApiError`.
  */
 export async function runVisitorQuery<T>(
   query: Pick<ContentQuery<T>, 'document'>,
   accessToken: string,
 ): Promise<T> {
+  const operation = query.document.operationName;
+  let answer: { status: number; body: unknown };
   try {
-    const { status, body } = await postDocument(
+    answer = await postDocument(
       query.document,
       { ...ACCEPT_JSON, [AUTHORIZATION_HEADER]: `${BEARER_PREFIX}${accessToken}` },
       'no-store',
     );
-    return unwrapGraphqlResponse<T>(status, body);
   } catch (error) {
-    if (error instanceof ServerApiError)
-      throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.NETWORK);
+    // `serverApi` logged the transport failure; this one carries the GraphQL network code.
+    if (!(error instanceof WebApiError)) throw error;
+    throw new WebApiError({
+      source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
+      errorCode: API_ERROR_CODES.GRAPHQL.NETWORK,
+      operation,
+      retryable: error.retryable,
+    });
+  }
+  try {
+    return unwrapGraphqlResponse<T>(answer.status, answer.body, operation);
+  } catch (error) {
+    if (error instanceof WebApiError) logApiError(error);
     throw error;
   }
 }

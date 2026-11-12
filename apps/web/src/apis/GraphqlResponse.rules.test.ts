@@ -1,69 +1,102 @@
+import { API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+
 import {
-  GraphqlRequestError,
+  graphqlFailureOf,
   isUnauthenticatedGraphqlError,
   readGraphqlRootFields,
   unwrapGraphqlResponse,
 } from './GraphqlResponse.rules';
 
-function thrownBy(run: () => unknown): GraphqlRequestError {
+function thrownBy(run: () => unknown): WebApiError {
   try {
     run();
   } catch (error) {
-    return error as GraphqlRequestError;
+    return error as WebApiError;
   }
   throw new Error('did not throw');
 }
 
+const OPERATION = 'Page';
+
+function failedWith(status: number, body: unknown): WebApiError {
+  return thrownBy(() => unwrapGraphqlResponse(status, body, OPERATION));
+}
+
+function graphqlError(init: { errorCode: WebApiError['errorCode']; statusCode?: number }) {
+  return new WebApiError({ source: API_ERROR_SOURCES.CMS_API_GRAPHQL, ...init });
+}
+
 describe('unwrapGraphqlResponse', () => {
   it('returns data of a clean 200 answer', () => {
-    expect(unwrapGraphqlResponse(200, { data: { a: 1 } })).toEqual({ a: 1 });
+    expect(unwrapGraphqlResponse(200, { data: { a: 1 } }, OPERATION)).toEqual({ a: 1 });
   });
 
-  it('throws the first error code even when data is present', () => {
-    const error = thrownBy(() =>
-      unwrapGraphqlResponse(200, {
-        data: { a: 1 },
-        errors: [
-          { message: 'secret', extensions: { code: 'FIRST' } },
-          { extensions: { code: 'SECOND' } },
-        ],
-      }),
-    );
-    expect(error).toBeInstanceOf(GraphqlRequestError);
-    expect(error.code).toBe('FIRST');
+  it('throws UNKNOWN_ERROR for an API code outside the list, keeps it as upstream code and never the message', () => {
+    const error = failedWith(200, {
+      data: { a: 1 },
+      errors: [
+        { message: 'secret', extensions: { code: 'FIRST' } },
+        { extensions: { code: 'SECOND' } },
+      ],
+    });
+    expect(error).toBeInstanceOf(WebApiError);
+    expect(error.source).toBe('cms-api-graphql');
+    expect(error.errorCode).toBe('UNKNOWN_ERROR');
+    expect(error.upstreamErrorCode).toBe('FIRST');
+    expect(error.operation).toBe(OPERATION);
     expect(error.message).not.toContain('secret');
   });
 
-  it('uses a fixed code for an error without extensions.code', () => {
-    expect(thrownBy(() => unwrapGraphqlResponse(200, { errors: [{}] })).code).toBe('UNKNOWN_ERROR');
+  it('keeps UNAUTHENTICATED as its own code', () => {
+    expect(
+      failedWith(200, { errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] }).errorCode,
+    ).toBe('UNAUTHENTICATED');
+  });
+
+  it('uses UNKNOWN_ERROR for an error without extensions.code', () => {
+    expect(failedWith(200, { errors: [{}] }).errorCode).toBe('UNKNOWN_ERROR');
   });
 
   it('throws on a non-200 answer and keeps its status', () => {
-    const error = thrownBy(() => unwrapGraphqlResponse(502, 'bad gateway'));
-    expect(error.code).toBe('HTTP_ERROR');
-    expect(error.status).toBe(502);
+    const error = failedWith(502, 'bad gateway');
+    expect(error.errorCode).toBe('HTTP_ERROR');
+    expect(error.statusCode).toBe(502);
   });
 
   it('throws when the body has no data', () => {
-    expect(thrownBy(() => unwrapGraphqlResponse(200, {})).code).toBe('NO_DATA');
-    expect(thrownBy(() => unwrapGraphqlResponse(200, undefined)).code).toBe('NO_DATA');
-    expect(thrownBy(() => unwrapGraphqlResponse(200, { data: null })).code).toBe('NO_DATA');
+    expect(failedWith(200, {}).errorCode).toBe('NO_DATA');
+    expect(failedWith(200, undefined).errorCode).toBe('NO_DATA');
+    expect(failedWith(200, { data: null }).errorCode).toBe('NO_DATA');
+  });
+});
+
+describe('graphqlFailureOf', () => {
+  it('is undefined for a clean read', () => {
+    expect(graphqlFailureOf(200, undefined, true, OPERATION)).toBeUndefined();
+  });
+
+  it('names the failure of a partial answer by its error code', () => {
+    expect(graphqlFailureOf(200, 'X', true, OPERATION)?.errorCode).toBe('UNKNOWN_ERROR');
   });
 });
 
 describe('isUnauthenticatedGraphqlError', () => {
   it('is true for an HTTP 401 and for the UNAUTHENTICATED code', () => {
-    expect(isUnauthenticatedGraphqlError(new GraphqlRequestError('HTTP_ERROR', 401))).toBe(true);
-    expect(isUnauthenticatedGraphqlError(new GraphqlRequestError('UNAUTHENTICATED', 200))).toBe(
-      true,
-    );
+    expect(
+      isUnauthenticatedGraphqlError(graphqlError({ errorCode: 'HTTP_ERROR', statusCode: 401 })),
+    ).toBe(true);
+    expect(
+      isUnauthenticatedGraphqlError(
+        graphqlError({ errorCode: 'UNAUTHENTICATED', statusCode: 200 }),
+      ),
+    ).toBe(true);
   });
 
   it.each([
-    ['a network error', new GraphqlRequestError('NETWORK_ERROR')],
-    ['a 403', new GraphqlRequestError('HTTP_ERROR', 403)],
-    ['a 500', new GraphqlRequestError('HTTP_ERROR', 500)],
-    ['another code', new GraphqlRequestError('FORBIDDEN', 200)],
+    ['a network error', graphqlError({ errorCode: 'NETWORK_ERROR' })],
+    ['a 403', graphqlError({ errorCode: 'HTTP_ERROR', statusCode: 403 })],
+    ['a 500', graphqlError({ errorCode: 'HTTP_ERROR', statusCode: 500 })],
+    ['another code', graphqlError({ errorCode: 'UNKNOWN_ERROR', statusCode: 200 })],
     ['a plain Error', new Error('boom')],
   ])('is false for %s', (_name, error) => {
     expect(isUnauthenticatedGraphqlError(error)).toBe(false);

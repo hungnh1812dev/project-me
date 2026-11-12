@@ -1,19 +1,24 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { GRAPHQL_FAILURE_CODES } from '@/apis/GraphqlResponse.rules';
 import { BFF_ERROR_CODES } from '@/apis/server/bff/Bff.errors';
-import { SERVER_API_FAILURE_CODES } from '@/apis/server/restful/ServerApi.client';
 
 import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from './WebApi.errors';
 
 describe('API_ERROR_CODES', () => {
   it('keeps every code of the server RESTful, GraphQL and BFF layers', () => {
-    expect(Object.values(API_ERROR_CODES.SERVER_API).sort()).toEqual(
-      Object.values(SERVER_API_FAILURE_CODES).sort(),
-    );
-    expect(Object.values(API_ERROR_CODES.GRAPHQL).sort()).toEqual(
-      Object.values(GRAPHQL_FAILURE_CODES).sort(),
-    );
+    expect(Object.values(API_ERROR_CODES.SERVER_API).sort()).toEqual([
+      'INVALID_BODY',
+      'NETWORK',
+      'REDIRECT',
+      'TIMEOUT',
+    ]);
+    expect(Object.values(API_ERROR_CODES.GRAPHQL).sort()).toEqual([
+      'HTTP_ERROR',
+      'NETWORK_ERROR',
+      'NO_DATA',
+      'UNAUTHENTICATED',
+      'UNKNOWN_ERROR',
+    ]);
     expect(Object.values(API_ERROR_CODES.BFF).sort()).toEqual(Object.keys(BFF_ERROR_CODES).sort());
   });
 
