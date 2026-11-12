@@ -38,14 +38,15 @@ A new field type: one entry in `FIELD_TYPES` plus one copy label. A new tree act
 <!-- prettier-ignore-start -->
 
 ```
-schema-builder/ (2 files)
+schema-builder/ (3 files)
 ```
 
-Tests: 1 file (not listed).
+Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
 | `FieldTypes.registry.ts` | Field type palette in order: type, icon, copy key (exports `FIELD_TYPES`, `FieldTypeName`, `COMPONENT_FIELD_TYPE`, `findFieldType`) |
+| `SchemaJson.rules.ts` | Import and export of the schema JSON: parse text into an editor tree or refuse with one reason, serialize in content-schema.md key order, map validator error paths to fields (exports `ImportRefusal`, `ImportResult`, `parseSchemaJson`, `SerializedSchema` +5) |
 | `SchemaTree.reducer.ts` | Editor tree model and reducer: start, load, add, move, duplicate, delete, rename, retype, depth limit, changed flag (exports `MAX_COMPONENT_DEPTH`, `OptionalFieldKey`, `SchemaField`, `OptionalTypeKey` +9) |
 
 <!-- prettier-ignore-end -->
