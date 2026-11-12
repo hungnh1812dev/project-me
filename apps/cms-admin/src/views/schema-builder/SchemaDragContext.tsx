@@ -25,7 +25,6 @@ import {
   type KeyboardCoordinateGetter,
   type UniqueIdentifier,
 } from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 
 import { PALETTE_ID_PREFIX } from './FieldPalette';
 import { COMPONENT_FIELD_TYPE, findFieldType, type FieldTypeName } from './FieldTypes.registry';
@@ -124,17 +123,14 @@ const ARROW_DIRECTIONS: Record<string, { x: number; y: number }> = {
 };
 
 /**
- * A palette item is not itself a droppable, which the sortable getter needs to move on, so its arrow keys
- * step to the nearest enabled place in that direction (rows, lists and empty component boxes alike);
- * a dragged field keeps the sortable getter.
+ * Arrow keys step the dragged item (palette item or field) to the nearest enabled place in that direction
+ * (rows, lists and empty component boxes alike); the sortable getter skipped empty component boxes in the
+ * production build.
  */
 export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
   const { active, collisionRect, droppableRects, droppableContainers, over } = args.context;
   const direction = ARROW_DIRECTIONS[event.code];
-  if (active === null || !isPaletteId(active.id)) {
-    return sortableKeyboardCoordinates(event, args);
-  }
-  if (direction === undefined || !collisionRect) return undefined;
+  if (active === null || direction === undefined || !collisionRect) return undefined;
   event.preventDefault();
   const from = {
     x: collisionRect.left + collisionRect.width / 2,
@@ -143,7 +139,7 @@ export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args
   let nearest: { x: number; y: number; distance: number } | null = null;
   for (const container of droppableContainers.getEnabled()) {
     const rect = droppableRects.get(container.id);
-    if (rect === undefined || container.id === over?.id) continue;
+    if (rect === undefined || container.id === over?.id || container.id === active.id) continue;
     const centre = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     const step = (centre.x - from.x) * direction.x + (centre.y - from.y) * direction.y;
     if (step <= 0) continue;

@@ -198,6 +198,30 @@ describe('palette drag by keyboard into an empty component box', () => {
   });
 });
 
+describe('field drag by keyboard into an empty component box', () => {
+  beforeEach(stubLayoutByDocumentOrder);
+  afterEach(() => vi.restoreAllMocks());
+
+  it('reaches the box of a component above it', async () => {
+    renderInApp(
+      createTestServices().services,
+      <Harness
+        steps={[
+          [null, 'component'],
+          [null, 'string'],
+        ]}
+      />,
+    );
+    screen.getByRole('button', { name: copy.dnd.fieldHandle('f2') }).focus();
+    await userEvent.keyboard(' ');
+    const listLabel = copy.fields.listLabel('f1');
+    for (let step = 0; step < 6 && !announcement()?.includes(listLabel); step += 1) {
+      await userEvent.keyboard('{ArrowUp}');
+    }
+    expect(announcement()).toContain(listLabel);
+  });
+});
+
 describe('drop places', () => {
   const threeLevels = build(
     [null, 'component'],

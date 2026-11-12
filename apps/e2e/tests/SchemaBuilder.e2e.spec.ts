@@ -4,6 +4,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
+import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
 import { CV_PAGE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import {
@@ -442,7 +443,8 @@ test.describe('schema builder canvas (owner only)', () => {
     await handle.focus();
     await page.keyboard.press('Space');
     await page.keyboard.press('ArrowUp');
-    await expect(announcement(page)).toContainText(`${SHORT_TYPE} is over`);
+    // Wait for the final "over" step (the box list) so Escape never races the coordinate update.
+    await expect(announcement(page)).toContainText(/is over position 1 of 1 in Fields of field1\./);
     await page.keyboard.press('Escape');
     await expect(announcement(page)).toHaveText(copy.dnd.cancelled(SHORT_TYPE));
     await expect(page.getByRole('button', { name: /^Edit / })).toHaveCount(2);
@@ -652,6 +654,31 @@ test.describe('schema builder canvas (owner only)', () => {
   });
 
   // Regression of finding SCB-C-qc#1: the keyboard reaches an empty box when a top-level field follows it.
+  test('pointer and keyboard drags raise no CSP violation and no console error', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: DESKTOP.width, height: TALL_HEIGHT });
+    const readViolations = await watchCsp(page);
+    const consoleErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    page.on('pageerror', (error) => consoleErrors.push(error.message));
+    await openBuilder(page);
+    await startNewType(page);
+    await addFieldByKeyboard(page, copy.fields.addField, COMPONENT_TYPE);
+    await dragWithPointer(
+      page,
+      page.getByRole('button', { name: copy.dnd.paletteHandle(SHORT_TYPE), exact: true }),
+      page.getByText(copy.fields.emptyComponent),
+    );
+    await expect(announcement(page)).toContainText('dropped at');
+    await dragByKeyboard(page, copy.dnd.paletteHandle(SHORT_TYPE), 'ArrowDown', /in Fields\./);
+    await expect(announcement(page)).toContainText('dropped at');
+    await expectNoViolation(readViolations, '/schema-builder during drags');
+    expect(consoleErrors).toEqual([]);
+  });
+
   test('keyboard palette drag reaches an empty component box that a top-level field follows', async ({
     page,
   }) => {
