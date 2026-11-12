@@ -19,9 +19,16 @@ Web rules: Server Components by default; `'use client'` only for state, effects,
 
 Applies to flows: `public-site`, `sign-in`.
 
-1. Off in production, unless `ALLOW_MOCK_FALLBACK=smoke` (smoke stack only, never in deploy config).
-2. Never used on a call made with a visitor's token.
-3. Mocks are read only through `MockView.ts` by `apis/server/restful`; no client file imports them.
+1. On only where `APP_ENV` is not `production`, at build and at runtime (WEB-9); no other key turns it on.
+2. Only for a content read of the server GraphQL layer, and only on an error (GraphQL `errors` with HTTP 200 included); a null or empty root field without an error gets no mock.
+3. Never used on a call made with a visitor's token, by the server RESTful layer, the BFF or the client.
+4. Mocks are read only through `MockView.ts`, by mock key, by `apis/server/graphql`, loaded with a dynamic `import()`; no client file imports them.
+5. A mock answer is never cached (no data cache entry, no revalidate seconds, no cached render).
+
+## API errors (WEB-10)
+
+1. Every API layer and BFF route raises or returns only `WebApiError`, with a code from its one closed list.
+2. A `WebApiError` never holds a token, a cookie, a request body or upstream text; it is logged only through the one API error logger.
 
 ## BFF (D21)
 

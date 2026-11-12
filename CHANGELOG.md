@@ -20,6 +20,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- web: spec for `APP_ENV` (`development`, `staging`, `production`, at build and at runtime) as the one switch of the mock fallback, replacing `ALLOW_MOCK_FALLBACK`; mocks only for server GraphQL content reads, only on an error (GraphQL `errors` with HTTP 200 included), chosen by key, loaded by dynamic import and never cached; and one API error shape `WebApiError` for the server and browser layers and the BFF (WEB-5, WEB-9, WEB-10).
 - cms-api: `POST /content-types/validate` (owner only) checks a content type definition against the registered types and returns the errors of the submitted definition; it stores nothing (flow schema-builder, SB-10).
 - cms-admin: the owner-only schema builder page `/schema-builder` with a field palette, canvas, property panel, live check, JSON import and copy or download; adds the `@dnd-kit` dependency (flow schema-builder, SB-1..SB-14).
 - cms-admin, cms-api: spec for the schema builder: an owner-only cms-admin page (`/schema-builder`) that creates or updates a content type schema with a drag-and-drop field palette and canvas (components up to 3 levels), a property panel, live checks through a new owner-only `POST /content-types/validate`, and copy or download of the JSON file; nothing is written on the server, `content:generate` stays a manual step; `@dnd-kit` added to cms-admin only (flow schema-builder, SB-1..SB-14, D24; Q-SB1..Q-SB5 answered by the user 2026-11-12, as recommended).

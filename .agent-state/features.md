@@ -22,6 +22,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 7 | backup | done | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployments | f4c4690 | features/backup/SUMMARY.md |
 | 23 | schema-builder | done (2026-11-12) | features/schema-builder/ | apps/cms-api (content-engine, content-types), apps/cms-admin (features/content-types, components, components/layouts, views/schema-builder), apps/e2e (qc), pnpm-lock.yaml, docs, CHANGELOG.md | Base: 9e686fb00bc433919d226c9b31f42e19abcb95c0 | features/schema-builder/SUMMARY.md |
 | 24 | e2e-flow-tags | todo | features/e2e-flow-tags/ | apps/e2e | - | - |
+| 25 | web-env-errors | todo | features/web-env-errors/ | apps/web, .github, docker-compose.smoke.yml, scripts/, docs/deployments, docs/apps/web, docs/guidelines, docs/modules/web, CHANGELOG.md | - | - |
 | 9 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm when opened) | - | - |
 | 6 | reviewer-console | todo, on hold (user 2026-11-10; after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
