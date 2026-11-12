@@ -4,6 +4,7 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 
 ## Testing
 - Frontend tests: Vitest + jsdom, `src/**/*.test.tsx`; jsdom needs the ResizeObserver stub and the `<dialog>` polyfill (test/Vitest.setup.ts in form-commons and cms-admin); ProseMirror is driven through `element.editor`. form-commons must be rebuilt (`pnpm --filter @abyss/form-commons build`) before apps see new exports.
+- cms-admin: a new screen of copy must be added to `ALL_SCREENS` in `test/Vitest.setup.ts`, or the first test of a component using it renders nothing; a view's nav hook lives in its view folder (a feature may not import `access`, lint-enforced).
 - Admin tests use fake handlers keyed "METHOD /path" (`test/FakeApi.fixture.ts`, createTestServices).
 - Contract tests read `apps/cms-api/content/public-constants.json` with `readFileSync` from `process.cwd()` (never import it in app code); add a mirror check there when a client copies a new cms-api constant.
 

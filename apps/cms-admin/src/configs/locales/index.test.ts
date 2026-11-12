@@ -19,6 +19,7 @@ describe('loadScreenText', () => {
     ['login', { login: EN_TEXT.login }],
     ['media', { media: EN_TEXT.media }],
     ['reviewer', { reviewer: EN_TEXT.reviewer }],
+    ['schemaBuilder', { schemaBuilder: EN_TEXT.schemaBuilder }],
     ['security', { security: EN_TEXT.security }],
     ['setup', { setup: EN_TEXT.setup }],
     ['status', { page: EN_TEXT.page, status: EN_TEXT.status }],

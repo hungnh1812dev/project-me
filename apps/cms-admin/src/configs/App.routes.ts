@@ -28,6 +28,8 @@ export const APP_ROUTES = {
   REVIEWER_SESSIONS: '/reviewer',
   /** Backups list and download, owner only. */
   BACKUPS: '/backups',
+  /** Content type schema builder, owner only. */
+  SCHEMA_BUILDER: '/schema-builder',
   /** Collection list with bulk actions; `:slug` = content type. */
   CONTENT_LIST: '/content/:slug',
   /** New document of a content type; `:slug` = content type. */

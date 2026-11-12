@@ -20,6 +20,8 @@ import { ResetPasswordPage } from './reset-password/ResetPasswordPage';
 import { ReviewerSessionsPage } from './reviewer-sessions/ReviewerSessionsPage';
 import { RolePermissionsPage } from './role-permissions/RolePermissionsPage';
 import { RolesPage } from './roles/RolesPage';
+import { SchemaBuilderPage } from './schema-builder/SchemaBuilderPage';
+import { useSchemaBuilderNavItems } from './schema-builder/useSchemaBuilderNavItems';
 import { SecuritySettingsPage } from './security-settings/SecuritySettingsPage';
 import { SetPasswordPage } from './set-password/SetPasswordPage';
 import { StatusPage } from './status/StatusPage';
@@ -130,6 +132,12 @@ export const VIEWS: readonly View[] = [
     Component: BackupsPage,
     textScreens: ['backups', 'security'],
     useNavItems: useBackupsNavItems,
+  },
+  {
+    path: APP_ROUTES.SCHEMA_BUILDER,
+    Component: SchemaBuilderPage,
+    textScreens: ['schemaBuilder'],
+    useNavItems: useSchemaBuilderNavItems,
   },
   {
     path: APP_ROUTES.CONTENT_LIST,

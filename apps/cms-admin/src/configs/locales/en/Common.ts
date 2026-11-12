@@ -91,6 +91,7 @@ export const NAV_COPY = {
   media: 'File Library',
   reviewer: 'Reviewers',
   backups: 'Backups',
+  schemaBuilder: 'Schema builder',
   content: 'Content',
   singleTypes: 'Single types',
   collectionTypes: 'Collection types',

@@ -1,7 +1,7 @@
 ---
 module: apps/cms-admin/src/views/schema-builder
 app: cms-admin
-summary: Owner page to design a content type visually: editor tree model and field type palette (screen still to come).
+summary: Owner page to design a content type: start or import, type keys, live cms-api check, export as JSON; editor tree model and field type palette.
 ---
 
 # Schema builder (cms-admin)
@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-The owner builds a content type definition as a field tree and exports it as JSON (flow schema-builder). So far this holds the editor tree state and the palette registry; screens follow in later tasks.
+The owner builds a content type definition as a field tree and exports it as JSON (flow schema-builder). The page (`/schema-builder`, owner only) starts or imports a definition, edits the type keys, shows the cms-api check live and exports the JSON. The field canvas and property panel come in a later task.
 
 ## Techniques
 
@@ -22,15 +22,15 @@ One pure reducer owns the tree: ids are client-only, depth (3 levels) and the pe
 
 ## Technologies
 
-lucide-react (palette icons).
+lucide-react (palette icons); the check runs through `useDefinitionValidation` of the content-types feature; copy in the `schemaBuilder` screen.
 
 ## Entry points
 
-`schemaTreeReducer`, `addField`, `moveTargetsOf`, `FIELD_TYPES`.
+`SchemaBuilderPage` (route `SCHEMA_BUILDER`), `useSchemaBuilderNavItems`, `schemaTreeReducer`, `addField`, `moveTargetsOf`, `FIELD_TYPES`.
 
 ## Where to change what
 
-A new field type: one entry in `FIELD_TYPES` plus one copy label. A new tree action: one case in `SchemaTree.reducer.ts`.
+A new field type: one entry in `FIELD_TYPES` plus one copy label. A new tree action: one case in `SchemaTree.reducer.ts`. Export rules (when it is enabled, what it shows): `ExportPanel.tsx`. A new import refusal: `SchemaJson.rules.ts` plus its copy line under `import.refusal`. The task file list named `views-schema-builder.md`; this existing doc of the same folder was filled instead.
 
 ## Files
 
@@ -38,16 +38,21 @@ A new field type: one entry in `FIELD_TYPES` plus one copy label. A new tree act
 <!-- prettier-ignore-start -->
 
 ```
-schema-builder/ (3 files)
+schema-builder/ (8 files)
 ```
 
-Tests: 2 files (not listed).
+Tests: 6 files (not listed).
 
 | File | Description |
 |---|---|
+| `ExportPanel.tsx` | Copy JSON and Download (`<slug>.json`) enabled only for a current, error-free check; the reason when off; next steps after an export (exports `ExportPanel`) |
 | `FieldTypes.registry.ts` | Field type palette in order: type, icon, copy key (exports `FIELD_TYPES`, `FieldTypeName`, `COMPONENT_FIELD_TYPE`, `findFieldType`) |
+| `ImportSchemaDialog.tsx` | Pick a `.json` file or paste text, refuse with one message or hand the parsed tree to the page (exports `ImportSchemaDialog`) |
+| `SchemaBuilderPage.tsx` | `/schema-builder` page: owner gate, start and import, type key controls with their errors, restart confirm, leave guard, live check (exports `SchemaBuilderPage`) |
 | `SchemaJson.rules.ts` | Import and export of the schema JSON: parse text into an editor tree or refuse with one reason, serialize in content-schema.md key order, map validator error paths to fields (exports `ImportRefusal`, `ImportResult`, `parseSchemaJson`, `SerializedSchema` +5) |
 | `SchemaTree.reducer.ts` | Editor tree model and reducer: start, load, add, move, duplicate, delete, rename, retype, depth limit, changed flag (exports `MAX_COMPONENT_DEPTH`, `OptionalFieldKey`, `SchemaField`, `OptionalTypeKey` +9) |
+| `ValidationPanel.tsx` | Error count and list of the cms-api check, checking mark, unavailable with retry, error to field selection (exports `ValidationPanel`) |
+| `useSchemaBuilderNavItems.ts` | The System settings menu item, shown to the owner only (exports `useSchemaBuilderNavItems`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

@@ -243,6 +243,7 @@
       "media": "File Library",
       "reviewer": "Reviewers",
       "backups": "Backups",
+      "schemaBuilder": "Schema builder",
       "content": "Content",
       "singleTypes": "Single types",
       "collectionTypes": "Collection types",
@@ -1027,6 +1028,106 @@
       "twoFactorOff": "Downloading a backup needs two-factor sign-in. Turn it on in your security settings first.",
       "openSecurity": "Open security settings",
       "close": "Close"
+    }
+  },
+  "schemaBuilder": {
+    "title": "Schema builder",
+    "description": "Design a content type and export its schema file. Nothing is saved on the server: you add the file to the repository yourself.",
+    "forbidden": "Only the owner can use the schema builder.",
+    "start": {
+      "title": "Start a content type",
+      "hint": "Begin with an empty definition, or import an existing schema file to change it.",
+      "newType": "New content type",
+      "importJson": "Import JSON"
+    },
+    "restartDialog": {
+      "title": "Start again?",
+      "description": "The definition has changes that are not exported. Starting again replaces them.",
+      "cancel": "Keep working",
+      "confirm": "Discard and start again"
+    },
+    "typeKeys": {
+      "heading": "Content type",
+      "slug": "Slug",
+      "slugHint": "Lower case, used in the API path and as the schema file name.",
+      "displayName": "Display name",
+      "kind": "Kind",
+      "kindOptions": {
+        "collection": "Collection (many documents)",
+        "single": "Single (one document)"
+      },
+      "draftAndPublish": "Draft and publish",
+      "draftAndPublishHint": "Edits stay in a draft until someone publishes them."
+    },
+    "fields": {
+      "heading": "Fields",
+      "count": "SAMPLE fields",
+      "placeholder": "The field editor opens here."
+    },
+    "fieldTypes": {
+      "text": "Long text",
+      "string": "Short text",
+      "richtext": "Rich text",
+      "integer": "Whole number",
+      "decimal": "Decimal number",
+      "boolean": "Yes / no",
+      "date": "Date",
+      "datetime": "Date and time",
+      "json": "JSON",
+      "media": "Media",
+      "component": "Component"
+    },
+    "import": {
+      "title": "Import a schema file",
+      "description": "Load an existing content type to change it, or a file you saved earlier. Your current work stays if the file is refused.",
+      "fileLabel": "Schema file (.json)",
+      "fileAccept": ".json,application/json",
+      "textLabel": "Or paste the JSON",
+      "textPlaceholder": "{ \"slug\": \"cv-page\", \"fields\": [] }",
+      "readFailed": "The file could not be read. Pick it again or paste its text.",
+      "empty": "Pick a file or paste the JSON first.",
+      "submit": "Load schema",
+      "cancel": "Cancel",
+      "refusal": {
+        "notJson": "This text is not valid JSON.",
+        "notObject": "The JSON must be an object with the content type keys, not a list or a value.",
+        "fieldsMissing": "The content type has no \"fields\" list. Add \"fields\": [] and try again.",
+        "fieldNotObject": "Every entry of a \"fields\" list must be an object."
+      }
+    },
+    "validation": {
+      "heading": "Validation",
+      "waiting": "Checking the definition",
+      "checking": "Checking again",
+      "valid": "No errors",
+      "errorCount": "SAMPLE errors",
+      "listLabel": "Validation errors",
+      "typeLevel": "Content type",
+      "unavailable": "Validation unavailable",
+      "unavailableHint": "The check could not be completed. Export stays off until it runs.",
+      "retry": "Try again",
+      "selectError": "Go to the field of SAMPLE at undefined"
+    },
+    "export": {
+      "heading": "Export",
+      "copy": "Copy JSON",
+      "download": "Download",
+      "copied": "Schema JSON copied",
+      "copyFailed": "The browser blocked copying. Use Download instead.",
+      "reason": {
+        "checking": "Export is off while the definition is being checked.",
+        "unavailable": "Export is off because validation is unavailable.",
+        "invalid": "Fix the validation errors to export."
+      },
+      "nextSteps": {
+        "heading": "Next steps",
+        "steps": {
+          "0": "Save the file under apps/cms-api/content/schemas/.",
+          "1": "Run content:generate to create the migration.",
+          "2": "Review the migration. Destructive changes need --allow-destructive and a note.",
+          "3": "Commit the schema file and the migration."
+        }
+      }
     }
   }
 }
