@@ -425,8 +425,10 @@ test.describe('schema builder canvas (owner only)', () => {
     };
     expect(exported.slug).toBe(BUILDER_SLUG);
     expect(exported.fields).toHaveLength(1);
-    expect(exported.fields[0].type).toBe('component');
-    expect(exported.fields[0].fields?.[0].fields?.[0]).toBeDefined();
+    const [firstField] = exported.fields;
+    if (!firstField) throw new Error('the export has no field');
+    expect(firstField.type).toBe('component');
+    expect(firstField.fields?.[0]?.fields?.[0]).toBeDefined();
   });
 
   test('keyboard drag: palette to root and into a component, reorder, Escape cancels, announcements', async ({

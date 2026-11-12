@@ -54,7 +54,11 @@ test.describe.serial('cms-admin premium theme', () => {
       };
     });
     expect(tokens.radii).toEqual([0.75, 1, 0.5]);
-    tokens.primary.forEach((value, index) => expect(value).toBeCloseTo(INDIGO_600_OKLCH[index], 3));
+    tokens.primary.forEach((value, index) => {
+      const expected = INDIGO_600_OKLCH[index];
+      if (expected === undefined) throw new Error(`no expected primary channel ${index}`);
+      expect(value).toBeCloseTo(expected, 3);
+    });
   });
 
   test('dialog: surface radius, soft shadow, transparent border, tinted backdrop, footer order, 300 ms', async () => {
@@ -411,7 +415,9 @@ test.describe.serial('cms-admin premium theme', () => {
       }),
     );
     console.log('TOAST375', JSON.stringify(narrow));
-    expect(Math.abs(narrow[0].left - narrow[0].right)).toBeLessThan(2);
+    const [firstToast] = narrow;
+    if (!firstToast) throw new Error('no toast at 375 px');
+    expect(Math.abs(firstToast.left - firstToast.right)).toBeLessThan(2);
     // After F8 + Esc the emptied viewport keeps focus, which pauses timers: move focus away first.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.waitForTimeout(5500);

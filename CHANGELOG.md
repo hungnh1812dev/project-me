@@ -14,6 +14,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - cms-admin: premium SaaS look (indigo primary, rounded cards, sticky sidebar and header, soft focus halo) and toasts for the outcomes of content, media, access and security actions (ADM-1..ADM-10).
 - form-commons: theme tokens for the premium look, a `Card` component and a `Toast` provider; web is unchanged.
 
+### Bug fixes
+
+- e2e: the type check passes again (`jsx` and the `@apis/*` path in `tsconfig.json`; explicit presence checks in three specs).
+
 ### DevOps patches
 
 - web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped; create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).

@@ -88,9 +88,11 @@ test.describe.serial('cms-admin card screens', () => {
         await expect(page.locator('h1')).toBeVisible();
         const cards = await readCards(page);
         expect(cards, path).toHaveLength(1);
-        expect(cards[0].radius, path).toBe(SURFACE_RADIUS_PX);
-        expect(cards[0].borderColor, path).toMatch(TRANSPARENT);
-        expect(cards[0].shadow, path).not.toBe('none');
+        const [card] = cards;
+        if (!card) throw new Error(`no card on ${path}`);
+        expect(card.radius, path).toBe(SURFACE_RADIUS_PX);
+        expect(card.borderColor, path).toMatch(TRANSPARENT);
+        expect(card.shadow, path).not.toBe('none');
         await expect(page.locator('main button[type="submit"]'), path).toHaveCount(1);
         expect(await pageOverflowPx(page), path).toBeLessThanOrEqual(OVERFLOW_TOLERANCE_PX);
       }
@@ -118,6 +120,7 @@ test.describe.serial('cms-admin card screens', () => {
     await page.goto('/login');
     await expect(page.locator('h1')).toBeVisible();
     const [card] = await readCards(page);
+    if (!card) throw new Error('the login card is missing');
     expect(card.borderWidth).toBe('1px');
     expect(card.borderColor).not.toMatch(TRANSPARENT);
     await page.emulateMedia({ forcedColors: 'none' });
