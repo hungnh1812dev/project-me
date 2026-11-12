@@ -20,6 +20,8 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 20 | local-registry-push | done (2026-11-09) | features/local-registry-push/ | scripts/local-registry-push*.sh, docs/deployments, CHANGELOG.md | f34d4a12f3d10ce8d5ed96f587a07a804a03d8cb | features/local-registry-push/SUMMARY.md |
 | 21 | admin-ui-premium-saas | done | features/admin-ui-premium-saas/ | packages/form-commons (styles, components/ui, index, public API snapshot), apps/cms-admin (index.html, assets/styles, app, components, components/layouts, views, features access/content/media, configs/locales/en, test fixture), apps/e2e (qc), docs/modules, CHANGELOG.md | f72c9317f063c05704602cdc77e8c54d156eac03 | features/admin-ui-premium-saas/SUMMARY.md |
 | 7 | backup | done | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployments | f4c4690 | features/backup/SUMMARY.md |
+| 23 | schema-builder | done (2026-11-12) | features/schema-builder/ | apps/cms-api (content-engine, content-types), apps/cms-admin (features/content-types, components, components/layouts, views/schema-builder), apps/e2e (qc), pnpm-lock.yaml, docs, CHANGELOG.md | Base: 9e686fb00bc433919d226c9b31f42e19abcb95c0 | features/schema-builder/SUMMARY.md |
+| 24 | e2e-flow-tags | todo | features/e2e-flow-tags/ | apps/e2e | - | - |
 | 9 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm when opened) | - | - |
 | 6 | reviewer-console | todo, on hold (user 2026-11-10; after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
@@ -75,3 +77,11 @@ Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (
 - web-content-api: start check skips when no cvPage is published: add a seed or checklist row so it runs live -> unscheduled.
 - web-content-api: `MockFallback.server.ts` row in docs/modules/web/apis-server.md has a TODO description (pre-existing) -> unscheduled.
 - backup (close 2026-11-10): cms-api `test/integration/ContentRepository.integration.spec.ts:177` (cv-page registry) fails; the expected slug list lacks `cv-page-text`, `sign-in-text`, `site-text`, `status-page-text`. Last spec change 0918d5b2. Update the spec or the registry -> core-builder, unscheduled.
+- schema-builder: SCB-9 pickup announcement is replaced at once by the over announcement; test covers over, drop, cancel -> unscheduled.
+- schema-builder: SCB-8: after adding a field, keyboard focus stays on the menu trigger (new field is selected, panel opens) -> unscheduled.
+- schema-builder: SCB-8/SCB-9: the builder's own tier 2 checks were not run; covered by the qc tier 2 run above -> unscheduled.
+- schema-builder: pnpm audit: 4 advisories in the tree (1 low, 2 moderate, 1 high) in systeminformation, glob, minimatch, deepmerge; none from @dnd-kit. Pre-existing per security-qc; a separate task if the user wants it tracked -> unscheduled.
+- schema-builder: qc notes (non-blocking): CSCB-C-11 level-4 case checked only via Add field menu; CSCB-C-13 type-change refusal only in T1 tests -> unscheduled.
+- schema-builder: SCB-D qc notes: smoke run 1 printed "web restarted with the content token" FAIL once (run 2 clean; likely a race in scripts/smoke.sh around up --wait, not reproduced). Pre-existing, outside SCB-D: a published module-sign-in with an empty validation component crashes the web sign-in dialog (apps/web/src/features/auth/WebLoginDialog.tsx line 180) -> unscheduled.
+- schema-builder: Checklist row wording CSCB-C-9 names a snapshot file and views-schema-builder.md, neither exists; stale wording, no defect (qc) -> unscheduled.
+- schema-builder: SQI-6 (low): a malformed JSON body gets 400 with the JSON parser text before the owner guard; optional, map body-parser errors to the standard message -> core-builder, unscheduled.
