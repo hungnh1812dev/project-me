@@ -19,7 +19,7 @@ Every anonymous visitor sees what this token reads, and the shared cache serves 
 
 ## Order
 
-1. Release the cms-api version that serves the `siteText`, `signInText`, `statusPageText` and `cvPageText` single types, and apply its migration and content ([release.md](../../deployments/release.md)).
+1. Release the cms-api version that serves the `siteText`, `moduleSignIn`, `modulePageStatus` and `cvPageText` single types (cms-api types `module-sign-in` and `module-page-status`), and apply its migration and content ([release.md](../../deployments/release.md)).
 2. Create the API token for web and add `APP_API_TOKEN` to `web-secrets` (item 2); apply items 1 and 3.
 3. Only then release web 0.2.0. An earlier web finds no page text and fails start (missing `APP_API_URL` or `APP_API_TOKEN`).
 

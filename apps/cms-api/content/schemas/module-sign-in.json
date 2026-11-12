@@ -1,40 +1,48 @@
 {
-  "slug": "sign-in-text",
-  "displayName": "Sign In Text",
+  "slug": "module-sign-in",
+  "displayName": "Module Sign In",
   "kind": "single",
   "draftAndPublish": true,
   "fields": [
     {
       "name": "title",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "description",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "emailLabel",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "passwordLabel",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "rememberMeLabel",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "rememberMeHint",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "submit",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "cancel",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "humanCheck",

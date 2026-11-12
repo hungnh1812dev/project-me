@@ -489,6 +489,284 @@
         ]
       }
     },
+    "module-page-status": {
+      "hash": "2f2a124a58cfa5ff9bdc518cd1048e4ea8a045dd9f39f2768fd20ff975b969b3",
+      "definition": {
+        "slug": "module-page-status",
+        "displayName": "Module Page Status",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "title",
+            "type": "text"
+          },
+          {
+            "name": "description",
+            "type": "text"
+          },
+          {
+            "name": "cardTitle",
+            "type": "text"
+          },
+          {
+            "name": "cardDescription",
+            "type": "text"
+          },
+          {
+            "name": "endpointLabel",
+            "type": "text"
+          },
+          {
+            "name": "lastCheckedLabel",
+            "type": "text"
+          },
+          {
+            "name": "notCheckedYet",
+            "type": "text"
+          },
+          {
+            "name": "stateChecking",
+            "type": "text"
+          },
+          {
+            "name": "stateOk",
+            "type": "text"
+          },
+          {
+            "name": "stateError",
+            "type": "text"
+          },
+          {
+            "name": "errorHint",
+            "type": "text"
+          },
+          {
+            "name": "checkAgain",
+            "type": "text"
+          }
+        ]
+      }
+    },
+    "module-sign-in": {
+      "hash": "da08b698c7623b966b3ae246fd8d33f9bbe2a2713d65f180aad369e167d7ad8a",
+      "definition": {
+        "slug": "module-sign-in",
+        "displayName": "Module Sign In",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "title",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "description",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "emailLabel",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "passwordLabel",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "rememberMeLabel",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "rememberMeHint",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "submit",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "cancel",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "humanCheck",
+            "type": "component",
+            "component": "signInHumanCheck",
+            "fields": [
+              {
+                "name": "loading",
+                "type": "text"
+              },
+              {
+                "name": "required",
+                "type": "text"
+              },
+              {
+                "name": "expired",
+                "type": "text"
+              },
+              {
+                "name": "failed",
+                "type": "text"
+              },
+              {
+                "name": "unavailable",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "validation",
+            "type": "component",
+            "component": "signInValidation",
+            "fields": [
+              {
+                "name": "emailRequired",
+                "type": "text"
+              },
+              {
+                "name": "emailInvalid",
+                "type": "text"
+              },
+              {
+                "name": "passwordRequired",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "errors",
+            "type": "component",
+            "component": "signInErrors",
+            "fields": [
+              {
+                "name": "invalidCredentials",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedSecondsOne",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedSecondsOther",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedMinutesOne",
+                "type": "text"
+              },
+              {
+                "name": "rateLimitedMinutesOther",
+                "type": "text"
+              },
+              {
+                "name": "rateLimited",
+                "type": "text"
+              },
+              {
+                "name": "network",
+                "type": "text"
+              },
+              {
+                "name": "unexpected",
+                "type": "text"
+              },
+              {
+                "name": "humanCheckFailed",
+                "type": "text"
+              },
+              {
+                "name": "humanCheckUnavailable",
+                "type": "text"
+              },
+              {
+                "name": "privileged",
+                "type": "text"
+              }
+            ]
+          },
+          {
+            "name": "twoFactor",
+            "type": "component",
+            "component": "signInTwoFactor",
+            "fields": [
+              {
+                "name": "title",
+                "type": "text"
+              },
+              {
+                "name": "totpDescription",
+                "type": "text"
+              },
+              {
+                "name": "emailDescription",
+                "type": "text"
+              },
+              {
+                "name": "emailWarning",
+                "type": "text"
+              },
+              {
+                "name": "totpLabel",
+                "type": "text"
+              },
+              {
+                "name": "emailLabel",
+                "type": "text"
+              },
+              {
+                "name": "totpHint",
+                "type": "text"
+              },
+              {
+                "name": "emailHint",
+                "type": "text"
+              },
+              {
+                "name": "codeInvalid",
+                "type": "text"
+              },
+              {
+                "name": "submit",
+                "type": "text"
+              },
+              {
+                "name": "cancel",
+                "type": "text"
+              },
+              {
+                "name": "resend",
+                "type": "text"
+              },
+              {
+                "name": "resent",
+                "type": "text"
+              },
+              {
+                "name": "expired",
+                "type": "text"
+              },
+              {
+                "name": "invalidCode",
+                "type": "text"
+              },
+              {
+                "name": "unsupportedMethod",
+                "type": "text"
+              }
+            ]
+          }
+        ]
+      }
+    },
     "profile": {
       "hash": "51d712d47ec9330edaa5c413f07e7d1fd337c9c42a6e4c0cd752c41b4723b2da",
       "definition": {
@@ -701,217 +979,6 @@
         ]
       }
     },
-    "sign-in-text": {
-      "hash": "c27e2228e20561cdb619f2ff21019ea2a03b34a410616a7a71dfcf0d7b47b9df",
-      "definition": {
-        "slug": "sign-in-text",
-        "displayName": "Sign In Text",
-        "kind": "single",
-        "draftAndPublish": true,
-        "fields": [
-          {
-            "name": "title",
-            "type": "text"
-          },
-          {
-            "name": "description",
-            "type": "text"
-          },
-          {
-            "name": "emailLabel",
-            "type": "text"
-          },
-          {
-            "name": "passwordLabel",
-            "type": "text"
-          },
-          {
-            "name": "rememberMeLabel",
-            "type": "text"
-          },
-          {
-            "name": "rememberMeHint",
-            "type": "text"
-          },
-          {
-            "name": "submit",
-            "type": "text"
-          },
-          {
-            "name": "cancel",
-            "type": "text"
-          },
-          {
-            "name": "humanCheck",
-            "type": "component",
-            "component": "signInHumanCheck",
-            "fields": [
-              {
-                "name": "loading",
-                "type": "text"
-              },
-              {
-                "name": "required",
-                "type": "text"
-              },
-              {
-                "name": "expired",
-                "type": "text"
-              },
-              {
-                "name": "failed",
-                "type": "text"
-              },
-              {
-                "name": "unavailable",
-                "type": "text"
-              }
-            ]
-          },
-          {
-            "name": "validation",
-            "type": "component",
-            "component": "signInValidation",
-            "fields": [
-              {
-                "name": "emailRequired",
-                "type": "text"
-              },
-              {
-                "name": "emailInvalid",
-                "type": "text"
-              },
-              {
-                "name": "passwordRequired",
-                "type": "text"
-              }
-            ]
-          },
-          {
-            "name": "errors",
-            "type": "component",
-            "component": "signInErrors",
-            "fields": [
-              {
-                "name": "invalidCredentials",
-                "type": "text"
-              },
-              {
-                "name": "rateLimitedSecondsOne",
-                "type": "text"
-              },
-              {
-                "name": "rateLimitedSecondsOther",
-                "type": "text"
-              },
-              {
-                "name": "rateLimitedMinutesOne",
-                "type": "text"
-              },
-              {
-                "name": "rateLimitedMinutesOther",
-                "type": "text"
-              },
-              {
-                "name": "rateLimited",
-                "type": "text"
-              },
-              {
-                "name": "network",
-                "type": "text"
-              },
-              {
-                "name": "unexpected",
-                "type": "text"
-              },
-              {
-                "name": "humanCheckFailed",
-                "type": "text"
-              },
-              {
-                "name": "humanCheckUnavailable",
-                "type": "text"
-              },
-              {
-                "name": "privileged",
-                "type": "text"
-              }
-            ]
-          },
-          {
-            "name": "twoFactor",
-            "type": "component",
-            "component": "signInTwoFactor",
-            "fields": [
-              {
-                "name": "title",
-                "type": "text"
-              },
-              {
-                "name": "totpDescription",
-                "type": "text"
-              },
-              {
-                "name": "emailDescription",
-                "type": "text"
-              },
-              {
-                "name": "emailWarning",
-                "type": "text"
-              },
-              {
-                "name": "totpLabel",
-                "type": "text"
-              },
-              {
-                "name": "emailLabel",
-                "type": "text"
-              },
-              {
-                "name": "totpHint",
-                "type": "text"
-              },
-              {
-                "name": "emailHint",
-                "type": "text"
-              },
-              {
-                "name": "codeInvalid",
-                "type": "text"
-              },
-              {
-                "name": "submit",
-                "type": "text"
-              },
-              {
-                "name": "cancel",
-                "type": "text"
-              },
-              {
-                "name": "resend",
-                "type": "text"
-              },
-              {
-                "name": "resent",
-                "type": "text"
-              },
-              {
-                "name": "expired",
-                "type": "text"
-              },
-              {
-                "name": "invalidCode",
-                "type": "text"
-              },
-              {
-                "name": "unsupportedMethod",
-                "type": "text"
-              }
-            ]
-          }
-        ]
-      }
-    },
     "site-text": {
       "hash": "731099f9b3f2a5f459e2bbaa89a3066e28797d36d9cde27d41bd728107571853",
       "definition": {
@@ -958,65 +1025,6 @@
           },
           {
             "name": "errorRetry",
-            "type": "text"
-          }
-        ]
-      }
-    },
-    "status-page-text": {
-      "hash": "ad7408bf77d0de81cf0f5ec51a874cbab4965269e372b59f9c82a3f06c5270d2",
-      "definition": {
-        "slug": "status-page-text",
-        "displayName": "Status Page Text",
-        "kind": "single",
-        "draftAndPublish": true,
-        "fields": [
-          {
-            "name": "title",
-            "type": "text"
-          },
-          {
-            "name": "description",
-            "type": "text"
-          },
-          {
-            "name": "cardTitle",
-            "type": "text"
-          },
-          {
-            "name": "cardDescription",
-            "type": "text"
-          },
-          {
-            "name": "endpointLabel",
-            "type": "text"
-          },
-          {
-            "name": "lastCheckedLabel",
-            "type": "text"
-          },
-          {
-            "name": "notCheckedYet",
-            "type": "text"
-          },
-          {
-            "name": "stateChecking",
-            "type": "text"
-          },
-          {
-            "name": "stateOk",
-            "type": "text"
-          },
-          {
-            "name": "stateError",
-            "type": "text"
-          },
-          {
-            "name": "errorHint",
-            "type": "text"
-          },
-          {
-            "name": "checkAgain",
             "type": "text"
           }
         ]

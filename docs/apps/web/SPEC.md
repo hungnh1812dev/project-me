@@ -59,7 +59,7 @@ User answers (2026-11-08): the mock fallback is used only in local/dev, elsewher
 | Q-WCA7 | Text when the shell text cannot load | Built-in set of about 5 strings, global error and not-found only; with Q-WCP3 about 9 |
 | Q-WCA8 | CV source | `cvPageList` with `isMain = true` (existing schema), not `resumeList` |
 | Q-WCA9 | BFF cms-api client | Moves onto the server RESTful layer, own security-gated task, behaviour unchanged |
-| Q-WCA10 | Text content model | Typed single types `siteText`, `signInText`, `statusPageText`, `cvPageText` |
+| Q-WCA10 | Text content model | Typed single types `siteText`, `signInText`, `statusPageText`, `cvPageText`; the cms-api types behind `signInText` and `statusPageText`: public-site PS-1 "Module text types" (user 2026-11-12) |
 | Q-WCA11 | Locale | English only |
 | Q-WCP2 | Whole operation rejected while the mocks are on | Ask each root field alone, then the mocks; dev and smoke only, never production (user 2026-11-08) |
 | Q-WCP3 | Status card when `statusPageText` cannot load | The four card words join the last-resort set (user 2026-11-08) |

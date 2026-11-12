@@ -1,6 +1,6 @@
 {
-  "slug": "status-page-text",
-  "displayName": "Status Page Text",
+  "slug": "module-page-status",
+  "displayName": "Module Page Status",
   "kind": "single",
   "draftAndPublish": true,
   "fields": [
