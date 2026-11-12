@@ -1,5 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
+import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { expectSignedIn, openUserMenu, submitLogin } from '../src/Session.fixture';
@@ -17,18 +18,9 @@ const INDIGO_600_OKLCH = [0.511, 0.262, 276.966];
 const INDIGO_600 = 'oklch(0.511 0.262 276.966)';
 const ROSE_600 = 'oklch(0.586 0.253 17.585)';
 
-/** Computed style of the first match, read in the page. */
-function styleOf(page: Page, selector: string, props: string[]) {
-  return page.evaluate(
-    ([sel, names]) => {
-      const el = document.querySelector(sel);
-      if (!el) return null;
-      const cs = getComputedStyle(el);
-      return Object.fromEntries(names.map((n) => [n, cs.getPropertyValue(n)]));
-    },
-    [selector, props] as const,
-  );
-}
+type ToastWindow = Window & {
+  showToast: (toast: { tone: string; title: string; key?: string }) => void;
+};
 
 test.describe.serial('cms-admin premium theme', () => {
   let page: Page;
@@ -186,7 +178,7 @@ test.describe.serial('cms-admin premium theme', () => {
       const cs = getComputedStyle(el);
       return {
         bg: cs.backgroundColor,
-        cls: el.className,
+        cls: el.getAttribute('class') ?? '',
         radius: cs.borderTopLeftRadius,
         trans: cs.transitionDuration,
       };
@@ -313,7 +305,7 @@ test.describe.serial('cms-admin premium theme', () => {
           bg: cs.backgroundColor,
           border: cs.borderTopWidth,
           radius: cs.borderTopLeftRadius,
-          cls: el.className,
+          cls: el.getAttribute('class') ?? '',
         };
       });
       console.log('ALERT', JSON.stringify(a));
@@ -323,7 +315,7 @@ test.describe.serial('cms-admin premium theme', () => {
 
   test('FormAlert: soft tone background, no hard frame (page error state)', async () => {
     await page.route(
-      (url) => url.pathname.includes('/api/') && !url.pathname.includes('/auth/'),
+      (url) => url.pathname.includes('/api/') && !url.pathname.includes(API_PATHS.AUTH_PREFIX),
       (route) => route.fulfill({ status: 500, contentType: 'application/json', body: '{}' }),
     );
     await page.goto('/accounts');
@@ -345,14 +337,18 @@ test.describe.serial('cms-admin premium theme', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-    const hasHarness = await page.evaluate(() => typeof (window as any).showToast === 'function');
+    const hasHarness = await page.evaluate(
+      () => typeof (window as unknown as ToastWindow).showToast === 'function',
+    );
     test.skip(!hasHarness, 'ToastHarness is a temporary dev-only mount, absent from a built stack');
     const items = page.locator('ol li');
     const show = (tone: string, title: string, key?: string) =>
       page.evaluate(
         ([t, ti, k]) =>
-          (window as any).showToast(k ? { tone: t, title: ti, key: k } : { tone: t, title: ti }),
-        [tone, title, key ?? ''],
+          (window as unknown as ToastWindow).showToast(
+            k ? { tone: t, title: ti, key: k } : { tone: t, title: ti },
+          ),
+        [tone, title, key ?? ''] as [string, string, string],
       );
     await show('success', 'First saved');
     await show('error', 'Second failed');

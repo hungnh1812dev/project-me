@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { accountRow } from '../src/AccessPages.fixture';
+import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
 import { fakeMediaApi, PNG_BASE64 } from '../src/FakeMediaApi.fixture';
@@ -131,7 +132,7 @@ test.describe.serial('toast walk on the admin shell (APS-D tier 2)', () => {
       if (response.status() < HTTP.BAD_REQUEST) return;
       if (forcedFailures.some((fragment) => url.includes(fragment))) return;
       // The silent refresh before sign-in answers 401 by design.
-      if (response.status() === HTTP.UNAUTHORIZED && url.endsWith('/auth/refresh')) return;
+      if (response.status() === HTTP.UNAUTHORIZED && url.endsWith(API_PATHS.AUTH.REFRESH)) return;
       failedRequests.push(`${response.status()} ${response.request().method()} ${url}`);
     });
     await page.setViewportSize(DESKTOP);
