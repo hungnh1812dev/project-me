@@ -68,3 +68,6 @@ export const REDIRECT_STATUS_MIN = 300;
 
 /** Data cache lifetime of a server call that sets none (WEB-4). */
 export const DEFAULT_REVALIDATE_SECONDS = 180;
+
+/** Prefix of the one log line the API error logger writes per failure (WEB-10). */
+export const API_ERROR_LOG_PREFIX = '[api-error]';
