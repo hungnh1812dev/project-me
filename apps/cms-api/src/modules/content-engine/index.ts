@@ -62,6 +62,11 @@ export {
   type RegisteredContentType,
   type TableNode,
 } from './domain/ContentTypeRegistry.entity';
+export {
+  formatDefinitionPath,
+  validateCandidateDefinition,
+  type DefinitionValidationError,
+} from './domain/DefinitionValidator.rules';
 export { quoteIdentifier } from './domain/SqlGenerator.rules';
 export {
   assertTreeInput,

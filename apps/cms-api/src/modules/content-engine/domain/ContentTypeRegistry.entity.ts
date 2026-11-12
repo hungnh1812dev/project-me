@@ -104,6 +104,10 @@ export class ContentTypeRegistry {
     );
   }
 
+  definitions(): ContentTypeDefinition[] {
+    return [...this.types.values()].map(({ definition }) => definition);
+  }
+
   slugs(): string[] {
     return [...this.types.keys()];
   }

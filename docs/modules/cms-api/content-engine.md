@@ -14,7 +14,7 @@ Flows: [`content-editing`](../../flows/content-editing/FLOW.md), [`content-model
 
 ## Purpose
 
-Turns the content type definitions (JSON) into database tables in the `content` schema and stores document trees (root rows plus nested component tables): definition validation, migration generation and running (`content:generate`, `content:migrate`), the content type registry, the content repository and the field-type rules (value parsing, media columns, richtext sanitizing). Format: `docs/modules/content-schema.md`.
+Turns the content type definitions (JSON) into database tables in the `content` schema and stores document trees (root rows plus nested component tables): definition validation (also of one candidate against the registered types, `validateCandidateDefinition`), migration generation and running (`content:generate`, `content:migrate`), the content type registry, the content repository and the field-type rules (value parsing, media columns, richtext sanitizing). Format: `docs/modules/content-schema.md`.
 
 ## Techniques
 
@@ -69,9 +69,9 @@ Tests: 11 files (not listed).
 | `domain/ContentEngine.constants.ts` | Schema name, depth and identifier limits, patterns, field type names, `FIELD_WIDTHS` |
 | `domain/ContentRowMapping.rules.ts` | `toColumnValues`, `toDocument`: values <-> rows |
 | `domain/ContentTree.entity.ts` | `ContentRow`, `ComponentNode`, `ComponentTrees` |
-| `domain/ContentTypeRegistry.entity.ts` | `ContentTypeRegistry`, table nodes, `UnknownContentTypeError` |
+| `domain/ContentTypeRegistry.entity.ts` | `ContentTypeRegistry` (`definitions()` lists the registered ones), table nodes, `UnknownContentTypeError` |
 | `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`) |
-| `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, `component` values, field `displayName`, depth, relations) |
+| `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, `component` values, field `displayName`, depth, relations); `validateCandidateDefinition`: one candidate against the registered types, only its own errors, a clash names the other type by slug |
 | `domain/Naming.rules.ts` | `planTables` (tables named by `component`, with `apiPath`), `toSqlIdentifier`, table and relation names |
 | `domain/SqlGenerator.rules.ts` | `planMigration` (renames first, then create and column diff, then drops), `pairRenamedTables`, `renderMigrationSql`, snapshots and column types |
 | `domain/TreeInput.rules.ts` | `assertTreeInput`: checks a submitted document tree |

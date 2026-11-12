@@ -239,7 +239,14 @@ function schemaNames(tables: TablePlan[]): OwnedName[] {
   ]);
 }
 
-function checkSchemaCollisions(names: OwnedName[], errors: DefinitionValidationError[]): void {
+/** Says where the earlier owner of a clashing name lives; the CLI names its path. */
+type DescribeNameOwner = (ownerPath: DefinitionPath) => string;
+
+function checkSchemaCollisions(
+  names: OwnedName[],
+  errors: DefinitionValidationError[],
+  describeOwner: DescribeNameOwner = formatDefinitionPath,
+): void {
   const owners = new Map<string, OwnedName>();
   for (const entry of names) {
     const owner = owners.get(entry.name);
@@ -250,7 +257,7 @@ function checkSchemaCollisions(names: OwnedName[], errors: DefinitionValidationE
     errors.push({
       path: entry.path,
       rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
-      message: `Generated name "${entry.name}" is already used by ${formatDefinitionPath(owner.path)} in the "content" schema. Rename the slug or field.`,
+      message: `Generated name "${entry.name}" is already used by ${describeOwner(owner.path)} in the "content" schema. Rename the slug or field.`,
     });
   }
 }
@@ -295,7 +302,10 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
  * them (they share the `content` schema). Error paths start with the
  * definition's index in `inputs`.
  */
-export function validateDefinitions(inputs: readonly unknown[]): DefinitionSetValidationResult {
+export function validateDefinitions(
+  inputs: readonly unknown[],
+  describeOwner?: DescribeNameOwner,
+): DefinitionSetValidationResult {
   const errors: DefinitionValidationError[] = [];
   const valid: { definition: ContentTypeDefinition; tables: TablePlan[] }[] = [];
   const names: OwnedName[] = [];
@@ -323,7 +333,30 @@ export function validateDefinitions(inputs: readonly unknown[]): DefinitionSetVa
     );
   });
 
-  checkSchemaCollisions(names, errors);
+  checkSchemaCollisions(names, errors, describeOwner);
 
   return errors.length > 0 ? { ok: false, errors } : { ok: true, definitions: valid };
+}
+
+/**
+ * Validates one candidate next to the registered definitions, as
+ * `content:generate` validates the whole schema folder, and returns only
+ * the candidate's errors with its list index removed. A clash with a
+ * registered type names that type by its slug alone, never its paths.
+ */
+export function validateCandidateDefinition(
+  candidate: unknown,
+  registered: readonly ContentTypeDefinition[],
+): DefinitionValidationError[] {
+  const candidateIndex = registered.length;
+  const result = validateDefinitions([...registered, candidate], ([ownerIndex, ...ownerPath]) => {
+    const owner = typeof ownerIndex === 'number' ? registered[ownerIndex] : undefined;
+    return owner === undefined
+      ? formatDefinitionPath(ownerPath)
+      : `the content type "${owner.slug}"`;
+  });
+  if (result.ok) return [];
+  return result.errors
+    .filter(({ path }) => path[0] === candidateIndex)
+    .map(({ path: [, ...path], ...error }) => ({ ...error, path }));
 }

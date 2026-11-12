@@ -38,6 +38,11 @@ describe('ContentTypeRegistry', () => {
     expect(new UnknownContentTypeError('x').code).toBe(CONTENT_ERROR_CODES.CONTENT_TYPE_UNKNOWN);
   });
 
+  it('lists the registered definitions', () => {
+    const registry = ContentTypeRegistry.fromDefinitions([loadCvPage()]);
+    expect(registry.definitions().map((definition) => definition.slug)).toEqual(['cv-page']);
+  });
+
   it('refuses an invalid definition', () => {
     const broken = { ...loadCvPage(), slug: 'Bad Slug' };
     expect(() => ContentTypeRegistry.fromDefinitions([broken])).toThrow(ContentEngineError);

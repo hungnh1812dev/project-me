@@ -109,13 +109,13 @@ type Query {
   cvPageList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [CvPageSort!], filter: CvPageFilter): CvPagePage
   cvPageText(status: DocumentStatus = PUBLISHED): CvPageText
   header(status: DocumentStatus = PUBLISHED): Header
+  modulePageStatus(status: DocumentStatus = PUBLISHED): ModulePageStatus
+  moduleSignIn(status: DocumentStatus = PUBLISHED): ModuleSignIn
   profile(documentId: ID!, status: DocumentStatus = PUBLISHED): Profile
   profileList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ProfileSort!], filter: ProfileFilter): ProfilePage
   resume(documentId: ID!, status: DocumentStatus = PUBLISHED): Resume
   resumeList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ResumeSort!], filter: ResumeFilter): ResumePage
-  signInText(status: DocumentStatus = PUBLISHED): SignInText
   siteText(status: DocumentStatus = PUBLISHED): SiteText
-  statusPageText(status: DocumentStatus = PUBLISHED): StatusPageText
 }
 
 type CommonText {
@@ -384,6 +384,113 @@ type Header_Author {
   btnLogoutText: String
 }
 
+type ModulePageStatus {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  title: String
+  description: String
+  cardTitle: String
+  cardDescription: String
+  endpointLabel: String
+  lastCheckedLabel: String
+  notCheckedYet: String
+  stateChecking: String
+  stateOk: String
+  stateError: String
+  errorHint: String
+  checkAgain: String
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type ModuleSignIn {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  title: String
+  description: String
+  emailLabel: String
+  passwordLabel: String
+  rememberMeLabel: String
+  rememberMeHint: String
+  submit: String
+  cancel: String
+  humanCheck: ModuleSignIn_SignInHumanCheck
+  validation: ModuleSignIn_SignInValidation
+  errors: ModuleSignIn_SignInErrors
+  twoFactor: ModuleSignIn_SignInTwoFactor
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type ModuleSignIn_SignInHumanCheck {
+  componentUid: ID!
+  loading: String
+  required: String
+  expired: String
+  failed: String
+  unavailable: String
+}
+
+type ModuleSignIn_SignInValidation {
+  componentUid: ID!
+  emailRequired: String
+  emailInvalid: String
+  passwordRequired: String
+}
+
+type ModuleSignIn_SignInErrors {
+  componentUid: ID!
+  invalidCredentials: String
+  rateLimitedSecondsOne: String
+  rateLimitedSecondsOther: String
+  rateLimitedMinutesOne: String
+  rateLimitedMinutesOther: String
+  rateLimited: String
+  network: String
+  unexpected: String
+  humanCheckFailed: String
+  humanCheckUnavailable: String
+  privileged: String
+}
+
+type ModuleSignIn_SignInTwoFactor {
+  componentUid: ID!
+  title: String
+  totpDescription: String
+  emailDescription: String
+  emailWarning: String
+  totpLabel: String
+  emailLabel: String
+  totpHint: String
+  emailHint: String
+  codeInvalid: String
+  submit: String
+  cancel: String
+  resend: String
+  resent: String
+  expired: String
+  invalidCode: String
+  unsupportedMethod: String
+}
+
 type Profile {
   documentId: ID!
   version: Int!
@@ -560,85 +667,6 @@ input ResumeFilter {
   summary: TextFilter
 }
 
-type SignInText {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  title: String
-  description: String
-  emailLabel: String
-  passwordLabel: String
-  rememberMeLabel: String
-  rememberMeHint: String
-  submit: String
-  cancel: String
-  humanCheck: SignInText_SignInHumanCheck
-  validation: SignInText_SignInValidation
-  errors: SignInText_SignInErrors
-  twoFactor: SignInText_SignInTwoFactor
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type SignInText_SignInHumanCheck {
-  componentUid: ID!
-  loading: String
-  required: String
-  expired: String
-  failed: String
-  unavailable: String
-}
-
-type SignInText_SignInValidation {
-  componentUid: ID!
-  emailRequired: String
-  emailInvalid: String
-  passwordRequired: String
-}
-
-type SignInText_SignInErrors {
-  componentUid: ID!
-  invalidCredentials: String
-  rateLimitedSecondsOne: String
-  rateLimitedSecondsOther: String
-  rateLimitedMinutesOne: String
-  rateLimitedMinutesOther: String
-  rateLimited: String
-  network: String
-  unexpected: String
-  humanCheckFailed: String
-  humanCheckUnavailable: String
-  privileged: String
-}
-
-type SignInText_SignInTwoFactor {
-  componentUid: ID!
-  title: String
-  totpDescription: String
-  emailDescription: String
-  emailWarning: String
-  totpLabel: String
-  emailLabel: String
-  totpHint: String
-  emailHint: String
-  codeInvalid: String
-  submit: String
-  cancel: String
-  resend: String
-  resent: String
-  expired: String
-  invalidCode: String
-  unsupportedMethod: String
-}
-
 type SiteText {
   documentId: ID!
   version: Int!
@@ -658,34 +686,6 @@ type SiteText {
   errorTitle: String
   errorDescription: String
   errorRetry: String
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type StatusPageText {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  title: String
-  description: String
-  cardTitle: String
-  cardDescription: String
-  endpointLabel: String
-  lastCheckedLabel: String
-  notCheckedYet: String
-  stateChecking: String
-  stateOk: String
-  stateError: String
-  errorHint: String
-  checkAgain: String
 
   """
   Paths of the fields the caller may not read; their values are masked or null.
