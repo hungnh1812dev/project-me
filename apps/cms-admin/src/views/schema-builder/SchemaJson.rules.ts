@@ -1,5 +1,6 @@
 import { COMPONENT_FIELD_TYPE } from './FieldTypes.registry';
 import {
+  MAX_IMPORT_DEPTH,
   MAX_IMPORT_FIELDS,
   type ImportedField,
   type ImportedTree,
@@ -11,7 +12,7 @@ import {
 
 /** Why an import is refused; the screen copy maps each to one message (SB-3). */
 export type ImportRefusal =
-  'notJson' | 'notObject' | 'fieldsMissing' | 'fieldNotObject' | 'tooManyFields';
+  'notJson' | 'notObject' | 'fieldsMissing' | 'fieldNotObject' | 'tooManyFields' | 'tooDeep';
 
 export type ImportResult = { ok: true; tree: ImportedTree } | { ok: false; refusal: ImportRefusal };
 
@@ -130,6 +131,18 @@ function exceedsFieldCap(fields: readonly unknown[], counted = { total: 0 }): bo
   return false;
 }
 
+/** True when fields nest more than the import depth bound; stops descending at the bound. */
+function exceedsDepthCap(fields: readonly unknown[], level = 1): boolean {
+  return fields.some(
+    (field) =>
+      isPlainObject(field) &&
+      Array.isArray(field.fields) &&
+      (level >= MAX_IMPORT_DEPTH
+        ? field.fields.length > 0
+        : exceedsDepthCap(field.fields, level + 1)),
+  );
+}
+
 /** Builds the editor tree from pasted or picked text; refuses with one reason (SB-3). */
 export function parseSchemaJson(text: string): ImportResult {
   let parsed: unknown;
@@ -141,6 +154,7 @@ export function parseSchemaJson(text: string): ImportResult {
   if (!isPlainObject(parsed)) return { ok: false, refusal: 'notObject' };
   if (!Array.isArray(parsed.fields)) return { ok: false, refusal: 'fieldsMissing' };
   if (exceedsFieldCap(parsed.fields)) return { ok: false, refusal: 'tooManyFields' };
+  if (exceedsDepthCap(parsed.fields)) return { ok: false, refusal: 'tooDeep' };
   try {
     const { known, unknownKeys } = splitKeys(parsed, TYPE_STRING_KEYS, TYPE_BOOLEAN_KEYS);
     const { slug, ...optional } = known;

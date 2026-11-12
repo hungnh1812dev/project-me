@@ -6,6 +6,9 @@ export const MAX_COMPONENT_DEPTH = 3;
 /** An import with more fields (all levels together) is refused: the editor renders every row, so a huge file would freeze the tab. */
 export const MAX_IMPORT_FIELDS = 500;
 
+/** An import nested deeper than this is refused; a little past the component depth so the rows still show the depth error, yet the recursive rows never run away. */
+export const MAX_IMPORT_DEPTH = MAX_COMPONENT_DEPTH + 2;
+
 const FIELD_NAME_PREFIX = 'field';
 const COPY_SUFFIX = '_copy';
 

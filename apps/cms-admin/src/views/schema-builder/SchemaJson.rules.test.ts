@@ -11,6 +11,7 @@ import {
 } from './SchemaJson.rules';
 import {
   createNewSchemaTree,
+  MAX_IMPORT_DEPTH,
   MAX_IMPORT_FIELDS,
   schemaTreeReducer,
   type SchemaTree,
@@ -237,5 +238,20 @@ describe('error paths', () => {
       ok: false,
       refusal: 'tooManyFields',
     });
+  });
+
+  it('refuses fields nested deeper than the import depth bound, however few they are', () => {
+    const nestedBoxes = (levels: number): unknown =>
+      levels === 0
+        ? { name: 'leaf', type: 'string' }
+        : { name: `box${levels}`, type: 'component', fields: [nestedBoxes(levels - 1)] };
+    const withLevels = (levels: number) =>
+      JSON.stringify({ slug: 'a', fields: [nestedBoxes(levels - 1)] });
+    expect(parseSchemaJson(withLevels(MAX_IMPORT_DEPTH)).ok).toBe(true);
+    expect(parseSchemaJson(withLevels(MAX_IMPORT_DEPTH + 1))).toEqual({
+      ok: false,
+      refusal: 'tooDeep',
+    });
+    expect(parseSchemaJson(withLevels(400))).toEqual({ ok: false, refusal: 'tooDeep' });
   });
 });

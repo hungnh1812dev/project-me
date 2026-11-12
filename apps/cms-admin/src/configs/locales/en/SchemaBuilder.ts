@@ -131,6 +131,8 @@ export const SCHEMA_BUILDER_COPY = {
       fieldNotObject: 'Every entry of a "fields" list must be an object.',
       tooManyFields: (max: number) =>
         `This file has more than ${max} fields. Split it into smaller content types or components and import them one at a time.`,
+      tooDeep: (max: number) =>
+        `This file nests fields more than ${max} levels deep. Flatten the components or split them into separate components and import them one at a time.`,
     },
   },
   validation: {

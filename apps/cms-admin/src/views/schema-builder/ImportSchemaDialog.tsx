@@ -3,8 +3,8 @@ import { Button, FormAlert, Input, Label, Textarea } from '@abyss/form-commons';
 import { Modal, ModalActions } from '@components/Modal';
 import { useScreenText } from '@configs/locales';
 
-import { parseSchemaJson } from './SchemaJson.rules';
-import { MAX_IMPORT_FIELDS, type ImportedTree } from './SchemaTree.reducer';
+import { parseSchemaJson, type ImportRefusal } from './SchemaJson.rules';
+import { MAX_IMPORT_DEPTH, MAX_IMPORT_FIELDS, type ImportedTree } from './SchemaTree.reducer';
 
 interface ImportSchemaDialogProps {
   onLoad: (tree: ImportedTree) => void;
@@ -28,6 +28,12 @@ export function ImportSchemaDialog({ onLoad, onClose, onCloseAutoFocus }: Import
     }
   };
 
+  const refusalMessage = (refusal: ImportRefusal): string => {
+    if (refusal === 'tooManyFields') return copy.refusal.tooManyFields(MAX_IMPORT_FIELDS);
+    if (refusal === 'tooDeep') return copy.refusal.tooDeep(MAX_IMPORT_DEPTH);
+    return copy.refusal[refusal];
+  };
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (text.trim() === '') {
@@ -36,11 +42,7 @@ export function ImportSchemaDialog({ onLoad, onClose, onCloseAutoFocus }: Import
     }
     const result = parseSchemaJson(text);
     if (!result.ok) {
-      setMessage(
-        result.refusal === 'tooManyFields'
-          ? copy.refusal.tooManyFields(MAX_IMPORT_FIELDS)
-          : copy.refusal[result.refusal],
-      );
+      setMessage(refusalMessage(result.refusal));
       return;
     }
     onLoad(result.tree);
