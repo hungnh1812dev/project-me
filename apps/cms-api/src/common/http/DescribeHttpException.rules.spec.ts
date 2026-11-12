@@ -112,6 +112,13 @@ describe('describeError', () => {
     expect(described.isServerError).toBe(true);
   });
 
+  it('reads the body parser too-large error as a 413', () => {
+    const described = describeError(
+      Object.assign(new Error('too large'), { type: 'entity.too.large' }),
+    );
+    expect(described).toMatchObject({ statusCode: 413, isServerError: false });
+  });
+
   it('rounds retryAfterSeconds up, at least 1, and only for rate_limited', () => {
     const rateLimited = (retryAfterSeconds: number) =>
       describeError(

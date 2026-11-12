@@ -584,7 +584,9 @@ describe('validateCandidateDefinition', () => {
   it('reports a component table that clashes with another type on the candidate field', () => {
     const registered = definition([component('x', [{ name: 'a', type: 'text' }])]);
     const candidate = definition([component('x', [{ name: 'b', type: 'text' }])]);
-    const errors = validateCandidateDefinition(candidate, [registered as ContentTypeDefinition]);
+    const errors = validateCandidateDefinition(candidate, [
+      registered as unknown as ContentTypeDefinition,
+    ]);
     expect(errors).toContainEqual(
       expect.objectContaining({
         path: ['fields', 0, 'component'],
