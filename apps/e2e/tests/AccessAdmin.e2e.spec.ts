@@ -29,7 +29,7 @@ const SERVER_REJECTED_CONDITIONS = '{"all":[{"field":"createdBy","op":"nope"}]}'
 
 test.describe.serial(
   'owner: accounts and roles',
-  { tag: ['@cms-admin', '@cms-api', '@access-admin'] },
+  { tag: ['@cms-admin', '@cms-api', '@access-admin', '@password', '@sign-in'] },
   () => {
     let page: Page;
     let context: BrowserContext;
