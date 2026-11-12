@@ -54,6 +54,7 @@ export const API_ENDPOINTS = {
   /** Read-only content types (field paths for the permission matrix). */
   CONTENT_TYPES: {
     LIST: '/content-types',
+    VALIDATE: '/content-types/validate',
     ONE: (slug: string) => `/content-types/${encodeURIComponent(slug)}`,
   },
   /** Reviewer sessions (owner) and the on/off switch. */

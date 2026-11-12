@@ -1,4 +1,9 @@
-import type { Feature } from '../Features.registry';
+import { defineApiService } from '@apis/client/ApiService.setup';
 
-/** Data only: no API service of its own. */
-export const contentTypesFeature: Feature = {};
+import type { Feature } from '../Features.registry';
+import { createContentTypesApi } from './ContentTypes.api';
+import { ContentTypesApiProvider } from './ContentTypesApi.context';
+
+export const contentTypesFeature: Feature = {
+  apiServices: [defineApiService(createContentTypesApi, ContentTypesApiProvider)],
+};

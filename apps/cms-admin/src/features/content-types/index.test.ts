@@ -15,13 +15,25 @@ function namesExportedBy(file: string): string[] {
 }
 
 describe('content-types facade', () => {
-  it('exposes exactly the content-type model and its loader', () => {
+  it('exposes exactly the content-type model, its loader and the definition check', () => {
     expect(namesExportedBy(INDEX_FILE)).toEqual([
       'ContentType',
       'ContentTypeField',
+      'ContentTypesApiProvider',
+      'DefinitionCheckStatus',
+      'DefinitionError',
+      'DefinitionValidation',
+      'DefinitionValidationMode',
       'FieldWidth',
       'getContentTypes',
+      'useContentTypesApi',
+      'useDefinitionValidation',
     ]);
-    expect(Object.keys(contentTypesFacade)).toEqual(['getContentTypes']);
+    expect(Object.keys(contentTypesFacade).sort()).toEqual([
+      'ContentTypesApiProvider',
+      'getContentTypes',
+      'useContentTypesApi',
+      'useDefinitionValidation',
+    ]);
   });
 });
