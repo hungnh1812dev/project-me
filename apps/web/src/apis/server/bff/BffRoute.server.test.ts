@@ -197,10 +197,12 @@ describe('defineBffRoute pipeline', () => {
     expect(handle).not.toHaveBeenCalled();
   });
 
-  it('logs only the route and the code of a refusal', async () => {
+  it('logs a refusal once, with the method and path as its operation and no body', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     await postRoute()(requestOf({ body: '{"name":"secret-password","extra":1}' }));
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.join(' ')).toBe('[bff] POST /api/v1/test BFF_INVALID_REQUEST');
+    expect(warn.mock.calls[0]?.join(' ')).toBe(
+      '[api-error] bff BFF_INVALID_REQUEST 400 POST /api/v1/test',
+    );
   });
 });

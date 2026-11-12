@@ -2,7 +2,12 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { API_ERROR_CODES as WEB_API_ERROR_CODES, WebApiError } from '@/apis/WebApi.errors';
+import {
+  API_ERROR_SOURCES,
+  API_ERROR_CODES as WEB_API_ERROR_CODES,
+  WebApiError,
+  type ApiErrorCode,
+} from '@/apis/WebApi.errors';
 import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import {
   API_ERROR_CODES,
@@ -94,6 +99,18 @@ function validatedHeadersOf(options: CallOptions): Record<string, string> {
   return Object.fromEntries(new Headers(requestHeaders(options)));
 }
 
+/** An answer or transport failure of cms-api; the BFF route turns it into its fixed answer. */
+function upstreamFailure(
+  errorCode: ApiErrorCode,
+  options: {
+    statusCode?: number;
+    upstreamErrorCode?: string | undefined;
+    retryAfterSeconds?: number;
+  } = {},
+): WebApiError {
+  return new WebApiError({ source: API_ERROR_SOURCES.CMS_API_REST, errorCode, ...options });
+}
+
 function retryAfterSecondsOf(response: ServerApiAnswer): number {
   const seconds = Number(response.headers.get(RETRY_AFTER_HEADER));
   return Number.isInteger(seconds) && seconds > 0 ? seconds : SECONDS_PER_MINUTE;
@@ -115,20 +132,26 @@ async function callCmsApi(options: CallOptions): Promise<ServerApiAnswer> {
       cache: 'no-store',
     });
   } catch (error) {
-    const isTimeout =
-      error instanceof WebApiError && error.errorCode === WEB_API_ERROR_CODES.SERVER_API.TIMEOUT;
-    throw new BffError(isTimeout ? 'BFF_UPSTREAM_TIMEOUT' : 'BFF_UPSTREAM_FAILED');
+    if (error instanceof WebApiError) throw error;
+    throw upstreamFailure(WEB_API_ERROR_CODES.BFF.UPSTREAM_FAILED);
   }
   if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
-    throw BffError.rateLimited(retryAfterSecondsOf(response));
+    throw upstreamFailure(WEB_API_ERROR_CODES.BFF.RATE_LIMITED, {
+      statusCode: response.status,
+      retryAfterSeconds: retryAfterSecondsOf(response),
+    });
   }
-  if (response.status >= HTTP_STATUS.SERVER_ERROR_MIN) throw new BffError('BFF_UPSTREAM_FAILED');
+  if (response.status >= HTTP_STATUS.SERVER_ERROR_MIN) throw unexpectedStatus(response);
   return response;
 }
 
 function parseAnswer<T>(response: ServerApiAnswer, schema: z.ZodType<T>): T {
   const parsed = schema.safeParse(response.body);
-  if (!parsed.success) throw new BffError('BFF_UPSTREAM_FAILED');
+  if (!parsed.success) {
+    throw upstreamFailure(WEB_API_ERROR_CODES.SERVER_API.INVALID_BODY, {
+      statusCode: response.status,
+    });
+  }
   return parsed.data;
 }
 
@@ -145,8 +168,15 @@ function refreshTokenOf(response: ServerApiAnswer): string | undefined {
   return value === undefined || value === '' ? undefined : value;
 }
 
+function unexpectedStatus(response: ServerApiAnswer): WebApiError {
+  return upstreamFailure(WEB_API_ERROR_CODES.BFF.UPSTREAM_FAILED, {
+    statusCode: response.status,
+    ...(errorCodeOf(response) !== undefined && { upstreamErrorCode: errorCodeOf(response) }),
+  });
+}
+
 function expectStatus(response: ServerApiAnswer, status: number): void {
-  if (response.status !== status) throw new BffError('BFF_UPSTREAM_FAILED');
+  if (response.status !== status) throw unexpectedStatus(response);
 }
 
 /** A second-step 401 maps by cms-api's code; any other refusal is an upstream failure. */
@@ -154,18 +184,18 @@ function throwTwoFactorRefusal(response: ServerApiAnswer): never {
   if (response.status === HTTP_STATUS.UNAUTHORIZED) {
     const errorCode = errorCodeOf(response);
     if (errorCode === API_ERROR_CODES.INVALID_2FA_CODE) {
-      throw new BffError('BFF_INVALID_TWO_FACTOR_CODE');
+      throw new BffError('BFF_INVALID_TWO_FACTOR_CODE', {}, [], { upstreamErrorCode: errorCode });
     }
     if (errorCode === API_ERROR_CODES.INVALID_TEMP_TOKEN) {
-      throw new BffError('BFF_TWO_FACTOR_EXPIRED');
+      throw new BffError('BFF_TWO_FACTOR_EXPIRED', {}, [], { upstreamErrorCode: errorCode });
     }
   }
-  throw new BffError('BFF_UPSTREAM_FAILED');
+  throw unexpectedStatus(response);
 }
 
 /**
  * The fixed list of cms-api calls the BFF makes (ADR 0018 section 2). Every
- * call forwards the visitor IP; a failure is a `BffError` with a fixed code.
+ * call forwards the visitor IP; a failure is a `WebApiError`; the BFF route maps it to a fixed code.
  */
 export const cmsApiClient = {
   /** Any 401 is `BFF_INVALID_CREDENTIALS`: no account enumeration. */
@@ -179,7 +209,11 @@ export const cmsApiClient = {
       visitorIp,
       body: credentials,
     });
-    if (response.status === HTTP_STATUS.UNAUTHORIZED) throw new BffError('BFF_INVALID_CREDENTIALS');
+    if (response.status === HTTP_STATUS.UNAUTHORIZED) {
+      throw new BffError('BFF_INVALID_CREDENTIALS', {}, [], {
+        upstreamErrorCode: errorCodeOf(response),
+      });
+    }
     expectStatus(response, HTTP_STATUS.OK);
     const refreshToken = refreshTokenOf(response);
     const answer = parseAnswer(response, z.union([accessTokenAnswer, twoFactorRequiredAnswer]));

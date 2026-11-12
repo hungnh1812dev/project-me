@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
 import {
   ALLOW_HEADER,
   CACHE_CONTROL_HEADER,
@@ -75,10 +76,13 @@ export const BFF_ERROR_CODES = {
 
 export type BffErrorCode = keyof typeof BFF_ERROR_CODES;
 
-/** A refusal with a fixed code and message; nothing from the upstream ever reaches it. */
-export class BffError extends Error {
-  readonly errorCode: BffErrorCode;
-  readonly statusCode: number;
+/**
+ * A refusal with a fixed code and message; nothing from the upstream ever reaches it. It is a
+ * `WebApiError` of source `bff` that also carries the headers and cookies of the answer.
+ */
+export class BffError extends WebApiError {
+  declare readonly errorCode: BffErrorCode;
+  declare readonly statusCode: number;
   readonly headers: Readonly<Record<string, string>>;
   /** `Set-Cookie` lines the refusal carries (a session cleared by the refusal). */
   readonly setCookies: readonly string[];
@@ -87,11 +91,15 @@ export class BffError extends Error {
     errorCode: BffErrorCode,
     headers: Record<string, string> = {},
     setCookies: readonly string[] = [],
+    extra: { upstreamErrorCode?: string | undefined; retryAfterSeconds?: number | undefined } = {},
   ) {
-    super(errorCode);
+    super({
+      source: API_ERROR_SOURCES.BFF,
+      errorCode,
+      statusCode: BFF_ERROR_CODES[errorCode].statusCode,
+      ...extra,
+    });
     this.name = 'BffError';
-    this.errorCode = errorCode;
-    this.statusCode = BFF_ERROR_CODES[errorCode].statusCode;
     this.headers = headers;
     this.setCookies = setCookies;
   }
@@ -101,8 +109,37 @@ export class BffError extends Error {
   }
 
   static rateLimited(retryAfterSeconds: number): BffError {
-    return new BffError('BFF_RATE_LIMITED', { [RETRY_AFTER_HEADER]: String(retryAfterSeconds) });
+    return new BffError(
+      'BFF_RATE_LIMITED',
+      { [RETRY_AFTER_HEADER]: String(retryAfterSeconds) },
+      [],
+      { retryAfterSeconds },
+    );
   }
+}
+
+function isBffErrorCode(errorCode: string): errorCode is BffErrorCode {
+  return errorCode in BFF_ERROR_CODES;
+}
+
+/**
+ * The refusal a failure answers with. A `BffError` answers as it is; a `WebApiError` of cms-api or
+ * Turnstile carrying a BFF code answers with it (a 429 keeps its Retry-After); a transport timeout
+ * is `BFF_UPSTREAM_TIMEOUT`; anything else is `BFF_UPSTREAM_FAILED`.
+ */
+export function bffErrorOf(error: unknown): BffError {
+  if (error instanceof BffError) return error;
+  if (!(error instanceof WebApiError)) return new BffError('BFF_UPSTREAM_FAILED');
+  if (
+    error.errorCode === API_ERROR_CODES.BFF.RATE_LIMITED &&
+    error.retryAfterSeconds !== undefined
+  ) {
+    return BffError.rateLimited(error.retryAfterSeconds);
+  }
+  if (error.errorCode === API_ERROR_CODES.SERVER_API.TIMEOUT) {
+    return new BffError('BFF_UPSTREAM_TIMEOUT');
+  }
+  return new BffError(isBffErrorCode(error.errorCode) ? error.errorCode : 'BFF_UPSTREAM_FAILED');
 }
 
 /** The `{ statusCode, errorCode, message }` answer for a refusal. */

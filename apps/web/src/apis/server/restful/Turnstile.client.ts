@@ -2,11 +2,20 @@ import 'server-only';
 
 import { z } from 'zod';
 
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
 import { API_TIMEOUT_MS, CONTENT_TYPE_HEADER, JSON_MEDIA_TYPE } from '@/configs/Http.constants';
 import { TURNSTILE, type TurnstileAction } from '@/configs/Security.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
-import { BffError } from '../bff/Bff.errors';
+const { HUMAN_CHECK_FAILED, HUMAN_CHECK_UNAVAILABLE } = API_ERROR_CODES.BFF;
+
+function humanCheckFailure(errorCode: typeof HUMAN_CHECK_FAILED | typeof HUMAN_CHECK_UNAVAILABLE) {
+  return new WebApiError({
+    source: API_ERROR_SOURCES.TURNSTILE,
+    errorCode,
+    operation: 'siteverify',
+  });
+}
 
 const siteverifyAnswer = z.object({
   success: z.boolean(),
@@ -33,7 +42,7 @@ async function askSiteverify(
     });
     return siteverifyAnswer.parse(await response.json());
   } catch {
-    throw new BffError('BFF_HUMAN_CHECK_UNAVAILABLE');
+    throw humanCheckFailure(HUMAN_CHECK_UNAVAILABLE);
   }
 }
 
@@ -50,7 +59,7 @@ export async function verifyHumanCheck(
   visitorIp: string | undefined,
 ): Promise<void> {
   if (typeof token !== 'string' || token === '' || token.length > TURNSTILE.TOKEN_MAX_LENGTH) {
-    throw new BffError('BFF_HUMAN_CHECK_FAILED');
+    throw humanCheckFailure(HUMAN_CHECK_FAILED);
   }
   const { turnstileSecretKey, turnstileExpectedHostname } = getServerEnv();
   const answer = await askSiteverify(token, visitorIp);
@@ -59,6 +68,6 @@ export async function verifyHumanCheck(
   const isHostnameWrong =
     turnstileExpectedHostname !== undefined && answer.hostname !== turnstileExpectedHostname;
   if (!answer.success || isActionWrong || isHostnameWrong) {
-    throw new BffError('BFF_HUMAN_CHECK_FAILED');
+    throw humanCheckFailure(HUMAN_CHECK_FAILED);
   }
 }

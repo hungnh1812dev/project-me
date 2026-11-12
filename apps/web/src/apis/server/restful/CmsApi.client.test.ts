@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
 
+import { bffErrorOf } from '../bff/Bff.errors';
 import { cmsApiClient } from './CmsApi.client';
 import { serverApi } from './ServerApi.client';
 
@@ -32,11 +33,16 @@ async function sentBody(): Promise<unknown> {
   return JSON.parse(await lastCall().request.text());
 }
 
+/** The code the BFF answers with for the failure the call raised. */
 async function errorCodeOf(promise: Promise<unknown>): Promise<string | undefined> {
   return promise.then(
     () => undefined,
-    (error: { errorCode: string }) => error.errorCode,
+    (error: unknown) => bffErrorOf(error).errorCode,
   );
+}
+
+async function failureOf(promise: Promise<unknown>): Promise<unknown> {
+  return promise.catch((caught: unknown) => caught);
 }
 
 beforeEach(() => {
@@ -100,14 +106,33 @@ describe('every call', () => {
     expect(post).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the Retry-After of a cms-api 429', async () => {
+  it('raises a cms-api-rest WebApiError for a 429 and the BFF answers with its Retry-After', async () => {
     answer(429, { message: 'x' }, { 'retry-after': '42' });
-    const error: unknown = await cmsApiClient
-      .logIn({ email: 'e', password: 'p', rememberMe: false }, IP)
-      .catch((caught: unknown) => caught);
+    const error = await failureOf(
+      cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP),
+    );
+    expect(error).toBeInstanceOf(WebApiError);
     expect(error).toMatchObject({
+      source: API_ERROR_SOURCES.CMS_API_REST,
+      errorCode: 'BFF_RATE_LIMITED',
+      statusCode: 429,
+      retryAfterSeconds: 42,
+    });
+    expect(bffErrorOf(error)).toMatchObject({
       errorCode: 'BFF_RATE_LIMITED',
       headers: { 'retry-after': '42' },
+    });
+  });
+
+  it('keeps the cms-api errorCode of an unexpected 4xx as upstreamErrorCode', async () => {
+    answer(400, { errorCode: 'AUTH_INVALID_REQUEST' });
+    const error = await failureOf(
+      cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP),
+    );
+    expect(error).toMatchObject({
+      source: API_ERROR_SOURCES.CMS_API_REST,
+      statusCode: 400,
+      upstreamErrorCode: 'AUTH_INVALID_REQUEST',
     });
   });
 });
