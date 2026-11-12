@@ -198,6 +198,11 @@ export interface ErrorPathTarget {
   key: string | undefined;
 }
 
+/** A validator error placed on the tree: the field and key it points at, with its message. */
+export interface LocatedError extends ErrorPathTarget {
+  message: string;
+}
+
 /** Follows `fields[i].fields[j].<key>` through the tree. */
 export function fieldIdOfErrorPath(
   tree: SchemaTree,

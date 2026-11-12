@@ -18,9 +18,20 @@ import { useCallerAccess } from '@features/access';
 import { useDefinitionValidation, type DefinitionValidationMode } from '@features/content-types';
 
 import { ExportPanel } from './ExportPanel';
+import { FieldPalette } from './FieldPalette';
+import type { FieldTypeName } from './FieldTypes.registry';
 import { ImportSchemaDialog } from './ImportSchemaDialog';
-import { fieldIdOfErrorPath, serializeSchemaTree } from './SchemaJson.rules';
-import { createNewSchemaTree, schemaTreeReducer, type ImportedTree } from './SchemaTree.reducer';
+import { PropertyPanel } from './PropertyPanel';
+import { SchemaCanvas } from './SchemaCanvas';
+import { fieldIdOfErrorPath, serializeSchemaTree, type LocatedError } from './SchemaJson.rules';
+import {
+  canPlaceComponentIn,
+  createNewSchemaTree,
+  findField,
+  schemaTreeReducer,
+  type ImportedTree,
+  type ListOwnerId,
+} from './SchemaTree.reducer';
 import { ValidationPanel } from './ValidationPanel';
 
 type StartKind = 'new' | 'import';
@@ -39,6 +50,7 @@ export function SchemaBuilderPage() {
   const [pendingStart, setPendingStart] = useState<StartKind | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [seenAddedId, setSeenAddedId] = useState<string | null>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus();
 
   const hasUnsavedWork = isStarted && tree.changedSinceSnapshot;
@@ -49,6 +61,12 @@ export function SchemaBuilderPage() {
     [caller.isOwner, isStarted, tree],
   );
   const check = useDefinitionValidation(definition, mode);
+
+  // A field just added or duplicated is selected (SB-6); adjust during render, not in an effect.
+  if (tree.lastAddedId !== seenAddedId) {
+    setSeenAddedId(tree.lastAddedId);
+    if (tree.lastAddedId !== null) setSelectedFieldId(tree.lastAddedId);
+  }
 
   const startNew = () => {
     dispatch({ type: 'startNew' });
@@ -80,6 +98,21 @@ export function SchemaBuilderPage() {
     if (kind === 'new') startNew();
     if (kind === 'import') setIsImportOpen(true);
   };
+
+  const currentErrors = useMemo<LocatedError[]>(
+    () =>
+      check.isResultCurrent
+        ? (check.validation?.errors ?? []).map((error) => ({
+            ...fieldIdOfErrorPath(tree, error.path),
+            message: error.message,
+          }))
+        : [],
+    [check.isResultCurrent, check.validation, tree],
+  );
+  const selectedField =
+    selectedFieldId === null ? null : (findField(tree.fields, selectedFieldId) ?? null);
+  const addToList = (parentId: ListOwnerId, fieldType: FieldTypeName) =>
+    dispatch({ type: 'addField', parentId, index: Number.POSITIVE_INFINITY, fieldType });
 
   const keyErrors = (key: string) =>
     !check.isResultCurrent
@@ -217,15 +250,45 @@ export function SchemaBuilderPage() {
                 </div>
               </div>
             </Card>
-            <Card className="grid gap-2" data-selected-field-id={selectedFieldId ?? undefined}>
-              <h2 className="m-0 text-base font-semibold">{copy.fields.heading}</h2>
-              <p className="m-0 text-sm text-muted-foreground tabular-nums">
-                {copy.fields.count(tree.fields.length)}
-              </p>
-              <p className="m-0 text-sm text-muted-foreground">{copy.fields.placeholder}</p>
+            <Card className="grid gap-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="m-0 text-base font-semibold">{copy.fields.heading}</h2>
+                <p className="m-0 text-sm text-muted-foreground tabular-nums">
+                  {copy.fields.count(tree.fields.length)}
+                </p>
+              </div>
+              <SchemaCanvas
+                tree={tree}
+                selectedFieldId={selectedField?.id ?? null}
+                errors={currentErrors}
+                onSelect={setSelectedFieldId}
+                onAdd={addToList}
+                onMove={(fieldId, parentId, index) =>
+                  dispatch({ type: 'moveField', fieldId, parentId, index })
+                }
+                onDuplicate={(fieldId) => dispatch({ type: 'duplicateField', fieldId })}
+                onDelete={(fieldId) => dispatch({ type: 'deleteField', fieldId })}
+              />
             </Card>
           </div>
           <div className="grid gap-6">
+            <PropertyPanel
+              tree={tree}
+              field={selectedField}
+              errors={currentErrors}
+              onSetKey={(fieldId, key, value) =>
+                dispatch({ type: 'setFieldKey', fieldId, key, value })
+              }
+              onChangeType={(fieldId, fieldType) =>
+                dispatch({ type: 'changeFieldType', fieldId, fieldType })
+              }
+            />
+            <Card>
+              <FieldPalette
+                canAddComponent={canPlaceComponentIn(tree, null)}
+                onPick={(fieldType) => addToList(null, fieldType)}
+              />
+            </Card>
             <ValidationPanel
               tree={tree}
               status={check.status}

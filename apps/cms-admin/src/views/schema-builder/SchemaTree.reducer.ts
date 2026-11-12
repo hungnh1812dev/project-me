@@ -110,7 +110,7 @@ function componentDepth(field: SchemaField): number {
   return 1 + Math.max(0, ...field.fields.map(componentDepth));
 }
 
-function findField(fields: readonly SchemaField[], id: string): SchemaField | undefined {
+export function findField(fields: readonly SchemaField[], id: string): SchemaField | undefined {
   for (const field of fields) {
     if (field.id === id) return field;
     const inChild = findField(field.fields, id);
@@ -189,6 +189,11 @@ function listOf(tree: SchemaTree, ownerId: ListOwnerId): readonly SchemaField[] 
 function fitsDepth(tree: SchemaTree, ownerId: ListOwnerId, subtreeDepth: number): boolean {
   const level = levelOfList(tree.fields, ownerId);
   return level !== undefined && level + subtreeDepth <= MAX_COMPONENT_DEPTH;
+}
+
+/** Whether a new component (or a retyped field) may sit in this list without passing the depth limit (SB-7). */
+export function canPlaceComponentIn(tree: SchemaTree, ownerId: ListOwnerId): boolean {
+  return fitsDepth(tree, ownerId, 1);
 }
 
 function insertAt<T>(list: readonly T[], index: number, item: T): readonly T[] {
@@ -348,13 +353,30 @@ function setFieldKey(
   });
 }
 
+export type TypeChangeRefusal = 'holdsFields' | 'tooDeep';
+
+/** Why a field cannot take this type, or `undefined` when it can (SB-8, SB-7). */
+export function typeChangeRefusal(
+  tree: SchemaTree,
+  fieldId: string,
+  fieldType: string,
+): TypeChangeRefusal | undefined {
+  const field = findField(tree.fields, fieldId);
+  if (!field) return undefined;
+  const toComponent = fieldType === COMPONENT_FIELD_TYPE;
+  if (!toComponent && field.fields.length > 0) return 'holdsFields';
+  if (toComponent && !isComponent(field)) {
+    const parentId = findParentId(tree.fields, fieldId) ?? null;
+    if (!fitsDepth(tree, parentId, 1)) return 'tooDeep';
+  }
+  return undefined;
+}
+
 function changeFieldType(tree: SchemaTree, fieldId: string, fieldType: string): SchemaTree {
   const field = findField(tree.fields, fieldId);
   if (!field || field.type === fieldType) return tree;
+  if (typeChangeRefusal(tree, fieldId, fieldType) !== undefined) return tree;
   const toComponent = fieldType === COMPONENT_FIELD_TYPE;
-  if (!toComponent && field.fields.length > 0) return tree;
-  const parentId = findParentId(tree.fields, fieldId) ?? null;
-  if (toComponent && !fitsDepth(tree, parentId, 1)) return tree;
   return edited(tree, {
     fields: updateField(tree.fields, fieldId, (current) => {
       const retyped = withoutKeys(

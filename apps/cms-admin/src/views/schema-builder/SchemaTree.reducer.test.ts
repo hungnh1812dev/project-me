@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { FIELD_TYPES } from './FieldTypes.registry';
 import {
+  canPlaceComponentIn,
   createNewSchemaTree,
   MAX_COMPONENT_DEPTH,
   moveTargetsOf,
   schemaTreeReducer,
+  typeChangeRefusal,
   type ImportedField,
   type SchemaTree,
   type SchemaTreeAction,
@@ -318,5 +320,31 @@ describe('schemaTreeReducer', () => {
         fieldType: 'component',
       }),
     ).toBe(withLeaf);
+  });
+});
+
+describe('refusal helpers', () => {
+  it('says why a type change is refused, and when it is allowed', () => {
+    const withChild = add(add(createNewSchemaTree(), 'component'), 'string', 'f1');
+    expect(typeChangeRefusal(withChild, 'f1', 'string')).toBe('holdsFields');
+    expect(typeChangeRefusal(withChild, 'f2', 'integer')).toBeUndefined();
+    const deep = add(
+      add(add(createNewSchemaTree(), 'component'), 'component', 'f1'),
+      'component',
+      'f2',
+    );
+    const leaf = add(deep, 'string', 'f3');
+    expect(typeChangeRefusal(leaf, 'f4', 'component')).toBe('tooDeep');
+  });
+
+  it('knows which lists can take a component', () => {
+    const deep = add(
+      add(add(createNewSchemaTree(), 'component'), 'component', 'f1'),
+      'component',
+      'f2',
+    );
+    expect(canPlaceComponentIn(deep, null)).toBe(true);
+    expect(canPlaceComponentIn(deep, 'f2')).toBe(true);
+    expect(canPlaceComponentIn(deep, 'f3')).toBe(false);
   });
 });

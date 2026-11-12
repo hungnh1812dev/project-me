@@ -1062,7 +1062,61 @@
     "fields": {
       "heading": "Fields",
       "count": "SAMPLE fields",
-      "placeholder": "The field editor opens here."
+      "empty": "No fields yet. Add the first field to start building.",
+      "emptyComponent": "No fields in this component yet.",
+      "addField": "Add field",
+      "addFieldTo": "Add field to SAMPLE",
+      "paletteHeading": "Field types",
+      "paletteHint": "Pick a type to add it at the end of the top level.",
+      "listLabel": "Fields of SAMPLE",
+      "rootListLabel": "Fields"
+    },
+    "row": {
+      "select": "Edit SAMPLE",
+      "moveUp": "Move SAMPLE up",
+      "moveDown": "Move SAMPLE down",
+      "moveTo": "Move SAMPLE to another list",
+      "moveToRoot": "Top level",
+      "moveToComponent": "Inside SAMPLE",
+      "duplicate": "Duplicate SAMPLE",
+      "remove": "Delete SAMPLE",
+      "hasErrors": "Has validation errors",
+      "markers": {
+        "required": "Required",
+        "sensitive": "Sensitive",
+        "repeatable": "Repeatable",
+        "width": "Width SAMPLE"
+      },
+      "deleteDialog": {
+        "title": "Delete SAMPLE?",
+        "description": "This component holds SAMPLE fields. Deleting it removes them too.",
+        "cancel": "Keep it",
+        "confirm": "Delete SAMPLE"
+      }
+    },
+    "property": {
+      "heading": "Field properties",
+      "empty": "Select a field to edit its properties.",
+      "name": "Name",
+      "displayName": "Display name",
+      "type": "Type",
+      "required": "Required",
+      "sensitive": "Sensitive",
+      "sensitiveHint": "Hidden from public and reviewer roles unless they are granted the field.",
+      "width": "Width",
+      "widthUnset": "Not set",
+      "widthOptions": {
+        "1/3": "One third",
+        "1/2": "Half",
+        "full": "Full width"
+      },
+      "component": "Component",
+      "componentHint": "The name of the component this field holds.",
+      "repeatable": "Repeatable",
+      "typeRefusal": {
+        "holdsFields": "Delete the fields inside this component before changing its type.",
+        "tooDeep": "A component here would nest deeper than 3 levels."
+      }
     },
     "fieldTypes": {
       "text": "Long text",

@@ -189,4 +189,103 @@ describe('SchemaBuilderPage', () => {
     );
     expect(api.callsTo(VALIDATE)).toHaveLength(2);
   });
+
+  describe('canvas editing', () => {
+    const pickType = async (label: string, menuName = copy.fields.addField) => {
+      await userEvent.click(screen.getByRole('button', { name: menuName }));
+      await userEvent.click(await screen.findByRole('menuitem', { name: label }));
+    };
+
+    it('adds a field by the menu, selects it and edits it in the property panel', async () => {
+      const { api } = await open(TEST_USER);
+      await startNew();
+      expect(screen.getByText(copy.property.empty)).toBeVisible();
+      await pickType(copy.fieldTypes.string);
+      expect(screen.getByRole('button', { name: copy.row.select('field1') })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      const name = screen.getByLabelText(copy.property.name);
+      expect(name).toHaveValue('field1');
+      await userEvent.clear(name);
+      await userEvent.type(name, 'title');
+      await userEvent.click(screen.getByRole('checkbox', { name: copy.property.required }));
+      expect(screen.getByRole('button', { name: copy.row.select('title') })).toHaveTextContent(
+        copy.row.markers.required,
+      );
+      await vi.waitFor(() =>
+        expect(lastRequest(api).definition).toMatchObject({
+          fields: [{ name: 'title', type: 'string', required: true }],
+        }),
+      );
+    });
+
+    it('builds a 3-level component by keyboard-reachable controls and offers no 4th level', async () => {
+      await open(TEST_USER);
+      await startNew();
+      const adderName = copy.fields.addFieldTo('field1');
+      await pickType(copy.fieldTypes.component);
+      for (let level = 2; level <= 3; level += 1) {
+        await userEvent.click(screen.getAllByRole('button', { name: adderName })[0]!);
+        await userEvent.click(
+          await screen.findByRole('menuitem', { name: copy.fieldTypes.component }),
+        );
+      }
+      expect(screen.getAllByRole('button', { name: adderName })).toHaveLength(3);
+      await userEvent.click(screen.getAllByRole('button', { name: adderName })[0]!);
+      expect(await screen.findByRole('menuitem', { name: copy.fieldTypes.string })).toBeVisible();
+      expect(screen.queryByRole('menuitem', { name: copy.fieldTypes.component })).toBeNull();
+    });
+
+    it('moves a field across levels and asks before deleting a component that holds fields', async () => {
+      await open(TEST_USER);
+      await startNew();
+      await pickType(copy.fieldTypes.component);
+      await pickType(copy.fieldTypes.string);
+      await userEvent.click(screen.getByRole('button', { name: copy.row.moveTo('field2') }));
+      await userEvent.click(
+        await screen.findByRole('menuitem', { name: copy.row.moveToComponent('field1') }),
+      );
+      expect(
+        within(screen.getByRole('list', { name: copy.fields.listLabel('field1') })).getByRole(
+          'button',
+          { name: copy.row.select('field2') },
+        ),
+      ).toBeVisible();
+      await userEvent.click(screen.getByRole('button', { name: copy.row.remove('field1') }));
+      const dialog = await screen.findByRole('dialog');
+      await userEvent.click(
+        within(dialog).getByRole('button', { name: copy.row.deleteDialog.confirm('field1') }),
+      );
+      expect(screen.queryByRole('button', { name: copy.row.select('field1') })).toBeNull();
+      expect(screen.getByText(copy.fields.empty)).toBeVisible();
+    });
+
+    it('marks a row with an error and selects the field from the error list', async () => {
+      await open(TEST_USER, () => ({
+        status: 200,
+        data: {
+          valid: false,
+          errors: [{ path: ['fields', 0, 'name'], rule: 'name-format', message: 'Use snake case' }],
+        } satisfies DefinitionValidation,
+      }));
+      await startNew();
+      await pickType(copy.fieldTypes.string);
+      await pickType(copy.fieldTypes.string);
+      const second = screen.getByRole('button', { name: copy.row.select('field2') });
+      expect(second).toHaveAttribute('aria-pressed', 'true');
+      const marked = await screen.findByRole('button', { name: copy.row.select('field1') });
+      await vi.waitFor(() => expect(marked).toHaveTextContent(copy.row.hasErrors));
+      expect(second).not.toHaveTextContent(copy.row.hasErrors);
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: copy.validation.selectError('name-format', 'fields[0].name'),
+        }),
+      );
+      expect(marked).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByLabelText(copy.property.name)).toHaveAccessibleDescription(
+        expect.stringContaining('Use snake case'),
+      );
+    });
+  });
 });
