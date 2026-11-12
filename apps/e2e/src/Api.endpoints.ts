@@ -20,6 +20,7 @@ export const API_PATHS = {
   /** Prefix shared by every auth route. */
   AUTH_PREFIX: '/auth/',
   ACCOUNTS: '/accounts',
+  CONTENT_TYPES_VALIDATE: '/content-types/validate',
   API_TOKENS: '/api-tokens',
   GRAPHQL: '/graphql',
   MEDIA: '/media',
