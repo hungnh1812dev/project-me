@@ -22,7 +22,7 @@ Commands:
 - integration test: cms-api `pnpm --filter @abyss/cms-api test:integration` (Testcontainers, Docker must run)
 - format: `pnpm exec prettier --write <files>` (check: `pnpm format:check`)
 - dev stack (tier 2): `pnpm dev:stack` (stop `pnpm dev:stack:stop`; compose project `abyss-dev`, env from `.localEnv.agent`, vars in `.dev-stack/e2e-vars.sh`); run specs with `E2E_STACK=dev pnpm e2e:spec ...`
-- full stack (tier 3): `SMOKE_E2E=1 pnpm smoke`; kept mode `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke`; `SMOKE_NO_BUILD=1` reuses the last built images (only when no product code changed); stop `docker compose -p abyss-smoke down -v`; serves port 8080
+- full stack (tier 3): kept mode without e2e `SMOKE_KEEP=1 pnpm smoke` (scoped runs, re-test rounds, per-unit security reviews); kept mode with the full suite `SMOKE_KEEP=1 SMOKE_E2E=1 pnpm smoke` (final run only); `SMOKE_NO_BUILD=1` reuses the last built images (only when no product code changed); running check `docker compose -p abyss-smoke ps --status running --services` lists `proxy`, `cms-api`, `cms-admin` and `web`, and `.smoke/e2e-vars.sh` exists; stop `docker compose -p abyss-smoke down -v`; serves port 8080
 - e2e single spec: `pnpm e2e:spec <spec relative to apps/e2e> [-g <test name>]` against a running stack (first time: `pnpm --filter @abyss/e2e browsers:install`)
 - run app: dev `pnpm --filter @abyss/cms-admin dev` (5173), `pnpm --filter @abyss/web dev` (5174)
 - dependency audit: `pnpm audit`

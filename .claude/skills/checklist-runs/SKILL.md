@@ -11,7 +11,8 @@ One format for the planner's table under each checkpoint in the phases file, the
 
 ```markdown
 # Checklist - <checkpoint | feature>
-Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHECK tier=<n>>
+Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHECK tier=<n> | FINAL>
+Test scope: <feature base>..<hash> · flows: <list> · specs: <list>   (qc, at each scoped run; `test-tiers` "Scoped runs and the final run")
 
 | ID | Description | Input | Expected output | Checker | Method | Source | Status | Note |
 |---|---|---|---|---|---|---|---|---|
@@ -19,7 +20,7 @@ Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHEC
 ```
 
 - `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<1-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).
-- **Phase checkpoint:** its own rows plus the rows of the phase's older checkpoints in an old plan (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows, the full e2e suite at tier 3 and the feature diff review; with one phase, a copy of its phase checklist. A full-suite row may also pass on a shared phase run or with a flaky finding, only as `test-tiers` "Tier 3 re-test rounds" says.
+- **Phase checkpoint:** its own rows plus the rows of the phase's older checkpoints in an old plan (as `T1`, reset to `todo`); always `Scoped e2e suite green on the full stack` (`T3 cli`, qc; the test scope of a scoped run) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows and the feature diff review; with one phase, a copy of its phase checklist. The feature checklist (one phase or several) ends with one `Full e2e suite green on the full stack (final run)` row (`T3 cli`, qc), run once, after every other row is `pass` (`test-tiers` "Scoped runs and the final run"). A scoped or final row may also pass with a flaky finding, only as `test-tiers` "Tier 3 re-test rounds" says. A full-suite row written before ADR 0022 in a phase checkpoint runs as the scoped row, `Note` `scoped per ADR 0022`.
 - Order: planner writes → qc copies, merges, adds its rows → security-qc adds its rows → tier runs.
 - Each checker writes `Status` and `Note` of its own rows only (both parts of a `both` row; it passes only when both do). No row is ever deleted; one that no longer applies keeps a `Note` saying why and still needs `pass`.
 - Done = every row `pass`.
