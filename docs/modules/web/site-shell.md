@@ -18,6 +18,8 @@ Owns the `SiteShell` content query (`header`, `siteText`, `signInText`), its loa
 
 ## Techniques
 
+Read types: `siteText` reads the cms-api type `siteText`; `signInText` is a GraphQL alias of the cms-api root field `moduleSignIn` (response key and web type stay `signInText` / `SignInText`).
+
 Query file split: `SiteShell.graphql.ts` is client-safe and imports nothing from `apis/server/**`; `SiteShell.server.ts` is `server-only` and builds the query with `defineContentQuery`. `loadSiteShell` is wrapped in React `cache` and throws `GraphqlRequestError` when any root field failed. Texts with placeholders use `formatText` and `pickPlural` from `utils/TextTemplate.rules.ts`. The mock is `apis/server/restful/mocks/SiteShell.mock.ts`, checked against the query selections by `SiteShell.graphql.test.ts`.
 
 ## Technologies

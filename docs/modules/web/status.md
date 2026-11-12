@@ -18,6 +18,8 @@ Holds the `StatusPage` text query and reads cms-api's liveness for the status ca
 
 ## Techniques
 
+`statusPageText` is a GraphQL alias of the cms-api root field `modulePageStatus` (response key and web type stay `statusPageText` / `StatusPageText`).
+
 One fetch function and its query keys, and the `StatusPage` query split into a client-safe `.graphql` file and a `server-only` loader (`null` when `statusPageText` failed); it imports no other feature.
 
 ## Technologies

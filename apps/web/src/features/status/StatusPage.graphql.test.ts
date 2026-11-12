@@ -25,9 +25,12 @@ const rootSelection = operation.selectionSet;
 const fieldsOf = (selectionSet: SelectionSetNode): FieldNode[] =>
   selectionSet.selections.filter((selection): selection is FieldNode => selection.kind === 'Field');
 
+/** The key a field has in the response: its alias when it has one. */
+const responseKeyOf = (field: FieldNode): string => (field.alias ?? field.name).value;
+
 function selectionPaths(selectionSet: SelectionSetNode, prefix = ''): string[] {
   return fieldsOf(selectionSet).flatMap((field) => {
-    const path = `${prefix}${field.name.value}`;
+    const path = `${prefix}${responseKeyOf(field)}`;
     return field.selectionSet === undefined
       ? [path]
       : [path, ...selectionPaths(field.selectionSet, `${path}.`)];

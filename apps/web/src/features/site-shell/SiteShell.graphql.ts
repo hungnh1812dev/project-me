@@ -92,7 +92,10 @@ export interface SiteShell {
 
 export const SITE_SHELL_OPERATION_NAME = 'SiteShell';
 
-/** The header and every shared text of the site: each root field's text after its name. */
+/**
+ * The header and every shared text of the site: each root field's text after its name.
+ * `signInText` is a GraphQL alias of the cms-api root field `moduleSignIn`, so the response key stays `signInText`.
+ */
 export const SITE_SHELL_ROOT_FIELDS = {
   header: `{
     name
@@ -123,7 +126,7 @@ export const SITE_SHELL_ROOT_FIELDS = {
     errorDescription
     errorRetry
   }`,
-  signInText: `{
+  signInText: `: moduleSignIn {
     title
     description
     emailLabel

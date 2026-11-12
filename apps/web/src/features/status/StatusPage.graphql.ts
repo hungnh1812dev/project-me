@@ -20,9 +20,9 @@ export interface StatusPage {
 
 export const STATUS_PAGE_OPERATION_NAME = 'StatusPage';
 
-/** The status page text: each root field's text after its name. */
+/** The status page text: each root field's text after its name; `statusPageText` is a GraphQL alias of the cms-api root field `modulePageStatus`. */
 export const STATUS_PAGE_ROOT_FIELDS = {
-  statusPageText: `{
+  statusPageText: `: modulePageStatus {
     title
     description
     cardTitle
