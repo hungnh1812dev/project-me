@@ -30,7 +30,7 @@ React 19, react-router, `@abyss/form-commons` (Radix-based primitives), `lucide-
 
 ## Where to change what
 
-A new menu item: add the page to `views/Views.registry.ts` and its section in `NavSections.constants.ts`; the side menu needs no change. A component only one page uses stays in that page's `views/` folder.
+A new menu item: add the page to `views/Views.registry.ts` and its section in `NavSections.constants.ts`; the side menu needs no change. A component only one page uses stays in that page's `views/` folder. A list or grid with nothing to show renders `EmptyState` from `PageStates.tsx` (a `Card` with a title, an optional hint and an optional decorative icon; ADM-7) in place of the table or grid; a new empty case passes its own copy and needs no new component. A forbidden notice or failed load stays `FormAlert` / `LoadError`, outside any `Card`.
 
 ## Files
 
@@ -42,21 +42,21 @@ components/ (6 files)
   layouts/ (7 files)
 ```
 
-Tests: 6 files (not listed).
+Tests: 7 files (not listed).
 
 | File | Description |
 |---|---|
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
-| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton`, `LoadError`: page title and loading/error states |
+| `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton` (neutral rows in a flush `Card`), `LoadError`, `EmptyState` (title, optional hint and icon in a `Card`): page title and loading, error and empty states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
 | `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), a loading screen throws its promise (no `use`, so no conditional-use warning); an already loaded screen renders at once; shows `LoadError` when the load fails, and its retry clears the failed loads (`retryFailedScreenText`) and loads again; optional `fallback` replaces the skeleton |
 | `useClampedPage.ts` | `useClampedPage`: keeps the current page within the last page |
 | `useRestoreFocus.ts` | `useRestoreFocus`: puts focus back on the opener after a dialog closes |
-| `layouts/AppShell.tsx` | `AppShell`: signed-in layout (side menu, top bar, reviewer banner, outlet) |
-| `layouts/AuthPageLayout.tsx` | `AuthPageLayout`: centered layout for sign-in and password pages |
-| `layouts/MobileMenu.tsx` | `MobileMenu`: the side menu in a drawer on small screens |
-| `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups |
-| `layouts/TopBar.tsx` | `TopBar`: top bar on every width: app name and mobile menu below `md`, user menu at the right |
+| `layouts/AppShell.tsx` | `AppShell`: signed-in layout (sticky full-height white sidebar with a soft edge shadow, side menu, sticky top bar, reviewer banner, outlet in a padded column with section gap) |
+| `layouts/AuthPageLayout.tsx` | `AuthPageLayout`: centered `Card` frame for sign-in and password pages |
+| `layouts/MobileMenu.tsx` | `MobileMenu`: the side menu in a drawer on small screens (same item styles as the sidebar) |
+| `layouts/SideMenu.tsx` | `SideMenu`, `AppNameLink`: grouped, permission-filtered navigation with collapsible groups; when no item is readable (access ready, catalog not loading or failed) it shows the Welcome panel (`NAV_COPY.welcomeTitle`, `welcomeText`, no control, no nav landmark) in the sidebar and the sheet; items use `rounded-item`, the active page (`aria-current`) gets `bg-nav-active` and a 3 px `bg-nav-indicator` bar |
+| `layouts/TopBar.tsx` | `TopBar`: sticky blurred 64 px top bar on every width: app name and mobile menu below `md`, user menu at the right |
 | `layouts/UserMenu.tsx` | `UserMenu`, `initialsOf`: avatar menu (profile, password, security, sign out) |
 | `layouts/useNavGroupOpenState.ts` | `useNavGroupOpenState`: remembers which menu groups are open |
 

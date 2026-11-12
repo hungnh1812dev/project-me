@@ -100,11 +100,7 @@ export function SetPasswordPage() {
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">{COMMON_TEXT.password.set.description}</p>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {error !== null ? (
             <FormAlert tone={ALERT_TONE_BY_ERROR[error.kind]}>{error.message}</FormAlert>
           ) : null}

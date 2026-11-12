@@ -1,0 +1,144 @@
+{
+  "slug": "cv-page-text",
+  "displayName": "CV Page Text",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "loading",
+      "type": "text"
+    },
+    {
+      "name": "refetchFailed",
+      "type": "text"
+    },
+    {
+      "name": "fallbackName",
+      "type": "text"
+    },
+    {
+      "name": "emptyTitle",
+      "type": "text"
+    },
+    {
+      "name": "emptyDescription",
+      "type": "text"
+    },
+    {
+      "name": "maskedValue",
+      "type": "text"
+    },
+    {
+      "name": "contact",
+      "type": "component",
+      "component": "cvPageTextContact",
+      "fields": [
+        {
+          "name": "title",
+          "type": "text"
+        },
+        {
+          "name": "email",
+          "type": "text"
+        },
+        {
+          "name": "phone",
+          "type": "text"
+        },
+        {
+          "name": "address",
+          "type": "text"
+        },
+        {
+          "name": "linkedin",
+          "type": "text"
+        },
+        {
+          "name": "github",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "sections",
+      "type": "component",
+      "component": "cvPageTextSections",
+      "fields": [
+        {
+          "name": "summary",
+          "type": "text"
+        },
+        {
+          "name": "skills",
+          "type": "text"
+        },
+        {
+          "name": "experiences",
+          "type": "text"
+        },
+        {
+          "name": "educations",
+          "type": "text"
+        },
+        {
+          "name": "languages",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "experience",
+      "type": "component",
+      "component": "cvPageTextExperience",
+      "fields": [
+        {
+          "name": "teamSize",
+          "type": "text"
+        },
+        {
+          "name": "projects",
+          "type": "text"
+        },
+        {
+          "name": "techStack",
+          "type": "text"
+        },
+        {
+          "name": "liveLink",
+          "type": "text"
+        },
+        {
+          "name": "repositoryLink",
+          "type": "text"
+        },
+        {
+          "name": "liveLinkName",
+          "type": "text"
+        },
+        {
+          "name": "repositoryLinkName",
+          "type": "text"
+        },
+        {
+          "name": "unnamedProject",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "reference",
+      "type": "component",
+      "component": "cvPageTextReference",
+      "fields": [
+        {
+          "name": "title",
+          "type": "text"
+        },
+        {
+          "name": "phone",
+          "type": "text"
+        }
+      ]
+    }
+  ]
+}

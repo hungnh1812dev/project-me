@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+"""Check that the in-progress feature's state files hold everything a fresh session needs.
+
+Hooks (`break-check --hook`, registered in .claude/settings.json; silent when all is well, so they cost no tokens):
+  Stop          the manager's last message asks for a session break (`Session break ...`) while the state
+                files are not ready -> block the stop with the list of problems (once; a second stop passes)
+  SessionEnd    snapshot the feature folder, git status and the transcript path into .agent-state/.breaks/
+  SessionStart  the state is not ready -> name the problems and the latest snapshot to compare with
+
+CLI (prints nothing and exits 0 when the gate holds):
+  break-check                 the break checks
+  break-check --pass <target> checkpoint pass: every row of checklists/<target>.md is `pass`, no findings
+  break-check --close         feature close: CHECKLIST.md all `pass`, no findings, no open issue, handoff
+                              emptied (follow-ups moved), no unit in progress
+
+Paths are relative to the project root, whatever the session's cwd. Any error lets the hook call through.
+"""
+import glob, json, os, re, shutil, subprocess, sys, time
+
+PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+FEATURES_FILE = ".agent-state/features.md"
+BREAKS_DIR = ".agent-state/.breaks"
+KEEP_BREAKS = 5
+MTIME_SLACK_S = 2
+BREAK_MESSAGE = re.compile(r"\bSession break\b")
+CELL = re.compile(r"(?<!\\)\|")
+# Files other agents write; a newer one than handoff.md means the manager did not fold it in.
+AGENT_OUTPUTS = ("current.md", "qc-issues-handoff.md", "findings/*", "checklists/*")
+
+
+def feature_dir():
+    """The in-progress feature's folder (relative), or None when none or several are in progress."""
+    try:
+        rows = [[c.strip() for c in row.split("|")] for row in open(FEATURES_FILE)]
+    except OSError:
+        return None
+    active = [c for c in rows if len(c) > 4 and c[3].startswith("in-progress")]
+    return os.path.normpath(os.path.join(".agent-state", active[0][4])) if len(active) == 1 else None
+
+
+def read(path):
+    try:
+        return open(path).read()
+    except OSError:
+        return ""
+
+
+def section(text, heading):
+    m = re.search(rf"^## {re.escape(heading)}[^\n]*\n(.*?)(?=^## |\Z)", text, re.M | re.S)
+    return m.group(1) if m else ""
+
+
+def not_passed(checklist):
+    """IDs of checklist rows whose Status is not `pass` (`\\|` inside a cell is not a separator)."""
+    bad = []
+    for line in read(checklist).splitlines():
+        cells = [c.strip() for c in CELL.split(line)]
+        if len(cells) > 9 and re.match(r"^C[A-Z0-9-]*\d+$", cells[1]) and cells[8] != "pass":
+            bad.append(f"{cells[1]} {cells[8] or 'empty'}")
+    return bad
+
+
+def findings(f):
+    return sorted(os.path.basename(p) for p in glob.glob(os.path.join(f, "findings", "*")))
+
+
+def idle_unit(path):
+    """current.md reset at a task close is written after handoff.md and holds nothing to fold in."""
+    return os.path.basename(path) == "current.md" and read(path).strip() == "No unit in progress."
+
+
+def break_problems(f):
+    handoff = os.path.join(f, "handoff.md")
+    text = read(handoff)
+    if not text:
+        return ["handoff.md is missing"]
+    problems = []
+    if not re.search(r"^Next: \S", section(text, "In progress / next"), re.M):
+        problems.append("handoff.md `## In progress / next` has no `Next:` line")
+    since = os.path.getmtime(handoff) + MTIME_SLACK_S
+    newer = sorted(os.path.relpath(p, f) for pattern in AGENT_OUTPUTS for p in glob.glob(os.path.join(f, pattern))
+                   if os.path.isfile(p) and os.path.getmtime(p) > since and not idle_unit(p))
+    if newer:
+        problems.append(f"newer than handoff.md: {', '.join(newer)} (fold their results into handoff.md and `Next:`)")
+    return problems
+
+
+def pass_problems(f, target):
+    checklist = os.path.join(f, "checklists", f"{target}.md")
+    if not os.path.exists(checklist):
+        return [f"no checklist {os.path.relpath(checklist, f)}"]
+    problems = [f"row {r}" for r in not_passed(checklist)]
+    problems += [f"findings/{n} still exists" for n in findings(f) if n.startswith(target)]
+    return problems
+
+
+def close_problems(f):
+    problems = []
+    checklist = os.path.join(f, "CHECKLIST.md")
+    problems += [f"CHECKLIST.md row {r}" for r in not_passed(checklist)] if os.path.exists(checklist) else ["no CHECKLIST.md"]
+    problems += [f"findings/{n} still exists" for n in findings(f)]
+    problems += [f"qc-issues-handoff.md open: {l.strip()[:80]}" for l in read(os.path.join(f, "qc-issues-handoff.md")).splitlines()
+                 if re.search(r"status:\s*open", l)]
+    text = read(os.path.join(f, "handoff.md"))
+    for heading in ("In progress / next", "Direct requests", "Follow-ups"):
+        left = [l.strip() for l in section(text, heading).splitlines() if re.match(r"^(Next:|- |### )", l.strip())]
+        problems += [f"handoff.md `{heading}` still holds: {l[:80]}" for l in left]
+    if read(os.path.join(f, "current.md")).strip() not in ("", "No unit in progress."):
+        problems.append("current.md is not `No unit in progress.`")
+    board = read(os.path.join(f, "board.md"))
+    problems += [f"board row {m.group(1)} is {m.group(2)}" for m in re.finditer(r"^\| ([A-Z]+\d*-?\d+) \|.*\| (todo|in-progress|blocked) \|", board, re.M)]
+    return problems
+
+
+def last_assistant_text(event):
+    text = event.get("last_assistant_message")
+    if isinstance(text, str):
+        return text
+    try:
+        with open(event["transcript_path"], "rb") as fh:
+            fh.seek(0, 2)
+            fh.seek(max(0, fh.tell() - 200_000))
+            lines = fh.read().decode("utf-8", "ignore").splitlines()
+    except (OSError, KeyError):
+        return ""
+    for line in reversed(lines):
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        message = entry.get("message") or {}
+        if entry.get("type") == "assistant" and message.get("role") == "assistant":
+            content = message.get("content")
+            texts = [c.get("text", "") for c in content if isinstance(c, dict) and c.get("type") == "text"] if isinstance(content, list) else [str(content)]
+            if any(texts):
+                return "\n".join(texts)
+    return ""
+
+
+def snapshot(f, event):
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    dest = os.path.join(BREAKS_DIR, stamp)
+    shutil.copytree(f, os.path.join(dest, os.path.basename(f)), ignore=shutil.ignore_patterns(".agent-state"))
+    git = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True, timeout=10).stdout.strip()
+    status = git("status", "--short").splitlines()
+    with open(os.path.join(dest, "meta.txt"), "w") as fh:
+        fh.write(f"session: {event.get('session_id', '')}\nreason: {event.get('reason', '')}\n"
+                 f"transcript: {event.get('transcript_path', '')}\nhead: {git('rev-parse', '--short', 'HEAD')}\n"
+                 "git status:\n" + "\n".join(status[:60]) + ("\n..." if len(status) > 60 else "") + "\n")
+    for old in sorted(os.listdir(BREAKS_DIR))[:-KEEP_BREAKS]:
+        shutil.rmtree(os.path.join(BREAKS_DIR, old), ignore_errors=True)
+
+
+def latest_snapshot():
+    try:
+        names = sorted(os.listdir(BREAKS_DIR))
+    except OSError:
+        return ""
+    return os.path.join(BREAKS_DIR, names[-1]) if names else ""
+
+
+def hook(event):
+    f = feature_dir()
+    if not f:
+        return
+    name = event.get("hook_event_name")
+    if name == "Stop":
+        if event.get("stop_hook_active") or not BREAK_MESSAGE.search(last_assistant_text(event)):
+            return
+        problems = break_problems(f)
+        if problems:
+            print(json.dumps({"decision": "block", "reason": "break-check: not ready for a session break: "
+                              + "; ".join(problems) + ". Fix the state files, then give the break line again."}))
+    elif name == "SessionEnd":
+        snapshot(f, event)
+    elif name == "SessionStart":
+        problems = break_problems(f)
+        if problems:
+            snap = latest_snapshot()
+            hint = f" Compare with {snap} (meta.txt names the old transcript: grep it for the missing step only, never read it whole)." if snap else ""
+            print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext":
+                              "break-check: the state may be behind the last session: " + "; ".join(problems)
+                              + "." + hint + " Fix handoff.md before the first dispatch."}}))
+
+
+def main():
+    os.chdir(PROJECT_DIR)
+    if sys.argv[1:] == ["--hook"]:
+        try:
+            hook(json.load(sys.stdin))
+        except Exception:
+            pass
+        return 0
+    f = feature_dir()
+    if not f:
+        print("break-check: no single in-progress feature in features.md")
+        return 1
+    args = sys.argv[1:]
+    if args[:1] == ["--pass"] and len(args) == 2:
+        problems = pass_problems(f, args[1])
+    elif args == ["--close"]:
+        problems = close_problems(f)
+    elif not args or args == ["--break"]:
+        problems = break_problems(f)
+    else:
+        print(__doc__)
+        return 2
+    for p in problems:
+        print(p)
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

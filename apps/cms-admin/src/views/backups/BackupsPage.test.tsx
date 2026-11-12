@@ -92,8 +92,11 @@ describe('BackupsPage', () => {
     const { api } = await open(TEST_USER, {
       [`GET ${BACKUPS.LIST}`]: () => listOf([backup()]),
     });
-    await screen.findByRole('button', { name: copy.check.button });
+    const checkButton = await screen.findByRole('button', { name: copy.check.button });
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(0);
+    const card = checkButton.closest('[data-slot="card"]');
+    expect(card).toHaveAttribute('data-padding', 'default');
+    expect(within(card as HTMLElement).getByText(copy.check.hint)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: copy.check.button }));
     await screen.findByRole('table', { name: copy.tableLabel });
     expect(api.callsTo(`GET ${BACKUPS.LIST}`)).toHaveLength(1);
@@ -160,7 +163,9 @@ describe('BackupsPage', () => {
     });
     // A 5xx is retried once (one second back-off) before the error shows.
     expect(await screen.findByText(copy.loadFailed, {}, { timeout: RETRY_WAIT_MS })).toBeVisible();
-    expect(screen.getByRole('button', { name: EN_TEXT.common.retry })).toBeVisible();
+    const retry = screen.getByRole('button', { name: EN_TEXT.common.retry });
+    expect(retry).toBeVisible();
+    expect(retry.closest('[data-slot="card"]')).not.toBeNull();
   });
 
   it('shows a rate-limit message with retry on a 429, without a second request', async () => {

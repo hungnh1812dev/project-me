@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import {
   Button,
+  Card,
   Dialog,
   DialogClose,
   DialogContent,
@@ -83,7 +84,7 @@ export function ReviewerSessionsPage() {
           <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
         </div>
       ) : (
-        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+        <Card padding="flush" className="relative overflow-x-auto">
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}
@@ -100,7 +101,7 @@ export function ReviewerSessionsPage() {
               copy={copy.pagination}
             />
           )}
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -217,56 +218,58 @@ function AccessSwitch() {
 
   const isOn = enabled.data;
   return (
-    <section className="grid gap-3 rounded-md border border-border bg-card p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="grid gap-1">
-          <Label id={labelId} htmlFor={`${labelId}-switch`}>
-            {copy.switch.label}
-          </Label>
-          <p className="m-0 text-sm text-muted-foreground">
-            {isOn ? copy.switch.onHint : copy.switch.offHint}
-          </p>
+    <Card asChild padding="compact" className="grid gap-3">
+      <section>
+        <div className="flex items-start justify-between gap-4">
+          <div className="grid gap-1">
+            <Label id={labelId} htmlFor={`${labelId}-switch`}>
+              {copy.switch.label}
+            </Label>
+            <p className="m-0 text-sm text-muted-foreground">
+              {isOn ? copy.switch.onHint : copy.switch.offHint}
+            </p>
+          </div>
+          <Switch
+            id={`${labelId}-switch`}
+            checked={isOn}
+            disabled={!canChange || change.isPending}
+            onCheckedChange={(next) => {
+              setFailed(null);
+              if (next) change.mutate(true);
+              else setConfirmOff(true);
+            }}
+          />
         </div>
-        <Switch
-          id={`${labelId}-switch`}
-          checked={isOn}
-          disabled={!canChange || change.isPending}
-          onCheckedChange={(next) => {
-            setFailed(null);
-            if (next) change.mutate(true);
-            else setConfirmOff(true);
+        {failed === null ? null : <FormAlert tone="error">{failed}</FormAlert>}
+        <Dialog
+          open={confirmOff}
+          onOpenChange={(next) => {
+            if (!next && !change.isPending) setConfirmOff(false);
           }}
-        />
-      </div>
-      {failed === null ? null : <FormAlert tone="error">{failed}</FormAlert>}
-      <Dialog
-        open={confirmOff}
-        onOpenChange={(next) => {
-          if (!next && !change.isPending) setConfirmOff(false);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{copy.confirmOff.title}</DialogTitle>
-            <DialogDescription>{copy.confirmOff.description}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" disabled={change.isPending}>
-                {copy.confirmOff.cancel}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{copy.confirmOff.title}</DialogTitle>
+              <DialogDescription>{copy.confirmOff.description}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" disabled={change.isPending}>
+                  {copy.confirmOff.cancel}
+                </Button>
+              </DialogClose>
+              <Button
+                type="button"
+                variant="destructive"
+                loading={change.isPending}
+                onClick={() => change.mutate(false)}
+              >
+                {copy.confirmOff.submit}
               </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              variant="destructive"
-              loading={change.isPending}
-              onClick={() => change.mutate(false)}
-            >
-              {copy.confirmOff.submit}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </section>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
+    </Card>
   );
 }

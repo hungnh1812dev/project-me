@@ -206,6 +206,7 @@ export interface RefreshTokenRecord {
   readonly replacedById: number | null;
   readonly revokedAt: Date | null;
   readonly expiresAt: Date;
+  readonly rememberMe: boolean;
   readonly account: RefreshTokenAccountFacts;
 }
 
@@ -225,6 +226,7 @@ export interface NewRefreshToken {
   readonly userAgent: string | null;
   readonly ip: string | null;
   readonly expiresAt: Date;
+  readonly rememberMe: boolean;
 }
 
 export interface RefreshTokenFamilyOwner {

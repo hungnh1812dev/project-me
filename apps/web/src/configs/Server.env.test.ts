@@ -1,53 +1,146 @@
 import { TURNSTILE } from './Security.constants';
 import {
-  DEFAULT_REVALIDATE_SECONDS,
   DEFAULT_TRUST_PROXY_HOPS,
   parseServerEnv,
   SESSION_SECRET_MIN_BYTES,
-  TURNSTILE_TEST_SECRET_OPT_IN,
+  SMOKE_STACK_OPT_IN,
 } from './Server.env';
 
 const VALID = {
-  API_INTERNAL_URL: 'http://cms-api:3000/api/v1/',
+  APP_API_URL: 'http://cms-api:3000/api/v1/',
   WEB_ORIGIN: 'https://example.test/',
   WEB_SESSION_SECRET: 'short-dev-secret',
   TURNSTILE_SECRET_KEY: 'turnstile-secret',
 };
 
-const PRODUCTION_HOSTNAME = { TURNSTILE_EXPECTED_HOSTNAME: 'example.test' };
+/** What a production start needs besides the base values: the Turnstile hostname and the API token. */
+const PRODUCTION_HOSTNAME = {
+  TURNSTILE_EXPECTED_HOSTNAME: 'example.test',
+  APP_API_TOKEN: 'ak_live_abc',
+};
 
 describe('parseServerEnv', () => {
   it('reads the values and strips the trailing slash', () => {
     expect(parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: '0' })).toEqual({
-      apiInternalUrl: 'http://cms-api:3000/api/v1',
-      revalidateSeconds: 0,
+      appApiUrl: 'http://cms-api:3000/api/v1',
+      appApiToken: undefined,
+      revalidateOverrideSeconds: 0,
+      isMockFallbackOn: true,
       webOrigin: 'https://example.test',
       sessionSecret: 'short-dev-secret',
       turnstileSecretKey: 'turnstile-secret',
       turnstileExpectedHostname: undefined,
       trustProxyHops: DEFAULT_TRUST_PROXY_HOPS,
       clientIpHeader: undefined,
+      bffRateLimitOverrides: {},
     });
   });
 
-  it('defaults the revalidate window when unset or blank', () => {
-    expect(parseServerEnv(VALID).revalidateSeconds).toBe(DEFAULT_REVALIDATE_SECONDS);
-    expect(parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: ' ' }).revalidateSeconds).toBe(
-      DEFAULT_REVALIDATE_SECONDS,
-    );
+  it.each([undefined, '', ' '])('has no revalidate override when the key is %j', (value) => {
+    expect(
+      parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: value }).revalidateOverrideSeconds,
+    ).toBeUndefined();
   });
 
-  it('fails when API_INTERNAL_URL is missing or not absolute', () => {
-    expect(() => parseServerEnv({ ...VALID, API_INTERNAL_URL: undefined })).toThrow(
-      /API_INTERNAL_URL is not set/,
-    );
-    expect(() => parseServerEnv({ ...VALID, API_INTERNAL_URL: '/api/v1' })).toThrow(/absolute URL/);
+  it('reads the revalidate override', () => {
+    expect(
+      parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: ' 15 ' }).revalidateOverrideSeconds,
+    ).toBe(15);
+  });
+
+  it.each([undefined, ' ', '/api/v1'])('fails when APP_API_URL is %j', (value) => {
+    expect(() => parseServerEnv({ ...VALID, APP_API_URL: value })).toThrow(/APP_API_URL/);
+  });
+
+  it('does not accept API_INTERNAL_URL in place of APP_API_URL', () => {
+    expect(() =>
+      parseServerEnv({
+        ...VALID,
+        APP_API_URL: undefined,
+        API_INTERNAL_URL: 'http://cms-api:3000/api/v1',
+      }),
+    ).toThrow(/APP_API_URL is not set/);
   });
 
   it.each(['-1', '1.5', 'abc'])('fails on WEB_REVALIDATE_SECONDS=%s', (value) => {
     expect(() => parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: value })).toThrow(
       /WEB_REVALIDATE_SECONDS/,
     );
+  });
+
+  describe('APP_API_TOKEN', () => {
+    const TOKEN = `ak_live_${'Ab3_-'.repeat(8)}`;
+    const PRODUCTION = {
+      ...VALID,
+      ...PRODUCTION_HOSTNAME,
+      NODE_ENV: 'production',
+      WEB_SESSION_SECRET: 'x'.repeat(40),
+    };
+
+    it('is optional outside production and read trimmed when set', () => {
+      expect(parseServerEnv(VALID).appApiToken).toBeUndefined();
+      expect(parseServerEnv({ ...VALID, APP_API_TOKEN: ` ${TOKEN} ` }).appApiToken).toBe(TOKEN);
+    });
+
+    it.each([undefined, ' '])('is required in production when the key is %j', (value) => {
+      expect(() => parseServerEnv({ ...PRODUCTION, APP_API_TOKEN: value })).toThrow(
+        /APP_API_TOKEN is required in production/,
+      );
+    });
+
+    it('starts in production with a valid token', () => {
+      expect(parseServerEnv({ ...PRODUCTION, APP_API_TOKEN: TOKEN }).appApiToken).toBe(TOKEN);
+    });
+
+    it.each(['ak_test_abc', 'ak_live_', 'ak_live_a b', 'ak_live_a+b', 'plain-secret'])(
+      'refuses a malformed token without printing it',
+      (value) => {
+        let message = '';
+        try {
+          parseServerEnv({ ...VALID, APP_API_TOKEN: value });
+        } catch (error) {
+          message = (error as Error).message;
+        }
+        expect(message).toMatch(/APP_API_TOKEN must be an API token/);
+        expect(message).not.toContain(value.slice('ak_live_'.length) || 'ak_test_abc');
+      },
+    );
+  });
+
+  describe('ALLOW_MOCK_FALLBACK', () => {
+    const PRODUCTION = {
+      ...VALID,
+      ...PRODUCTION_HOSTNAME,
+      NODE_ENV: 'production',
+      WEB_SESSION_SECRET: 'x'.repeat(40),
+      APP_API_TOKEN: 'ak_live_abc',
+    };
+
+    it('is on outside production', () => {
+      expect(parseServerEnv(VALID).isMockFallbackOn).toBe(true);
+      expect(parseServerEnv({ ...VALID, NODE_ENV: 'development' }).isMockFallbackOn).toBe(true);
+    });
+
+    it.each([undefined, '', ' '])('is off in production when the key is %j', (value) => {
+      expect(parseServerEnv({ ...PRODUCTION, ALLOW_MOCK_FALLBACK: value }).isMockFallbackOn).toBe(
+        false,
+      );
+    });
+
+    it('is on in production with the smoke opt-in', () => {
+      expect(
+        parseServerEnv({ ...PRODUCTION, ALLOW_MOCK_FALLBACK: SMOKE_STACK_OPT_IN }).isMockFallbackOn,
+      ).toBe(true);
+    });
+
+    it.each(['true', '1', 'Smoke'])('refuses the value %s in any environment', (value) => {
+      expect(() => parseServerEnv({ ...VALID, ALLOW_MOCK_FALLBACK: value })).toThrow(
+        /ALLOW_MOCK_FALLBACK/,
+      );
+      expect(() => parseServerEnv({ ...PRODUCTION, ALLOW_MOCK_FALLBACK: value })).toThrow(
+        /ALLOW_MOCK_FALLBACK/,
+      );
+    });
   });
 
   it.each(['WEB_ORIGIN', 'WEB_SESSION_SECRET', 'TURNSTILE_SECRET_KEY'])(
@@ -99,8 +192,71 @@ describe('parseServerEnv', () => {
     expect(() => parseServerEnv({ ...VALID, TRUST_PROXY_HOPS: value })).toThrow(/TRUST_PROXY_HOPS/);
   });
 
+  describe('BFF rate limit override', () => {
+    const PRODUCTION = {
+      ...VALID,
+      NODE_ENV: 'production',
+      WEB_SESSION_SECRET: 'x'.repeat(40),
+      APP_API_TOKEN: 'ak_live_abc',
+    };
+    const WITH_HOSTNAME = { ...PRODUCTION, ...PRODUCTION_HOSTNAME };
+
+    it.each([undefined, '', ' '])('has no override when the key is %j', (value) => {
+      expect(
+        parseServerEnv({ ...VALID, BFF_AUTH_RATE_LIMIT_IP: value }).bffRateLimitOverrides,
+      ).toEqual({});
+    });
+
+    it('reads a valid override outside production without the opt-in', () => {
+      expect(
+        parseServerEnv({ ...VALID, BFF_AUTH_RATE_LIMIT_IP: '10000' }).bffRateLimitOverrides,
+      ).toEqual({
+        auth: 10000,
+      });
+    });
+
+    it.each(['0', '-1', '1.5', 'abc'])('fails on BFF_AUTH_RATE_LIMIT_IP=%s', (value) => {
+      expect(() => parseServerEnv({ ...VALID, BFF_AUTH_RATE_LIMIT_IP: value })).toThrow(
+        /BFF_AUTH_RATE_LIMIT_IP/,
+      );
+    });
+
+    it('refuses the override in production without the opt-in, naming the key', () => {
+      expect(() => parseServerEnv({ ...WITH_HOSTNAME, BFF_AUTH_RATE_LIMIT_IP: '100' })).toThrow(
+        /BFF_AUTH_RATE_LIMIT_IP/,
+      );
+    });
+
+    it('allows the override in production with the smoke opt-in', () => {
+      const env = parseServerEnv({
+        ...WITH_HOSTNAME,
+        BFF_AUTH_RATE_LIMIT_IP: '100',
+        ALLOW_BFF_RATE_LIMIT_OVERRIDE: SMOKE_STACK_OPT_IN,
+      });
+      expect(env.bffRateLimitOverrides).toEqual({ auth: 100 });
+    });
+
+    it('starts in production with neither key', () => {
+      expect(parseServerEnv(WITH_HOSTNAME).bffRateLimitOverrides).toEqual({});
+    });
+
+    it.each(['true', '1', 'Smoke'])('refuses the opt-in value %s in any environment', (value) => {
+      expect(() => parseServerEnv({ ...VALID, ALLOW_BFF_RATE_LIMIT_OVERRIDE: value })).toThrow(
+        /ALLOW_BFF_RATE_LIMIT_OVERRIDE/,
+      );
+      expect(() =>
+        parseServerEnv({ ...WITH_HOSTNAME, ALLOW_BFF_RATE_LIMIT_OVERRIDE: value }),
+      ).toThrow(/ALLOW_BFF_RATE_LIMIT_OVERRIDE/);
+    });
+  });
+
   describe('Turnstile production guard', () => {
-    const PRODUCTION = { ...VALID, NODE_ENV: 'production', WEB_SESSION_SECRET: 'x'.repeat(40) };
+    const PRODUCTION = {
+      ...VALID,
+      NODE_ENV: 'production',
+      WEB_SESSION_SECRET: 'x'.repeat(40),
+      APP_API_TOKEN: 'ak_live_abc',
+    };
     const TEST_SECRET = { TURNSTILE_SECRET_KEY: TURNSTILE.ALWAYS_PASS_TEST_SECRET };
 
     it('refuses the test secret in production without the opt-in', () => {
@@ -111,7 +267,7 @@ describe('parseServerEnv', () => {
       const env = parseServerEnv({
         ...PRODUCTION,
         ...TEST_SECRET,
-        ALLOW_TURNSTILE_TEST_SECRET: TURNSTILE_TEST_SECRET_OPT_IN,
+        ALLOW_TURNSTILE_TEST_SECRET: SMOKE_STACK_OPT_IN,
       });
       expect(env.turnstileExpectedHostname).toBeUndefined();
     });

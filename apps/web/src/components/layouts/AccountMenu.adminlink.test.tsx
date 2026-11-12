@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
-import { COPY } from '../../configs/Copy.constants';
 import type { AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
+import { fakeApi, SHELL_TEXT, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { AccountMenu } from './AccountMenu';
 
 vi.mock('../../configs/Browser.env', () => ({
@@ -19,7 +18,7 @@ describe('account menu with an admin URL', () => {
         <AccountMenu />
       </Wrapper>,
     );
-    expect(await screen.findByRole('link', { name: COPY.session.openCms })).toHaveAttribute(
+    expect(await screen.findByRole('link', { name: SHELL_TEXT.siteText.openCms })).toHaveAttribute(
       'href',
       'https://admin.example.com',
     );

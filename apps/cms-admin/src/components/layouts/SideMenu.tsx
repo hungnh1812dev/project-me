@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Button } from '@abyss/form-commons';
+import { Button, CONTROL_FOCUS_RING_ONLY_CLASSES } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
 import { COMMON_TEXT } from '@configs/locales';
 import {
@@ -18,11 +18,11 @@ import { useNavGroupOpenState } from './useNavGroupOpenState';
 
 const SKELETON_ROW_COUNT = 3;
 
-const LINK_CLASS =
-  'block break-words rounded-md border-l-2 px-3 py-1.5 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50';
-const LINK_ACTIVE_CLASS = 'border-primary bg-primary/10 font-medium text-foreground';
-const LINK_IDLE_CLASS =
-  'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground';
+const NAV_ITEM_CLASS = `rounded-item px-3 py-1.5 text-sm transition-colors duration-fast ${CONTROL_FOCUS_RING_ONLY_CLASSES}`;
+
+const LINK_CLASS = `relative block break-words ${NAV_ITEM_CLASS} text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=page]:bg-nav-active aria-[current=page]:font-medium aria-[current=page]:text-nav-active-foreground aria-[current=page]:before:absolute aria-[current=page]:before:inset-y-1.5 aria-[current=page]:before:left-0 aria-[current=page]:before:w-[3px] aria-[current=page]:before:rounded-full aria-[current=page]:before:bg-nav-indicator`;
+
+const GROUP_TOGGLE_CLASS = `flex w-full items-center gap-2 text-left hover:bg-muted hover:text-foreground ${NAV_ITEM_CLASS}`;
 
 interface MenuProps {
   /** Called after a link is chosen; the mobile sheet closes itself with it. */
@@ -31,6 +31,7 @@ interface MenuProps {
 
 interface MenuState {
   isReady: boolean;
+  isEmpty: boolean;
   items: readonly NavItem[];
   isCatalogLoading: boolean;
   catalogFailure: NavItemsState | undefined;
@@ -44,11 +45,15 @@ function useMenuState(nav: NavSource): MenuState {
   const items = [...nav.items, ...dataBacked.flatMap((state) => state.items)].filter((item) =>
     caller.can(item.subject, item.action),
   );
+  const isCatalogLoading = dataBacked.some((state) => state.isLoading);
+  const catalogFailure = dataBacked.find((state) => state.hasFailed);
   return {
     isReady: caller.isReady,
+    isEmpty:
+      caller.isReady && !isCatalogLoading && catalogFailure === undefined && items.length === 0,
     items: caller.isReady ? items : [],
-    isCatalogLoading: dataBacked.some((state) => state.isLoading),
-    catalogFailure: dataBacked.find((state) => state.hasFailed),
+    isCatalogLoading,
+    catalogFailure,
   };
 }
 
@@ -56,7 +61,7 @@ export function AppNameLink() {
   return (
     <Link
       to={APP_ROUTES.HOME}
-      className="rounded-sm text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className={`rounded-item text-sm font-semibold ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
     >
       {COMMON_TEXT.app.name}
     </Link>
@@ -74,19 +79,24 @@ function SkeletonRows() {
   );
 }
 
+function WelcomePanel() {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="grid gap-1 px-3">
+      <h2 id={headingId} className="text-sm font-semibold text-foreground">
+        {COMMON_TEXT.nav.welcomeTitle}
+      </h2>
+      <p className="text-sm text-muted-foreground">{COMMON_TEXT.nav.welcomeText}</p>
+    </section>
+  );
+}
+
 function ItemList({ items, onNavigate }: MenuProps & { items: readonly NavItem[] }) {
   return (
     <ul className="grid gap-0.5">
       {items.map((item) => (
         <li key={item.path}>
-          <NavLink
-            to={item.path}
-            title={item.label}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `${LINK_CLASS} ${isActive ? LINK_ACTIVE_CLASS : LINK_IDLE_CLASS}`
-            }
-          >
+          <NavLink to={item.path} title={item.label} onClick={onNavigate} className={LINK_CLASS}>
             {item.label}
           </NavLink>
         </li>
@@ -116,13 +126,13 @@ function SubGroup({ sub, items, openState, onNavigate }: SubGroupProps) {
           aria-expanded={isOpen}
           aria-controls={listId}
           onClick={() => openState.toggle(sub.id)}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className={GROUP_TOGGLE_CLASS}
         >
           <Icon aria-hidden="true" className="size-4 shrink-0" />
           <span className="flex-1">{sub.label}</span>
           <ChevronDown
             aria-hidden="true"
-            className={`size-4 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
+            className={`duration-fast size-4 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
           />
         </button>
       </h3>
@@ -195,21 +205,25 @@ export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
-        <nav aria-label={COMMON_TEXT.nav.label} className="grid gap-5">
-          {menu.isReady ? (
-            NAV_SECTIONS.map((section) => (
-              <MenuSection
-                key={section.id}
-                section={section}
-                menu={menu}
-                openState={openState}
-                onNavigate={onNavigate}
-              />
-            ))
-          ) : (
-            <SkeletonRows />
-          )}
-        </nav>
+        {menu.isEmpty ? (
+          <WelcomePanel />
+        ) : (
+          <nav aria-label={COMMON_TEXT.nav.label} className="grid gap-5">
+            {menu.isReady ? (
+              NAV_SECTIONS.map((section) => (
+                <MenuSection
+                  key={section.id}
+                  section={section}
+                  menu={menu}
+                  openState={openState}
+                  onNavigate={onNavigate}
+                />
+              ))
+            ) : (
+              <SkeletonRows />
+            )}
+          </nav>
+        )}
       </div>
     </div>
   );

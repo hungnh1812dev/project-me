@@ -343,9 +343,9 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 - Query documents live next to the feature (`features/cv/cv.query.ts`): a
   plain string + hand-written result types, no client library (Q-G6).
 - Server: `lib/graphql/graphql-fetch.server.ts` (`server-only`) POSTs to
-  `${API_INTERNAL_URL}/graphql` with no `Authorization` and no forwarded
-  cookies or client IP headers, cached for `WEB_REVALIDATE_SECONDS`
-  (60 s prod, 0 smoke). Any `errors` entry or non-200 = error state.
+  `${APP_API_URL}/graphql` with the `APP_API_TOKEN` Bearer (public profile) and no forwarded
+  cookies or client IP headers, cached 180 s per call by default
+  (`WEB_REVALIDATE_SECONDS` overrides it; the dev and smoke stacks set 0). Any `errors` entry or non-200 = error state.
 - Browser (refetch after sign-in or a reviewer session): `lib/graphql/graphql-request.ts` POSTs the same
   query through the Axios client to `NEXT_PUBLIC_API_BASE_URL` + `/graphql`
   with the in-memory Bearer token.

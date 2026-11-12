@@ -23,7 +23,7 @@ function DropdownMenuContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'border-border bg-popover text-popover-foreground z-50 min-w-48 overflow-hidden rounded-md border p-1 shadow-md',
+          'border-border bg-popover text-popover-foreground rounded-surface shadow-overlay data-[state=open]:animate-overlay-in data-[state=closed]:animate-overlay-out z-50 min-w-48 overflow-hidden border p-1 motion-reduce:animate-none',
           className,
         )}
         {...props}
@@ -40,7 +40,7 @@ function DropdownMenuItem({
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground rounded-item relative flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className,
       )}
       {...props}

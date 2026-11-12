@@ -14,11 +14,11 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Renders the public CV from the server data, and refetches it with the visitor's token when someone is signed in ([public-site flow](../../flows/public-site/FLOW.md)).
+Renders the public CV from the server data and the page text (`cvPageText`, passed as props from `app/cv/page.tsx`), and refetches it with the visitor's token when someone is signed in ([public-site flow](../../flows/public-site/FLOW.md)).
 
 ## Techniques
 
-Server data first: anonymous visitors (and everyone's first paint) get the server-rendered data without a request; a signed-in session refetches through `GET /bff/v1/cv` with its own token, cached per actor, and signing out falls back to the server data. Masked values render a placeholder; unsafe link targets render as text; richtext is sanitized on the server only (D13).
+Server data first: anonymous visitors (and everyone's first paint) get the server-rendered data without a request; a signed-in session refetches through `GET /api/v1/cv` with its own token, cached per actor, and signing out falls back to the server data. Masked values render a placeholder; unsafe link targets render as text; richtext is sanitized on the server only (D13).
 
 ## Technologies
 

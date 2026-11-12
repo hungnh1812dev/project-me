@@ -5,13 +5,14 @@ import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:cr
 import { z } from 'zod';
 
 import {
+  REMEMBERED_SESSION_MAX_AGE_SECONDS,
   TWO_FACTOR_COOKIE_MAX_AGE_SECONDS,
   TWO_FACTOR_COOKIE_NAME,
   TWO_FACTOR_METHODS,
   WEB_SESSION_COOKIE_NAME,
-} from '../../configs/Auth.constants';
-import { COOKIE_HEADER, SET_COOKIE_HEADER } from '../../configs/Http.constants';
-import { getServerEnv } from '../../configs/Server.env';
+} from '@/configs/Auth.constants';
+import { COOKIE_HEADER, SET_COOKIE_HEADER } from '@/configs/Http.constants';
+import { getServerEnv } from '@/configs/Server.env';
 
 const SEAL_VERSION = 1;
 const SEAL_ALGORITHM = 'aes-256-gcm';
@@ -27,10 +28,13 @@ const sealedWebSessionShape = z.strictObject({
   refreshToken: z.string().min(1),
   accessToken: z.string().min(1),
   accessExpiresAt: z.number().int().nonnegative(),
+  /** Absent in a session sealed before the choice existed: reads as not remembered. */
+  rememberMe: z.boolean().default(false),
 });
 const sealedTwoFactorChallengeShape = z.strictObject({
   tempToken: z.string().min(1),
   methods: z.array(z.enum(TWO_FACTOR_METHODS)),
+  rememberMe: z.boolean().default(false),
 });
 
 export type SealedWebSession = z.infer<typeof sealedWebSessionShape>;
@@ -129,7 +133,11 @@ export function readTwoFactorCookie(request: Request) {
 }
 
 export function writeSessionCookie(session: SealedWebSession): string {
-  return setCookieLine(WEB_SESSION_COOKIE_NAME, sealCookieValue(WEB_SESSION_COOKIE_NAME, session));
+  return setCookieLine(
+    WEB_SESSION_COOKIE_NAME,
+    sealCookieValue(WEB_SESSION_COOKIE_NAME, session),
+    session.rememberMe ? REMEMBERED_SESSION_MAX_AGE_SECONDS : undefined,
+  );
 }
 
 export function writeTwoFactorCookie(challenge: SealedTwoFactorChallenge): string {

@@ -195,8 +195,8 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
     });
   }
 
-  async function signIn(email: string, password = PASSWORD) {
-    const res = await post(LOGIN).send({ email, password });
+  async function signIn(email: string, password = PASSWORD, rememberMe?: boolean) {
+    const res = await post(LOGIN).send({ email, password, rememberMe });
     expect(res.status).toBe(HttpStatus.OK);
     const cookies = ([] as string[]).concat(
       (res.headers['set-cookie'] as string[] | string | undefined) ?? [],
@@ -339,29 +339,32 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
   });
 
   describe('POST /auth/password/reset', () => {
-    it('sets the new password, ends every session and old access tokens get 401 (§12-10)', async () => {
-      const account = await createAccount();
-      const session = await signIn(account.email);
-      expect((await me(session.accessToken)).status).toBe(HttpStatus.OK);
+    it.each([true, false])(
+      'sets the new password, ends every session and old access tokens get 401 (§12-10, rememberMe %s)',
+      async (rememberMe) => {
+        const account = await createAccount();
+        const session = await signIn(account.email, PASSWORD, rememberMe);
+        expect((await me(session.accessToken)).status).toBe(HttpStatus.OK);
 
-      const code = await requestCode(account.email);
-      const res = await reset(account.email, code);
-      expect(res.status).toBe(HttpStatus.NO_CONTENT);
-      expect(res.headers['set-cookie']).toBeUndefined();
+        const code = await requestCode(account.email);
+        const res = await reset(account.email, code);
+        expect(res.status).toBe(HttpStatus.NO_CONTENT);
+        expect(res.headers['set-cookie']).toBeUndefined();
 
-      expect((await me(session.accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
-      const refreshed = await post(REFRESH)
-        .set('Origin', TEST_ADMIN_ORIGIN)
-        .set('Cookie', session.cookie);
-      expect(refreshed.status).toBe(HttpStatus.UNAUTHORIZED);
+        expect((await me(session.accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
+        const refreshed = await post(REFRESH)
+          .set('Origin', TEST_ADMIN_ORIGIN)
+          .set('Cookie', session.cookie);
+        expect(refreshed.status).toBe(HttpStatus.UNAUTHORIZED);
 
-      const oldLogin = await post(LOGIN).send({
-        email: account.email,
-        password: PASSWORD,
-      });
-      expect(oldLogin.status).toBe(HttpStatus.UNAUTHORIZED);
-      await signIn(account.email, NEW_PASSWORD);
-    });
+        const oldLogin = await post(LOGIN).send({
+          email: account.email,
+          password: PASSWORD,
+        });
+        expect(oldLogin.status).toBe(HttpStatus.UNAUTHORIZED);
+        await signIn(account.email, NEW_PASSWORD);
+      },
+    );
 
     it('accepts a code only once (single use)', async () => {
       const account = await createAccount();
@@ -531,21 +534,24 @@ describe('OTP + password lifecycle (D8, SPEC §12-9/10; Postgres 17 via Testcont
       expect((await me(accessToken)).status).toBe(HttpStatus.OK);
     });
 
-    it('changes the password and ends every session, the current one included', async () => {
-      const account = await createAccount();
-      const session = await signIn(account.email);
-      const res = await post(CHANGE)
-        .set('Authorization', `Bearer ${session.accessToken}`)
-        .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD });
-      expect(res.status).toBe(HttpStatus.NO_CONTENT);
+    it.each([true, false])(
+      'changes the password and ends every session, the current one included (rememberMe %s)',
+      async (rememberMe) => {
+        const account = await createAccount();
+        const session = await signIn(account.email, PASSWORD, rememberMe);
+        const res = await post(CHANGE)
+          .set('Authorization', `Bearer ${session.accessToken}`)
+          .send({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD });
+        expect(res.status).toBe(HttpStatus.NO_CONTENT);
 
-      expect((await me(session.accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
-      const refreshed = await post(REFRESH)
-        .set('Origin', TEST_ADMIN_ORIGIN)
-        .set('Cookie', session.cookie);
-      expect(refreshed.status).toBe(HttpStatus.UNAUTHORIZED);
-      await signIn(account.email, NEW_PASSWORD);
-    });
+        expect((await me(session.accessToken)).status).toBe(HttpStatus.UNAUTHORIZED);
+        const refreshed = await post(REFRESH)
+          .set('Origin', TEST_ADMIN_ORIGIN)
+          .set('Cookie', session.cookie);
+        expect(refreshed.status).toBe(HttpStatus.UNAUTHORIZED);
+        await signIn(account.email, NEW_PASSWORD);
+      },
+    );
 
     it('throttles the 6th change per IP within 15 minutes', async () => {
       const [rule] = IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_CHANGE;

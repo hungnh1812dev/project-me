@@ -1,6 +1,6 @@
 # ADR 0013: Download database backups from the admin console
 
-- Status: accepted (2026-10-27). The user answered Q-BK1 to Q-BK7 on 2026-10-27. Q-BK7 was first deferred and then answered the same day. Each answer matches the design below.
+- Status: implemented (2026-11-10, feature backup, f4c4690b..050e3b50)
 - Date: 2026-10-27
 - Asked by: the user (2026-10-27, Vietnamese): "có UI download backup trên CMS-Admin, và đảm bảo backup không lấy quá nhiều dung lượng VPS hoặc supabase". In English: a backup download UI in cms-admin, and backups must not use much space on the VPS or on Supabase. The request validator routed it as `DESIGN backup-download`.
 - Amends: SPEC §2 (out of scope note), §3 (stack row), §7 (new D20), §9 (new row "Backups"); `docs/deployment/k3s-traefik.md` §7, `docs/deployment/supabase-database.md` (backup part, written by LG-db-4), `docs/deployment/k3s-secrets-sops.md` §1, §2. Adds to LG-0 item (4): the off-site upload and the restore drill now include the steps in section 3.

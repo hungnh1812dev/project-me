@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { Button, Checkbox } from '@abyss/form-commons';
+import { Button, Card, Checkbox } from '@abyss/form-commons';
 import { useScreenText, type ScreenText } from '@configs/locales';
 
 import type { ContentType } from '../content-types';
@@ -119,7 +119,7 @@ function MatrixSection({
         </h2>
         <p className="m-0 text-sm text-muted-foreground">{description}</p>
       </div>
-      <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+      <Card padding="flush" className="relative overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-muted text-left text-muted-foreground">
             <tr>
@@ -223,7 +223,7 @@ function MatrixSection({
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
       {showsDetails ? null : (
         <SystemErrors errors={props.errors} subjects={subjects} known={known} />
       )}

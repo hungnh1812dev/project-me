@@ -4,7 +4,7 @@ import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { labelStartingWith } from '../src/Locators.fixture';
+import { labelStartingWith, toast } from '../src/Locators.fixture';
 import { bearer, ownerApiToken, signInAs } from '../src/Session.fixture';
 
 const access = ADMIN_COPY.access;
@@ -141,7 +141,7 @@ test.describe.serial('owner: API tokens', () => {
 
     await revealDialog.getByRole('button', { name: reveal.done }).click();
     await expect(revealDialog).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(tokens.created(TOKEN_NAME));
+    await expect(toast(page, tokens.created(TOKEN_NAME))).toBeVisible();
 
     // The list shows the prefix, never the secret; the page holds no secret.
     const row = tokenRow(page, TOKEN_NAME);
@@ -184,7 +184,7 @@ test.describe.serial('owner: API tokens', () => {
     await dialog.getByLabel(labelStartingWith(form.nameLabel)).fill(RENAMED);
     await dialog.getByRole('button', { name: form.submitEdit }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(tokens.updated(RENAMED));
+    await expect(toast(page, tokens.updated(RENAMED))).toBeVisible();
     expect(patches).toHaveLength(1);
     expect(Object.keys(JSON.parse(patches[0] ?? '{}') as object)).toEqual(['name']);
     const renamed = tokenRow(page, RENAMED);
@@ -233,7 +233,7 @@ test.describe.serial('owner: API tokens', () => {
       })
       .click();
     await expect(confirm).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(tokens.revoked(REVOKE_ONLY_NAME));
+    await expect(toast(page, tokens.revoked(REVOKE_ONLY_NAME))).toBeVisible();
     await expect(row).toContainText(tokens.status.revoked);
     await expect(row.getByRole('button')).toHaveCount(0);
   });
@@ -311,7 +311,7 @@ test.describe.serial('owner: API tokens', () => {
       await edit.getByLabel(labelStartingWith(form.nameLabel)).fill(`${RENAMED} x`);
       await edit.getByRole('button', { name: form.submitEdit }).click();
       await expect(edit).toBeHidden();
-      await expect(page.getByRole('status')).toHaveText(message);
+      await expect(toast(page, message)).toBeVisible();
       await page.unroute(tokensUrl);
     }
   });
@@ -356,7 +356,7 @@ test.describe.serial('owner: API tokens', () => {
       .getByRole('button', { name: access.revokeToken.submit(RENAMED) })
       .click();
     showExpired = false;
-    await expect(page.getByRole('status')).toHaveText(tokens.revoked(RENAMED));
+    await expect(toast(page, tokens.revoked(RENAMED))).toBeVisible();
     await expect(row).toContainText(tokens.status.revoked);
     await expect(row.getByRole('button')).toHaveCount(0);
     await page.unroute(tokensUrl);
@@ -424,7 +424,7 @@ test.describe.serial('owner: API tokens', () => {
     expect(((await answer.json()) as { errorCode: string }).errorCode).toBe('API_TOKEN_EXPIRED');
     await refetched;
     await expect(edit).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(tokens.alreadyExpired);
+    await expect(toast(page, tokens.alreadyExpired)).toBeVisible();
     await expect(row).toContainText(EXPIRING_NAME);
     await expect(row).not.toContainText(`${EXPIRING_NAME} x`);
     await expect(row).toContainText(tokens.status.expired);

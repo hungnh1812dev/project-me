@@ -9,6 +9,7 @@ import {
   contentNewPath,
 } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { toast } from '../src/Locators.fixture';
 import {
   bearer,
   ownerApiToken,
@@ -167,7 +168,7 @@ test.describe.serial('document lifecycle: badge, actions and Status column', () 
   test('Publish: Published badge, notice, public read has the values', async ({ request }) => {
     await openEdit(page, documentId);
     await button(page, actions.publish).click();
-    await expect(page.getByText(actions.published)).toBeVisible();
+    await expect(toast(page, actions.published)).toBeVisible();
     await expect(badge(page, states.published)).toBeVisible();
     await expect(button(page, actions.publish)).toBeDisabled();
     await expect(button(page, actions.unpublish)).toBeEnabled();
@@ -188,7 +189,7 @@ test.describe.serial('document lifecycle: badge, actions and Status column', () 
   }) => {
     await page.getByLabel(NAME_LABEL).fill(EDITED);
     await button(page, copy.save).click();
-    await expect(page.getByText(copy.saved)).toBeVisible();
+    await expect(toast(page, copy.saved)).toBeVisible();
     await expect(badge(page, states.modified)).toBeVisible();
     await expect(button(page, actions.discard)).toBeEnabled();
     await expect(button(page, actions.publish)).toBeEnabled();
@@ -229,7 +230,7 @@ test.describe.serial('document lifecycle: badge, actions and Status column', () 
     await button(page, actions.discard).click();
     const dialog = page.getByRole('dialog', { name: actions.discardDialog.title });
     await dialog.getByRole('button', { name: actions.discardDialog.confirm }).click();
-    await expect(page.getByText(actions.discarded)).toBeVisible();
+    await expect(toast(page, actions.discarded)).toBeVisible();
     await expect(badge(page, states.published)).toBeVisible();
     await expect(page.getByLabel(NAME_LABEL)).toHaveValue(FIRST);
     await expect(button(page, actions.discard)).toBeDisabled();
@@ -278,7 +279,7 @@ test.describe.serial('document lifecycle: badge, actions and Status column', () 
 
     await trigger.click();
     await dialog.getByRole('button', { name: actions.unpublishDialog.confirm }).click();
-    await expect(page.getByText(actions.unpublished)).toBeVisible();
+    await expect(toast(page, actions.unpublished)).toBeVisible();
     await expect(badge(page, states.draft)).toBeVisible();
     await expect(button(page, actions.publish)).toBeEnabled();
 
@@ -296,7 +297,7 @@ test.describe.serial('document lifecycle: badge, actions and Status column', () 
     await openEdit(other, draft.documentId);
     await other.getByLabel(NAME_LABEL).fill(`${SECOND} saved elsewhere`);
     await button(other, copy.save).click();
-    await expect(other.getByText(copy.saved)).toBeVisible();
+    await expect(toast(other, copy.saved)).toBeVisible();
     await other.close();
 
     await button(page, actions.publish).click();

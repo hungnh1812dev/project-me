@@ -21,7 +21,20 @@
     ],
     "SessionStart": [
       {
-        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/session-gate" }]
+        "hooks": [
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/session-gate" },
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/break-check --hook" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/break-check --hook" }]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [{ "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/bin/break-check --hook" }]
       }
     ]
   }

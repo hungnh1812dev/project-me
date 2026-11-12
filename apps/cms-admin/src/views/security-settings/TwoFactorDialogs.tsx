@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Button, FormAlert } from '@abyss/form-commons';
+import { Button, Card, FormAlert } from '@abyss/form-commons';
 import { Modal, ModalActions } from '@components/Modal';
 import {
   TOTP_QR_SIZE_PX,
@@ -88,7 +88,7 @@ export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps
         >
           <div className="grid gap-3 text-sm">
             <p>{copy.totpSetup.scanStep}</p>
-            <div className="w-fit rounded-md border border-border bg-card p-3 text-foreground">
+            <Card padding="compact" className="w-fit text-foreground">
               <QRCodeSVG
                 value={setup.data.otpauthUri}
                 size={TOTP_QR_SIZE_PX}
@@ -96,7 +96,7 @@ export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps
                 bgColor="transparent"
                 title={copy.totpSetup.qrLabel}
               />
-            </div>
+            </Card>
             <div className="grid gap-1">
               <p className="text-muted-foreground">{copy.totpSetup.manualKeyLabel}</p>
               <code

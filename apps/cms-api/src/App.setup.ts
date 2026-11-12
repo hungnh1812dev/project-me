@@ -11,10 +11,13 @@ import {
 } from './common/constants/Http.constants';
 import { HttpExceptionFilter } from './common/filters/HttpException.filter';
 import { requestIdMiddleware } from './common/middleware/RequestId.middleware';
+import { createRequestTimingMiddleware } from './common/middleware/RequestTiming.middleware';
 import { securityHeadersMiddleware } from './common/middleware/SecurityHeaders.middleware';
 import { type IAppConfig } from './config/AppConfig.setup';
+import { APP_LOGGER, type AppLogger } from './infrastructure/logging/AppLogger.port';
 import { BULK_BODY_LIMIT_MOUNT_PATH, bulkBodyLimit } from './modules/documents';
 import { GRAPHQL_BODY_LIMIT_MOUNT_PATH, graphqlBodyLimit } from './modules/graphql';
+import { HEALTH_ROUTES } from './modules/health';
 
 /**
  * Pipeline shared by `main.ts` and the integration tests, so tests run
@@ -27,7 +30,14 @@ export function configureApp(app: NestExpressApplication, config: IAppConfig): v
   app.set(EXPRESS_SETTINGS.TRUST_PROXY, config.http.trustProxyHops);
   // D17: no framework fingerprint on any response.
   app.set(EXPRESS_SETTINGS.X_POWERED_BY, false);
-  // D17: first in the chain, so parser errors (413/415) and CORS preflights carry it too.
+  // API-1: first of all, so the duration covers every other middleware and parser errors are logged.
+  app.use(
+    createRequestTimingMiddleware({
+      logger: app.get<AppLogger>(APP_LOGGER),
+      skippedPathPrefixes: [`/${API_PREFIX}/${HEALTH_ROUTES.ROOT}`],
+    }),
+  );
+  // D17: first header-setting middleware, so parser errors (413/415) and CORS preflights carry it too.
   app.use(securityHeadersMiddleware);
   app.use(requestIdMiddleware);
   // Populates req.cookies; only the auth refresh/logout routes read it (D14).

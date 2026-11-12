@@ -47,6 +47,7 @@ import { JwtAuthGuard, type AuthenticatedRequest } from './Jwt.strategy';
 const loginRequestSchema = z.object({
   email: z.string().trim().min(1).max(EMAIL_MAX_LENGTH),
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+  rememberMe: z.boolean().optional(),
 });
 
 export interface AccessTokenResponse {
@@ -65,12 +66,19 @@ function refreshCookieOf(req: Request): string | undefined {
   return typeof value === 'string' && value !== '' ? value : undefined;
 }
 
-/** Sets the refresh cookie of a new session (login, 2FA verify, refresh). */
-export function setRefreshCookie(res: Response, token: string): void {
-  res.cookie(REFRESH_COOKIE.NAME, token, {
-    ...REFRESH_COOKIE_OPTIONS,
-    maxAge: REFRESH_TOKEN_TTL_MS,
-  });
+/**
+ * Sets the refresh cookie of a new session (login, 2FA verify, refresh).
+ * Remembered: persistent for the token lifetime. Otherwise a browser-session
+ * cookie (no `Max-Age`/`Expires`); the server expiry bounds it at 12 h (D22).
+ */
+export function setRefreshCookie(res: Response, token: string, rememberMe: boolean): void {
+  res.cookie(
+    REFRESH_COOKIE.NAME,
+    token,
+    rememberMe
+      ? { ...REFRESH_COOKIE_OPTIONS, maxAge: REFRESH_TOKEN_TTL_MS }
+      : REFRESH_COOKIE_OPTIONS,
+  );
 }
 
 function clearRefreshCookie(res: Response): void {
@@ -115,7 +123,10 @@ export class AuthController {
       });
     }
 
-    const loginOutcome = await this.auth.login(parsed.data, this.clientMeta(req));
+    const loginOutcome = await this.auth.login(
+      { ...parsed.data, rememberMe: parsed.data.rememberMe ?? false },
+      this.clientMeta(req),
+    );
     if (loginOutcome.kind === 'two-factor') {
       return {
         requires2FA: true,
@@ -123,7 +134,7 @@ export class AuthController {
         methods: loginOutcome.methods,
       };
     }
-    setRefreshCookie(res, loginOutcome.refreshToken);
+    setRefreshCookie(res, loginOutcome.refreshToken, loginOutcome.rememberMe);
     return { accessToken: loginOutcome.accessToken };
   }
 
@@ -142,7 +153,7 @@ export class AuthController {
       const tokens = await this.auth.refresh(rawToken, this.clientMeta(req));
       // Grace: no new token, the cookie keeps the successor.
       if (tokens.refreshToken !== undefined) {
-        setRefreshCookie(res, tokens.refreshToken);
+        setRefreshCookie(res, tokens.refreshToken, tokens.rememberMe);
       }
       return { accessToken: tokens.accessToken };
     } catch (error) {

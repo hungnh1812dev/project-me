@@ -228,7 +228,7 @@ test.describe.serial('web CV: richtext images', () => {
     api = await playwright.request.newContext();
     expect(ownerToken).not.toBe('');
     image = await uploadImage(api, ownerToken, WEB_NAME, pngOf(SEED + 3));
-    const created = await api.post(apiUrl(API_PATHS.documents('resume')), {
+    const created = await api.post(apiUrl(API_PATHS.documents(CV_PAGE_SLUG)), {
       headers: bearer(ownerToken),
       data: {
         values: {
@@ -246,15 +246,18 @@ test.describe.serial('web CV: richtext images', () => {
     expect(created.status()).toBe(HTTP.CREATED);
     const draft = (await created.json()) as DraftRef;
     resumeId = draft.documentId;
-    const published = await api.post(apiUrl(`${API_PATHS.document('resume', resumeId)}/publish`), {
-      headers: bearer(ownerToken),
-      data: { expectedVersion: draft.version },
-    });
+    const published = await api.post(
+      apiUrl(`${API_PATHS.document(CV_PAGE_SLUG, resumeId)}/publish`),
+      {
+        headers: bearer(ownerToken),
+        data: { expectedVersion: draft.version },
+      },
+    );
     expect(published.ok()).toBe(true);
   });
 
   test.afterAll(async () => {
-    const removed = await api.delete(apiUrl(API_PATHS.document('resume', resumeId)), {
+    const removed = await api.delete(apiUrl(API_PATHS.document(CV_PAGE_SLUG, resumeId)), {
       headers: bearer(ownerToken),
     });
     expect(removed.status()).toBe(HTTP.NO_CONTENT);

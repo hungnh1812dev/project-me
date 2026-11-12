@@ -18,7 +18,7 @@ The stack runs Postgres 17. A dev-stack volume created on Postgres 16 does not s
 
 `pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and sign in (needs internet for the Turnstile widget).
 
-The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account").
+The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. The test account logins (`STACK_OWNER_*`, `STACK_2FA_*`, `STACK_READER_*`, `STACK_READER_2FA_*`, email and password) are generated once and kept there too; every dev and smoke start seeds its accounts with them, so the same logins work on whichever stack runs (ADR 0020). Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account"). The web server's API token (`STACK_APP_API_TOKEN`, read-only, created by the reader account) is minted by `pnpm dev:stack` and `pnpm smoke` after the accounts are seeded and stored there too; to create it the script gives the `guest` role `api_tokens: create` for a moment and takes it back straight away (also on failure). It is reused while it still works, and the start fails if a `cvPageList` read with it does not mask `references.phone`. Nothing outside these two scripts grants it.
 
 Requirements: Node >= 24, pnpm 11, Docker (database, smoke stack, cms-api integration tests).
 
@@ -124,19 +124,21 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @abyss/web dev
 ```
 
-Open `http://domain.localhost:5174`. The browser calls only web's own routes; the Node server reaches cms-api through `API_INTERNAL_URL`.
+Open `http://domain.localhost:5174`. The browser calls only web's own routes; the Node server reaches cms-api through `APP_API_URL`. Page text and CV data come from cms-api; with no token or no reachable API, outside production, web shows built-in mock content (WEB-5), so web runs alone.
 
 | Key                                    | Kind                | Meaning                                                                    |
 | -------------------------------------- | ------------------- | -------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_ADMIN_URL`                | browser, build time | optional; empty hides the "Open CMS" link                                  |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required). Cloudflare publishes test keys                 |
-| `API_INTERNAL_URL`                     | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`      |
+| `APP_API_URL`                          | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`      |
+| `APP_API_TOKEN`                        | server, runtime     | cms-api API token for page content (required in production; optional here) |
 | `WEB_ORIGIN`                           | server, runtime     | exact origin of the site (required), `http://domain.localhost:5174` in dev |
 | `WEB_SESSION_SECRET`                   | server, runtime     | session cookie key (required; 32+ bytes in production)                     |
 | `TURNSTILE_SECRET_KEY`                 | server, runtime     | Turnstile secret (required); Cloudflare publishes test secrets             |
 | `TURNSTILE_EXPECTED_HOSTNAME`          | server, runtime     | bare host a Turnstile answer must carry; required in production            |
 | `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER` | server, runtime     | visitor IP source, see `apps/web/.env.example`                             |
-| `WEB_REVALIDATE_SECONDS`               | server, runtime     | data cache seconds, default 60; use `0` while developing content           |
+| `WEB_REVALIDATE_SECONDS`               | server, runtime     | optional override of every call's cache (default 180 s); `0` in dev        |
+| `ALLOW_MOCK_FALLBACK`                  | server, runtime     | `smoke` only on the smoke stack; mocks are on in dev by default            |
 | `WEB_PORT`                             | server, runtime     | port of `pnpm start` (production server), default 8080                     |
 | `DEV_SERVER_PORT`                      | dev only            | read from the shell, not `.env.local`; default 5174                        |
 
@@ -144,7 +146,7 @@ Open `http://domain.localhost:5174`. The browser calls only web's own routes; th
 
 ## 6. Smoke stack (everything behind Traefik, Docker only)
 
-`docker-compose.smoke.yml` builds and starts Postgres, Mailpit (catches OTP mail), the cms-api init container (`deploy:migrate`), cms-api, web, cms-admin and Traefik, with the same routing as production. It is for local testing only; CI does not use it. Static cms-api settings are in `scripts/stack/cms-api.env`; per-run secrets are generated by `scripts/smoke.sh`, so you do not provide any. The checks live in `scripts/smoke/<group>.sh` (one `check_<group>()` function each); `smoke.sh` keeps the stack lifecycle, the assert helpers and the call order.
+`docker-compose.smoke.yml` builds and starts Postgres, Mailpit (catches OTP mail), the cms-api init container (`deploy:migrate`), cms-api, web, cms-admin and Traefik, with the same routing as production. It is for local testing only; CI does not use it. Static cms-api settings are in `scripts/stack/cms-api.env`; per-run secrets are generated by `scripts/smoke.sh`, so you do not provide any; only the account logins (`STACK_*`) are read from `.localEnv.agent` and reused. The checks live in `scripts/smoke/<group>.sh` (one `check_<group>()` function each); `smoke.sh` keeps the stack lifecycle, the assert helpers and the call order.
 
 ```
 pnpm smoke                    # build, start, check routing/auth/mail/headers, tear down

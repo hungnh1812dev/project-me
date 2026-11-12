@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, FormAlert, type FormAlertTone } from '@abyss/form-commons';
+import { Button, FormAlert, useToast, type FormAlertTone } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { APP_ROUTES } from '@configs/App.routes';
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
@@ -28,6 +28,8 @@ import { useCallerAccess } from '@features/access/useCallerAccess';
 import type { ContentType } from '@features/content-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router';
+
+const ROLE_SAVED_TOAST_KEY = 'role-permissions-saved';
 
 /** `/roles/:roleId`: one role's permission matrix. */
 export function RolePermissionsPage() {
@@ -111,6 +113,7 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
   const api = useAccessApi();
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
+  const { showToast } = useToast();
   const [baseline, setBaseline] = useState(() => matrixFromRows(role.permissions));
   const [matrix, setMatrix] = useState<MatrixState>(baseline);
   const [feedback, setFeedback] = useState<SaveFeedback | null>(null);
@@ -140,7 +143,8 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
       setErrors(new Map());
       setNotHeld(new Set());
       setCheckJson(false);
-      setFeedback({ tone: 'success', message: copy.role.saved });
+      setFeedback(null);
+      showToast({ tone: 'success', title: copy.role.saved, key: ROLE_SAVED_TOAST_KEY });
     },
     onError: (cause, sent) => {
       const error = toAccessError(cause, access);
@@ -184,7 +188,6 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
         state={matrix}
         onChange={(update) => {
           setMatrix(update);
-          if (feedback?.tone === 'success') setFeedback(null);
         }}
         contentTypes={contentTypes}
         order={order}
@@ -199,7 +202,8 @@ function RoleEditor({ role, contentTypes }: { role: Role; contentTypes: readonly
           {dirty ? (
             <p className="m-0 text-sm text-muted-foreground sm:mr-auto">{copy.role.unsaved}</p>
           ) : null}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+          {/* Stacked order is not reversed: Discard stays above Save and first in Tab order. */}
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               disabled={!dirty || save.isPending}

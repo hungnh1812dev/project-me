@@ -6,6 +6,7 @@ import type { CurrentUser } from './Auth.slice';
 export interface LoginCredentials {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 interface AccessTokenResponse {

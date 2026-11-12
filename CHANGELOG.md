@@ -6,6 +6,49 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### New features
+
+- scripts: build and push the three app images to a local k3d registry ([local-registry.md](docs/deployments/local-registry.md)).
+- scripts: `pnpm dev:stack:seed` adds one media file and one document with a draft to a running dev stack, so the media and diff screens can be checked at tier 2.
+- web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a local mock fallback through `MockView.ts` (WEB-1..WEB-8).
+- cms-admin: premium SaaS look (indigo primary, rounded cards, sticky sidebar and header, soft focus halo) and toasts for the outcomes of content, media, access and security actions (ADM-1..ADM-10).
+- form-commons: theme tokens for the premium look, a `Card` component and a `Toast` provider; web is unchanged.
+
+### DevOps patches
+
+- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped; create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+
+### Changes
+
+- cms-admin: spec for the premium SaaS look: indigo primary with a soft coloured shadow, rose destructive, slate zoning, rounded cards without hard borders, sticky sidebar with an active indicator, sticky header, toasts for action outcomes, a 3 px focus halo with a solid edge, 200/300 ms transitions; tokens stay in form-commons with a `premium` theme block, web keeps its look (ADM-1..ADM-10, D23).
+- cms-admin: spec: a dialog closes at once; only its backdrop fades out and takes no clicks while it fades (ADM-9).
+- cms-admin: spec: the sidebar shows only the pages the role may read; a role with no read permission sees a Welcome sidebar ("Welcome to the system", "Contact the administrator to be granted access."); no API change, reviewer role out of scope (ADM-11).
+- cms-admin: spec: empty states (no rows yet, backups not configured) sit in a card like the loading skeleton; forbidden and load-error notices stay alerts outside cards (ADM-7).
+- cms-api: test-stack-only overrides `ACCOUNT_INVITE_RATE_LIMIT_IP`, `ACCOUNT_INVITE_RATE_LIMIT_ACTOR`, `OTP_ISSUE_RATE_LIMIT_ACCOUNT`, `PASSWORD_SUBMIT_RATE_LIMIT_IP` and `PASSWORD_CHANGE_RATE_LIMIT_IP` (same opt-in as the other rate-limit overrides), raised on the smoke and dev stacks so the full e2e suite no longer hits the invite and per-account email-code limits; production defaults are unchanged.
+- web: spec for the content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful), page text from cms-api in three queries, per-call cache (180 s default), local mock fallback through `MockView.ts`, a role-display extension point, and `APP_API_URL` replacing `API_INTERNAL_URL` (WEB-1..WEB-8, public-site PS-1..PS-2); the public-site rules now say the homepage shows only the service status view (Q-BFF2); `site-shell` is a base web feature (web RULES "Layers").
+- web: spec names the scope of the web API token: `*` `read`, created by a read-only account, on every stack and in production (WEB-2, Q-WCT1).
+- root: `docs/deployments/web.md` is the DevOps deployment guide for the web service (image, env keys, routing, release, checks), linked from the DevOps runbook.
+- cms-api: every finished request leaves one log line (method, path without query, status, duration in ms), a warning above 1000 ms; the health probes are skipped (API-1).
+- root: the dev and smoke stacks keep the test account logins (`STACK_*`) in `.localEnv.agent`, generated once and reused on every start; `stack_load_accounts` replaces `stack_generate_credentials` (ADR 0020).
+- cms-api, cms-admin, web: a ticked "Keep me signed in" keeps the sign-in for 30 days (sliding); an unticked one ends with the browser session; existing sessions get 30 days at their next rotation.
+- cms-api: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` overrides the `2fa-email:ip` limit (test stacks only, same opt-in as the other rate-limit overrides); smoke and dev stacks raise it.
+- cms-api: `TWO_FACTOR_MANAGE_RATE_LIMIT_IP` overrides the `2fa-manage:ip` limit the same way; the 2FA e2e spec restores its stored account on a kept stack.
+- web: `BFF_AUTH_RATE_LIMIT_IP` and the opt-in `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` are set to 10000 on the smoke and dev stacks only; deploy docs list both as never set in production.
+- web: the BFF moved from `/bff/v1` to `/api/v1`; `/bff/v1` is removed with no alias or redirect.
+- web: imports use `@/` tsconfig path aliases, resolved by Vitest too; base-config: Prettier groups `@/styles/global.css` alone.
+- root: `session-gate` breaks checklist sessions only after 40k tokens of growth; the manager resumes from `Next:`; `tokstats` reports per-job tokens.
+- root: `session-gate` denies a CHECK or RECHECK naming several tiers; `tokstats` groups Bash output by command after a leading `cd`.
+- root: `session-gate` breaks the manager session past 95K tokens of context, under the 100K prompt size Haiku bills at 5x.
+- root: `session-gate` names the in-progress feature and its `Next:` line at session start, so the manager skips scanning state.
+- root: `session-gate` keeps its state under the project root, so a session that changes folder no longer forks it.
+- root: `session-gate` takes the first non-zero context size as the session baseline; a 0 read at the first dispatch counted the whole startup context as growth and broke checklist sessions after about 2k tokens of work.
+- root: the manager breaks a session only when `session-gate` denies a dispatch, at a board `Breaks:` point, or after a passed checkpoint or closed feature, never on its own estimate.
+- root: qc, security-qc and the builders wait on a long command in bounded steps under 170 s (no open `until` / `pgrep` / `sleep` loop, no turn ended to wait) and report `blocked` after 10 min with no new log line; the manager names the usual length of a tier 2 or 3 checker run.
+- root: `test-tiers` keeps only the tiers, when each runs, who does what and missing commands; the checklist format, access preflight and progress file move to `checklist-runs` (planner, qc, security-qc), `.localEnv.agent` and scratch git to `local-env` (builders, qc, security-qc), and the manager's preflight and progress steps to `manager.md`, so the manager and builders preload about 1.1–1.3k fewer tokens.
+- root: the planner writes `SPEC`, `PLAN`, `DESIGN` and phase or feature `REPLAN` changes as a draft in `.agent-state/drafts/<name>/` (`.claude/bin/draft start`), revises it in place and reports a summary instead of the drafted text; the manager shows `draft diff --stat` and, on the user's word, runs `draft apply` (refused when a repo file changed since the start; `draft rebase` merges it in 3-way) or `draft drop`.
+- root: qc and security-qc run an access preflight before every tier 2 or 3 run: they list the commands, MCP tools, `.localEnv.agent` keys and stack actions the rows need, probe the stack, and stop with `status: preflight` when something is not allowed yet; the manager asks the user once, then sends `GO` (`test-tiers` "Access preflight").
+- root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
+
 ## 0.1.0 (2026-11-05)
 
 Repo 0.1.0, cms-api, cms-admin and web 0.1.0, e2e 0.0.2: the web BFF, the content schema moves to component paths, admin labels and widths, and the fixes since 0.0.1.
@@ -71,8 +114,8 @@ Repo 0.0.2 and cms-api 0.0.2: tag-driven release CI and the cms-api integration 
 
 ### DevOps patches
 
-- Tag-driven release ([ADR 0016](docs/adr/0016-tag-driven-release-ci.md)): images are built and pushed only by a repo tag `v<x.y.z>` made by the `release-tag` skill, and tagged with the app version (`APP_IMAGE_TAG` changes from `main-<sha7>` to `<x.y.z>`); the deploy repo `staging` branch is no longer bumped by CI. Patch notes: [cms-api](docs/apps/cms-api/patch-cms-api-0.0.2.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.0.2.md), [web](docs/apps/web/patch-web-0.0.2.md).
-- cms-api integration tests (Testcontainers) moved out of the Checks job into their own job that runs only on `v<x.y.z>` tags and gates the cms-api publish.
+- Tag-driven release ([ADR 0016](docs/adr/0016-tag-driven-release-ci.md)): `v<x.y.z>` tags build `<x.y.z>` images; CI stops bumping the deploy repo ([cms-api](docs/apps/cms-api/patch-cms-api-0.0.2.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.0.2.md), [web](docs/apps/web/patch-web-0.0.2.md)).
+- cms-api integration tests (Testcontainers) run in their own job, only on `v<x.y.z>` tags, gating the cms-api publish.
 - Test coverage for the tag refusal when `release-apps.sh` fails.
 
 ## 0.0.1 (2026-11-04)
@@ -92,13 +135,13 @@ First versioned release: everything built up to this date.
 
 cms-api:
 
-- Content engine: content types as JSON schemas (root plus up to 3 component levels), generated and reviewed SQL migrations in schema `content`, the type registry ([content-modeling](docs/flows/content-modeling/SPEC.md)).
-- Documents REST API: list with filter, sort and paging, read, create, draft save with a version check and a masked `409` diff, publish and unpublish, bulk actions on collections, presence ([content-editing](docs/flows/content-editing/SPEC.md)).
+- Content engine: JSON-schema content types (root plus up to 3 component levels), reviewed SQL migrations, the type registry ([content-modeling](docs/flows/content-modeling/SPEC.md)).
+- Documents REST API: list, read, create, versioned draft save with masked `409` diff, publish, unpublish, bulk actions, presence ([content-editing](docs/flows/content-editing/SPEC.md)).
 - Read-only GraphQL API over published document reads, with the same authorization and masking as REST ([public-site](docs/flows/public-site/SPEC.md)).
-- Access control: system and custom roles with a rank rule, field-level permissions with `***` masking, conditions, API tokens limited to the creator's current permissions ([access-admin](docs/flows/access-admin/SPEC.md)).
-- Identity: sign-in with refresh token rotation and reuse detection, two-factor by TOTP or email code, invitations, password reset and change, one-time owner setup page and CLI ([sign-in](docs/flows/sign-in/SPEC.md), [password](docs/flows/password/SPEC.md), [two-factor-setup](docs/flows/two-factor-setup/SPEC.md), [owner-setup](docs/flows/owner-setup/SPEC.md)).
-- Media library: upload with magic-byte checks and image re-encoding, replace in place, alt text, delete while unreferenced, purge job; stored file names `<stem>_<hash8>.<ext>` ([media](docs/flows/media/SPEC.md)).
-- Reviewer sessions: self-service 24 h read-only sessions behind a Turnstile check, the owner switch and session log, the deploy switch `REVIEWER_FEATURE_ENABLED` ([reviewer](docs/flows/reviewer/SPEC.md)).
+- Access control: ranked system and custom roles, field permissions with `***` masking and conditions, scoped API tokens ([access-admin](docs/flows/access-admin/SPEC.md)).
+- Identity: rotating refresh tokens with reuse detection, TOTP or email 2FA, invitations, password reset, owner setup ([sign-in](docs/flows/sign-in/SPEC.md), [password](docs/flows/password/SPEC.md), [two-factor-setup](docs/flows/two-factor-setup/SPEC.md), [owner-setup](docs/flows/owner-setup/SPEC.md)).
+- Media library: magic-byte-checked uploads, image re-encoding, replace, alt text, delete when unreferenced, purge job, files stored as `<stem>_<hash8>.<ext>` ([media](docs/flows/media/SPEC.md)).
+- Reviewer sessions: self-service 24 h read-only access behind Turnstile, owner switch, session log, `REVIEWER_FEATURE_ENABLED` switch ([reviewer](docs/flows/reviewer/SPEC.md)).
 - Owner-only backup download: list the nightly encrypted dumps and get a 60 s link after password plus 2FA ([backups](docs/flows/backups/SPEC.md)).
 - Always-on security audit log ([security-audit](docs/flows/security-audit/SPEC.md)); health probes; production config guards; separate database roles with TLS `verify-full`.
 
@@ -124,11 +167,11 @@ Repository:
 
 ### Bug fixes
 
-- cms-api: a rejected upload answered 502 or lost its 403; the Node `requestTimeout` is 5 min and rejected uploads close cleanly.
-- cms-admin, form-commons: uploads were cut by the 10 s client timeout, the progress bar showed 100 % too early, long file names lost their extension, `MediaInput` had no frame.
+- cms-api: rejected uploads no longer answer 502 or lose their 403; `requestTimeout` is 5 min.
+- cms-admin, form-commons: uploads outlast the 10 s client timeout; progress, long file names and the `MediaInput` frame are fixed.
 - cms-api, cms-admin, e2e: refresh races across browser tabs signed users out.
-- cms-api: updating an expired API token is refused; create permissions with conditions count as not granted; the purge keeps deleted media of another storage provider; document reads include the media `sha256`.
-- cms-admin: Zod runs jitless so its eval probe breaks no CSP; backup status loads on demand; focus returns to the trigger after a dialog closes; the collection table stays inside its card at 375 px; emoji stay whole in avatar initials.
+- cms-api: expired tokens can't be updated; conditional create counts as ungranted; purge keeps other providers' media; reads include media `sha256`.
+- cms-admin: jitless Zod keeps CSP; backup status loads on demand; dialog focus returns; tables fit 375 px; emoji initials intact.
 - web: masked CV fields show "Hidden" for reviewers.
 
 ### DevOps patches

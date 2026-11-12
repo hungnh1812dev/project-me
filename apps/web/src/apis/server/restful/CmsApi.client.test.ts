@@ -1,11 +1,13 @@
 // @vitest-environment node
 import { cmsApiClient } from './CmsApi.client';
+import { SERVER_API_FAILURE_CODES, serverApi, ServerApiError } from './ServerApi.client';
 
 vi.mock('../../../configs/Server.env', () => ({
   getServerEnv: () => ({
-    apiInternalUrl: 'http://api.internal/api/v1',
+    appApiUrl: 'http://api.internal/api/v1',
     webOrigin: 'https://site.test',
     clientIpHeader: 'cf-connecting-ip',
+    revalidateOverrideSeconds: undefined,
   }),
 }));
 
@@ -18,9 +20,14 @@ function answer(status: number, body?: unknown, headers: HeadersInit = {}) {
   );
 }
 
-function lastCall(): { url: string; init: RequestInit; headers: Headers } {
-  const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-  return { url, init, headers: new Headers(init.headers) };
+/** The call as it reaches `fetch` through `serverApi` (axios hands it a `Request` plus init). */
+function lastCall(): { url: string; request: Request; init: RequestInit; headers: Headers } {
+  const [request, init] = fetchMock.mock.calls[0] as [Request, RequestInit];
+  return { url: request.url, request, init, headers: request.headers };
+}
+
+async function sentBody(): Promise<unknown> {
+  return JSON.parse(await lastCall().request.text());
 }
 
 async function errorCodeOf(promise: Promise<unknown>): Promise<string | undefined> {
@@ -34,16 +41,20 @@ beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('every call', () => {
   it('goes to the internal URL without following redirects, forwarding the IP once', async () => {
     answer(200, { accessToken: 'a' });
-    await cmsApiClient.logIn({ email: 'e', password: 'p' }, IP);
+    await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP);
 
     const { url, init, headers } = lastCall();
     expect(url).toBe('http://api.internal/api/v1/auth/login');
-    expect(init.redirect).toBe('manual');
+    expect(lastCall().request.redirect).toBe('manual');
+    expect(init).toMatchObject({ cache: 'no-store' });
     expect(headers.get('x-forwarded-for')).toBe(IP);
     expect(headers.get('cf-connecting-ip')).toBe(IP);
     expect(headers.has('cookie')).toBe(false);
@@ -51,7 +62,7 @@ describe('every call', () => {
 
   it('sends no forwarding header when no address is trusted', async () => {
     answer(200, { accessToken: 'a' });
-    await cmsApiClient.logIn({ email: 'e', password: 'p' }, undefined);
+    await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, undefined);
     expect(lastCall().headers.has('x-forwarded-for')).toBe(false);
   });
 
@@ -62,14 +73,33 @@ describe('every call', () => {
     expect(await errorCodeOf(cmsApiClient.logOut('rt', IP))).toBe('BFF_UPSTREAM_FAILED');
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
     expect(await errorCodeOf(cmsApiClient.logOut('rt', IP))).toBe('BFF_UPSTREAM_FAILED');
-    fetchMock.mockRejectedValue(new DOMException('timed out', 'TimeoutError'));
-    expect(await errorCodeOf(cmsApiClient.logOut('rt', IP))).toBe('BFF_UPSTREAM_TIMEOUT');
+  });
+
+  it.each([
+    [SERVER_API_FAILURE_CODES.NETWORK, 'BFF_UPSTREAM_FAILED'],
+    [SERVER_API_FAILURE_CODES.TIMEOUT, 'BFF_UPSTREAM_TIMEOUT'],
+    [SERVER_API_FAILURE_CODES.REDIRECT, 'BFF_UPSTREAM_FAILED'],
+    [SERVER_API_FAILURE_CODES.INVALID_BODY, 'BFF_UPSTREAM_FAILED'],
+  ])('maps the transport failure %s to %s', async (failure, mapped) => {
+    vi.spyOn(serverApi, 'post').mockRejectedValue(new ServerApiError(failure));
+    expect(await errorCodeOf(cmsApiClient.logOut('rt', IP))).toBe(mapped);
+  });
+
+  it('sends a GET through serverApi.get and a POST through serverApi.post', async () => {
+    const get = vi.spyOn(serverApi, 'get');
+    const post = vi.spyOn(serverApi, 'post');
+    answer(200, { status: 'ok' });
+    await cmsApiClient.readLiveHealth();
+    answer(204);
+    await cmsApiClient.logOut('rt', IP);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledTimes(1);
   });
 
   it('keeps the Retry-After of a cms-api 429', async () => {
     answer(429, { message: 'x' }, { 'retry-after': '42' });
     const error: unknown = await cmsApiClient
-      .logIn({ email: 'e', password: 'p' }, IP)
+      .logIn({ email: 'e', password: 'p', rememberMe: false }, IP)
       .catch((caught: unknown) => caught);
     expect(error).toMatchObject({
       errorCode: 'BFF_RATE_LIMITED',
@@ -101,16 +131,26 @@ describe('logIn', () => {
         ],
       }),
     );
-    expect(await cmsApiClient.logIn({ email: 'e', password: 'p' }, IP)).toEqual({
+    expect(await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)).toEqual({
       kind: 'signed-in',
       accessToken: 'at',
       refreshToken: 'rt-1',
     });
   });
 
+  it('sends rememberMe in the login body', async () => {
+    answer(200, { accessToken: 'a' });
+    await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: true }, IP);
+    expect(await sentBody()).toEqual({
+      email: 'e',
+      password: 'p',
+      rememberMe: true,
+    });
+  });
+
   it('returns the second step with only the allowlisted fields', async () => {
     answer(200, { requires2FA: true, tempToken: 't', methods: ['totp'], leak: 1 });
-    expect(await cmsApiClient.logIn({ email: 'e', password: 'p' }, IP)).toEqual({
+    expect(await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)).toEqual({
       kind: 'two-factor-required',
       tempToken: 't',
       methods: ['totp'],
@@ -119,17 +159,17 @@ describe('logIn', () => {
 
   it('maps any 401 to invalid credentials and an odd answer to upstream failure', async () => {
     answer(401, { errorCode: 'ANYTHING' });
-    expect(await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p' }, IP))).toBe(
-      'BFF_INVALID_CREDENTIALS',
-    );
+    expect(
+      await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)),
+    ).toBe('BFF_INVALID_CREDENTIALS');
     answer(200, { nothing: true });
-    expect(await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p' }, IP))).toBe(
-      'BFF_UPSTREAM_FAILED',
-    );
+    expect(
+      await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)),
+    ).toBe('BFF_UPSTREAM_FAILED');
     answer(400, { errorCode: 'AUTH_INVALID_REQUEST' });
-    expect(await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p' }, IP))).toBe(
-      'BFF_UPSTREAM_FAILED',
-    );
+    expect(
+      await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)),
+    ).toBe('BFF_UPSTREAM_FAILED');
   });
 });
 
@@ -156,7 +196,7 @@ describe('verifyTwoFactor and sendEmailChallenge', () => {
   it('sends the email challenge and expects 202', async () => {
     answer(202);
     await expect(cmsApiClient.sendEmailChallenge('t', IP)).resolves.toBeUndefined();
-    expect(JSON.parse(lastCall().init.body as string)).toEqual({ tempToken: 't' });
+    expect(await sentBody()).toEqual({ tempToken: 't' });
 
     answer(401, { errorCode: 'AUTH_INVALID_TEMP_TOKEN' });
     expect(await errorCodeOf(cmsApiClient.sendEmailChallenge('t', IP))).toBe(

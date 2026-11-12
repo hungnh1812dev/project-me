@@ -46,9 +46,8 @@ export const ACCESS_COPY = {
     enabledInvited: (name: string) =>
       `${name} is enabled. They have not set a password yet, so resend the invite if they need a new code.`,
     alreadyEnabled: 'That account is no longer disabled. The list is updated.',
-    resent: (email: string) => `New invitation sent to ${email}. Earlier codes no longer work.`,
-    resentNoEmail: (email: string) =>
-      `A new code was created for ${email}, but the email could not be sent. They can ask for a code on the Set password page.`,
+    resent: 'New invitation sent. Earlier codes no longer work.',
+    resentNoEmail: `A new code was created, but the email could not be sent. They can ask for a code on the Set password page.`,
     notInvited:
       'That account already set a password, so there is nothing to resend. The list is updated.',
     pagination: {
@@ -59,10 +58,8 @@ export const ACCESS_COPY = {
     },
     disable: 'Disable',
     disableLabel: (name: string) => `Disable ${name}`,
-    invited: (email: string) =>
-      `Invitation sent to ${email}. They choose a password with the code from the email.`,
-    invitedNoEmail: (email: string) =>
-      `The account for ${email} was created, but the invitation email could not be sent. They can ask for a code on the Set password page.`,
+    invited: `Invitation sent. They choose a password with the code from the email.`,
+    invitedNoEmail: `The account was created, but the invitation email could not be sent. They can ask for a code on the Set password page.`,
     disabled: (name: string) => `${name} is disabled and was signed out everywhere.`,
     alreadyDisabled: 'That account was already disabled. The list is updated.',
     gone: 'That account no longer exists. The list is updated.',

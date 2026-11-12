@@ -17,6 +17,9 @@
 #                          stack as the bootstrapped owner
 #   SMOKE_NO_BUILD=1       reuse the images from the last build (only when no
 #                          product code changed since, e.g. e2e-only edits)
+#
+# The account logins (STACK_*) come from .localEnv.agent, generated once and reused
+# (ADR 0020); every other secret is generated per run and the file is read for nothing else.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,6 +35,7 @@ for section_file in routing security-headers cors init-container database-roles 
   source "$ROOT_DIR/scripts/smoke/$section_file.sh"
 done
 COMPOSE_FILE="$ROOT_DIR/docker-compose.smoke.yml"
+COMPOSE_PROJECT="abyss-smoke"
 DEFAULT_DOMAIN="domain.localhost"
 DEFAULT_HTTP_PORT="8080"
 DEFAULT_TIMEOUT_SECONDS="180"
@@ -44,6 +48,10 @@ API_PREFIX="/api/v1"
 WEB_UNKNOWN_PATH="/this-page-does-not-exist"
 WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
+# The web BFF owns /api/v1/* on the web host; its old path /bff/v1 is removed (404, no alias).
+WEB_BFF_HEALTH_PATH="/api/v1/health"
+WEB_REMOVED_BFF_HEALTH_PATH="/bff/v1/health"
+BFF_CACHE_CONTROL="no-store"
 JWT_ACCESS_KID="smoke"
 TOTP_ENC_KID="smoke-totp"
 # Written only with SMOKE_KEEP=1 (gitignored, mode 600): the e2e env of the kept
@@ -78,7 +86,11 @@ export SMOKE_JWT_ACCESS_SECRET="$(stack_random_secret)"
 export SMOKE_OTP_PEPPER="$(stack_random_secret)"
 export SMOKE_TOTP_ENC_KEY="$(stack_random_secret)"
 export SMOKE_WEB_SESSION_SECRET="$(stack_random_secret)"
-stack_generate_credentials "$SMOKE_DOMAIN"
+# The web image refuses to start in production without an API token, but the real one can only
+# be minted once cms-api and the accounts exist. The first start gets a well-formed throwaway
+# that cms-api does not know; check_content_token swaps in the minted one (WCA-4).
+export SMOKE_APP_API_TOKEN="ak_live_$(stack_random_secret)"
+stack_load_accounts "$SMOKE_DOMAIN" "$ROOT_DIR/.localEnv.agent"
 
 compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 # api_exec [docker exec options...] -- <command...>: runs in the cms-api service.
@@ -167,6 +179,22 @@ in_init() {
   pass "$label"
 }
 
+# check_content_token: mints the reader-account API token for the web container (stack-seed.sh),
+# runs the start check, then recreates web with it.
+check_content_token() {
+  echo "Content API token for the web container"
+  STACK_API_URL="$SMOKE_API_BASE_URL"
+  STACK_API_CURL_ARGS=(--resolve "$ADMIN_HOST:$SMOKE_HTTP_PORT:$LOOPBACK")
+  if ! stack_mint_content_token "$COMPOSE_PROJECT" "$ROOT_DIR/.localEnv.agent"; then
+    fail "content API token minted and checked"
+    return
+  fi
+  pass "content API token minted and checked"
+  export SMOKE_APP_API_TOKEN="$STACK_APP_API_TOKEN"
+  compose up --detach --no-build --no-deps --force-recreate --wait --wait-timeout "$TIMEOUT_SECONDS" web >/dev/null 2>&1 \
+    && web_home_ready && pass "web restarted with the content token" || fail "web restarted with the content token"
+}
+
 # in_api <label> <stdin text> <expect success: 1|0> <expected fragments...> -- <command...>
 # Runs a command in the cms-api container; output must contain every fragment.
 in_api() {
@@ -176,11 +204,14 @@ in_api() {
   while [[ "$1" != "--" ]]; do fragments+=("$1"); shift; done
   shift
   output="$(printf '%s\n' "$input" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "$@" 2>&1)" || ok=0
+  # Redact first so no failure message below can write the long-lived password to the log.
+  local has_password=0
+  if [[ "$output" == *"$STACK_OWNER_PASSWORD"* ]]; then has_password=1; output="${output//$STACK_OWNER_PASSWORD/***}"; fi
+  if [[ "$has_password" == 1 ]]; then fail "$label: output contains the password"; return; fi
   if [[ "$ok" != "$want_ok" ]]; then fail "$label: exit status mismatch: $output"; return; fi
   for fragment in "${fragments[@]}"; do
     if [[ "$output" != *"$fragment"* ]]; then fail "$label: missing '$fragment' in: $output"; return; fi
   done
-  if [[ "$output" == *"$STACK_OWNER_PASSWORD"* ]]; then fail "$label: output contains the password"; return; fi
   pass "$label"
 }
 
@@ -238,6 +269,7 @@ check_init_container
 check_database_roles
 check_owner_setup
 check_migrations_again
+check_content_token
 check_auth
 check_two_factor
 check_mail

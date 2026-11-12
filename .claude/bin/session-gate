@@ -2,28 +2,40 @@
 """Hook: make the manager break its session (/clear) around checklist runs and when its context grows.
 
   PreToolUse (Agent|SendMessage)   check a dispatch against the session's state; deny with a reason
-  SessionStart                     forget the session's state (fresh session, /clear or /compact)
+  SessionStart                     forget the session's state (fresh session, /clear or /compact) and tell
+                                   the session where to resume: the in-progress feature of features.md and
+                                   the `Next:` line of its handoff.md (or that none or several are in progress)
 
 Only dispatches in the manager's format are checked (first word TASK, BATCH, REQUEST, CHECKLIST, CHECK,
 RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Rules, per session:
-- Growth: the context at the first checked dispatch is the baseline; a dispatch when the context has
-  grown more than GROWTH_LIMIT tokens past it is denied. A fresh session starts at +0, so it never loops.
+- Size: a dispatch is denied once the context is over CONTEXT_LIMIT tokens (Haiku bills prompts over
+  100K at 5x), or over MIN_GROWTH past the baseline (the context at the first checked dispatch that reads a size) when the
+  baseline is already near the limit. A fresh session starts at +0, so it never loops.
 - Before a checklist: a qc / security-qc CHECKLIST or CHECK (checklist mode) is denied when the session
-  already ran other jobs.
-- During and after: in checklist mode only CHECKLIST, CHECK, RECHECK and FIX of the same target pass.
+  already ran other jobs and its context grew more than CHECKLIST_LIMIT tokens.
+- During and after: in checklist mode only CHECKLIST, CHECK, RECHECK and FIX of the same target pass, once
+  the context grew more than CHECKLIST_LIMIT tokens (a small session goes on without a break).
+- One tier: a CHECK or RECHECK naming more than one tier (`tier=1,2,3`, `tier=1-3`) is denied.
 - After a plan: a TASK or BATCH is denied in a session that ran PLAN when the in-progress feature's
   board says `Size: medium` or `Size: large`.
 - Break points: once a TASK or BATCH named in the board's `Breaks:` line ran, a TASK or BATCH of other
   tasks is denied (FIX and RECHECK of that unit still pass).
-State: .agent-state/.session-gate.json (git-ignored). Any error lets the call through.
+State: .agent-state/.session-gate.json under the project root (git-ignored), whatever the session's cwd.
+Any error lets the call through.
 """
 import json, os, re, sys, time
 
-GROWTH_LIMIT = 100_000
+# The state paths below are relative to the project root, never to the session's cwd (a `cd` into a
+# subfolder would otherwise start a second state file there).
+PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+CONTEXT_LIMIT = 95_000
+MIN_GROWTH = 20_000
+CHECKLIST_LIMIT = 40_000
 STATE_FILE = ".agent-state/.session-gate.json"
 STATE_TTL_S = 2 * 24 * 3600
 FEATURES_FILE = ".agent-state/features.md"
 BOARD_LINE = re.compile(r"^(Size|Breaks):[ \t]*(.*)$", re.M)
+TIERS = re.compile(r"\btier=(\S+)")
 TASK_ID = re.compile(r"\b[A-Z][A-Z0-9]*-\d+\b")
 BUILD_JOBS = ("TASK", "BATCH")
 JOBS = re.compile(r"^\s*(TASK|BATCH|REQUEST|CHECKLIST|CHECK|RECHECK|FIX|REPLAN|SPEC|PLAN|ADR-STATUS)\b:?\s*([^\s:]*)")
@@ -78,9 +90,41 @@ def board_plan():
     return "", []
 
 
+def resume_note():
+    """Where the manager resumes, from the in-progress rows of features.md; "" without a features file."""
+    try:
+        rows = [[c.strip() for c in row.split("|")] for row in open(FEATURES_FILE)]
+    except OSError:
+        return ""
+    active = [c for c in rows if len(c) > 4 and c[3].startswith("in-progress")]
+    if not active:
+        return "Resume: no feature in progress in features.md."
+    if len(active) > 1:
+        names = ", ".join(f"{c[2]} #{c[1]}" for c in active)
+        return f"Resume: {len(active)} features in progress ({names}); ask the user which to work on."
+    num, name, folder = active[0][1], active[0][2], active[0][4]
+    note = f"Resume: .agent-state/{folder} ({name}, #{num} in features.md, in-progress)"
+    try:
+        nxt = next((l.strip() for l in open(os.path.join(".agent-state", folder, "handoff.md")) if l.startswith("Next:")), "")
+    except OSError:
+        nxt = ""
+    return note + ("\n" + nxt if nxt else "")
+
+
 def deny(reason):
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
                                              "permissionDecisionReason": f"session-gate: {reason}; {BREAK}."}}))
+
+
+def deny_tier(job, target):
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                             "permissionDecisionReason": f"session-gate: {job} {target} names several tiers; "
+                                             "send one CHECK per tier, lowest first (`tier=<n>`)."}}))
+
+
+def first_line(tool_input):
+    text = tool_input.get("prompt") or tool_input.get("message") or ""
+    return (text if isinstance(text, str) else json.dumps(text)).split("\n", 1)[0]
 
 
 def job_of(tool_input):
@@ -98,19 +142,28 @@ def pre_tool_use(event, state):
     if not job:
         return
     agent = (event.get("tool_input") or {}).get("subagent_type", "")
+    tiers = TIERS.search(first_line(event.get("tool_input") or {}))
+    if job in ("CHECK", "RECHECK") and tiers and re.search(r"[,\-]", tiers.group(1)):
+        return deny_tier(job, target)
     session = state.setdefault(event["session_id"], {"jobs": 0, "mode": None})
     size = context_tokens(event["transcript_path"])
-    session.setdefault("baseline", size)
+    # The transcript may not hold the first turn's usage yet (size 0); a 0 baseline would count the
+    # whole startup context as growth, so take the first non-zero size instead.
+    if size and not session.get("baseline"):
+        session["baseline"] = size
+    baseline = session.get("baseline", size)
     session["at"] = time.time()
-    growth = size - session["baseline"]
-    if session["jobs"] and growth > GROWTH_LIMIT:
-        return deny(f"context grew {growth // 1000}k tokens this session (limit {GROWTH_LIMIT // 1000}k)")
+    growth = size - baseline
+    limit = max(CONTEXT_LIMIT, baseline + MIN_GROWTH)
+    if session["jobs"] and size > limit:
+        return deny(f"context is {size // 1000}k tokens (limit {limit // 1000}k)")
     mode = session["mode"]
-    if mode:
+    small = growth <= CHECKLIST_LIMIT
+    if mode and not small:
         if job not in TARGET_JOBS or target != mode:
             return deny(f"this session ran the checklist of {mode}; {job} {target} needs a fresh session")
-    elif job in CHECKLIST_JOBS and agent in CHECKERS:
-        if session["jobs"]:
+    if job in CHECKLIST_JOBS and agent in CHECKERS and mode != target:
+        if session["jobs"] and not small:
             return deny(f"the checklist of {target} must start in a fresh session (this one already ran other jobs)")
         session["mode"] = target
     if job == "PLAN":
@@ -128,10 +181,13 @@ def pre_tool_use(event, state):
 def main():
     try:
         event = json.load(sys.stdin)
-        os.chdir(event.get("cwd") or ".")
+        os.chdir(PROJECT_DIR)
         state = load_state()
         if event.get("hook_event_name") == "SessionStart":
             state.pop(event.get("session_id"), None)
+            note = resume_note()
+            if note:
+                print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": note}}))
         else:
             pre_tool_use(event, state)
         save_state(state)

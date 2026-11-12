@@ -16,6 +16,8 @@ cms-api (NestJS 11 on Express) serves every API under `/api/v1`: REST for cms-ad
 
 The decisions below, plus the requirements of the flows that use cms-api (Docs table of the [project spec](../../../SPEC.md)). New app-wide requirements go here with ids `API-<n>`.
 
+- **API-1 Request duration log** (user, 2026-11-07). cms-api writes one log line through the project logger (`AppLogger`, [logging module](../../modules/cms-api/logging.md)) for every request it answers: method, path, status and duration in whole milliseconds. The path is the request path only: no query string, and never headers, body or cookies. Level `info`; `warn` when the duration exceeds a named threshold constant. Requests to the health probes (`/api/v1/health` and below) are not logged.
+
 ## Decisions
 
 **D3 Field-level reads (C4).** Applied **when the query is built**: no `read` on a subject → `403` (not a masked row) · unreadable columns are never selected; the serializer emits the sentinel and `_maskedFields` · filter, sort or search on an unreadable field → `400 FIELD_NOT_READABLE` · every payload carrying record data uses the same serializer (list, detail, 409 conflict, bulk conflicts, audit metadata view, error details).

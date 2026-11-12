@@ -326,6 +326,9 @@ test.describe.serial('owner: attach media to a profile', () => {
       },
     );
     await page.goto('/media');
+    // The library lists newest first, 10 per page: under the parallel full
+    // suite other uploads push the seeded file off page 1, so search for it.
+    await page.getByLabel(copy.filters.search).fill(THIRD_FILE_NAME);
     await expect(libraryCard(page, THIRD_FILE_NAME)).toBeVisible();
     expect(third).toBeDefined();
     await page.goto(editUrl);

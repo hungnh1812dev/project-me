@@ -121,20 +121,20 @@ model Account {
 }
 
 model Role {
-  id            Int      @id @default(autoincrement())
-  documentId    String   @unique @default(uuid(7)) @map("document_id") @db.Uuid
-  slug          String   @unique
-  name          String
+  id                         Int       @id @default(autoincrement())
+  documentId                 String    @unique @default(uuid(7)) @map("document_id") @db.Uuid
+  slug                       String    @unique
+  name                       String
   /// System ranks are fixed (SPEC §6); custom roles use 11–39 (CHECK in SQL).
-  rank          Int
-  isSystem      Boolean  @default(false) @map("is_system")
-  policyVersion Int      @default(1) @map("policy_version")
+  rank                       Int
+  isSystem                   Boolean   @default(false) @map("is_system")
+  policyVersion              Int       @default(1) @map("policy_version")
   /// Set once the default rows of a system role were seeded; later Owner edits (even an empty list) are never refilled.
   defaultPermissionsSeededAt DateTime? @map("default_permissions_seeded_at") @db.Timestamptz(6)
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  createdById   Int?     @map("created_by")
-  updatedById   Int?     @map("updated_by")
+  createdAt                  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                  DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdById                Int?      @map("created_by")
+  updatedById                Int?      @map("updated_by")
 
   createdBy   Account?     @relation("RoleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy   Account?     @relation("RoleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
@@ -180,6 +180,7 @@ model RefreshToken {
   userAgent    String?   @map("user_agent")
   ip           String?
   expiresAt    DateTime  @map("expires_at") @db.Timestamptz(6)
+  rememberMe   Boolean   @default(true) @map("remember_me")
   revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(6)
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

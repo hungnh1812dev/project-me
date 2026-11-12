@@ -1,8 +1,7 @@
-import type { AxiosInstance } from 'axios';
-
-import { apiFailureOf } from '../../apis/client/ApiFailure.errors';
-import { BFF_ENDPOINTS } from '../../configs/Api.endpoints';
-import { BFF_ERROR_CODES } from '../../configs/Auth.constants';
+import type { ClientApi } from '@/apis/client/Api.client';
+import { apiFailureOf } from '@/apis/client/ApiFailure.errors';
+import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
+import { BFF_ERROR_CODES } from '@/configs/Auth.constants';
 
 /** The signed-in account as the BFF returns it: no token, no permission list. */
 export interface CurrentUser {
@@ -20,6 +19,7 @@ export interface HumanCheckInput {
 export interface LoginCredentials extends HumanCheckInput {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 /** A password-checked login waiting for its second step; the BFF keeps the temp token. */
@@ -65,7 +65,7 @@ async function rethrowPrivilegedRefusal<T>(call: Promise<T>): Promise<T> {
  * token or refresh cookie is readable here: the BFF keeps them in a sealed
  * HttpOnly cookie and sets it on its own responses.
  */
-export function createAuthApi(client: AxiosInstance) {
+export function createAuthApi(client: ClientApi) {
   return {
     /** The signed-in visitor, or null. */
     async readSession(): Promise<CurrentUser | null> {

@@ -19,17 +19,21 @@ export function Modal({
   title,
   description,
   onClose,
+  onCloseAutoFocus,
   children,
 }: {
   title: string;
   description?: ReactNode;
   /** Esc, or the caller's own cancel button. */
   onClose: () => void;
+  /** Pass `restoreFocus` of `useRestoreFocus` when the dialog has no Radix trigger. */
+  onCloseAutoFocus?: (event: Event) => void;
   children: ReactNode;
 }) {
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent
+        {...(onCloseAutoFocus === undefined ? {} : { onCloseAutoFocus })}
         onInteractOutside={(event) => event.preventDefault()}
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >

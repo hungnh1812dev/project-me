@@ -5,7 +5,7 @@ import type { PermissionRow } from '@features/access/Access.api';
 import type { PublishState } from '@features/content/Content.constants';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -146,7 +146,7 @@ describe('DocumentEditPage lifecycle: actions', () => {
       },
     });
     await userEvent.click(await screen.findByRole('button', { name: actions.publish }));
-    expect(await screen.findByText(actions.published)).toBeInTheDocument();
+    expect(await findToast(actions.published)).toBeInTheDocument();
     expect(JSON.parse(String(api.callsTo(PUBLISH)[0]?.data))).toEqual({ expectedVersion: 3 });
     expect(await screen.findByText(copy.publishState.published)).toBeInTheDocument();
     expect(button(actions.publish)).toBeDisabled();
@@ -181,7 +181,7 @@ describe('DocumentEditPage lifecycle: actions', () => {
         name: actions.unpublishDialog.confirm,
       }),
     );
-    expect(await screen.findByText(actions.unpublished)).toBeInTheDocument();
+    expect(await findToast(actions.unpublished)).toBeInTheDocument();
     expect(await screen.findByText(copy.publishState.draft)).toBeInTheDocument();
     expect(button(actions.unpublish)).toBeDisabled();
   });
@@ -206,7 +206,7 @@ describe('DocumentEditPage lifecycle: actions', () => {
     await userEvent.click(
       within(dialog).getByRole('button', { name: actions.discardDialog.confirm }),
     );
-    expect(await screen.findByText(actions.discarded)).toBeInTheDocument();
+    expect(await findToast(actions.discarded)).toBeInTheDocument();
     expect(JSON.parse(String(api.callsTo(DISCARD)[0]?.data))).toEqual({ expectedVersion: 3 });
     expect(await screen.findByText(copy.publishState.published)).toBeInTheDocument();
     expect(screen.getByLabelText('Position')).toHaveValue('Engineer');

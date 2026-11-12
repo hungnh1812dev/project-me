@@ -51,6 +51,21 @@ export function countActiveRefreshTokens(email: string): number {
   return Number(count.trim());
 }
 
+export interface RefreshTokenMode {
+  rememberMe: boolean;
+  hoursAhead: number;
+}
+
+/** Mode and remaining lifetime of the account's newest refresh token row. */
+export function newestRefreshTokenMode(email: string): RefreshTokenMode {
+  if (!SAFE_EMAIL.test(email)) throw new Error(`unsafe email: ${email}`);
+  const row = querySql(
+    `SELECT rt.remember_me, extract(epoch FROM (rt.expires_at - now())) / 3600 FROM refresh_tokens rt JOIN accounts a ON a.id = rt.account_id WHERE a.email = '${email}' ORDER BY rt.created_at DESC LIMIT 1;`,
+  ).trim();
+  const [flag, hours] = row.split('|');
+  return { rememberMe: flag === 't', hoursAhead: Number(hours) };
+}
+
 /** The reviewer endpoint allows one session per IP per 10 minutes. */
 export function clearReviewerSessions(): void {
   runSql('DELETE FROM reviewer_sessions');

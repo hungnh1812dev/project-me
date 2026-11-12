@@ -7,6 +7,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  useToast,
 } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
 import type { PermissionAction } from '@features/access';
@@ -17,6 +18,8 @@ import { toSaveError } from '@features/content/Content.errors';
 import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+const LIFECYCLE_TOAST_KEY = 'document-lifecycle';
 
 type ConfirmedAction = 'unpublish' | 'discard';
 
@@ -29,14 +32,14 @@ interface DocumentActionsProps {
   rootFieldNames: readonly string[];
   isFormDirty: boolean;
   isSaving: boolean;
-  onNotice: (notice: string | null) => void;
   onFailure: (failure: unknown) => void;
 }
 
 /**
  * The action row under the form: Save, and for a saved draft-and-publish
- * document Publish, Unpublish and Discard (SPEC §16.4). Secondary actions on
- * the left, the primary one on the right. Unpublish and Discard confirm first.
+ * document Publish, Unpublish and Discard (SPEC §16.4). The destructive Discard
+ * sits apart at the left end, secondary actions then the one primary on the
+ * right (ADM-6). Unpublish and Discard confirm first.
  */
 export function DocumentActions({
   slug,
@@ -45,12 +48,12 @@ export function DocumentActions({
   rootFieldNames,
   isFormDirty,
   isSaving,
-  onNotice,
   onFailure,
 }: DocumentActionsProps) {
   const content = useScreenText('content');
   const copy = content.content.actions;
   const api = useContentApi();
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
   const access = useCallerAccess();
   const [confirming, setConfirming] = useState<ConfirmedAction | null>(null);
@@ -85,18 +88,23 @@ export function DocumentActions({
       else await api.discardDocument(slug, documentId, version);
       return action;
     },
-    onMutate: () => onNotice(null),
     onSuccess: async (action) => {
       setConfirming(null);
       await refetch();
-      onNotice(
-        { publish: copy.published, unpublish: copy.unpublished, discard: copy.discarded }[action],
-      );
+      showToast({
+        tone: 'success',
+        title: {
+          publish: copy.published,
+          unpublish: copy.unpublished,
+          discard: copy.discarded,
+        }[action],
+        key: LIFECYCLE_TOAST_KEY,
+      });
     },
     onError: async (failure) => {
       setConfirming(null);
       onFailure(failure);
-      // A refetch changes the version and would drop this notice with the form.
+      // A refetch changes the version and remounts the form, which would drop the error shown with it.
       if (!toSaveError(failure, content).conflict) await refetch();
     },
   });
@@ -109,6 +117,17 @@ export function DocumentActions({
   return (
     <fieldset className="m-0 flex min-w-0 flex-wrap justify-end gap-2 border-0 p-0">
       <legend className="sr-only">{copy.group}</legend>
+      {canDiscard ? (
+        <Button
+          type="button"
+          variant="destructive"
+          className="mr-auto"
+          disabled={state !== PUBLISH_STATE.MODIFIED || busy}
+          onClick={(event) => askToConfirm('discard', event.currentTarget)}
+        >
+          {copy.discard}
+        </Button>
+      ) : null}
       {hasLifecycle && holds('unpublish') ? (
         <Button
           type="button"
@@ -117,16 +136,6 @@ export function DocumentActions({
           onClick={(event) => askToConfirm('unpublish', event.currentTarget)}
         >
           {copy.unpublish}
-        </Button>
-      ) : null}
-      {canDiscard ? (
-        <Button
-          type="button"
-          variant="destructive"
-          disabled={state !== PUBLISH_STATE.MODIFIED || busy}
-          onClick={(event) => askToConfirm('discard', event.currentTarget)}
-        >
-          {copy.discard}
         </Button>
       ) : null}
       <Button
@@ -183,7 +192,7 @@ function ConfirmDialog({
   const cancelRef = useRef<HTMLButtonElement>(null);
   const text = action === 'discard' ? copy.discardDialog : copy.unpublishDialog;
   return (
-    <Dialog open={open} onOpenChange={(open) => (open ? undefined : onCancel())}>
+    <Dialog open={open} onOpenChange={(isOpen) => (isOpen ? undefined : onCancel())}>
       <DialogContent
         onOpenAutoFocus={(event) => {
           event.preventDefault();

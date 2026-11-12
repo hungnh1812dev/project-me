@@ -29,5 +29,8 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 
 ## User decisions in force
 - apps/web: features import each other only through `index.ts`; `session` is below `auth` and `reviewer`, which never import each other; `**/*.fixture.*` only in `*.test.*` (eslint + `src/FeatureTiers.architecture.test.ts`).
-- cms-admin admin UI (ADR 0020, Q-UI1/4/5/6): menu routes, `/media` kept as the File Library route, 200 px media cards and the palette are in the ADR. Icons from `lucide-react`; Tiptap 3 packages pinned to 3.32.0.
+- cms-admin admin UI (Q-UI1/4/5/6): menu routes, `/media` kept as the File Library route, 200 px media cards; palette and look: D23 (`docs/apps/cms-admin/SPEC.md`). (ADR 0020 is stable-stack-accounts; there is no admin UI ADR.) Icons from `lucide-react`; Tiptap 3 packages pinned to 3.32.0.
 - Richtext editor: images keep the alt-text action; image order changes with up/down buttons only, no drag (Q-UI10).
+- Web BFF path is `/api/v1/*` on the web origin (2026-11-06, web-api-path, ADR 0018 amended): no alias or redirect from `/bff/v1`, which answers 404.
+- cms-admin premium look (2026-11-10, admin-ui-premium-saas): the document action bar sticks to the bottom with the `--shadow-bar-top` token; invite and resend toasts drop the email address (no personal data in toasts); the sidebar menu is hidden when no item is visible, and a role with no read permission sees the Welcome panel (ADM-11); dialog footers keep the destructive confirm below Cancel at 375 px.
+- Browser checks never read or pass the owner password: signed-in e2e specs sign in inside the test with the env values; the QC browser does not sign in (2026-11-10).

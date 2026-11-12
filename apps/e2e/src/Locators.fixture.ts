@@ -27,3 +27,7 @@ export const listItem = (scope: Page | Locator, label: string, index: number): L
       }),
     })
     .first();
+
+/** The toast (not the screen-reader announcement copy) whose text contains `text`. */
+export const toast = (page: Page, text: string | RegExp): Locator =>
+  page.locator('[data-slot="toast"]').filter({ hasText: text });

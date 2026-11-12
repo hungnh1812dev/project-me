@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
   headers: () =>
     Promise.resolve([
       { source: '/:path*', headers: [...SECURITY_RESPONSE_HEADERS] },
-      { source: '/bff/:path*', headers: [...BFF_RESPONSE_HEADERS] },
+      // BFF_BASE_PATH is a route folder here; keep this literal in step with it.
+      { source: '/api/:path*', headers: [...BFF_RESPONSE_HEADERS] },
     ]),
 };
 

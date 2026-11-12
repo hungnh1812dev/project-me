@@ -3,6 +3,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from 'cn';
 import { Slot } from 'radix-ui';
 
+import {
+  CONTROL_FOCUS_DESTRUCTIVE_CLASSES,
+  CONTROL_FOCUS_RING_ONLY_CLASSES,
+} from '@/components/ui/Control.constants';
+
 /**
  * Variants follow the action's meaning (ui-direction §2):
  * primary = the one main action of a view, secondary = alternatives,
@@ -10,20 +15,25 @@ import { Slot } from 'radix-ui';
  * destructive = irreversible (always behind a confirm), ghost/link = tertiary.
  */
 const buttonVariants = cva(
-  "relative inline-flex shrink-0 cursor-pointer appearance-none border border-transparent bg-transparent items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 aria-busy:cursor-progress [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  [
+    "relative inline-flex shrink-0 cursor-pointer appearance-none border border-transparent bg-transparent items-center justify-center gap-2 rounded-control text-sm font-medium whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none aria-busy:cursor-progress [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    'transition-[color,background-color,box-shadow,transform] duration-(--duration-fast) active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100',
+    CONTROL_FOCUS_RING_ONLY_CLASSES,
+  ],
   {
     variants: {
       variant: {
         primary:
-          'bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-hover',
+          'bg-primary text-primary-foreground shadow-primary hover:bg-primary-hover hover:shadow-primary-hover active:bg-primary-hover',
         secondary:
-          'border-input bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-hover',
+          'border-secondary-border bg-secondary text-secondary-foreground hover:bg-secondary-hover active:bg-secondary-hover',
         success:
           'bg-success text-success-foreground hover:bg-success-hover active:bg-success-hover',
         warning:
           'border-warning bg-warning-soft text-warning-strong hover:bg-warning/20 active:bg-warning/30',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-hover focus-visible:ring-destructive/40',
+          'bg-destructive text-destructive-foreground hover:bg-destructive-hover active:bg-destructive-hover ' +
+          CONTROL_FOCUS_DESTRUCTIVE_CLASSES,
         ghost: 'text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent',
         link: 'text-primary underline-offset-4 hover:underline',
       },

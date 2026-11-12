@@ -1,5 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import {
+  Button,
+  CheckboxInput,
+  FormAlert,
+  TextInput,
+  type FormAlertTone,
+} from '@abyss/form-commons';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { useScreenText, type ScreenText } from '@configs/locales';
@@ -30,6 +36,7 @@ const loginSchemaOf = (copy: LoginCopy) =>
       .min(1, copy.validation.emailRequired)
       .pipe(z.email(copy.validation.emailInvalid)),
     password: z.string().min(1, copy.validation.passwordRequired),
+    rememberMe: z.boolean(),
   });
 
 type LoginValues = z.input<ReturnType<typeof loginSchemaOf>>;
@@ -80,7 +87,7 @@ export function LoginPage() {
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchemaOf(copy)),
-    defaultValues: { email: loginEmailOf(location.state), password: '' },
+    defaultValues: { email: loginEmailOf(location.state), password: '', rememberMe: false },
     mode: 'onTouched',
   });
 
@@ -99,12 +106,14 @@ export function LoginPage() {
     onError: (cause) => {
       setError(toLoginError(cause, text));
       form.resetField('password');
+      form.resetField('rememberMe');
       form.setFocus('password');
     },
   });
 
   const closeChallenge = useCallback(() => {
     setChallenge(null);
+    form.resetField('rememberMe');
     form.setFocus('password');
   }, [form]);
   const expireChallenge = useCallback(() => {
@@ -125,7 +134,11 @@ export function LoginPage() {
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
     setChallengeExpired(false);
-    signIn.mutate({ email: values.email.trim(), password: values.password });
+    signIn.mutate({
+      email: values.email.trim(),
+      password: values.password,
+      rememberMe: values.rememberMe,
+    });
   });
 
   return (
@@ -143,11 +156,7 @@ export function LoginPage() {
         </div>
       ) : null}
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {notice !== undefined ? (
             <FormAlert tone={NOTICE_TONE[notice]}>{noticeCopyOf(copy)[notice]}</FormAlert>
           ) : null}
@@ -172,6 +181,11 @@ export function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
+          />
+          <CheckboxInput<LoginValues>
+            name="rememberMe"
+            label={copy.rememberMe}
+            description={copy.rememberMeHint}
           />
           <Button
             type="submit"

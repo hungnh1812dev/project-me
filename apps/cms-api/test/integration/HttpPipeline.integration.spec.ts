@@ -1,6 +1,8 @@
+import { Controller, Get, Module } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 
+import { APP_LOGGER } from '../../src/infrastructure/logging/AppLogger.port';
 import { dbEnvOf, devEnv } from '../fixtures/Env.fixture';
 import { unreachableDatabaseUrl } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
@@ -62,5 +64,74 @@ describe('HTTP pipeline', () => {
     };
     expect(express.get('strict routing')).toBe(false);
     expect(express.get('trust proxy')).toBe(2);
+  });
+});
+
+@Controller('timing-probe')
+class TimingProbeController {
+  @Get()
+  ok(): { ok: true } {
+    return { ok: true };
+  }
+}
+
+@Module({ controllers: [TimingProbeController] })
+class TimingProbeModule {}
+
+describe('HTTP pipeline request timing log', () => {
+  let app: NestExpressApplication;
+  const info = jest.fn();
+  const warn = jest.fn();
+  const linesOf = () => info.mock.calls.map(([line]) => line as string);
+
+  beforeAll(async () => {
+    app = await createTestApp(
+      devEnv({ ...dbEnvOf(await unreachableDatabaseUrl()) }),
+      [{ token: APP_LOGGER, value: { info, warn, error: jest.fn() } }],
+      [TimingProbeModule],
+    );
+  });
+
+  beforeEach(() => {
+    info.mockClear();
+    warn.mockClear();
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  it.each([
+    ['a 404', 'get', '/api/v1/does-not-exist', 404],
+    ['a 401', 'get', '/api/v1/auth/me', 401],
+  ] as const)('logs one line for %s', async (_label, method, path, status) => {
+    await request(app.getHttpServer())[method](path);
+    expect(linesOf()).toEqual([
+      expect.stringMatching(new RegExp(`^GET ${path} ${status} \\d+ms$`)),
+    ]);
+  });
+
+  it('logs one line for a 413 on the GraphQL body cap', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/graphql')
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify({ query: 'x'.repeat(40_000) }));
+    expect(res.status).toBe(413);
+    expect(linesOf()).toEqual([expect.stringMatching(/^POST \/api\/v1\/graphql 413 \d+ms$/)]);
+  });
+
+  it('logs a 200 and never the query string', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/timing-probe?x=secret');
+    expect(res.status).toBe(200);
+    expect(linesOf()).toHaveLength(1);
+    expect(linesOf()[0]).toMatch(/^GET \/api\/v1\/timing-probe 200 \d+ms$/);
+    expect(linesOf()[0]).not.toContain('secret');
+  });
+
+  it('logs nothing for the health probes', async () => {
+    await request(app.getHttpServer()).get('/api/v1/health/live');
+    await request(app.getHttpServer()).get('/api/v1/health/ready');
+    expect(info).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
   });
 });

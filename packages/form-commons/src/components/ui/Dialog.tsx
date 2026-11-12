@@ -27,7 +27,10 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn('bg-foreground/40 fixed inset-0 z-50', className)}
+      className={cn(
+        'bg-foreground/30 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out fixed inset-0 z-50 backdrop-blur-sm data-[state=closed]:pointer-events-none! motion-reduce:animate-none',
+        className,
+      )}
       {...props}
     />
   );
@@ -44,7 +47,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'border-border bg-card text-card-foreground fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-lg border p-5 shadow-lg outline-none',
+          'border-border bg-card text-card-foreground rounded-surface shadow-overlay data-[state=open]:animate-overlay-in fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto border border-transparent p-5 outline-none motion-reduce:animate-none',
           className,
         )}
         {...props}
@@ -59,12 +62,12 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="dialog-header" className={cn('grid gap-1.5', className)} {...props} />;
 }
 
-/** Buttons: secondary left, primary right, aligned to the end. */
+/** Buttons: secondary first, primary last (left to right, top to bottom when stacked), so Tab follows the picture. */
 function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn('mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      className={cn('mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   );

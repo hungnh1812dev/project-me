@@ -38,7 +38,7 @@ function build(fakes: Fakes = {}) {
     insertTree: jest.fn(() => Promise.resolve(9)),
     setVersionAndEditor: jest.fn(() => Promise.resolve()),
   };
-  const logger = { warn: jest.fn(), error: jest.fn() };
+  const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const activity = {
     record: jest.fn(() =>
       fakes.activityFails ? Promise.reject(new Error('down')) : Promise.resolve(),

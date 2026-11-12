@@ -1,16 +1,17 @@
 import 'server-only';
 
-import { BffError } from '../../apis/server/bff/Bff.errors';
-import type { BffContext } from '../../apis/server/bff/BffRoute.server';
-import { visitorIpOf } from '../../apis/server/bff/ClientIp.rules';
-import { cmsApiClient, type CurrentAccount } from '../../apis/server/restful/CmsApi.client';
+import { BffError } from '@/apis/server/bff/Bff.errors';
+import type { BffContext } from '@/apis/server/bff/BffRoute.server';
+import { visitorIpOf } from '@/apis/server/bff/ClientIp.rules';
+import { cmsApiClient, type CurrentAccount } from '@/apis/server/restful/CmsApi.client';
 import {
   ACCESS_REFRESH_LEAD_MS,
   PERMISSION_STRING_SEPARATOR,
   READ_ACTION,
   REFRESH_RESULT_SHARE_MS,
-} from '../../configs/Auth.constants';
-import { getServerEnv } from '../../configs/Server.env';
+} from '@/configs/Auth.constants';
+import { getServerEnv } from '@/configs/Server.env';
+
 import {
   clearSessionCookie,
   clearTwoFactorCookie,
@@ -71,29 +72,31 @@ function dropExpiredRefreshes(now: number): void {
 }
 
 async function refreshOnce(
-  refreshToken: string,
+  presented: Pick<SealedWebSession, 'refreshToken' | 'rememberMe'>,
   visitorIp: string | undefined,
 ): Promise<SealedWebSession | null> {
-  const issued = await cmsApiClient.refreshSession(refreshToken, visitorIp);
+  const issued = await cmsApiClient.refreshSession(presented.refreshToken, visitorIp);
   if (issued === null) return null;
   const accessExpiresAt = accessExpiryOf(issued.accessToken);
   if (accessExpiresAt === null) throw new BffError('BFF_UPSTREAM_FAILED');
   return {
-    refreshToken: issued.refreshToken ?? refreshToken,
+    refreshToken: issued.refreshToken ?? presented.refreshToken,
     accessToken: issued.accessToken,
     accessExpiresAt,
+    rememberMe: presented.rememberMe,
   };
 }
 
 /** Concurrent reads of one refresh token share one call; its result is kept briefly after it settles. */
 function refreshShared(
-  refreshToken: string,
+  presented: Pick<SealedWebSession, 'refreshToken' | 'rememberMe'>,
   visitorIp: string | undefined,
 ): Promise<SealedWebSession | null> {
+  const { refreshToken } = presented;
   dropExpiredRefreshes(Date.now());
   const shared = refreshes.get(refreshToken);
   if (shared) return shared.result;
-  const entry: SharedRefresh = { result: refreshOnce(refreshToken, visitorIp) };
+  const entry: SharedRefresh = { result: refreshOnce(presented, visitorIp) };
   refreshes.set(refreshToken, entry);
   entry.result.then(
     () => {
@@ -130,7 +133,7 @@ export async function readWebSession(request: Request): Promise<WebSessionRead> 
   const setCookies: string[] = [];
 
   if (session.accessExpiresAt - Date.now() < ACCESS_REFRESH_LEAD_MS) {
-    const refreshed = await refreshShared(session.refreshToken, visitorIp);
+    const refreshed = await refreshShared(session, visitorIp);
     if (refreshed === null) return { status: 'signed-out', setCookies: [clearSessionCookie()] };
     session = refreshed;
     setCookies.push(writeSessionCookie(session));
@@ -148,7 +151,7 @@ export function publicUserOf(account: CurrentAccount) {
   return { id, email, displayName, role };
 }
 
-/** `GET /bff/v1/session`: the signed-in visitor or `null`, carrying a rotated or cleared cookie. */
+/** `GET /api/v1/session`: the signed-in visitor or `null`, carrying a rotated or cleared cookie. */
 export async function answerSessionRead({ request }: BffContext<unknown>): Promise<Response> {
   const read = await readWebSession(request);
   const user = read.status === 'signed-in' ? publicUserOf(read.account) : null;

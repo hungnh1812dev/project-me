@@ -1,6 +1,6 @@
 ---
 name: test-tiers
-description: How much runtime testing a unit or checklist needs - tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs, who starts which stack, the checklist format, and the agent-local env file `.localEnv.agent`. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc.
+description: How much runtime testing a unit or checklist needs - tier 1 unit + integration, tier 2 e2e against the apps in dev mode, tier 3 the full production-like stack - when each tier runs and who starts which stack. Project-agnostic; the commands come from `.agent-state/project.md`. Preloaded by the manager, planner, builders, qc and security-qc. Checklist format, access preflight and progress file - `checklist-runs`; `.localEnv.agent` and git in scratch copies - `local-env`.
 ---
 
 # Test Tiers
@@ -27,42 +27,30 @@ Tiers 2 and 3 start from a green tier 1.
 | Feature checklist | the tiers its rows hold, lowest first |
 | One unit (builder's checks, per-unit security-qc review) | the lowest that can show it, 1 to 3 |
 
-Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint: each row runs only at the tier in its `Method`. Take the tiers present in the checklist (all its rows, whatever checkpoint they came from), lowest first; run every tier 1 row in **one** tier 1 run, then every tier 2 row in one tier 2 run, then every tier 3 row in one tier 3 run (one stack start each), qc first, then security-qc on the same stack. A tier no row holds is not run (rows only at T1 and T2 → tier 1 then tier 2, no tier 3). A failed row does not stop higher tiers; its fix is re-checked in a later run of its own tier.
+Checklist rows run grouped by tier, never row by row or checkpoint by checkpoint: each row runs only at the tier in its `Method`. Take the tiers present in the checklist (all its rows, whatever checkpoint they came from), lowest first; run every tier 1 row in **one** tier 1 run, then every tier 2 row in one tier 2 run, then every tier 3 row in one tier 3 run (one stack start each), qc first, then security-qc on the same stack. A tier no row holds is not run (rows only at T1 and T2 → tier 1 then tier 2, no tier 3). A failed row does not stop higher tiers; its fix is re-checked in a later run of its own tier (tier 3: "Tier 3 re-test rounds" below).
+
+## Tier 3 re-test rounds
+
+- **Gate run:** the first tier 3 run of a phase checkpoint or a feature checklist: a fresh `full stack` (images built, its own stack checks), every tier 3 row, the full e2e suite, browser rows on that same kept stack.
+- **Re-test round:** each later tier 3 run of the same checklist after a fix (`RECHECK tier=3`). The gate run's stack stays up between rounds; a stack that died is started fresh. qc takes the **fix kind** of the fix commits since the last green round, the first that fits:
+
+| Fix kind | The fix commits change | Re-test round |
+|---|---|---|
+| `stack` | anything in "Tier 3 is required when" above or `Tier 3 also when` in `project.md` | a fresh run, as the gate run |
+| `app` | product code of one or more apps or packages, nothing of `stack` | a fresh run; once `project.md` has an `in-place rebuild` command: rebuild and recreate only the changed apps on the kept stack, then the full suite on it with the `e2e single spec` command |
+| `test-only` | only the e2e test package | the **retry set** on the kept stack with the `e2e single spec` command: the failed specs plus every spec that imports a changed shared e2e file (outside the spec files); no rebuild, no restart |
+
+- qc writes the fix kind and what it ran in the row `Note`: `retry set: <specs>`, `in-place: <apps>, full suite` or `fresh`.
+- **Flaky failure:** a spec failure that does not come back in 2 unchanged reruns of that spec on the same stack. qc records it as a flaky finding (qc owns the spec); the full-suite row passes with `Note` `flaky: <spec>, finding <id>`. Every flaky finding is fixed, and its spec green on a fresh run, before the feature close.
+- **Shared with the feature checklist:** when the feature checklist starts on the same commit as the last phase checkpoint's green tier 3 run (no commit between), its full-suite row takes that result (`Note` `same HEAD <hash> as checkpoint <id>`) and its other tier 3 rows run on that kept stack. Any commit between: a gate run.
+- Why this keeps coverage: every checklist still ends with the full suite green on the images of its final commit, and the stack checks green on a fresh stack no `stack` fix came after; a data problem only a fresh database shows is caught by the next gate run.
 
 ## Who does what
 
 - **Builder:** writes the unit's tier and reason in `Checks needed` (`worker-flow`).
-- **qc:** starts and stops the stack for its checklist runs. It may add a higher-tier row when the diff touches a tier 3 area; it never lowers a row's tier.
+- **qc:** starts and stops the stack for its checklist runs, keeps it up between tier 3 re-test rounds and picks each round's fix kind. It may add a higher-tier row when the diff touches a tier 3 area; it never lowers a row's tier.
 - **security-qc:** never starts or stops a stack. Tier 1: static review. Tier 2: authz, object access, input validation and error bodies on the dev stack. Tier 3: headers, CSP, cookies, CORS, redirects, proxy routing, production-only behavior. A tier 3 item checked while only a lower tier runs is reported `not verified dynamically (needs tier 3)`, never passed.
-- **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both, and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
-
-## Progress file
-
-During any run (checklist, recheck, audit, per-unit review), qc and security-qc keep one line each in `<F>/qc-progress.md` (header `# QC progress`):
-
-`<agent name> | <command> <target> tier=<n> | <date +%H:%M> | rows <done>/<total> | <current step, a few words>`
-
-- Write it at start, then at least every 25 minutes; each update must differ from the previous one (rows done or step). Remove your line when you return your report.
-- Manager: reads only this file while a checker runs, whenever it regains control or the user asks for status, and gives the user that line. A line older than 50 minutes, or two updates 25+ minutes apart that are the same → `TaskStop` that agent, tell the user, and dispatch a fresh one only on the user's word.
-
-## Checklists
-
-One format for the planner's table under each checkpoint in the phases file, the merged copy `<F>/checklists/<checkpoint>.md`, and the feature's `<F>/CHECKLIST.md` (`<F>` = `.agent-state/features/<feature>/`, the `in-progress` row of `.agent-state/features.md`).
-
-```markdown
-# Checklist - <checkpoint | feature>
-Base: <hash> · Updated: <YYYY-MM-DD> after <CHECKLIST | CHECK tier=<n> | RECHECK tier=<n>>
-
-| ID | Description | Input | Expected output | Checker | Method | Source | Status | Note |
-|---|---|---|---|---|---|---|---|---|
-| CLG-1 | Init container uses DB keys only | LG-db-1 | `docker compose ... config api-init` lists only `NODE_ENV`, `DB_*` | qc | T3 cli | planner | pass | - |
-```
-
-- `Checker`: `qc`, `security-qc`, or `both` only when the row needs both. `Method`: `T<1-3> <cli | browser | static>`, the lowest tier that can show the row. `Source`: `planner`, `qc` or `security-qc`. `Status`: `todo`, `pass`, `failed`, `blocked`. `Note`: one short line (evidence, finding id, or the missing value).
-- **Phase checkpoint:** its own rows plus the rows of the phase's older checkpoints in an old plan (as `T1`, reset to `todo`); always the full e2e suite at tier 3 (qc) and the phase diff review (security-qc). **Feature:** the phase checklists merged (repeats removed); passed rows stay `pass` unless a later phase changed what they check (then `todo`); plus the cross-phase rows, the full e2e suite at tier 3 and the feature diff review; with one phase, a copy of its phase checklist.
-- Order: planner writes → qc copies, merges, adds its rows → security-qc adds its rows → tier runs.
-- Each checker writes `Status` and `Note` of its own rows only (both parts of a `both` row; it passes only when both do). No row is ever deleted; one that no longer applies keeps a `Note` saying why and still needs `pass`.
-- Done = every row `pass`.
+- **Manager:** runs checklists tier by tier, has qc keep the stack up when security-qc has rows at that tier, stops it after both (a tier 3 stack stays up while a failed row waits for its re-test round), and starts the stack for a per-unit security-qc review or a `needs tier 3` recheck.
 
 ## Missing commands
 
@@ -71,20 +59,3 @@ From `project.md` `Commands:`. When one is missing:
 - No `dev stack`: tier 2 runs on the `full stack`; say so in the report. If this keeps happening, the manager suggests a dev-stack task.
 - No `full stack`: tier 3 runs the local production build if `project.md` has a command for it; otherwise `blocked`.
 - No e2e runner: tiers 2 and 3 are manual or CLI checks; the report says so.
-
-## Env files and `.localEnv.agent`
-
-No agent reads or writes `.env*` files (except `.env.example`). Local dev values go in `.localEnv.agent` at the repo root:
-- dev-only throwaway values (generated secrets, local URLs, test keys); real secrets and production values come from the user;
-- before creating it: `git check-ignore -q .localEnv.agent` succeeds and any `.dockerignore` (or image build ignore file) lists it; otherwise a builder adds the ignore lines and records it, qc and security-qc report `blocked`;
-- never `git add` it, copy it into an image, or print its values;
-- key names only go in the matching `.env.example`;
-- builders, qc and security-qc create, read and edit it, and add missing dev-only values there without asking the user (qc and security-qc note who, when and why on each change); security-qc reports a finding if it is tracked or holds a value that looks real.
-- qc and security-qc have full read and write permission on it (user decision); they work from it only (the e2e owner login values live there); any edit carries a note so other agents do not overwrite it.
-
-## Git in scratch copies
-
-A worktree shares the repo's `.git/config`, so `git config` inside it changes the identity of every later commit in the repo.
-- Never run `git config` (any scope) in the repo or in a worktree of it.
-- A test commit in a scratch copy: `git -c user.name=agent -c user.email=agent@localhost commit ...`.
-- Remove a scratch worktree with `git worktree remove <path>` before you report.

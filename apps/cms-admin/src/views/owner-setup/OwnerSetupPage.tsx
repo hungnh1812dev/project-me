@@ -172,11 +172,7 @@ export function OwnerSetupPage() {
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">{copy.title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{copy.description}</p>
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {formAlert !== null ? <FormAlert tone="error">{formAlert}</FormAlert> : null}
           <TextInput<SetupValues>
             name="setupToken"

@@ -43,3 +43,7 @@ apps/cms-admin/stats.html
 
 # session-gate hook state
 .agent-state/.session-gate.json
+# break-check snapshots of the feature folder at each session end
+.agent-state/.breaks/
+# planner drafts waiting for the user's approval (.claude/bin/draft)
+.agent-state/drafts/

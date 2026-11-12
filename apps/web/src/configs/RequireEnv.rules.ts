@@ -1,4 +1,5 @@
-import { isSafeLinkTarget } from '../utils/SafeLinkTarget.rules';
+import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
+
 import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
 
 export function requireEnv(name: string, value: string | undefined): string {

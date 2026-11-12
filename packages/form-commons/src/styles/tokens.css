@@ -3,9 +3,10 @@
  * Layer 1 (primitive): raw palette, never used by components directly.
  * Layer 2 (semantic): what components use (shadcn naming + status tokens).
  *
- * PROVISIONAL: palette option A (slate neutrals + muted blue primary) and the
- * system font stack are placeholders until the user picks a palette and font.
- * Changing them means editing this file only.
+ * Themes (D23): `:root` is the default look (palette A, used by apps/web);
+ * `[data-theme='premium']` is the cms-admin look. A new semantic token gets a
+ * value in both blocks; the default equals the look the default apps have today.
+ * The system font stack stays a placeholder until the user picks a font.
  */
 :root {
   /* ---- primitive: neutrals (slate) ---- */
@@ -25,6 +26,15 @@
   --abyss-brand-500: oklch(0.55 0.09 255);
   --abyss-brand-600: oklch(0.48 0.09 255);
   --abyss-brand-700: oklch(0.42 0.085 255);
+
+  /* ---- primitive: premium accents (indigo, rose) ---- */
+  --abyss-indigo-50: oklch(0.962 0.018 272.314);
+  --abyss-indigo-500: oklch(0.585 0.233 277.117);
+  --abyss-indigo-600: oklch(0.511 0.262 276.966);
+  --abyss-indigo-700: oklch(0.457 0.24 277.023);
+  --abyss-rose-50: oklch(0.969 0.015 12.422);
+  --abyss-rose-600: oklch(0.586 0.253 17.585);
+  --abyss-rose-700: oklch(0.514 0.222 16.935);
 
   /* ---- primitive: status (muted) ---- */
   --abyss-green-50: oklch(0.965 0.025 155);
@@ -62,6 +72,7 @@
   --secondary: var(--abyss-slate-0);
   --secondary-hover: var(--abyss-slate-100);
   --secondary-foreground: var(--abyss-slate-900);
+  --secondary-border: var(--input);
 
   /* ---- semantic: status (solid, soft background, strong text) ---- */
   --success: var(--abyss-green-600);
@@ -81,10 +92,67 @@
   --info-soft: var(--abyss-brand-50);
   --info-strong: var(--abyss-brand-700);
 
-  /* ---- semantic: shape and type ---- */
+  /* ---- semantic: shape, elevation, motion, navigation ---- */
   --radius: 0.375rem;
+  --radius-control: var(--radius);
+  --radius-surface: calc(var(--radius) + 2px);
+  --radius-item: var(--radius);
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-bar-top: 0 -1px 0 0 var(--border);
+  --shadow-overlay: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-primary: none;
+  --shadow-primary-hover: none;
+  --focus-edge: transparent;
+  --duration-fast: 150ms;
+  --duration-base: 150ms;
+  --nav-active: color-mix(in oklab, var(--primary) 10%, transparent);
+  --nav-active-foreground: var(--foreground);
+  --nav-indicator: var(--primary);
+
+  /* ---- semantic: size and type ---- */
   --size-media-preview: 300px;
   --size-media-card-preview: 200px;
   --font-family-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* cms-admin: ADM-2, ADM-3, ADM-9 values (D23). */
+[data-theme='premium'] {
+  --muted-foreground: var(--abyss-slate-600);
+  --accent: var(--abyss-slate-100);
+  --ring: var(--abyss-indigo-500);
+  --focus-edge: var(--abyss-indigo-600);
+
+  --primary: var(--abyss-indigo-600);
+  --primary-hover: var(--abyss-indigo-700);
+  --secondary: var(--abyss-slate-100);
+  --secondary-hover: var(--abyss-slate-200);
+  --secondary-foreground: var(--abyss-slate-700);
+  --secondary-border: var(--secondary);
+
+  --destructive: var(--abyss-rose-600);
+  --destructive-hover: var(--abyss-rose-700);
+  --destructive-soft: var(--abyss-rose-50);
+  --destructive-strong: var(--abyss-rose-700);
+  --info: var(--abyss-indigo-600);
+  --info-soft: var(--abyss-indigo-50);
+  --info-strong: var(--abyss-indigo-700);
+
+  --radius-control: 0.75rem;
+  --radius-surface: 1rem;
+  --radius-item: 0.5rem;
+  --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+  --shadow-card-hover: 0 8px 20px -6px rgb(15 23 42 / 0.12), 0 2px 6px -2px rgb(15 23 42 / 0.06);
+  --shadow-bar-top: 0 -6px 16px -8px rgb(15 23 42 / 0.12);
+  --shadow-overlay: 0 12px 32px -8px rgb(15 23 42 / 0.18), 0 4px 10px -4px rgb(15 23 42 / 0.08);
+  --shadow-primary: 0 4px 12px -2px color-mix(in oklab, var(--abyss-indigo-600) 35%, transparent);
+  --shadow-primary-hover: 0 6px 16px -2px
+    color-mix(in oklab, var(--abyss-indigo-600) 45%, transparent);
+
+  --duration-fast: 200ms;
+  --duration-base: 300ms;
+  --nav-active: var(--abyss-indigo-50);
+  --nav-active-foreground: var(--abyss-indigo-700);
+  --nav-indicator: var(--abyss-indigo-600);
 }

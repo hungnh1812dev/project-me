@@ -58,13 +58,19 @@ describe('useWebSession', () => {
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
-      await result.current.signIn({ email: 'a@b.co', password: 'pw', humanCheckToken: 'hc' });
+      await result.current.signIn({
+        email: 'a@b.co',
+        password: 'pw',
+        rememberMe: false,
+        humanCheckToken: 'hc',
+      });
     });
     expect(result.current.status).toBe('authenticated');
     expect(result.current.user).toEqual(TEST_USER);
     expect(api.login).toHaveBeenCalledWith({
       email: 'a@b.co',
       password: 'pw',
+      rememberMe: false,
       humanCheckToken: 'hc',
     });
   });
@@ -79,7 +85,7 @@ describe('useWebSession', () => {
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
-      await result.current.signIn({ email: 'a@b.co', password: 'pw' });
+      await result.current.signIn({ email: 'a@b.co', password: 'pw', rememberMe: false });
     });
     expect(result.current.status).toBe('anonymous');
     await act(async () => {
@@ -96,9 +102,9 @@ describe('useWebSession', () => {
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
-      await expect(result.current.signIn({ email: 'a@b.co', password: 'pw' })).rejects.toThrow(
-        'refused',
-      );
+      await expect(
+        result.current.signIn({ email: 'a@b.co', password: 'pw', rememberMe: false }),
+      ).rejects.toThrow('refused');
     });
     expect(result.current.status).toBe('anonymous');
   });

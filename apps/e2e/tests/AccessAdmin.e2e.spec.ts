@@ -10,7 +10,7 @@ import {
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { labelStartingWith } from '../src/Locators.fixture';
+import { labelStartingWith, toast } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
@@ -129,7 +129,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await dialog.getByLabel(labelStartingWith(invite.displayNameLabel)).press('Enter');
 
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole('status')).toHaveText(accounts.invited(INVITEE_EMAIL));
+    await expect(toast(page, accounts.invited)).toBeVisible();
     const row = accountRow(page, INVITEE_EMAIL);
     await expect(row).toContainText(INVITEE_NAME);
     await expect(row).toContainText(accounts.status.invited);
@@ -175,7 +175,7 @@ test.describe.serial('owner: accounts and roles', () => {
         })
         .click();
       await expect(confirm).toBeHidden();
-      await expect(page.getByRole('status')).toHaveText(accounts.disabled(INVITEE_NAME));
+      await expect(toast(page, accounts.disabled(INVITEE_NAME))).toBeVisible();
       await expect(row).toContainText(accounts.status.disabled);
       await expect(row.getByRole('button', { name: accounts.disable })).toHaveCount(0);
 
@@ -186,7 +186,7 @@ test.describe.serial('owner: accounts and roles', () => {
       // Owner enables it again: no dialog, success notice, can sign in.
       await row.getByRole('button', { name: accounts.enableLabel(INVITEE_NAME) }).click();
       await expect(page.getByRole('dialog')).toHaveCount(0);
-      await expect(page.getByRole('status')).toHaveText(accounts.enabled(INVITEE_NAME));
+      await expect(toast(page, accounts.enabled(INVITEE_NAME))).toBeVisible();
       await expect(row).toContainText(accounts.status.active);
       await expect(row.getByRole('button', { name: accounts.enable })).toHaveCount(0);
       await submitLogin(inviteePage, INVITEE_EMAIL, INVITEE_PASSWORD);
@@ -219,7 +219,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await expect(row.getByRole('button', { name: accounts.enable })).toHaveCount(0);
     const afterInvite = await mailIdsFor(context, email);
     await row.getByRole('button', { name: accounts.resendLabel(name) }).click();
-    await expect(page.getByRole('status')).toHaveText(accounts.resent(email));
+    await expect(toast(page, accounts.resent)).toBeVisible();
     const newCode = await waitForCode(context, email, afterInvite);
 
     const inviteeContext = await browser.newContext();
@@ -299,6 +299,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+        exact: true,
       })
       .click();
     await page.getByRole('radio', { name: access.fields.some }).check();
@@ -309,15 +310,14 @@ test.describe.serial('owner: accounts and roles', () => {
     await firstField.check();
 
     await roleSaveButton(page).click();
-    await expect(page.getByRole('status')).toContainText(
-      access.role.saved.slice(0, 'Permissions saved'.length),
-    );
+    await expect(toast(page, access.role.saved.slice(0, 'Permissions saved'.length))).toBeVisible();
 
     await page.reload();
     await expect(read).toBeChecked();
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+        exact: true,
       })
       .click();
     await expect(page.getByRole('radio', { name: access.fields.some })).toBeChecked();
@@ -328,7 +328,7 @@ test.describe.serial('owner: accounts and roles', () => {
     // Put the Editor role back.
     await read.uncheck();
     await roleSaveButton(page).click();
-    await expect(page.getByRole('status')).toBeVisible();
+    await expect(toast(page, access.role.saved.slice(0, 'Permissions saved'.length))).toBeVisible();
     await page.reload();
     await expect(read).not.toBeChecked();
   });
@@ -340,6 +340,7 @@ test.describe.serial('owner: accounts and roles', () => {
     await page
       .getByRole('button', {
         name: access.matrix.detailsLabel(access.matrix.wildcard),
+        exact: true,
       })
       .click();
     await page.getByText(access.conditions.summary(access.matrix.actions.read)).click();

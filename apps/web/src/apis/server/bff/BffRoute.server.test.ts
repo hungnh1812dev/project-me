@@ -14,6 +14,7 @@ vi.mock('../../../configs/Server.env', () => ({
     webOrigin: 'https://site.test',
     trustProxyHops: 1,
     clientIpHeader: undefined,
+    bffRateLimitOverrides: {},
   }),
 }));
 
@@ -33,7 +34,7 @@ interface Init {
 
 function requestOf({ method = 'POST', ip = freshIp(), headers = {}, body = '{}' }: Init = {}) {
   const hasBody = method !== 'GET';
-  return new Request('https://site.test/bff/v1/test', {
+  return new Request('https://site.test/api/v1/test', {
     method,
     headers: {
       'x-forwarded-for': ip,
@@ -200,6 +201,6 @@ describe('defineBffRoute pipeline', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     await postRoute()(requestOf({ body: '{"name":"secret-password","extra":1}' }));
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]?.join(' ')).toBe('[bff] POST /bff/v1/test BFF_INVALID_REQUEST');
+    expect(warn.mock.calls[0]?.join(' ')).toBe('[bff] POST /api/v1/test BFF_INVALID_REQUEST');
   });
 });

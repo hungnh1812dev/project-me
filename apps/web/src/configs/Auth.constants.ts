@@ -48,6 +48,9 @@ export const TWO_FACTOR_COOKIE_NAME = '__Host-abyss_web_2fa';
 
 export const TWO_FACTOR_COOKIE_MAX_AGE_SECONDS = 300;
 
+/** `Max-Age` of the session cookie of a visitor who ticked "Keep me signed in": 30 days, as cms-api's refresh token (D22). */
+export const REMEMBERED_SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
 /** A session read refreshes the access token when it expires within this lead. */
 export const ACCESS_REFRESH_LEAD_MS = 30_000;
 

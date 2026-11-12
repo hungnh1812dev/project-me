@@ -24,13 +24,13 @@ Every BFF route, in this order (D21):
 
 ```mermaid
 flowchart LR
-  req(["browser request /bff/v1/*"]) --> m{"method allowed?"}
+  req(["browser request /api/v1/*"]) --> m{"method allowed?"}
   m --> o{"Origin = WEB_ORIGIN?"}
   o --> b{"JSON, at most 8 KiB?"}
   b --> rl{"rate limit"}
   rl --> z{"Zod schema"}
   z --> t{"Turnstile (where needed)"}
-  t --> up["one cms-api call on API_INTERNAL_URL"]
+  t --> up["one cms-api call on APP_API_URL"]
   up --> ans["allowlisted answer, no-store"]
 ```
 
@@ -39,5 +39,6 @@ flowchart LR
 Applies to flows: `public-site`.
 
 1. `src/proxy.ts` creates the per-request nonce and sets the CSP header (D17).
-2. Server Components fetch content anonymously through GraphQL from `API_INTERNAL_URL`, cached for `WEB_REVALIDATE_SECONDS`.
-3. Client components call only the BFF under `/bff/v1`, through the browser API client.
+2. The root layout runs the shell query and the page its page query (public-site PS-1), through server GraphQL → server RESTful on `APP_API_URL` with `APP_API_TOKEN`, each cached for its own revalidate seconds (default 180 s, WEB-4).
+3. Outside production (or with `ALLOW_MOCK_FALLBACK=smoke`) a failed or empty root field is filled from `MockView.ts`; otherwise the section shows its error or empty state (WEB-5).
+4. Client components get their text from the layout's text context and call only the BFF under `/api/v1`, through the client RESTful layer (WEB-1, WEB-3).

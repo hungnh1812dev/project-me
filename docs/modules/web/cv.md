@@ -18,7 +18,7 @@ Loads the published CV page through GraphQL on the Next server and hands it to t
 
 ## Techniques
 
-`server-only` loader wrapped in React `cache`, so metadata and page share one request per render; richtext is sanitized with DOMPurify before it leaves the server (D13). `mainResumeOf` picks the published `cv-page` with `isMain = true`, the newest if several (Q-G7).
+`server-only` loader wrapped in React `cache`, so metadata and page share one request per render; richtext is sanitized with DOMPurify before it leaves the server (D13). `CvPage` asks `cvPageList` (`isMain = true`, newest, one entry), `cvContact` and `cvPageText`; a failed list or text throws to `error.tsx`. The signed-in refetch uses the data-only `CvPageVisitor` (same selections, picked from `CV_PAGE_ROOT_FIELDS`, no text). `mainResumeOf` reads `cvPageList.data[0]` (Q-G7). When the signed-in refetch fails, `CvView` keeps the server-rendered anonymous CV (or its empty state) under the refetch-failed alert.
 
 ## Technologies
 
@@ -26,7 +26,7 @@ Next.js App Router, the web GraphQL server client, DOMPurify.
 
 ## Entry points
 
-Facade `index.ts`: `loadCvPage`, `mainResumeOf`; the BFF route imports `answerCvRead` from `CvPage.server.ts` (reads the session through `features/session` server files); the GraphQL document and types in `Cv.graphql.ts`.
+Facade `index.ts`: `mainResumeOf`; `app/cv/page.tsx` and the BFF route import `loadCvPage` and `answerCvRead` from `CvPage.server.ts` (reads the session through `features/session` server files); the root field selections and types in `Cv.graphql.ts`, declared as a query in `CvPage.server.ts`.
 
 ## Where to change what
 
@@ -45,9 +45,9 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `Cv.graphql.ts` | The CV GraphQL document, its result types and `mainResumeOf` (exports `ResumeSkill`, `ResumeProject`, `ResumeRole`, `ResumeExperience` +10) |
-| `CvPage.server.ts` | Server loaders of the sanitized CV data (anonymous, cached; and per visitor token, uncached) and the handler of `GET /bff/v1/cv` (exports `loadCvPage`, `loadCvPageForSession`, `answerCvRead`) |
-| `index.ts` | Public facade of the feature (exports `mainResumeOf`, `loadCvPage`) |
+| `Cv.graphql.ts` | The CV root field selections (including `cvPageText`), result and text types and `mainResumeOf` (exports `ResumeSkill`, `ResumeProject`, `ResumeRole`, `ResumeExperience` +10) |
+| `CvPage.server.ts` | `CV_PAGE_QUERY` and `CV_PAGE_VISITOR_QUERY`; loaders of the sanitized CV data and page text (`runContentQuery`, cached, list and text required; and `runVisitorQuery` per visitor token, uncached) and the handler of `GET /api/v1/cv` (exports `loadCvPage`, `loadCvPageForSession`, `answerCvRead`) |
+| `index.ts` | Public facade of the feature (exports `mainResumeOf`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

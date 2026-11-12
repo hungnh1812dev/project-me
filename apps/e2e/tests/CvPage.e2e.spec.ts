@@ -1,8 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { API_PATHS, apiUrl, BFF_PATHS } from '../src/Api.endpoints';
+import {
+  API_PATHS,
+  apiUrl,
+  BFF_PATHS,
+  isCmsApiRequest,
+  REMOVED_BFF_PATHS,
+} from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
-import { HTTP } from '../src/E2e.constants';
+import { CV_PAGE_SLUG, HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 
 /**
@@ -19,7 +25,6 @@ const SECRET_COMPANY = `E2E Secret Co ${Date.now()}`;
 const SECRET_PHONE = '+1 555 0142';
 const MIN_MASKED_PLACEHOLDERS = 2;
 
-const API_PREFIX = '/api/';
 const cvUrl = `${e2eEnv.webUrl}/cv`;
 
 const isGraphqlRequest = (url: string): boolean =>
@@ -35,7 +40,7 @@ test.beforeAll(async ({ request }) => {
     data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
   });
   ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
-  const created = await request.post(apiUrl(API_PATHS.documents('resume')), {
+  const created = await request.post(apiUrl(API_PATHS.documents(CV_PAGE_SLUG)), {
     headers: ownerHeaders(),
     data: {
       values: {
@@ -46,7 +51,7 @@ test.beforeAll(async ({ request }) => {
       },
       components: {
         experiences: [{ values: { company: SECRET_COMPANY, period: '2020' } }],
-        referees: [{ values: { name: 'E2E Referee', phone: SECRET_PHONE } }],
+        references: [{ values: { name: 'E2E Referee', phone: SECRET_PHONE } }],
       },
     },
   });
@@ -55,14 +60,14 @@ test.beforeAll(async ({ request }) => {
     version: number;
   };
   resumeId = draft.documentId;
-  await request.post(apiUrl(API_PATHS.document('resume', resumeId) + '/publish'), {
+  await request.post(apiUrl(API_PATHS.document(CV_PAGE_SLUG, resumeId) + '/publish'), {
     headers: ownerHeaders(),
     data: { expectedVersion: draft.version },
   });
 });
 
 test.afterAll(async ({ request }) => {
-  const removed = await request.delete(apiUrl(API_PATHS.document('resume', resumeId)), {
+  const removed = await request.delete(apiUrl(API_PATHS.document(CV_PAGE_SLUG, resumeId)), {
     headers: ownerHeaders(),
   });
   expect(removed.status()).toBe(HTTP.NO_CONTENT);
@@ -120,7 +125,7 @@ test('a reader session refetches the CV once through the BFF and sign-out return
   page.on('request', (req) => {
     const { pathname } = new URL(req.url());
     if (pathname === BFF_PATHS.CV) cvCalls.push(req.headers()['authorization'] ?? '');
-    if (pathname.startsWith(API_PREFIX) || isGraphqlRequest(req.url())) apiCalls.push(pathname);
+    if (isCmsApiRequest(req.url()) || isGraphqlRequest(req.url())) apiCalls.push(pathname);
   });
   await page.goto(cvUrl);
   await headerSignIn(page).click();
@@ -143,6 +148,28 @@ test('a reader session refetches the CV once through the BFF and sign-out return
   expect(apiCalls).toEqual([]);
 });
 
+test('a failed signed-in refetch keeps the anonymous CV visible with an alert and the shell intact', async ({
+  page,
+}) => {
+  await page.route(`**${BFF_PATHS.CV}`, (route) =>
+    route.fulfill({ status: HTTP.BAD_GATEWAY, body: '' }),
+  );
+  await page.goto(cvUrl);
+  await headerSignIn(page).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox', { name: WEB_COPY.login.emailLabel }).fill(e2eEnv.readerEmail);
+  await dialog.getByLabel(WEB_COPY.login.passwordLabel).fill(e2eEnv.readerPassword);
+  await expect(dialog.locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
+  await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
+
+  await expect(page.getByRole('button', { name: WEB_COPY.session.signOut })).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: WEB_COPY.cv.refetchFailed }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: RESUME_NAME })).toBeVisible();
+  await expect(page.getByText(RESUME_POSITION)).toBeVisible();
+});
+
 test('the home page shows the status view and /status is gone', async ({ page, request }) => {
   await page.goto(e2eEnv.webUrl);
   await expect(page.getByText(WEB_COPY.status.state.ok)).toBeVisible();
@@ -150,4 +177,12 @@ test('the home page shows the status view and /status is gone', async ({ page, r
   await expect(page.getByText(WEB_COPY.status.state.ok)).toBeVisible();
 
   expect((await request.get(`${e2eEnv.webUrl}/status`)).status()).toBe(HTTP.NOT_FOUND);
+});
+
+test('the removed /bff/v1 path answers 404 on the web origin', async ({ request }) => {
+  for (const path of [REMOVED_BFF_PATHS.HEALTH, REMOVED_BFF_PATHS.SESSION, REMOVED_BFF_PATHS.CV]) {
+    expect((await request.get(`${e2eEnv.webUrl}${path}`)).status(), path).toBe(HTTP.NOT_FOUND);
+  }
+  const login = await request.post(`${e2eEnv.webUrl}${REMOVED_BFF_PATHS.LOGIN}`, { data: {} });
+  expect(login.status(), REMOVED_BFF_PATHS.LOGIN).toBe(HTTP.NOT_FOUND);
 });

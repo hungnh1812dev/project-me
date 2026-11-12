@@ -24,7 +24,7 @@ describe('createAuthApi', () => {
   it('sends login without a Bearer header and does not refresh on a 401', async () => {
     const { api, authApi, refreshAccessToken } = setup();
     await expect(
-      authApi.login({ email: 'a@example.com', password: 'wrong' }),
+      authApi.login({ email: 'a@example.com', password: 'wrong', rememberMe: false }),
     ).rejects.toMatchObject({ response: { status: 401 } });
     expect(api.calls).toHaveLength(1);
     expect(api.calls[0]?.headers.get('Authorization')).toBeUndefined();

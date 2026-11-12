@@ -77,7 +77,7 @@ export class TwoFactorLoginService {
     if (!this.challenges.tryMarkUsed(claims.jti, expiresAtMs)) {
       throw invalidTempToken();
     }
-    return this.auth.startSession(account, meta, account.twoFaMethod);
+    return this.auth.startSession(account, meta, account.twoFaMethod, claims.rm);
   }
 
   /** Emails the login code of an email-2FA account; no-op for TOTP. */

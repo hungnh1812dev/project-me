@@ -13,7 +13,7 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
 import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { contentSaveButton, fieldByLabel, listItem } from '../src/Locators.fixture';
+import { contentSaveButton, fieldByLabel, listItem, toast } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -126,7 +126,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
     const recorder = recordPuts(a);
     await dialog.getByRole('button', { name: merge.save }).click();
     await expect(dialog).toBeHidden();
-    await expect(a.getByText(copy.saved)).toBeVisible();
+    await expect(toast(a, copy.saved)).toBeVisible();
     recorder.stop();
     expect(recorder.puts).toHaveLength(1);
     const body = bodyOf(recorder.puts[0] as Request);
@@ -188,7 +188,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
 
     await dialog.getByRole('button', { name: merge.save }).click();
     await expect(dialog).toBeHidden();
-    await expect(a.getByText(copy.saved)).toBeVisible();
+    await expect(toast(a, copy.saved)).toBeVisible();
     await expect(fieldByLabel(a, 'Position')).toHaveValue(`B2 ${RUN_ID}`);
     expect(await skillNames(a)).toEqual([SKILLS[0], SKILLS[1], SKILLS[2], `Delta ${RUN_ID}`]);
     await expect(skillLevel(a, 0)).toHaveValue('A-level');
@@ -380,7 +380,7 @@ test.describe.serial('owner: conflict merge modal (cv-page)', () => {
       const recorder = recordPuts(editor);
       await dialog.getByRole('button', { name: merge.save }).click();
       await expect(dialog).toBeHidden();
-      await expect(editor.getByText(copy.saved)).toBeVisible();
+      await expect(toast(editor, copy.saved)).toBeVisible();
       recorder.stop();
       const sent = JSON.stringify(bodyOf(recorder.puts[0] as Request));
       expect(sent).toContain(`Editor ${RUN_ID}`);

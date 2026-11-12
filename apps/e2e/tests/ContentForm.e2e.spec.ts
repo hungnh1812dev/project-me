@@ -11,7 +11,7 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, API_ERROR_CODES, contentNewPath } from '../src/Apps.contract';
 import { CV_PAGE_NAME, CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { contentSaveButton, fieldByLabel, listItem } from '../src/Locators.fixture';
+import { contentSaveButton, fieldByLabel, listItem, toast } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -44,8 +44,7 @@ async function saveDraftAndExpectNotice(page: Page) {
   expect(response.ok()).toBe(true);
   // Judged in the last test, so a missing notice does not skip the other flows.
   noticeShown.push(
-    await page
-      .getByText(copy.saved)
+    await toast(page, copy.saved)
       .waitFor({ timeout: NOTICE_WAIT_MS })
       .then(
         () => true,
@@ -401,14 +400,19 @@ test.describe.serial('owner: dynamic document form (cv-page)', () => {
     const masked = ['name', 'references.phone', 'summary'];
     await page.route(`**${DOCUMENTS_PATH}/*`, async (route) => {
       if (route.request().method() !== 'GET') return route.fallback();
-      const response = await route.fetch();
-      const json = (await response.json()) as Record<string, unknown>;
-      json['_maskedFields'] = masked;
-      json['values'] = {
-        ...(json['values'] as object),
-        name: '***',
-      };
-      return route.fulfill({ response, json });
+      // The reload below can abort an earlier in-flight read: its route is gone by then.
+      try {
+        const response = await route.fetch();
+        const json = (await response.json()) as Record<string, unknown>;
+        json['_maskedFields'] = masked;
+        json['values'] = {
+          ...(json['values'] as object),
+          name: '***',
+        };
+        return await route.fulfill({ response, json });
+      } catch {
+        return undefined;
+      }
     });
     await page.reload();
     const maskedName = fieldByLabel(page, 'Name');

@@ -16,12 +16,14 @@ export const ACCESS_RATE_LIMIT_POLICIES = {
       keySource: RATE_LIMIT_KEY_SOURCES.IP,
       maxHits: 20,
       windowMs: ONE_HOUR_MS,
+      limitOverrideEnvKey: 'ACCOUNT_INVITE_RATE_LIMIT_IP',
     },
     {
       name: 'account-invite:actor',
       keySource: RATE_LIMIT_KEY_SOURCES.ACTOR,
       maxHits: 10,
       windowMs: ONE_HOUR_MS,
+      limitOverrideEnvKey: 'ACCOUNT_INVITE_RATE_LIMIT_ACTOR',
     },
   ],
 } as const satisfies Record<string, readonly RateLimitRule[]>;

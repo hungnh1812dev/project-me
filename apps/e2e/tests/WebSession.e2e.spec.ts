@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { BFF_PATHS } from '../src/Api.endpoints';
+import { BFF_PATHS, isCmsApiRequest } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
 import { WEB_SESSION_COOKIE_NAME, WEB_TWO_FACTOR_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
@@ -8,7 +8,7 @@ import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import { countActiveRefreshTokens } from '../src/SmokeDatabase.client';
 
 /**
- * apps/web sign-in dialog and the BFF session (sealed HttpOnly cookie; the browser calls only /bff/v1). Only reader accounts
+ * apps/web sign-in dialog and the BFF session (sealed HttpOnly cookie; the browser calls only /api/v1 on the web origin). Only reader accounts
  * (role guest, no permission) may hold a web session; owner / admin / editor
  * are refused. Self-contained: it uses the seeded reader accounts and the
  * owner, reads no state from other specs (the smoke stack lifts the login
@@ -18,11 +18,11 @@ import { countActiveRefreshTokens } from '../src/SmokeDatabase.client';
 test.describe.configure({ retries: 0 });
 
 const login = WEB_COPY.login;
+const withCount = (template: string, count: number) => template.replace('{count}', String(count));
 const headerSignIn = (page: Page) =>
   page.getByRole('button', { name: WEB_COPY.session.signIn, exact: true });
 const dialog = (page: Page) => page.getByRole('dialog');
 
-const API_PREFIX = '/api/';
 const TWO_FACTOR_COOKIE_MAX_AGE_SECONDS = 300;
 const COOKIE_AGE_SLACK_SECONDS = 30;
 
@@ -53,11 +53,18 @@ async function waitForHumanCheck(page: Page): Promise<void> {
   await expect(dialog(page).locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
 }
 
-async function fillCredentials(page: Page, email: string, password: string): Promise<void> {
+async function fillCredentials(
+  page: Page,
+  email: string,
+  password: string,
+  options: { remember?: boolean } = {},
+): Promise<void> {
   const form = dialog(page);
   await waitForHumanCheck(page);
   await form.getByRole('textbox', { name: login.emailLabel }).fill(email);
   await form.getByLabel(login.passwordLabel).fill(password);
+  // Ticked after the fields are filled: a blur error above the box would shift it under the pointer.
+  if (options.remember) await form.getByRole('checkbox', { name: login.rememberMeLabel }).check();
   await form.getByRole('button', { name: login.submit }).click();
 }
 
@@ -110,7 +117,11 @@ test('a reader signs in on the web, stays signed in on reload, and signs out', a
   context,
 }) => {
   const requests: string[] = [];
-  page.on('request', (req) => requests.push(new URL(req.url()).pathname));
+  const cmsApiRequests: string[] = [];
+  page.on('request', (req) => {
+    requests.push(new URL(req.url()).pathname);
+    if (isCmsApiRequest(req.url())) cmsApiRequests.push(req.url());
+  });
 
   await page.goto(e2eEnv.webUrl);
   await openDialog(page);
@@ -123,8 +134,7 @@ test('a reader signs in on the web, stays signed in on reload, and signs out', a
   await expect(headerSignIn(page)).toHaveCount(0);
 
   // Every browser call of the web origin goes to the BFF; none reaches cms-api.
-  const apiPaths = requests.filter((path) => path.startsWith(API_PREFIX));
-  expect(apiPaths).toEqual([]);
+  expect(cmsApiRequests).toEqual([]);
   const authPaths = requests.filter((path) => path.startsWith(BFF_PATHS.AUTH.LOGIN));
   expect(authPaths.length).toBeGreaterThan(0);
 
@@ -169,6 +179,83 @@ test('a reader signs in on the web, stays signed in on reload, and signs out', a
   await page.reload();
   await expect(headerSignIn(page)).toBeVisible();
   await expect(signOutButton(page)).toHaveCount(0);
+});
+
+const REMEMBERED_SECONDS = 2_592_000;
+const REMEMBERED_SLACK_SECONDS = 120;
+const SESSION_COOKIE_EXPIRES = -1;
+const rememberBox = (page: Page) =>
+  dialog(page).getByRole('checkbox', { name: login.rememberMeLabel });
+
+test('the keep-me-signed-in box is unticked on every open; unticked sets a session cookie, ticked about 30 days, both survive a reload', async ({
+  page,
+  context,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  await expect(rememberBox(page)).not.toBeChecked();
+  await expect(dialog(page).getByText(login.rememberMeHint)).toBeVisible();
+  await rememberBox(page).focus();
+  await page.keyboard.press('Space');
+  await expect(rememberBox(page)).toBeChecked();
+  await page.keyboard.press('Escape');
+  await openDialog(page);
+  await expect(rememberBox(page)).not.toBeChecked();
+  // A reopened dialog keeps its human check on "Loading"; a fresh page gives a ready one.
+  await page.reload();
+  await openDialog(page);
+
+  await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword);
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  expect(await hostCookie(context, WEB_SESSION_COOKIE_NAME)).toMatchObject({
+    expires: SESSION_COOKIE_EXPIRES,
+    httpOnly: true,
+    secure: true,
+  });
+  await page.reload();
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  expect(await hostCookie(context, WEB_SESSION_COOKIE_NAME)).toMatchObject({
+    expires: SESSION_COOKIE_EXPIRES,
+  });
+  expect(await storageState(page)).toEqual(EMPTY_STORAGE);
+  await signOutButton(page).click();
+  await expect(headerSignIn(page)).toBeVisible();
+
+  await openDialog(page);
+  await fillCredentials(page, e2eEnv.readerEmail, e2eEnv.readerPassword, { remember: true });
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  const cookie = await hostCookie(context, WEB_SESSION_COOKIE_NAME);
+  expect(cookie).toMatchObject({ httpOnly: true, secure: true });
+  const secondsLeft = (cookie?.expires ?? 0) - Date.now() / 1000;
+  expect(secondsLeft).toBeGreaterThan(REMEMBERED_SECONDS - REMEMBERED_SLACK_SECONDS);
+  expect(secondsLeft).toBeLessThanOrEqual(REMEMBERED_SECONDS);
+  expect(await storageState(page)).toEqual(EMPTY_STORAGE);
+  await signOutButton(page).click();
+  await expect(headerSignIn(page)).toBeVisible();
+});
+
+test('a ticked box on the credentials step is kept through the code step', async ({
+  page,
+  context,
+}) => {
+  await page.goto(e2eEnv.webUrl);
+  await openDialog(page);
+  const seen = await mailIdsFor(context, e2eEnv.reader2faEmail);
+  await fillCredentials(page, e2eEnv.reader2faEmail, e2eEnv.reader2faPassword, { remember: true });
+  const step = page.getByRole('dialog', { name: login.twoFactor.title });
+  await expect(step).toBeVisible();
+  const code = await waitForCode(context, e2eEnv.reader2faEmail, seen);
+  await step.getByLabel(new RegExp(`^${login.twoFactor.emailLabel}`)).fill(code);
+  await waitForHumanCheck(page);
+  await step.getByRole('button', { name: login.twoFactor.submit }).click();
+  await expect(page.getByText(/^Signed in as /)).toBeVisible();
+  const cookie = await hostCookie(context, WEB_SESSION_COOKIE_NAME);
+  const secondsLeft = (cookie?.expires ?? 0) - Date.now() / 1000;
+  expect(secondsLeft).toBeGreaterThan(REMEMBERED_SECONDS - REMEMBERED_SLACK_SECONDS);
+  await signOutButton(page).click();
+  await expect(headerSignIn(page)).toBeVisible();
 });
 
 test('the owner is refused on the web: the dialog says to use the admin, the page stays anonymous and holds no token', async ({
@@ -274,7 +361,9 @@ test('a rate-limited sign-in names the wait in seconds or minutes, and an offlin
     }),
   );
   await fillCredentials(page, e2eEnv.readerEmail, 'x');
-  await expect(dialog(page).getByText(login.errors.rateLimitedSeconds(30))).toBeVisible();
+  await expect(
+    dialog(page).getByText(withCount(login.errors.rateLimitedSecondsOther, 30)),
+  ).toBeVisible();
 
   await page.unroute(loginRoute);
   await page.route(loginRoute, (route) =>
@@ -287,7 +376,9 @@ test('a rate-limited sign-in names the wait in seconds or minutes, and an offlin
   await dialog(page).getByLabel(login.passwordLabel).fill('x');
   await waitForHumanCheck(page);
   await dialog(page).getByRole('button', { name: login.submit }).click();
-  await expect(dialog(page).getByText(login.errors.rateLimitedMinutes(2))).toBeVisible();
+  await expect(
+    dialog(page).getByText(withCount(login.errors.rateLimitedMinutesOther, 2)),
+  ).toBeVisible();
 
   await page.unroute(loginRoute);
   await page.route(loginRoute, (route) => route.fulfill({ status: 429, json: rateLimitedBody }));
@@ -326,7 +417,7 @@ test('the code step: a dead temp token returns to the credentials with a notice,
   );
   await waitForHumanCheck(page);
   await step.getByRole('button', { name: login.twoFactor.resend }).click();
-  await expect(step.getByText(login.errors.rateLimitedSeconds(45))).toBeVisible();
+  await expect(step.getByText(withCount(login.errors.rateLimitedSecondsOther, 45))).toBeVisible();
 
   await page.route(`**${BFF_PATHS.AUTH.TWO_FACTOR_VERIFY}`, (route) =>
     route.fulfill({

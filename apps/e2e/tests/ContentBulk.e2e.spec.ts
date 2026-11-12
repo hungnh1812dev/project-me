@@ -4,6 +4,7 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentListPath } from '../src/Apps.contract';
 import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { toast } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -112,7 +113,7 @@ test.describe.serial('owner: collection list and bulk actions (profile)', () => 
     const renamed = `${target}-edited`;
     await nameField.fill(renamed);
     await other.getByRole('button', { name: copy.save, exact: true }).click();
-    await expect(other.getByText(copy.saved)).toBeVisible();
+    await expect(toast(other, copy.saved)).toBeVisible();
     await other.close();
 
     await rowBox(page, target).check();

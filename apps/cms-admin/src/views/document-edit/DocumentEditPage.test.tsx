@@ -4,7 +4,7 @@ import { EN_TEXT } from '@configs/locales/en';
 import type { DocumentRecord } from '@features/content/Content.api';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -179,7 +179,7 @@ describe('DocumentEditPage: edit draft', () => {
       version: 3,
       values: { position: 'Lead' },
     });
-    expect(await screen.findByText(copy.saved)).toBeInTheDocument();
+    expect(await findToast(copy.saved)).toBeInTheDocument();
   });
 
   it('keeps component_uid when items are reordered and removed', async () => {

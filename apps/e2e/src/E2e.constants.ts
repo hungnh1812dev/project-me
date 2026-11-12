@@ -39,6 +39,12 @@ export const MS_PER_SECOND = 1_000;
  */
 export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;
 
+/** Wait for a UI state that follows retried or slow API calls on a loaded host. */
+export const SLOW_STATE_TIMEOUT_MS = 20_000;
+
+/** Test timeout for a spec that waits on such states. */
+export const SLOW_STATE_TEST_TIMEOUT_MS = 60_000;
+
 /** HTTP statuses the specs assert on. */
 export const HTTP = {
   OK: 200,
@@ -52,6 +58,7 @@ export const HTTP = {
   CONFLICT: 409,
   UNSUPPORTED_MEDIA_TYPE: 415,
   SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
 } as const;
 
 /** Distinguishes this run's data from earlier runs against the same stack. */
@@ -68,9 +75,13 @@ export const CONTENT_TYPE_NAMES = {
   'common-text': 'Common Text',
   'cv-contact': 'CV Contact',
   'cv-page': CV_PAGE_NAME,
+  'cv-page-text': 'CV Page Text',
   header: 'Header',
   profile: 'Profile',
   resume: 'Resume',
+  'sign-in-text': 'Sign In Text',
+  'site-text': 'Site Text',
+  'status-page-text': 'Status Page Text',
 } as const;
 
 /** Content type of the smoke stack with a media field and a list view. */

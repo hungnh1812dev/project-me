@@ -5,6 +5,10 @@ export const COMMON_COPY = {
   retry: 'Try again',
   loadingPage: 'Loading the page',
   textLoadFailed: 'This page could not be loaded. Check your connection, then try again.',
+  toast: {
+    region: 'Notifications',
+    close: 'Dismiss notification',
+  },
 } as const;
 
 export const APP_COPY = {
@@ -91,4 +95,6 @@ export const NAV_COPY = {
   loading: 'Loading the menu',
   catalogError: 'Could not load the content types.',
   retryCatalog: 'Reload content types',
+  welcomeTitle: 'Welcome to the system',
+  welcomeText: 'Contact the administrator to be granted access.',
 } as const;

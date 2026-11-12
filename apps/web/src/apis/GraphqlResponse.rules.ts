@@ -1,4 +1,4 @@
-import { HTTP_STATUS } from '../configs/Http.constants';
+import { HTTP_STATUS } from '@/configs/Http.constants';
 
 /** One GraphQL operation: its text and the name sent with it. */
 export interface GraphqlDocument {
@@ -62,4 +62,28 @@ export function unwrapGraphqlResponse<T>(status: number, body: unknown): T {
     throw new GraphqlRequestError(GRAPHQL_FAILURE_CODES.NO_DATA, status);
   }
   return data as T;
+}
+
+export interface GraphqlRootFields {
+  /** The answer's `data` object, or `null` when the call gave none (non-200, no object). */
+  data: Readonly<Record<string, unknown>> | null;
+  /** The first error code of the answer, when it has errors. */
+  errorCode: string | undefined;
+  status: number;
+}
+
+/**
+ * Reads an answer root field by root field and never throws: a partial answer
+ * keeps the fields that came back, so the caller can fill only the failed ones.
+ */
+export function readGraphqlRootFields(status: number, body: unknown): GraphqlRootFields {
+  const { data, errors } = (
+    typeof body === 'object' && body !== null ? body : {}
+  ) as GraphqlResponseBody;
+  const isDataObject = typeof data === 'object' && data !== null && !Array.isArray(data);
+  return {
+    data: status === HTTP_STATUS.OK && isDataObject ? (data as Record<string, unknown>) : null,
+    errorCode: firstErrorCodeOf(errors),
+    status,
+  };
 }

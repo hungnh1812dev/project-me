@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react';
-import { Button, Checkbox } from '@abyss/form-commons';
+import { Button, Card, Checkbox } from '@abyss/form-commons';
 import { useScreenText, type ScreenText } from '@configs/locales';
 import {
   CONTENT_WILDCARD_SUBJECT,
@@ -66,7 +66,7 @@ export function TokenScopeEditor({
 
   return (
     <div className="grid gap-2">
-      <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+      <Card padding="flush" className="relative overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-muted text-left text-muted-foreground">
             <tr>
@@ -160,7 +160,7 @@ export function TokenScopeEditor({
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
       {anyNotGrantable ? (
         <p className="m-0 text-sm text-muted-foreground">{copy.notHeldHint}</p>
       ) : null}

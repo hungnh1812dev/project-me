@@ -3,7 +3,7 @@ import { APP_ROUTES } from '@configs/App.routes';
 import { EN_TEXT } from '@configs/locales/en';
 import type { MediaFile } from '@features/media/Media.api';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp } from '@test/RenderApp.fixture';
+import { createTestServices, findToast, renderApp, toastToneOf } from '@test/RenderApp.fixture';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, vi } from 'vitest';
@@ -100,9 +100,32 @@ describe('MediaLibraryPage', () => {
     expect(within(dialog).getByText('portrait.jpg')).toBeInTheDocument();
     expect(api.callsTo(`POST ${MEDIA.LIST}`)).toHaveLength(0);
     await userEvent.click(within(dialog).getByRole('button', { name: copy.uploadDialog.upload }));
-    expect(await screen.findByText(copy.uploaded(1))).toBeInTheDocument();
+    expect(await findToast(copy.uploaded(1))).toBeInTheDocument();
     expect(await screen.findByText('2 KB')).toBeInTheDocument();
     expect(api.callsTo(`POST ${MEDIA.LIST}`)).toHaveLength(1);
+  });
+
+  it('warns in a toast when some files of a batch failed', async () => {
+    let calls = 0;
+    await open({
+      [`GET ${MEDIA.LIST}`]: () => ({ status: 200, data: body([]) }),
+      [`POST ${MEDIA.LIST}`]: () => {
+        calls += 1;
+        return calls === 1 ? { status: 201, data: file() } : { status: 500 };
+      },
+    });
+    await screen.findByText(copy.empty);
+    await chooseFiles([
+      new File(['x'], 'a.jpg', { type: 'image/jpeg' }),
+      new File(['y'], 'b.jpg', { type: 'image/jpeg' }),
+    ]);
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: copy.uploadDialog.uploadCount(2) }),
+    );
+    await findToast(copy.uploadedSomeFailed(1, 2));
+    expect(toastToneOf(copy.uploadedSomeFailed(1, 2))).toBe('warning');
+    expect(within(dialog).getByText(copy.uploadDialog.someFailed)).toBeInTheDocument();
   });
 
   it('shows the server reason for a rejected upload', async () => {
@@ -138,7 +161,7 @@ describe('MediaLibraryPage', () => {
     const dialog = await screen.findByRole('dialog');
     await userEvent.type(within(dialog).getByLabelText(copy.altDialog.label), 'A portrait');
     await userEvent.click(within(dialog).getByRole('button', { name: copy.altDialog.save }));
-    expect(await screen.findByText(copy.altDialog.saved('portrait.jpg'))).toBeInTheDocument();
+    expect(await findToast(copy.altDialog.saved('portrait.jpg'))).toBeInTheDocument();
     expect(JSON.parse(String(api.callsTo(`PATCH ${MEDIA.ONE('f1')}`)[0]?.data))).toEqual({
       alt: 'A portrait',
     });
@@ -181,7 +204,7 @@ describe('MediaLibraryPage', () => {
         name: copy.deleteDialog.submit('portrait.jpg'),
       }),
     );
-    expect(await screen.findByText(copy.deleteDialog.deleted('portrait.jpg'))).toBeInTheDocument();
+    expect(await findToast(copy.deleteDialog.deleted('portrait.jpg'))).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(copy.empty)).toBeInTheDocument());
   });
 
@@ -299,7 +322,7 @@ describe('MediaLibraryPage', () => {
       new File(['x'], 'new.png', { type: 'image/png' }),
     );
     await userEvent.click(within(dialog).getByRole('button', { name: copy.uploadDialog.upload }));
-    expect(await screen.findByText(copy.replaced('new.png'))).toBeInTheDocument();
+    expect(await findToast(copy.replaced('new.png'))).toBeInTheDocument();
     expect(api.callsTo(`PUT ${MEDIA.FILE('f1')}`)).toHaveLength(1);
     expect(api.callsTo(`POST ${MEDIA.LIST}`)).toHaveLength(0);
   });

@@ -2,11 +2,18 @@ import { useState } from 'react';
 import {
   BulkActionBar,
   Button,
+  Card,
   FormAlert,
   SortableSheet,
   TablePagination,
 } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
+import {
+  EmptyState,
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+  TitleSkeleton,
+} from '@components/PageStates';
 import { useRestoreFocus } from '@components/useRestoreFocus';
 import { contentNewPath } from '@configs/App.routes';
 import { useScreenText } from '@configs/locales';
@@ -179,12 +186,7 @@ export function CollectionListPage() {
           />
         )
       ) : rows.length === 0 && page === 1 ? (
-        <div className="grid justify-items-start gap-1">
-          <p className="m-0 font-medium">{list.empty}</p>
-          <p className="m-0 text-sm text-muted-foreground">
-            {canCreate ? list.emptyHint : list.emptyHintReadOnly}
-          </p>
-        </div>
+        <EmptyState title={list.empty} hint={canCreate ? list.emptyHint : list.emptyHintReadOnly} />
       ) : (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
           {selectable ? (
@@ -200,7 +202,7 @@ export function CollectionListPage() {
               }}
             />
           ) : null}
-          <div className="min-w-0 rounded-md border border-border bg-card">
+          <Card padding="flush" className="min-w-0 overflow-hidden">
             <SortableSheet
               className="rounded-none border-0"
               caption={list.tableLabel(displayName)}
@@ -232,7 +234,7 @@ export function CollectionListPage() {
                 }}
               />
             )}
-          </div>
+          </Card>
         </div>
       )}
       <BulkDeleteDialog
