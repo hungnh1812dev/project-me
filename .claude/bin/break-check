@@ -10,7 +10,7 @@ Hooks (`break-check --hook`, registered in .claude/settings.json; silent when al
 CLI (prints nothing and exits 0 when the gate holds):
   break-check                 the break checks
   break-check --pass <target> checkpoint pass: every row of checklists/<target>.md is `pass`, no findings
-  break-check --close         feature close: CHECKLIST.md all `pass`, no findings, no open issue, handoff
+  break-check --close         feature close: CHECKLIST.md all `pass` (or `n/a` with a Note), no findings, no open issue, handoff
                               emptied (follow-ups moved), no unit in progress
 
 Paths are relative to the project root, whatever the session's cwd. Any error lets the hook call through.
@@ -51,11 +51,11 @@ def section(text, heading):
 
 
 def not_passed(checklist):
-    """IDs of checklist rows whose Status is not `pass` (`\\|` inside a cell is not a separator)."""
+    """IDs of checklist rows whose Status is not `pass` or `n/a` with a Note (`\\|` inside a cell is not a separator)."""
     bad = []
     for line in read(checklist).splitlines():
         cells = [c.strip() for c in CELL.split(line)]
-        if len(cells) > 9 and re.match(r"^C[A-Z0-9-]*\d+$", cells[1]) and cells[8] != "pass":
+        if len(cells) > 9 and re.match(r"^C[A-Z0-9-]*\d+$", cells[1]) and cells[8] != "pass" and not (cells[8] == "n/a" and cells[9].strip()):
             bad.append(f"{cells[1]} {cells[8] or 'empty'}")
     return bad
 

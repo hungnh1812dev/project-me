@@ -46,7 +46,7 @@ On `RECHECK`: read the `Fix log` in `<F>/current.md` and your findings file; re-
 ## Checklists
 
 **CHECKLIST** (qc already created the file):
-1. From the checkpoint in the phases file and `git diff --stat <base>..HEAD`, draft one row per security control added or changed, per step 3 item that applies, and per high-risk path touched, each at the lowest tier that shows it. For `feature`, the phase rows are already merged (passed ones stay `pass`): draft only rows for controls that span phases and for phase rows qc reset to `todo`.
+1. From the checkpoint in the phases file and `git diff --stat <base>..HEAD`, draft one row per security control added or changed, per step 3 item that applies, and per high-risk path touched, each at the lowest tier that shows it. For `feature`, the phase rows are already merged (passed ones stay `pass`): draft only rows for controls that span phases, at tier 1 or 2 (a tier 3 one is `n/a`: `test-tiers` "Carried results").
 2. Always add: phase checkpoint `Phase diff <base>..HEAD reviewed` (`T1 static`); feature `Feature diff <base>..HEAD reviewed, no control from one phase bypassed by a later one` (`T1 static`).
 3. Add rows no existing row covers (`Source` and `Checker` `security-qc`, next free ID). A `qc` row that also needs a security check becomes `both`. Change nothing else in others' rows.
 

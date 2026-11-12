@@ -90,21 +90,20 @@ Target = a checkpoint (file `<F>/checklists/<checkpoint>.md`) or `feature` (`<F>
 ## Checkpoint checks
 
 Run when every task of a checkpoint is `done`, or when the user names one. On pass, write `Checkpoint <name>: passed <date>` under the phase heading.
-One checkpoint per phase, at its end (an old plan with several: run only the last; qc merges the others' rows): qc and security-qc, the tiers its rows hold (step 2 of "Checklist runs"); its checklist always holds the scoped e2e suite at tier 3 (`test-tiers` "Scoped runs and the final run"; never the full suite) and the phase diff review. On pass, write `Phase checks: qc pass · security pass` and ask the user for the phase checkpoint; on yes write `Checkpoint: passed <date>`. Until then, warn the user before any push.
+One checkpoint per phase, at its end (an old plan with several: run only the last; qc merges the others' rows): qc and security-qc, the tiers its rows hold (step 2 of "Checklist runs"); its checklist always holds the scoped e2e suite at tier 3 (`test-tiers` "Scoped runs and carried results"; never the full suite) and the phase diff review. On pass, write `Phase checks: qc pass · security pass` and ask the user for the phase checkpoint; on yes write `Checkpoint: passed <date>`. Until then, warn the user before any push.
 
 ## Feature checks
 
 - `Base` = the hash in the feature's row (missing: parent of the oldest commit of its tasks; write it in the row and on the board).
 - **One phase:** `cp` its phase checklist to `<F>/CHECKLIST.md`; write `Feature checks: qc n/a · security n/a (one phase)` at the board top.
-- **Several phases:** checklist runs with target `feature` (the tiers its rows hold; qc merges the phase checklists, keeping passed rows `pass` unless a later phase changed what they check, and adds the cross-phase rows). On pass write `Feature checks: qc pass · security pass` at the board top.
-- **Final run** (one phase or several, after the line above): a fresh `qc` (`qc-feature-final`): `FINAL feature`, the feature's only full e2e suite run, in its last session. Failed → step 3 of "Checklist runs" (fix, then `RECHECK feature tier=3` to the same qc). Its row in `<F>/CHECKLIST.md` must be `pass` before the close (`break-check --close` reads it).
+- **Several phases:** checklist runs with target `feature` (tiers 1 and 2 of its rows, never tier 3; qc merges the phase checklists, keeping passed rows `pass`, and adds the cross-phase rows: `test-tiers` "Carried results"). On pass write `Feature checks: qc pass · security pass` at the board top.
 
 ## Feature definition of done
 
 Check each yourself, then `.claude/bin/break-check --close` must print nothing (it checks the checklist, findings, open issues, the board, `current.md` and that `handoff.md` holds nothing left to move); any miss keeps the feature `in-progress`:
 - every board task `done` with a hash; no `todo`, `in-progress`, `blocked` or placeholder row;
 - every phase shows `Phase checks: qc pass · security pass` and `Checkpoint: passed`; feature checks passed;
-- `CHECKLIST.md` exists, every row `pass`;
+- `CHECKLIST.md` exists, every row `pass` (or `n/a` with a Note, `test-tiers` "Carried results");
 - `findings/` empty; no `open` entry in `qc-issues-handoff.md`; `.claude/bin/module-index --check` prints nothing;
 - `handoff.md` has no open question or task line (new-work follow-ups move to `features.md` `## Follow-ups`; tell the user which);
 - `current.md` says `No unit in progress.`

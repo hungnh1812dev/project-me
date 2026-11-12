@@ -32,29 +32,21 @@ Once each, only for `browser` rows, and no others: `agent-skills:browser-testing
 
 1. Read `.agent-state/project.md`, the checkpoint in the phases file (inputs, outputs, doubts, table), its tasks' acceptance and verify lines, and `git log --name-only` of its tasks' commits.
 2. Draft your rows from that alone:
-   one row per flow, output, error state or doubt worth checking, each at the one lowest tier (1, 2 or 3) that shows it, plus `Scoped e2e suite green on the full stack` (`T3 cli`; `test-tiers` "Scoped runs and the final run").
+   one row per flow, output, error state or doubt worth checking, each at the one lowest tier (1, 2 or 3) that shows it, plus `Scoped e2e suite green on the full stack` (`T3 cli`; `test-tiers` "Scoped runs and carried results").
 3. Create `<F>/checklists/<checkpoint>.md`: the planner's rows unchanged; then every row of the phase's older checklists (old plan) (`Method` `T1 cli`, `Status` `todo`, empty `Note`); then each of your rows that no row covers (`Source` `qc`, `Checker` `qc`, or `both` when it also needs a security check; next free ID).
 
 ## CHECKLIST feature
 
 Only for a feature with more than one phase.
 1. Merge the **phase** checklists in `<F>/checklists/` into `<F>/CHECKLIST.md`: keep every row; for exact repeats keep the first ID and list the others in its `Note`.
-2. A passed row stays `pass`, `Note` `phase <checkpoint> <date>`: it is not run again. Reset it to `todo` (empty `Note`) only when a later phase changed what it checks: a file it names or the flow it walks appears in `git diff --name-only <its phase's last commit>..HEAD`.
-3. Add your rows: the user's end-to-end flow through the whole feature, and outputs of different phases working together. End with one `Full e2e suite green on the full stack (final run)` (`T3 cli`) row, `todo`: it is the regression check for every row kept `pass`, and runs only in `FINAL feature`.
-
-## FINAL feature
-
-The feature's one full suite run (`test-tiers` "Scoped runs and the final run"); the manager sends it only when every other row of `<F>/CHECKLIST.md` is `pass`.
-1. When `<F>/CHECKLIST.md` has no `Full e2e suite green on the full stack (final run)` row (one-phase feature, or a checklist written before ADR 0022), add it (`Source` `qc`, next free ID, `T3 cli`, `todo`).
-2. Access preflight, then a fresh `full stack` in kept mode with the e2e suite (`project.md`), the full suite once. Write `Status`, `Note` `final run <hash>` (or the failing specs), and `after FINAL` in the header.
-3. On failure: findings as usual; the `RECHECK feature tier=3` that follows runs the run's suite of `test-tiers` "Tier 3 re-test rounds", never the full suite again.
-4. Stop the stack unless a row is `failed`.
+2. A passed row stays `pass`, `Note` `phase <checkpoint> <date>`: it is never run again or reset (`test-tiers` "Carried results").
+3. Add your rows: the user's end-to-end flow through the whole feature, and outputs of different phases working together. Each at tier 1 or 2; a check only tier 3 shows is `n/a`, `Note` naming the phase rows that cover it.
 
 ## CHECK / RECHECK
 
 1. Read `project.md` and the checklist. Take only your rows of the tier sent (on `RECHECK`: only `failed` ones, plus the `Fix log` in `<F>/current.md` and your findings file).
 2. Tier 2 or 3: access preflight (`checklist-runs` "Access preflight") before the first row; stop with `status: preflight` when it says so, and go on only on the manager's `GO`.
-3. Run the tier once for all of them. Tier 2: the `dev stack` only, never the full stack. Tier 3 of a checkpoint: a scoped run (`test-tiers` "Scoped runs and the final run"): work out the test scope, write its `Test scope:` line, reuse the running `full stack` or start it in kept mode without the e2e suite (`test-tiers` "One stack per tier 3 run"), run the scope with `e2e single spec`, then the other rows. Never run the full suite outside `FINAL feature`. Add or update e2e tests for rows that need one.
+3. Run the tier once for all of them. Tier 2: the `dev stack` only, never the full stack. Tier 3 of a checkpoint: a scoped run (`test-tiers` "Scoped runs and carried results"): work out the test scope, write its `Test scope:` line, reuse the running `full stack` or start it in kept mode without the e2e suite (`test-tiers` "One stack per tier 3 run"), run the scope with `e2e single spec`, then the other rows. Never run the full suite unless the user asks for it. Add or update e2e tests for rows that need one.
 4. Write each row's `Status` (`pass` / `failed` / `blocked`) and `Note`.
 5. Format the test files you changed (`code-standards`).
 6. Keep the stack running if `Notes` says security-qc needs it; otherwise stop it.
@@ -74,7 +66,7 @@ Read the page with `take_snapshot`. Take a screenshot only for the visual review
 1. One stack per tier run (tier 3 kept mode; reuse built images only when `project.md` says how and no product code changed since). For tier 3 this is stack run 1.
 2. Iterate with `e2e single spec`, never full runs.
 3. At most 3 attempts per failing spec; then it is either a finding or a row `blocked` with the error. Stop tuning.
-4. One final run when specs pass: tier 2 the rows' specs; tier 3 the test scope (the full suite only in `FINAL feature`). At most 3 full-stack runs per tier run.
+4. One final run when specs pass: tier 2 the rows' specs; tier 3 the test scope. At most 3 full-stack runs per tier run.
 5. Redirect runs to a scratchpad file; read only `tail -n 40` or the failing block.
 6. Waiting (stack start, e2e run): start it with `run_in_background`, then wait in bounded steps, each one command under 170 s (`timeout 170 sh -c 'until <done check>; do sleep 15; done'`); never an open `until` / `pgrep` / `sleep` loop, never end your turn to wait. A log with no new line for 10 min → `blocked` with its tail.
 
