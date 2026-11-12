@@ -148,89 +148,96 @@ const whitespaceTolerant = (text: string): RegExp =>
       .join('\\s'),
   );
 
-test.describe.serial('owner: collection list cells come from the field registry', () => {
-  let context: BrowserContext;
-  let page: Page;
-  const sorts: string[] = [];
-  const consoleProblems: string[] = [];
+test.describe.serial(
+  'owner: collection list cells come from the field registry',
+  { tag: ['@cms-admin', '@cms-api', '@content-editing'] },
+  () => {
+    let context: BrowserContext;
+    let page: Page;
+    const sorts: string[] = [];
+    const consoleProblems: string[] = [];
 
-  test.beforeAll(async ({ browser }) => {
-    context = await browser.newContext();
-    await mockCollections(context, sorts);
-    page = await context.newPage();
-    page.on('console', (message) => {
-      if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
-        consoleProblems.push(message.text());
-      }
+    test.beforeAll(async ({ browser }) => {
+      context = await browser.newContext();
+      await mockCollections(context, sorts);
+      page = await context.newPage();
+      page.on('console', (message) => {
+        if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
+          consoleProblems.push(message.text());
+        }
+      });
+      page.on('pageerror', (error) => consoleProblems.push(error.message));
+      await signInAsOwner(page);
     });
-    page.on('pageerror', (error) => consoleProblems.push(error.message));
-    await signInAsOwner(page);
-  });
 
-  test.afterAll(async () => {
-    await context.close();
-  });
+    test.afterAll(async () => {
+      await context.close();
+    });
 
-  test('columns: scalar types only, max 3, json never a column', async () => {
-    await page.goto(contentListPath('listmix'));
-    const table = page.getByRole('table');
-    await expect(table.getByRole('link', { name: 'Alpha' })).toBeVisible();
-    const headers = table.getByRole('columnheader');
-    await expect(headers.nth(1)).toContainText('title');
-    await expect(headers.nth(2)).toContainText('qty');
-    await expect(headers.nth(3)).toContainText('active');
-    await expect(table.getByRole('columnheader', { name: 'extra' })).toHaveCount(0);
-    await expect(table.getByRole('columnheader', { name: 'payload' })).toHaveCount(0);
-  });
+    test('columns: scalar types only, max 3, json never a column', async () => {
+      await page.goto(contentListPath('listmix'));
+      const table = page.getByRole('table');
+      await expect(table.getByRole('link', { name: 'Alpha' })).toBeVisible();
+      const headers = table.getByRole('columnheader');
+      await expect(headers.nth(1)).toContainText('title');
+      await expect(headers.nth(2)).toContainText('qty');
+      await expect(headers.nth(3)).toContainText('active');
+      await expect(table.getByRole('columnheader', { name: 'extra' })).toHaveCount(0);
+      await expect(table.getByRole('columnheader', { name: 'payload' })).toHaveCount(0);
+    });
 
-  test('cells: Yes/No, em dash, Protected, Untitled, integer right-aligned', async () => {
-    const rowOf = (text: string | RegExp) => page.getByRole('row').filter({ hasText: text });
-    const alpha = rowOf('Alpha');
-    await expect(alpha.getByRole('cell', { name: list.yes })).toBeVisible();
-    await expect(alpha.getByRole('cell', { name: '5', exact: true })).toHaveCSS(
-      'text-align',
-      'right',
-    );
-    const untitled = rowOf(new RegExp(`^.*${list.untitled}`));
-    await expect(untitled.getByRole('cell', { name: list.no })).toBeVisible();
-    await expect(untitled.getByRole('cell', { name: list.emptyValue }).first()).toBeVisible();
-    const masked = page.getByRole('row').filter({ hasText: '100' });
-    await expect(masked.getByRole('link', { name: new RegExp(list.untitled) })).toBeVisible();
-    await expect(page.getByText(MASKED)).toHaveCount(0);
-    await expect(alpha.getByRole('cell', { name: list.yes })).not.toHaveCSS('text-align', 'right');
-  });
+    test('cells: Yes/No, em dash, Protected, Untitled, integer right-aligned', async () => {
+      const rowOf = (text: string | RegExp) => page.getByRole('row').filter({ hasText: text });
+      const alpha = rowOf('Alpha');
+      await expect(alpha.getByRole('cell', { name: list.yes })).toBeVisible();
+      await expect(alpha.getByRole('cell', { name: '5', exact: true })).toHaveCSS(
+        'text-align',
+        'right',
+      );
+      const untitled = rowOf(new RegExp(`^.*${list.untitled}`));
+      await expect(untitled.getByRole('cell', { name: list.no })).toBeVisible();
+      await expect(untitled.getByRole('cell', { name: list.emptyValue }).first()).toBeVisible();
+      const masked = page.getByRole('row').filter({ hasText: '100' });
+      await expect(masked.getByRole('link', { name: new RegExp(list.untitled) })).toBeVisible();
+      await expect(page.getByText(MASKED)).toHaveCount(0);
+      await expect(alpha.getByRole('cell', { name: list.yes })).not.toHaveCSS(
+        'text-align',
+        'right',
+      );
+    });
 
-  test('datetime formatted, decimal right-aligned, richtext not a column', async () => {
-    await page.goto(contentListPath('listtime'));
-    // Formatted in the browser: its locale and time zone differ from Node's.
-    const expectedWhen = await page.evaluate(
-      (iso) =>
-        new Intl.DateTimeFormat(undefined, {
-          dateStyle: 'medium',
-          timeStyle: 'short',
-        }).format(new Date(iso)),
-      WHEN,
-    );
-    const dated = page.getByRole('row', { name: /^Select Dated/ });
-    await expect(
-      dated.getByRole('cell').filter({ hasText: whitespaceTolerant(expectedWhen) }),
-    ).toBeVisible();
-    await expect(dated.getByRole('cell', { name: '12.50', exact: true })).toHaveCSS(
-      'text-align',
-      'right',
-    );
-    const undated = page.getByRole('row').filter({ hasText: 'Undated' });
-    await expect(undated.getByRole('cell', { name: list.emptyValue })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'body' })).toHaveCount(0);
-  });
+    test('datetime formatted, decimal right-aligned, richtext not a column', async () => {
+      await page.goto(contentListPath('listtime'));
+      // Formatted in the browser: its locale and time zone differ from Node's.
+      const expectedWhen = await page.evaluate(
+        (iso) =>
+          new Intl.DateTimeFormat(undefined, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          }).format(new Date(iso)),
+        WHEN,
+      );
+      const dated = page.getByRole('row', { name: /^Select Dated/ });
+      await expect(
+        dated.getByRole('cell').filter({ hasText: whitespaceTolerant(expectedWhen) }),
+      ).toBeVisible();
+      await expect(dated.getByRole('cell', { name: '12.50', exact: true })).toHaveCSS(
+        'text-align',
+        'right',
+      );
+      const undated = page.getByRole('row').filter({ hasText: 'Undated' });
+      await expect(undated.getByRole('cell', { name: list.emptyValue })).toBeVisible();
+      await expect(page.getByRole('columnheader', { name: 'body' })).toHaveCount(0);
+    });
 
-  test('sorting by a column sends the sort and reorders rows', async () => {
-    await page.goto(contentListPath('listmix'));
-    await expect(page.getByRole('link', { name: 'Alpha' })).toBeVisible();
-    await page.getByRole('button', { name: 'qty' }).click();
-    await expect.poll(() => sorts.at(-1)).toMatch(/^-?qty$/);
-    await page.getByRole('button', { name: 'qty' }).click();
-    await expect.poll(() => sorts.at(-1)).toMatch(/^-?qty$/);
-    expect(consoleProblems).toEqual([]);
-  });
-});
+    test('sorting by a column sends the sort and reorders rows', async () => {
+      await page.goto(contentListPath('listmix'));
+      await expect(page.getByRole('link', { name: 'Alpha' })).toBeVisible();
+      await page.getByRole('button', { name: 'qty' }).click();
+      await expect.poll(() => sorts.at(-1)).toMatch(/^-?qty$/);
+      await page.getByRole('button', { name: 'qty' }).click();
+      await expect.poll(() => sorts.at(-1)).toMatch(/^-?qty$/);
+      expect(consoleProblems).toEqual([]);
+    });
+  },
+);

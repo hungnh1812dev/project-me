@@ -36,7 +36,7 @@ const REST_CASES: [string, string][] = [
   ['a malformed filter path', `filter[${SECRET}!]=x`],
 ];
 
-test.describe('API: list query limits (R2-06)', () => {
+test.describe('API: list query limits (R2-06)', { tag: ['@cms-api', '@content-editing'] }, () => {
   let headers: Record<string, string>;
 
   test.beforeAll(async ({ playwright }) => {

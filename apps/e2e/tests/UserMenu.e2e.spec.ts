@@ -36,7 +36,7 @@ async function displayNameOf(page: Page): Promise<string> {
   return (label ?? '').replace(session.accountMenu(''), '');
 }
 
-test.describe('settings routes', () => {
+test.describe('settings routes', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('profile shows name, email and role as text, with no input', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await signInAsOwner(page);
@@ -95,7 +95,7 @@ test.describe('settings routes', () => {
   }
 });
 
-test.describe('top bar user menu', () => {
+test.describe('top bar user menu', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('owner at 1280 px: initials, details, items, routes', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await signInAsOwner(page);
@@ -201,7 +201,7 @@ test.describe('top bar user menu', () => {
   });
 });
 
-test.describe('shell at mobile width', () => {
+test.describe('shell at mobile width', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('375 px: top bar, user menu inside the viewport, avatar usable after the sheet', async ({
     page,
   }) => {

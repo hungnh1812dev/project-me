@@ -7,7 +7,7 @@ const ZERO_SECONDS = '0s';
 const NO_SHADOW = 'none';
 const NO_WIDTH = '0px';
 
-test.describe('shell under media emulation', () => {
+test.describe('shell under media emulation', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('forced colours: sidebar edge, header edge and the active item stay distinguishable', async ({
     page,
   }) => {

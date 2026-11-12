@@ -22,7 +22,7 @@ type ToastWindow = Window & {
   showToast: (toast: { tone: string; title: string; key?: string }) => void;
 };
 
-test.describe.serial('cms-admin premium theme', () => {
+test.describe.serial('cms-admin premium theme', { tag: ['@cms-admin', '@cms-api'] }, () => {
   let page: Page;
   let context: BrowserContext;
 

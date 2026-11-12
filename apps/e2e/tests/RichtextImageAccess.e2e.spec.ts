@@ -39,30 +39,34 @@ async function serveEditorPermissions(page: Page, mediaAllowed: boolean): Promis
   });
 }
 
-test.describe('richtext image button follows the media read right', () => {
-  test('hidden, and no media request, without media:read', async ({ page }) => {
-    const mediaRequests: string[] = [];
-    page.on('request', (request) => {
-      if (request.url().startsWith(apiUrl(API_PATHS.MEDIA))) mediaRequests.push(request.url());
+test.describe(
+  'richtext image button follows the media read right',
+  { tag: ['@cms-admin', '@cms-api', '@content-editing', '@media'] },
+  () => {
+    test('hidden, and no media request, without media:read', async ({ page }) => {
+      const mediaRequests: string[] = [];
+      page.on('request', (request) => {
+        if (request.url().startsWith(apiUrl(API_PATHS.MEDIA))) mediaRequests.push(request.url());
+      });
+      await serveEditorPermissions(page, false);
+      await signInAsOwnerWithRole(page, EDITOR_ROLE);
+      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      const toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
+      await expect(toolbar).toBeVisible();
+      await expect(
+        toolbar.getByRole('button', { name: richtext.insertImage, exact: true }),
+      ).toHaveCount(0);
+      expect(mediaRequests).toEqual([]);
     });
-    await serveEditorPermissions(page, false);
-    await signInAsOwnerWithRole(page, EDITOR_ROLE);
-    await page.goto(contentNewPath(CV_PAGE_SLUG));
-    const toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
-    await expect(toolbar).toBeVisible();
-    await expect(
-      toolbar.getByRole('button', { name: richtext.insertImage, exact: true }),
-    ).toHaveCount(0);
-    expect(mediaRequests).toEqual([]);
-  });
 
-  test('shown with media:read', async ({ page }) => {
-    await serveEditorPermissions(page, true);
-    await signInAsOwnerWithRole(page, EDITOR_ROLE);
-    await page.goto(contentNewPath(CV_PAGE_SLUG));
-    const toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
-    await expect(
-      toolbar.getByRole('button', { name: richtext.insertImage, exact: true }),
-    ).toBeVisible();
-  });
-});
+    test('shown with media:read', async ({ page }) => {
+      await serveEditorPermissions(page, true);
+      await signInAsOwnerWithRole(page, EDITOR_ROLE);
+      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      const toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
+      await expect(
+        toolbar.getByRole('button', { name: richtext.insertImage, exact: true }),
+      ).toBeVisible();
+    });
+  },
+);

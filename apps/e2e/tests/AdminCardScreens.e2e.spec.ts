@@ -59,7 +59,7 @@ async function openScreen(page: Page, path: string): Promise<void> {
 const pageOverflowPx = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-test.describe.serial('cms-admin card screens', () => {
+test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api'] }, () => {
   let context: BrowserContext;
   let page: Page;
   const consoleProblems: string[] = [];

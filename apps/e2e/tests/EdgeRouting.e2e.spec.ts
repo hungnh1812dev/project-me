@@ -15,27 +15,29 @@ const CREDENTIALS = {
   password: 'definitely-wrong-password',
 };
 
-test('login with a trailing slash is answered by the API, never redirected (§12-17)', async ({
-  request,
-}) => {
-  for (const path of [LOGIN, `${LOGIN}/`]) {
-    const response = await request.post(apiUrl(path), {
-      data: CREDENTIALS,
-      maxRedirects: 0,
-    });
-    expect(response.status(), path).toBe(HTTP.UNAUTHORIZED);
-    expect(response.headers()['location']).toBeUndefined();
-  }
-});
+test.describe('edge routing', { tag: ['@cms-api', '@sign-in'] }, () => {
+  test('login with a trailing slash is answered by the API, never redirected (§12-17)', async ({
+    request,
+  }) => {
+    for (const path of [LOGIN, `${LOGIN}/`]) {
+      const response = await request.post(apiUrl(path), {
+        data: CREDENTIALS,
+        maxRedirects: 0,
+      });
+      expect(response.status(), path).toBe(HTTP.UNAUTHORIZED);
+      expect(response.headers()['location']).toBeUndefined();
+    }
+  });
 
-test('no route registers an account, with or without a trailing slash (§12-2)', async ({
-  request,
-}) => {
-  for (const path of [REGISTER, `${REGISTER}/`]) {
-    const response = await request.post(apiUrl(path), {
-      data: CREDENTIALS,
-      maxRedirects: 0,
-    });
-    expect(response.status(), path).toBe(HTTP.NOT_FOUND);
-  }
+  test('no route registers an account, with or without a trailing slash (§12-2)', async ({
+    request,
+  }) => {
+    for (const path of [REGISTER, `${REGISTER}/`]) {
+      const response = await request.post(apiUrl(path), {
+        data: CREDENTIALS,
+        maxRedirects: 0,
+      });
+      expect(response.status(), path).toBe(HTTP.NOT_FOUND);
+    }
+  });
 });

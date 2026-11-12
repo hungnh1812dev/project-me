@@ -82,33 +82,35 @@ async function pagedMediaApi(context: BrowserContext, requestedPages: number[]) 
   });
 }
 
-test('deleting the only row of the last page steps back and focus goes to the heading', async ({
-  browser,
-}) => {
-  const requestedPages: number[] = [];
-  const context = await browser.newContext();
-  try {
-    await pagedMediaApi(context, requestedPages);
-    const page = await context.newPage();
-    await signInAsOwner(page);
-    await page.goto('/media');
+test.describe('shared page hooks', { tag: ['@cms-admin', '@cms-api', '@media'] }, () => {
+  test('deleting the only row of the last page steps back and focus goes to the heading', async ({
+    browser,
+  }) => {
+    const requestedPages: number[] = [];
+    const context = await browser.newContext();
+    try {
+      await pagedMediaApi(context, requestedPages);
+      const page = await context.newPage();
+      await signInAsOwner(page);
+      await page.goto('/media');
 
-    await page.getByRole('button', { name: copy.pagination.next }).click();
-    const lastName = nameOf(FILE_COUNT - 1);
-    await expect(page.getByRole('listitem').filter({ hasText: lastName })).toBeVisible();
+      await page.getByRole('button', { name: copy.pagination.next }).click();
+      const lastName = nameOf(FILE_COUNT - 1);
+      await expect(page.getByRole('listitem').filter({ hasText: lastName })).toBeVisible();
 
-    await page.getByRole('button', { name: copy.deleteLabel(lastName) }).click();
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: copy.deleteDialog.submit(lastName) })
-      .click();
-    await expect(page.getByRole('dialog')).toBeHidden();
+      await page.getByRole('button', { name: copy.deleteLabel(lastName) }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: copy.deleteDialog.submit(lastName) })
+        .click();
+      await expect(page.getByRole('dialog')).toBeHidden();
 
-    // The page steps back: the first file shows again, no empty page 2.
-    await expect(page.getByRole('listitem').filter({ hasText: nameOf(0) })).toBeVisible();
-    expect(requestedPages.at(-1)).toBe(1);
-    await expect(page.getByRole('heading', { level: 1, name: copy.title })).toBeFocused();
-  } finally {
-    await context.close();
-  }
+      // The page steps back: the first file shows again, no empty page 2.
+      await expect(page.getByRole('listitem').filter({ hasText: nameOf(0) })).toBeVisible();
+      expect(requestedPages.at(-1)).toBe(1);
+      await expect(page.getByRole('heading', { level: 1, name: copy.title })).toBeFocused();
+    } finally {
+      await context.close();
+    }
+  });
 });

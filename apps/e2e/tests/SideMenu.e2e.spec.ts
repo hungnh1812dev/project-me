@@ -24,7 +24,7 @@ const EDITOR_ROLE = 'editor';
 const mainMenu = (page: Page) => page.getByRole('navigation', { name: nav.label });
 const menuButton = (page: Page) => page.getByRole('button', { name: nav.menu, exact: true });
 
-test.describe('side menu', () => {
+test.describe('side menu', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('owner at 1280 px sees every section, an active link and no user block', async ({
     page,
   }) => {

@@ -16,7 +16,7 @@ const SCROLLED_PX = 1200;
 const FUTURE_DATE = '2999-12-31';
 const TOKEN_NAME = `E2E shell ${RUN_ID}`;
 
-test.describe('admin shell and toasts', () => {
+test.describe('admin shell and toasts', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await signInAsOwner(page);

@@ -30,32 +30,34 @@ function expectNoMissingProvider(errors: string[]) {
 }
 
 /** R3-10: API services and providers are built from the feature registry. */
-test('public pages render without a missing-provider error', async ({ page }) => {
-  const errors = collectProviderErrors(page);
-  for (const path of PUBLIC_PATHS) {
-    await page.goto(path);
-    await expect(page.locator('main, form').first()).toBeVisible();
-  }
-  expectNoMissingProvider(errors);
-});
+test.describe('feature providers', { tag: ['@cms-admin', '@cms-api'] }, () => {
+  test('public pages render without a missing-provider error', async ({ page }) => {
+    const errors = collectProviderErrors(page);
+    for (const path of PUBLIC_PATHS) {
+      await page.goto(path);
+      await expect(page.locator('main, form').first()).toBeVisible();
+    }
+    expectNoMissingProvider(errors);
+  });
 
-test('owner: every feature page loads, then signs out', async ({ page }) => {
-  const errors = collectProviderErrors(page);
-  await page.goto('/login');
-  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expectSignedIn(page);
+  test('owner: every feature page loads, then signs out', async ({ page }) => {
+    const errors = collectProviderErrors(page);
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+    await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
+    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await expectSignedIn(page);
 
-  for (const path of PAGE_PATHS) {
-    await page.goto(path);
-    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
-    await expect(page.getByText(MISSING_PROVIDER_PATTERN)).toHaveCount(0);
-  }
+    for (const path of PAGE_PATHS) {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+      await expect(page.getByText(MISSING_PROVIDER_PATTERN)).toHaveCount(0);
+    }
 
-  await page.reload();
-  await expect(accountMenuTrigger(page)).toBeVisible();
-  await signOutFromUserMenu(page);
-  await expect(page).toHaveURL(/\/login$/);
-  expectNoMissingProvider(errors);
+    await page.reload();
+    await expect(accountMenuTrigger(page)).toBeVisible();
+    await signOutFromUserMenu(page);
+    await expect(page).toHaveURL(/\/login$/);
+    expectNoMissingProvider(errors);
+  });
 });

@@ -94,7 +94,7 @@ async function watchUploads(page: Page): Promise<UploadTraffic> {
   return traffic;
 }
 
-test.describe.serial('owner: upload dialog', () => {
+test.describe.serial('owner: upload dialog', { tag: ['@cms-admin', '@cms-api', '@media'] }, () => {
   let context: BrowserContext;
   let page: Page;
   let traffic: UploadTraffic;

@@ -40,34 +40,38 @@ async function waitForSetupStatusBudget(request: APIRequestContext): Promise<voi
     .toBe(HTTP.OK);
 }
 
-test('/setup redirects to /login and the login page offers no setup', async ({ page }) => {
-  test.setTimeout(TEST_TIMEOUT_MS);
-  await expect(async () => {
-    await page.goto(APP_ROUTES.SETUP);
-    await expect(page).toHaveURL(new RegExp(`${APP_ROUTES.LOGIN}$`), {
-      timeout: PAGE_REDIRECT_TIMEOUT_MS,
-    });
-  }).toPass({ timeout: STATUS_WAIT_TIMEOUT_MS, intervals: STATUS_POLL_INTERVALS_MS });
-  await expect(page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title })).toBeVisible();
-  await expect(page.getByText(ADMIN_COPY.login.setupPrompt.message)).toHaveCount(0);
-  await expect(page.getByRole('link', { name: ADMIN_COPY.login.setupPrompt.action })).toHaveCount(
-    0,
-  );
-  await expect(page.getByText(ADMIN_COPY.login.notices.ownerCreated)).toHaveCount(0);
-});
+test.describe('owner setup', { tag: ['@cms-admin', '@cms-api', '@owner-setup'] }, () => {
+  test('/setup redirects to /login and the login page offers no setup', async ({ page }) => {
+    test.setTimeout(TEST_TIMEOUT_MS);
+    await expect(async () => {
+      await page.goto(APP_ROUTES.SETUP);
+      await expect(page).toHaveURL(new RegExp(`${APP_ROUTES.LOGIN}$`), {
+        timeout: PAGE_REDIRECT_TIMEOUT_MS,
+      });
+    }).toPass({ timeout: STATUS_WAIT_TIMEOUT_MS, intervals: STATUS_POLL_INTERVALS_MS });
+    await expect(
+      page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title }),
+    ).toBeVisible();
+    await expect(page.getByText(ADMIN_COPY.login.setupPrompt.message)).toHaveCount(0);
+    await expect(page.getByRole('link', { name: ADMIN_COPY.login.setupPrompt.action })).toHaveCount(
+      0,
+    );
+    await expect(page.getByText(ADMIN_COPY.login.notices.ownerCreated)).toHaveCount(0);
+  });
 
-test('the setup status is closed and a submit is answered like an unknown route', async ({
-  request,
-}) => {
-  test.setTimeout(TEST_TIMEOUT_MS);
-  await waitForSetupStatusBudget(request);
-  const status = await request.get(apiUrl(API_PATHS.SETUP.STATUS));
-  expect(status.status()).toBe(HTTP.OK);
-  expect(await status.json()).toEqual({ open: false });
+  test('the setup status is closed and a submit is answered like an unknown route', async ({
+    request,
+  }) => {
+    test.setTimeout(TEST_TIMEOUT_MS);
+    await waitForSetupStatusBudget(request);
+    const status = await request.get(apiUrl(API_PATHS.SETUP.STATUS));
+    expect(status.status()).toBe(HTTP.OK);
+    expect(await status.json()).toEqual({ open: false });
 
-  for (const body of [{ ...OWNER_BODY, setupToken: UNUSED_TOKEN }, OWNER_BODY]) {
-    const response = await request.post(SETUP_OWNER_URL, { data: body });
-    expect(response.status()).toBe(HTTP.NOT_FOUND);
-    expect(JSON.stringify(await response.json())).not.toContain(UNUSED_TOKEN);
-  }
+    for (const body of [{ ...OWNER_BODY, setupToken: UNUSED_TOKEN }, OWNER_BODY]) {
+      const response = await request.post(SETUP_OWNER_URL, { data: body });
+      expect(response.status()).toBe(HTTP.NOT_FOUND);
+      expect(JSON.stringify(await response.json())).not.toContain(UNUSED_TOKEN);
+    }
+  });
 });

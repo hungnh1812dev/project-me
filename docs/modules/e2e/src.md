@@ -30,6 +30,8 @@ Imported by the specs in `apps/e2e/tests/*.e2e.spec.ts`; run with `pnpm e2e:spec
 
 ## Where to change what
 
+A new spec in `tests/*.e2e.spec.ts` carries `{ tag: [...] }` on its top-level `test.describe` (a file of bare tests is wrapped in one): an app tag for every app it exercises (`@cms-admin`, `@web`, `@cms-api`; `@cms-api` on every spec that sends a request to cms-api, through a page or directly) and one `@<flow>` per flow in `docs/flows/` it walks (an app-wide spec has no flow tag). `SpecTags.contract.test.ts` (tier 1, in `test:unit`) fails, naming the file and tag, when a tag option has no app tag or a tag names no folder of `docs/apps/` or `docs/flows/`. `*.contract.spec.ts` files get no tag. Select by tag with `pnpm e2e:spec --grep @<flow>`.
+
 A helper used by two or more specs goes here; one spec's helper stays in the spec. App constants come only through `Apps.contract.ts`, never copied.
 
 ## Files
@@ -41,7 +43,7 @@ A helper used by two or more specs goes here; one spec's helper stays in the spe
 src/ (15 files)
 ```
 
-Tests: 1 file (not listed).
+Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|

@@ -28,7 +28,7 @@ const chooseFile = async (page: Page, name: string, mimeType: string, body: Buff
   return dialog;
 };
 
-test.describe.serial('owner: media library', () => {
+test.describe.serial('owner: media library', { tag: ['@cms-admin', '@cms-api', '@media'] }, () => {
   const inUse = new Set<string>();
   let page: Page;
   let context: BrowserContext;

@@ -13,22 +13,24 @@ const LIST_ROUTES = [
   { path: '/media', empty: ADMIN_COPY.media.empty, grid: ADMIN_COPY.media.grid.label },
 ];
 
-test('admin list tables have no sort buttons and no selection column', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
-  await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
-  await expectSignedIn(page);
+test.describe('admin list sheets', { tag: ['@cms-admin', '@cms-api'] }, () => {
+  test('admin list tables have no sort buttons and no selection column', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
+    await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
+    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await expectSignedIn(page);
 
-  for (const { path, empty, ...rest } of LIST_ROUTES) {
-    await page.goto(path);
-    const table = page.getByRole('table').first();
-    // A library with files shows a grid, not a table.
-    const grid = 'grid' in rest ? page.getByRole('list', { name: rest.grid }) : table;
-    await expect(table.or(grid).or(page.getByText(empty))).toBeVisible();
-    if ((await table.count()) === 0) continue;
-    await expect(table.getByRole('columnheader').first()).toBeVisible();
-    await expect(table.getByRole('checkbox')).toHaveCount(0);
-    await expect(table.getByRole('columnheader').getByRole('button')).toHaveCount(0);
-  }
+    for (const { path, empty, ...rest } of LIST_ROUTES) {
+      await page.goto(path);
+      const table = page.getByRole('table').first();
+      // A library with files shows a grid, not a table.
+      const grid = 'grid' in rest ? page.getByRole('list', { name: rest.grid }) : table;
+      await expect(table.or(grid).or(page.getByText(empty))).toBeVisible();
+      if ((await table.count()) === 0) continue;
+      await expect(table.getByRole('columnheader').first()).toBeVisible();
+      await expect(table.getByRole('checkbox')).toHaveCount(0);
+      await expect(table.getByRole('columnheader').getByRole('button')).toHaveCount(0);
+    }
+  });
 });
