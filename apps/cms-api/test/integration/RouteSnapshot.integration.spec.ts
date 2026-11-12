@@ -56,6 +56,7 @@ const EXPECTED_ROUTES: string[] = [
   'PUT /api/v1/roles/:id/permissions',
   'GET /api/v1/content-types',
   'GET /api/v1/content-types/:slug',
+  'POST /api/v1/content-types/validate',
   'POST /api/v1/documents/:slug/bulk/create',
   'POST /api/v1/documents/:slug/bulk/publish',
   'POST /api/v1/documents/:slug/bulk/unpublish',

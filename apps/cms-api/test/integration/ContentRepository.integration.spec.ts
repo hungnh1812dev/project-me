@@ -178,9 +178,13 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
         'common-text',
         'cv-contact',
         SLUG,
+        'cv-page-text',
         'header',
+        'module-page-status',
+        'module-sign-in',
         'profile',
         'resume',
+        'site-text',
       ]);
     });
 

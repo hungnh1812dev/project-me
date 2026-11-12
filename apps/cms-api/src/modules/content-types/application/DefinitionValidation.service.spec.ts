@@ -43,6 +43,14 @@ describe('DefinitionValidationService', () => {
     expect(result).toEqual({ valid: true, errors: [] });
   });
 
+  it('answers valid for a sound candidate when the registry is empty', async () => {
+    const result = await serviceWith(() => Promise.resolve({ definitions: () => [] })).validate({
+      definition: asCandidate(definitionOf('article')),
+      mode: DEFINITION_VALIDATION_MODES.CREATE,
+    });
+    expect(result).toEqual({ valid: true, errors: [] });
+  });
+
   it('rethrows a registry failure instead of answering valid', async () => {
     const failure = new Error('registry down');
     await expect(
