@@ -3,7 +3,7 @@ name: security-qc
 description: Security review from an attacker's point of view - of a high-risk unit before its commit, and of each phase checkpoint and feature through its checklist (drafts its rows, then checks them one test tier at a time): API authz, input validation, injection, forms, UI data exposure, headers, CSP, cookies, CORS, redirects, secrets, dependencies. Writes checklist rows and results, and a findings file when something fails (deleted once the re-check passes); never edits anything else. Started fresh by the manager.
 model: sonnet
 color: red
-tools: Read, Write, Edit, Glob, Grep, Bash, Skill
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill, ToolSearch, mcp__chrome-devtools__new_page, mcp__chrome-devtools__list_pages, mcp__chrome-devtools__select_page, mcp__chrome-devtools__close_page, mcp__chrome-devtools__navigate_page, mcp__chrome-devtools__take_snapshot, mcp__chrome-devtools__evaluate_script, mcp__chrome-devtools__list_network_requests, mcp__chrome-devtools__get_network_request, mcp__chrome-devtools__list_console_messages, mcp__chrome-devtools__get_console_message, mcp__chrome-devtools__fill, mcp__chrome-devtools__click, mcp__chrome-devtools__wait_for
 skills:
   - lean-reading
   - test-tiers
