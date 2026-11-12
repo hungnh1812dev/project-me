@@ -4,6 +4,7 @@ import {
   ENGINE_RESERVED_NAMES,
   MAX_COMPONENT_DEPTH,
   MAX_IDENTIFIER_BYTES,
+  PARSE_SAFE_NESTING_LIMIT,
   SLUG_PATTERN,
   SQL_IDENTIFIER_PATTERN,
   SQL_RESERVED_WORDS,
@@ -262,11 +263,48 @@ function checkSchemaCollisions(
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Finds the first component nested past the parse-safe limit in the raw input,
+ * walking iteratively. The zod schema recurses through `fields`, so a deeper
+ * input has to be refused before it is parsed.
+ */
+function findTooDeepComponent(input: unknown): DefinitionValidationError | undefined {
+  if (!isRecord(input)) return undefined;
+  const pending: { fields: unknown; depth: number; path: DefinitionPath }[] = [
+    { fields: input.fields, depth: 0, path: [] },
+  ];
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    if (!Array.isArray(next.fields)) continue;
+    for (const [index, field] of next.fields.entries()) {
+      if (!isRecord(field) || !Array.isArray(field.fields)) continue;
+      const fieldPath = [...next.path, 'fields', index];
+      const childDepth = next.depth + 1;
+      if (childDepth > PARSE_SAFE_NESTING_LIMIT) {
+        const name = typeof field.name === 'string' ? field.name : formatDefinitionPath(fieldPath);
+        return {
+          path: fieldPath,
+          rule: DEFINITION_RULES.COMPONENT_DEPTH_EXCEEDED,
+          message: `Component "${name}" is at depth ${childDepth}; components may nest at most ${MAX_COMPONENT_DEPTH} levels below the root.`,
+        };
+      }
+      pending.push({ fields: field.fields, depth: childDepth, path: fieldPath });
+    }
+  }
+  return undefined;
+}
+
 /**
  * Validates one definition: shape, then naming, depth, length and collision
  * rules. Collects every error instead of stopping at the first.
  */
 export function validateDefinition(input: unknown): DefinitionValidationResult {
+  const tooDeep = findTooDeepComponent(input);
+  if (tooDeep !== undefined) return { ok: false, errors: [tooDeep] };
+
   const parsed = contentTypeDefinitionSchema.safeParse(input);
   if (!parsed.success) {
     return {

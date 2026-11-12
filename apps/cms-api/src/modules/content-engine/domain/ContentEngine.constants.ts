@@ -4,6 +4,9 @@ export const CONTENT_DB_SCHEMA = 'content';
 /** SPEC §6: max component nesting below the root. */
 export const MAX_COMPONENT_DEPTH = 3;
 
+/** Nesting past which input is refused before the recursive schema parse (stack safety, not a product rule). */
+export const PARSE_SAFE_NESTING_LIMIT = 100;
+
 /** SPEC §6: Postgres NAMEDATALEN - 1. Longer names are silently truncated by Postgres. */
 export const MAX_IDENTIFIER_BYTES = 63;
 

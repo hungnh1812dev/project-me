@@ -509,6 +509,20 @@ describe('validateDefinition', () => {
   });
 });
 
+describe('validateDefinition with extreme nesting', () => {
+  it('answers a depth error instead of overflowing the stack', () => {
+    let fields: unknown[] = [];
+    for (let level = 0; level < 5000; level += 1) {
+      fields = [{ name: 'c', component: 'c', fields }];
+    }
+    const result = validateDefinition({ slug: 'deep', displayName: 'Deep', fields });
+    expect(result.ok).toBe(false);
+    expect(result.ok ? [] : result.errors.map(({ rule }) => rule)).toEqual([
+      DEFINITION_RULES.COMPONENT_DEPTH_EXCEEDED,
+    ]);
+  });
+});
+
 describe('validateDefinitions', () => {
   const simple = (slug: string) => definition([{ name: 'title', type: 'string' }], slug);
 
