@@ -6,16 +6,22 @@ import {
   unwrapGraphqlResponse,
   type GraphqlDocument,
 } from '@/apis/GraphqlResponse.rules';
-import { fillFromMocks, type MockFallbackReason } from '@/apis/server/restful/MockFallback.server';
+import { fillFromMocks } from '@/apis/server/graphql/MockFallback.server';
+import type { MockKey } from '@/apis/server/graphql/mocks/MockView';
 import { serverApi, type ServerApiCache } from '@/apis/server/restful/ServerApi.client';
-import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from '@/apis/WebApi.errors';
+import {
+  API_ERROR_CODES,
+  API_ERROR_SOURCES,
+  logApiError,
+  WebApiError,
+  type ApiErrorCode,
+} from '@/apis/WebApi.errors';
 import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import { BEARER_PREFIX } from '@/configs/Auth.constants';
 import {
   ACCEPT_HEADER,
   AUTHORIZATION_HEADER,
   DEFAULT_REVALIDATE_SECONDS,
-  HTTP_STATUS,
   JSON_MEDIA_TYPE,
 } from '@/configs/Http.constants';
 import { getServerEnv } from '@/configs/Server.env';
@@ -30,6 +36,8 @@ const ACCEPT_JSON = { [ACCEPT_HEADER]: JSON_MEDIA_TYPE };
 export interface ContentQuery<T> {
   operationName: string;
   rootFields: Readonly<Record<keyof T & string, string>>;
+  /** Mock key of a root field whose mock is not stored under the root field's own name. */
+  mockKeys?: Partial<Record<keyof T & string, MockKey>>;
   /** Data cache lifetime of this query; defaults to `DEFAULT_REVALIDATE_SECONDS`. */
   revalidateSeconds?: number;
   document: GraphqlDocument;
@@ -38,6 +46,7 @@ export interface ContentQuery<T> {
 export interface ContentQueryDefinition<T> {
   operationName: string;
   rootFields: Readonly<Record<keyof T & string, string>>;
+  mockKeys?: Partial<Record<keyof T & string, MockKey>>;
   revalidateSeconds?: number;
 }
 
@@ -67,9 +76,17 @@ export function defineContentQuery<T>(definition: ContentQueryDefinition<T>): Co
   };
 }
 
+/** What one call gave: its `data` and, for each root field it failed, the code of the failure. */
 interface RootFieldsRead {
   data: Readonly<Record<string, unknown>> | null;
-  reason: MockFallbackReason;
+  failures: Map<string, ApiErrorCode>;
+}
+
+function failureOfEach(
+  names: readonly string[],
+  errorCode: ApiErrorCode,
+): Map<string, ApiErrorCode> {
+  return new Map(names.map((name) => [name, errorCode]));
 }
 
 async function postDocument(
@@ -87,6 +104,7 @@ async function postDocument(
 
 async function readRootFields(
   document: GraphqlDocument,
+  names: readonly string[],
   headers: Record<string, string>,
   cache: ServerApiCache,
 ): Promise<RootFieldsRead> {
@@ -99,42 +117,52 @@ async function readRootFields(
       read.data !== null,
       document.operationName,
     );
-    if (failure !== undefined) logApiError(failure);
-    if (read.data !== null) {
-      return { data: read.data, reason: read.errorCode === undefined ? 'empty' : 'graphql-error' };
-    }
-    if (status !== HTTP_STATUS.OK) return { data: null, reason: 'http' };
-    return { data: null, reason: read.errorCode === undefined ? 'empty' : 'graphql-error' };
+    if (failure === undefined) return { data: read.data, failures: new Map() };
+    logApiError(failure);
+    const failedNames =
+      read.failedRootFields === 'all'
+        ? names
+        : names.filter((name) => (read.failedRootFields as ReadonlySet<string>).has(name));
+    return { data: read.data, failures: failureOfEach(failedNames, failure.errorCode) };
   } catch (error) {
-    const isTimeout =
-      error instanceof WebApiError && error.errorCode === API_ERROR_CODES.SERVER_API.TIMEOUT;
-    return { data: null, reason: isTimeout ? 'timeout' : 'network' };
+    const errorCode =
+      error instanceof WebApiError ? error.errorCode : API_ERROR_CODES.SERVER_API.NETWORK;
+    return { data: null, failures: failureOfEach(names, errorCode) };
   }
 }
 
 /** Asks each root field alone so one the API cannot serve yet does not hide the others (dev and smoke only). */
 async function readRootFieldsOneByOne(
   query: ContentQuery<never>,
+  names: readonly string[],
   headers: Record<string, string>,
   cache: ServerApiCache,
 ): Promise<RootFieldsRead> {
-  const names = Object.keys(query.rootFields);
   const reads = await Promise.all(
     names.map((name) =>
-      readRootFields(documentOf(query.operationName, query.rootFields, [name]), headers, cache),
+      readRootFields(
+        documentOf(query.operationName, query.rootFields, [name]),
+        [name],
+        headers,
+        cache,
+      ),
     ),
   );
   const data: Record<string, unknown> = {};
+  const failures = new Map<string, ApiErrorCode>();
   names.forEach((name, index) => {
     data[name] = reads[index]?.data?.[name];
+    const errorCode = reads[index]?.failures.get(name);
+    if (errorCode !== undefined) failures.set(name, errorCode);
   });
-  return { data, reason: reads.find((read) => read.data === null)?.reason ?? 'empty' };
+  return { data, failures };
 }
 
 /**
  * Runs a page query as the site (the API token when set, else anonymous),
  * cached for every visitor. Never throws for a content failure: a root field
- * the API and the mocks cannot give is `null` and listed in `failedRootFields`.
+ * that failed and has no mock is `null` and listed in `failedRootFields`; a root field
+ * the API answered with null or empty, without an error, is returned as answered.
  */
 export async function runContentQuery<T>(query: ContentQuery<T>): Promise<ContentResult<T>> {
   const { appApiToken, isMockFallbackOn } = getServerEnv();
@@ -146,15 +174,17 @@ export async function runContentQuery<T>(query: ContentQuery<T>): Promise<Conten
     revalidateSeconds: query.revalidateSeconds ?? DEFAULT_REVALIDATE_SECONDS,
   };
 
-  let read = await readRootFields(query.document, headers, cache);
-  if (read.data === null && isMockFallbackOn) {
-    read = await readRootFieldsOneByOne(query, headers, cache);
+  const names = Object.keys(query.rootFields);
+  let read = await readRootFields(query.document, names, headers, cache);
+  if (read.failures.size === names.length && isMockFallbackOn) {
+    read = await readRootFieldsOneByOne(query, names, headers, cache);
   }
-  const filled = fillFromMocks({
+  const filled = await fillFromMocks({
     operationName: query.operationName,
-    rootFields: Object.keys(query.rootFields),
+    rootFields: names,
+    mockKeys: query.mockKeys ?? {},
     data: read.data,
-    reason: read.reason,
+    failures: read.failures,
   });
   return {
     data: filled.data as ContentResult<T>['data'],

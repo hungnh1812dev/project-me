@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import { SITE_SHELL_MOCK } from '@/apis/server/graphql/mocks/SiteShell.mock';
 
 import type { SignInText, SiteText } from './SiteShell.graphql';
 import {

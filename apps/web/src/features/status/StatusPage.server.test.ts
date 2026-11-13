@@ -1,5 +1,5 @@
 import { runContentQuery } from '@/apis/server/graphql/Graphql.server';
-import { STATUS_PAGE_MOCK } from '@/apis/server/restful/mocks/StatusPage.mock';
+import { STATUS_PAGE_MOCK } from '@/apis/server/graphql/mocks/StatusPage.mock';
 
 import { loadStatusPage } from './StatusPage.server';
 

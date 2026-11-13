@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { runContentQuery } from '../../apis/server/graphql/Graphql.server';
-import { CV_PAGE_MOCK } from '../../apis/server/restful/mocks/CvPage.mock';
+import { CV_PAGE_MOCK } from '../../apis/server/graphql/mocks/CvPage.mock';
 import type { CvPage as CvPageResult } from '../../features/cv/Cv.graphql';
 import { fakeApi, Wrapper } from '../../features/session/Session.fixture';
 import CvPage, { generateMetadata } from './page';

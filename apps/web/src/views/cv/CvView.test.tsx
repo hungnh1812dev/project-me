@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { AxiosResponse } from 'axios';
 
 import { clientApi } from '@/apis/client/Api.client';
-import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
+import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
 import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { type CvPageData, type CvPageText } from '@/features/cv/Cv.graphql';
 import { useWebSession } from '@/features/session';

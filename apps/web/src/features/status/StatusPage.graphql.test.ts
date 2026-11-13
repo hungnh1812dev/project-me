@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 
 import { buildSchema, parse, validate, type FieldNode, type SelectionSetNode } from 'graphql';
 
-import { MOCK_VIEW } from '@/apis/server/restful/mocks/MockView';
-import { STATUS_PAGE_MOCK } from '@/apis/server/restful/mocks/StatusPage.mock';
+import { MOCK_VIEW } from '@/apis/server/graphql/mocks/MockView';
+import { STATUS_PAGE_MOCK } from '@/apis/server/graphql/mocks/StatusPage.mock';
 
 import { STATUS_PAGE_OPERATION_NAME, STATUS_PAGE_ROOT_FIELDS } from './StatusPage.graphql';
 import { STATUS_PAGE_QUERY } from './StatusPage.server';
@@ -62,9 +62,9 @@ describe('StatusPage mock and query', () => {
     expect(validate(schema, parse(STATUS_PAGE_QUERY.document.query))).toEqual([]);
   });
 
-  it('names its operation and is registered in the mock view', () => {
+  it('names its operation and has every mock registered in the mock view by key', () => {
     expect(STATUS_PAGE_QUERY.document.query).toContain(`query ${STATUS_PAGE_OPERATION_NAME}`);
-    expect(MOCK_VIEW[STATUS_PAGE_OPERATION_NAME]).toBe(STATUS_PAGE_MOCK);
+    expect(MOCK_VIEW).toMatchObject(STATUS_PAGE_MOCK);
   });
 
   it('has a mock for every root field and a root field for every mock', () => {

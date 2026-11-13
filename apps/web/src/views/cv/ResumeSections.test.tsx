@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 
-import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
+import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
 import { sanitizeCvRichtext, type CvPageData, type Resume } from '@/features/cv/Cv.graphql';
 import { sanitizeRichtext } from '@/utils/SafeRichtext.rules';
 

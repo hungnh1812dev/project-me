@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 
 import { buildSchema, parse, validate, type FieldNode, type SelectionSetNode } from 'graphql';
 
-import { MOCK_VIEW } from '@/apis/server/restful/mocks/MockView';
-import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import { MOCK_VIEW } from '@/apis/server/graphql/mocks/MockView';
+import { SITE_SHELL_MOCK } from '@/apis/server/graphql/mocks/SiteShell.mock';
 
 import { SITE_SHELL_OPERATION_NAME, SITE_SHELL_ROOT_FIELDS } from './SiteShell.graphql';
 import { SITE_SHELL_QUERY } from './SiteShell.server';
@@ -62,9 +62,9 @@ describe('SiteShell mock and query', () => {
     expect(validate(schema, parse(SITE_SHELL_QUERY.document.query))).toEqual([]);
   });
 
-  it('names its operation and is registered in the mock view', () => {
+  it('names its operation and has every mock registered in the mock view by key', () => {
     expect(SITE_SHELL_QUERY.document.query).toContain(`query ${SITE_SHELL_OPERATION_NAME}`);
-    expect(MOCK_VIEW[SITE_SHELL_OPERATION_NAME]).toBe(SITE_SHELL_MOCK);
+    expect(MOCK_VIEW).toMatchObject(SITE_SHELL_MOCK);
   });
 
   it('has a mock for every root field and a root field for every mock', () => {

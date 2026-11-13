@@ -4,7 +4,7 @@ import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import type { Mock } from 'vitest';
 
 import { clientErrorOf } from '@/apis/client/Api.client';
-import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import { SITE_SHELL_MOCK } from '@/apis/server/graphql/mocks/SiteShell.mock';
 import type { WebApiError } from '@/apis/WebApi.errors';
 import { SiteTextProvider } from '@/features/site-shell';
 

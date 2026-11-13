@@ -1,5 +1,5 @@
 import { runContentQuery, runVisitorQuery } from '@/apis/server/graphql/Graphql.server';
-import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
+import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
 
 import { readWebSession } from '../session/WebSession.server';
 import { answerCvRead, loadCvPage } from './CvPage.server';

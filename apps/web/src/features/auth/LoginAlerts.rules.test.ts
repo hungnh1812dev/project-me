@@ -1,4 +1,4 @@
-import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import { SITE_SHELL_MOCK } from '@/apis/server/graphql/mocks/SiteShell.mock';
 import {
   API_ERROR_CODES,
   API_ERROR_SOURCES,

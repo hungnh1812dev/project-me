@@ -94,6 +94,28 @@ export interface GraphqlRootFields {
   /** The first error code of the answer, when it has errors. */
   errorCode: string | undefined;
   status: number;
+  /**
+   * The root fields the answer failed: `'all'` when it has no `data` or an error without a root
+   * field `path`, else the root fields named by the `path[0]` of its errors. A null or empty
+   * root field without an error is not a failure.
+   */
+  failedRootFields: ReadonlySet<string> | 'all';
+}
+
+function failedRootFieldsOf(
+  errors: unknown,
+  hasData: boolean,
+): GraphqlRootFields['failedRootFields'] {
+  if (!hasData) return 'all';
+  if (!Array.isArray(errors)) return new Set();
+  const failed = new Set<string>();
+  for (const entry of errors) {
+    const root = (entry as { path?: unknown } | null)?.path;
+    const rootField = Array.isArray(root) ? (root[0] as unknown) : undefined;
+    if (typeof rootField !== 'string') return 'all';
+    failed.add(rootField);
+  }
+  return failed;
 }
 
 /**
@@ -105,9 +127,12 @@ export function readGraphqlRootFields(status: number, body: unknown): GraphqlRoo
     typeof body === 'object' && body !== null ? body : {}
   ) as GraphqlResponseBody;
   const isDataObject = typeof data === 'object' && data !== null && !Array.isArray(data);
+  const readableData =
+    status === HTTP_STATUS.OK && isDataObject ? (data as Record<string, unknown>) : null;
   return {
-    data: status === HTTP_STATUS.OK && isDataObject ? (data as Record<string, unknown>) : null,
+    data: readableData,
     errorCode: firstErrorCodeOf(errors),
     status,
+    failedRootFields: failedRootFieldsOf(errors, readableData !== null),
   };
 }

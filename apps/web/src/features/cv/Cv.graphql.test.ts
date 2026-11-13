@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 
 import { buildSchema, parse, validate, type FieldNode, type SelectionSetNode } from 'graphql';
 
-import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
-import { MOCK_VIEW } from '@/apis/server/restful/mocks/MockView';
+import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
+import { MOCK_VIEW } from '@/apis/server/graphql/mocks/MockView';
 
 import {
   CV_PAGE_OPERATION_NAME,
@@ -86,9 +86,9 @@ describe('CvPage document', () => {
 });
 
 describe('CvPage mock and query', () => {
-  it('names its operation and is registered in the mock view', () => {
+  it('names its operation and has every mock registered in the mock view by key', () => {
     expect(CV_PAGE_QUERY.document.query).toContain(`query ${CV_PAGE_OPERATION_NAME}`);
-    expect(MOCK_VIEW[CV_PAGE_OPERATION_NAME]).toBe(CV_PAGE_MOCK);
+    expect(MOCK_VIEW).toMatchObject(CV_PAGE_MOCK);
   });
 
   it('has a mock for every root field and a root field for every mock', () => {

@@ -1,5 +1,5 @@
 import { runContentQuery } from '@/apis/server/graphql/Graphql.server';
-import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import { SITE_SHELL_MOCK } from '@/apis/server/graphql/mocks/SiteShell.mock';
 import { WebApiError } from '@/apis/WebApi.errors';
 
 import { loadSiteShell } from './SiteShell.server';

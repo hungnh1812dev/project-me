@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
+import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
 import { CvContact } from '@/features/cv/Cv.graphql';
 
 import { ContactCard } from './ContactCard';

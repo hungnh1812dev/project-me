@@ -32,8 +32,9 @@ function restFailure(errorCode: 'NETWORK' | 'TIMEOUT'): WebApiError {
   });
 }
 
-const mockView = vi.hoisted(() => ({ Page: {} }));
-vi.mock('../restful/mocks/MockView', () => ({ MOCK_VIEW: mockView }));
+const mockView = vi.hoisted<{ MOCK_VIEW: Record<string, unknown> }>(() => ({ MOCK_VIEW: {} }));
+vi.mock('./mocks/MockView', () => mockView);
+vi.mock('next/server', () => ({ connection: () => Promise.resolve() }));
 
 interface PageData {
   alpha: { title: string };
@@ -60,7 +61,7 @@ beforeEach(() => {
   env.appApiToken = 'api-token-secret';
   env.revalidateOverrideSeconds = undefined;
   env.isMockFallbackOn = false;
-  mockView.Page = {};
+  mockView.MOCK_VIEW = {};
   vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 afterEach(() => vi.restoreAllMocks());
@@ -106,11 +107,11 @@ describe('runContentQuery', () => {
 
   it('fills only the failed root field of a partial answer', async () => {
     env.isMockFallbackOn = true;
-    mockView.Page = { alpha: { title: 'mock' }, beta: { items: ['mock'] } };
+    mockView.MOCK_VIEW = { alpha: { title: 'mock' }, beta: { items: ['mock'] } };
     postMock.mockResolvedValue(
       answer(200, {
         data: { alpha: { title: 'real' }, beta: null },
-        errors: [{ extensions: { code: 'FORBIDDEN' } }],
+        errors: [{ path: ['beta'], extensions: { code: 'FORBIDDEN' } }],
       }),
     );
 
@@ -119,7 +120,7 @@ describe('runContentQuery', () => {
     expect(result.data).toEqual({ alpha: { title: 'real' }, beta: { items: ['mock'] } });
     expect(result.failedRootFields).toEqual([]);
     expect(postMock).toHaveBeenCalledTimes(1);
-    expect(console.warn).toHaveBeenCalledWith('[mock] Page beta graphql-error');
+    expect(console.warn).toHaveBeenCalledWith('[mock] Page beta beta UNKNOWN_ERROR');
   });
 
   it('lists the failed root fields as null when the mocks are off, without retrying', async () => {
@@ -136,7 +137,7 @@ describe('runContentQuery', () => {
 
   it('asks each root field alone when the whole operation is rejected and the mocks are on', async () => {
     env.isMockFallbackOn = true;
-    mockView.Page = { beta: { items: ['mock'] } };
+    mockView.MOCK_VIEW = { beta: { items: ['mock'] } };
     postMock
       .mockResolvedValueOnce(answer(400, { errors: [{ extensions: { code: 'BAD' } }] }))
       .mockResolvedValueOnce(answer(200, { data: { alpha: { title: 'real' } } }))
@@ -158,6 +159,68 @@ describe('runContentQuery', () => {
     }
   });
 
+  it('fills a root field named by an error path even when the answer is 200', async () => {
+    env.isMockFallbackOn = true;
+    mockView.MOCK_VIEW = { alpha: { title: 'mock' }, beta: { items: ['mock'] } };
+    postMock.mockResolvedValue(
+      answer(200, {
+        data: { alpha: { title: 'real' }, beta: null },
+        errors: [{ path: ['beta', 0], extensions: { code: 'FORBIDDEN' } }],
+      }),
+    );
+
+    const result = await runContentQuery(PAGE);
+
+    expect(result.data).toEqual({ alpha: { title: 'real' }, beta: { items: ['mock'] } });
+    expect(postMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats an error without a path as a failure of every root field and asks each alone', async () => {
+    env.isMockFallbackOn = true;
+    mockView.MOCK_VIEW = { beta: { items: ['mock'] } };
+    postMock
+      .mockResolvedValueOnce(
+        answer(200, {
+          data: { alpha: { title: 'real' }, beta: null },
+          errors: [{ extensions: { code: 'BAD' } }],
+        }),
+      )
+      .mockResolvedValueOnce(answer(200, { data: { alpha: { title: 'real' } } }))
+      .mockResolvedValueOnce(answer(200, { errors: [{ extensions: { code: 'BAD' } }] }));
+
+    const result = await runContentQuery(PAGE);
+
+    expect(result.data).toEqual({ alpha: { title: 'real' }, beta: { items: ['mock'] } });
+    expect(postMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('returns a null root field without an error as null, with no mock and not failed', async () => {
+    env.isMockFallbackOn = true;
+    mockView.MOCK_VIEW = { alpha: { title: 'mock' }, beta: { items: ['mock'] } };
+    postMock.mockResolvedValue(answer(200, { data: { alpha: null, beta: { items: [] } } }));
+
+    const result = await runContentQuery(PAGE);
+
+    expect(result).toEqual({ data: { alpha: null, beta: { items: [] } }, failedRootFields: [] });
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it('picks the mock by the mock key of the root field', async () => {
+    env.isMockFallbackOn = true;
+    mockView.MOCK_VIEW = { sharedAlpha: { title: 'keyed mock' } };
+    const keyed = defineContentQuery<PageData>({
+      operationName: 'Page',
+      rootFields: ROOT_FIELDS,
+      mockKeys: { alpha: 'sharedAlpha' as never },
+    });
+    postMock.mockRejectedValue(restFailure('NETWORK'));
+
+    const result = await runContentQuery(keyed);
+
+    expect(result.data.alpha).toEqual({ title: 'keyed mock' });
+    expect(result.failedRootFields).toEqual(['beta']);
+  });
+
   it('never throws on a transport failure and never prints the token', async () => {
     postMock.mockRejectedValue(restFailure('NETWORK'));
 
@@ -169,12 +232,12 @@ describe('runContentQuery', () => {
 
   it('reports a timeout as the mock reason', async () => {
     env.isMockFallbackOn = true;
-    mockView.Page = { alpha: { title: 'mock' }, beta: { items: [] } };
+    mockView.MOCK_VIEW = { alpha: { title: 'mock' }, beta: { items: [] } };
     postMock.mockRejectedValue(restFailure('TIMEOUT'));
 
     await runContentQuery(PAGE);
 
-    expect(console.warn).toHaveBeenCalledWith('[mock] Page alpha timeout');
+    expect(console.warn).toHaveBeenCalledWith('[mock] Page alpha alpha TIMEOUT');
   });
 });
 
@@ -192,7 +255,7 @@ describe('runVisitorQuery', () => {
 
   it('throws the first error code, never fills a mock and never retries', async () => {
     env.isMockFallbackOn = true;
-    mockView.Page = { alpha: { title: 'mock' } };
+    mockView.MOCK_VIEW = { alpha: { title: 'mock' } };
     postMock.mockResolvedValue(answer(200, { errors: [{ extensions: { code: 'BAD_INPUT' } }] }));
 
     await expect(runVisitorQuery(PAGE, 'visitor-token')).rejects.toMatchObject({
