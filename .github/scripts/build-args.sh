@@ -4,6 +4,8 @@
 # Reads ENVIRONMENT, TURBO_VERSION, VITE_API_BASE_URL (the admin-host API base,
 # https://admin.<domain>/api/v1), NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 # APP_ENV (web: development | staging | production) from the environment.
+# The production Environment builds web only with APP_ENV=production; staging and
+# local accept all three values.
 # Appends `api_url` (cms-admin only) and a `build_args` block to $GITHUB_OUTPUT
 # (stdout when it is unset). Every check runs before anything is written, so a
 # failure leaves the output empty; it prints one `::error::<KEY> ...` line naming
@@ -47,6 +49,12 @@ require_app_env() { # value
   esac
 }
 
+require_production_app_env() { # value
+  if [ "${environment}" = production ] && [ "${1}" != production ]; then
+    fail "APP_ENV for ${environment} must be production"
+  fi
+}
+
 validate() {
   require_single_line TURBO_VERSION "${turbo_version}"
   case "${app}" in
@@ -56,6 +64,7 @@ validate() {
       ;;
     web)
       require_app_env "${web_app_env}"
+      require_production_app_env "${web_app_env}"
       require_single_line NEXT_PUBLIC_ADMIN_URL "${web_admin_url}"
       require_single_line NEXT_PUBLIC_TURNSTILE_SITE_KEY "${web_turnstile_site_key}"
       ;;

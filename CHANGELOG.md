@@ -22,7 +22,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### DevOps patches
 
-- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` (`staging` or `production`) is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build (the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 
 ### Changes
 
