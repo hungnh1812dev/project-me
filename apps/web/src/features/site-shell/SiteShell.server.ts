@@ -17,19 +17,22 @@ export const SITE_SHELL_QUERY = defineContentQuery<SiteShell>({
 });
 
 /**
- * The header and shared texts; one request per render. Throws when any root
- * field is missing, because the layout cannot render without them.
+ * The header and shared texts; one request per render. Returns `null` when any
+ * root field is missing (failed, or answered null because no content is published),
+ * so the layout renders without the shell instead of failing every page.
  */
-export const loadSiteShell = cache(async (): Promise<SiteShell> => {
+export const loadSiteShell = cache(async (): Promise<SiteShell | null> => {
   const { data, failedRootFields } = await runContentQuery(SITE_SHELL_QUERY);
-  if (failedRootFields.length > 0) {
-    const error = new WebApiError({
+  const { header, siteText, signInText } = data;
+  if (failedRootFields.length === 0 && header && siteText && signInText) {
+    return { header, siteText, signInText };
+  }
+  logApiError(
+    new WebApiError({
       source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
       errorCode: API_ERROR_CODES.GRAPHQL.NO_DATA,
       operation: SITE_SHELL_OPERATION_NAME,
-    });
-    logApiError(error);
-    throw error;
-  }
-  return data as SiteShell;
+    }),
+  );
+  return null;
 });

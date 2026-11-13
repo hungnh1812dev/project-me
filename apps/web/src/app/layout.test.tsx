@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 import { SITE_SHELL_MOCK } from '../apis/server/graphql/mocks/SiteShell.mock';
+import { LAST_RESORT_TEXT } from '../features/site-shell';
 import { loadSiteShell } from '../features/site-shell/SiteShell.server';
 import RootLayout, { generateMetadata } from './layout';
 
@@ -10,8 +11,12 @@ vi.mock('../features/site-shell/SiteShell.server', () => ({
   loadSiteShell: vi.fn<typeof loadSiteShell>(),
 }));
 vi.mock('../components/layouts/AccountMenu', () => ({ AccountMenu: () => <div>menu</div> }));
+const providersRendered = vi.fn<() => void>();
 vi.mock('../components/layouts/AppProviders', () => ({
-  Providers: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  Providers: ({ children }: { children: React.ReactNode }) => {
+    providersRendered();
+    return <>{children}</>;
+  },
 }));
 vi.mock('../components/layouts/CspNonce', () => ({ CspNonce: () => null }));
 
@@ -42,8 +47,16 @@ describe('RootLayout', () => {
     expect(await generateMetadata()).toEqual({ title: SITE_SHELL_MOCK.header.name });
   });
 
-  it('throws when the shell cannot load, so no page renders without its text', async () => {
-    vi.mocked(loadSiteShell).mockRejectedValue(new Error('no shell'));
-    await expect(RootLayout({ children: null })).rejects.toThrow('no shell');
+  it('renders the page with only the brand when the shell is not published', async () => {
+    vi.mocked(loadSiteShell).mockResolvedValue(null);
+    render(await RootLayout({ children: <p>page</p> }), { container: document.documentElement });
+    expect(screen.getByRole('link', { name: LAST_RESORT_TEXT.appName })).toHaveAttribute(
+      'href',
+      '/',
+    );
+    expect(screen.getByText('page')).toBeVisible();
+    expect(providersRendered).toHaveBeenCalled();
+    expect(screen.queryByRole('navigation')).toBeNull();
+    expect(await generateMetadata()).toEqual({ title: LAST_RESORT_TEXT.appName });
   });
 });

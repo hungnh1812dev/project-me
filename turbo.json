@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build", "db:generate"],
+      "env": ["APP_ENV"],
       "inputs": [
         "$TURBO_DEFAULT$",
         "!**/*.md",
@@ -15,14 +16,17 @@
     },
     "test": {
       "dependsOn": ["^build", "db:generate"],
+      "passThroughEnv": ["APP_ENV"],
       "outputs": ["coverage/**"]
     },
     "lint": {
       "dependsOn": ["^build", "db:generate"],
+      "passThroughEnv": ["APP_ENV"],
       "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build", "db:generate"],
+      "passThroughEnv": ["APP_ENV"],
       "outputs": []
     },
     "db:generate": {

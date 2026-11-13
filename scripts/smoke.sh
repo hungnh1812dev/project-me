@@ -30,7 +30,7 @@ source "$ROOT_DIR/scripts/lib/stack-seed.sh"
 # shellcheck source=lib/expected-output.sh
 source "$ROOT_DIR/scripts/lib/expected-output.sh"
 # Check sections: each defines check_<section>() functions, run in order below.
-for section_file in routing security-headers cors init-container database-roles owner-setup auth mail; do
+for section_file in routing security-headers cors init-container database-roles owner-setup auth mail content; do
   # shellcheck source=/dev/null
   source "$ROOT_DIR/scripts/smoke/$section_file.sh"
 done
@@ -269,6 +269,7 @@ check_init_container
 check_database_roles
 check_owner_setup
 check_migrations_again
+check_seed_content
 check_content_token
 check_auth
 check_two_factor
