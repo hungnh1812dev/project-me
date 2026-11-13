@@ -1,43 +1,52 @@
-import { AxiosError, type AxiosResponse } from 'axios';
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
 
-import { apiFailureOf, formatRetryAfter, retryAfterSecondsOf } from './ApiFailure.errors';
-
-function failedWith(status: number, data: unknown, headers = {}) {
-  return new AxiosError('failed', undefined, undefined, undefined, {
-    status,
-    data,
-    headers,
-  } as AxiosResponse);
-}
-
-describe('apiFailureOf', () => {
-  it('reads an answerless axios error as a network failure', () => {
-    expect(apiFailureOf(new AxiosError('down'))).toEqual({ kind: 'network' });
-  });
-
-  it('reads a 429 with its Retry-After', () => {
-    expect(apiFailureOf(failedWith(429, null, { 'retry-after': '30' }))).toEqual({
-      kind: 'rate-limited',
-      retryAfterSeconds: 30,
-    });
-  });
-
-  it('keeps status and error code of other answers', () => {
-    expect(apiFailureOf(failedWith(401, { errorCode: 'X' }))).toEqual({
-      kind: 'http',
-      status: 401,
-      errorCode: 'X',
-    });
-  });
-
-  it('treats a non-axios error as unexpected', () => {
-    expect(apiFailureOf(new Error('boom'))).toEqual({ kind: 'unexpected' });
-  });
-});
+import {
+  formatRetryAfter,
+  isRateLimitError,
+  retryAfterSecondsOf,
+  webApiErrorOf,
+} from './ApiFailure.errors';
 
 describe('retryAfterSecondsOf', () => {
   it.each(['0', '-3', 'soon', '', undefined])('rejects %s', (value) => {
     expect(retryAfterSecondsOf(value)).toBeUndefined();
+  });
+
+  it('reads whole seconds', () => {
+    expect(retryAfterSecondsOf(' 30 ')).toBe(30);
+  });
+});
+
+describe('isRateLimitError', () => {
+  it.each([API_ERROR_CODES.BFF.RATE_LIMITED, API_ERROR_CODES.CLIENT.RATE_LIMITED])(
+    'knows %s',
+    (errorCode) => {
+      expect(isRateLimitError(new WebApiError({ source: API_ERROR_SOURCES.BFF, errorCode }))).toBe(
+        true,
+      );
+    },
+  );
+
+  it('rejects other codes', () => {
+    expect(
+      isRateLimitError(
+        new WebApiError({ source: API_ERROR_SOURCES.BFF, errorCode: API_ERROR_CODES.CLIENT.HTTP }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('webApiErrorOf', () => {
+  it('keeps a WebApiError and reads anything else as unexpected', () => {
+    const error = new WebApiError({
+      source: API_ERROR_SOURCES.BFF,
+      errorCode: API_ERROR_CODES.BFF.INVALID_REQUEST,
+    });
+    expect(webApiErrorOf(error)).toBe(error);
+    expect(webApiErrorOf(new Error('boom'))).toMatchObject({
+      source: 'client',
+      errorCode: 'CLIENT_UNEXPECTED',
+    });
   });
 });
 

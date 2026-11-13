@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
-import { apiFailureOf, type ApiFailure } from '@/apis/client/ApiFailure.errors';
+import { isRateLimitError, webApiErrorOf } from '@/apis/client/ApiFailure.errors';
+import type { WebApiError } from '@/apis/WebApi.errors';
 import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@/configs/Http.constants';
 
 /**
@@ -13,11 +14,11 @@ import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@/configs/Http.constants';
  */
 export function useEmailCode(
   send: () => Promise<void>,
-  onFailure?: (failure: ApiFailure) => void,
+  onFailure?: (failure: WebApiError) => void,
   isReady = true,
 ) {
   const [sentCount, setSentCount] = useState(0);
-  const [failure, setFailure] = useState<ApiFailure | null>(null);
+  const [failure, setFailure] = useState<WebApiError | null>(null);
   const [isCoolingDown, setIsCoolingDown] = useState(false);
   const autoSent = useRef(false);
   const cooldownTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -27,10 +28,10 @@ export function useEmailCode(
     onMutate: () => setFailure(null),
     onSuccess: () => setSentCount((count) => count + 1),
     onError: (cause) => {
-      const mapped = apiFailureOf(cause);
+      const mapped = webApiErrorOf(cause);
       setFailure(mapped);
       onFailure?.(mapped);
-      if (mapped.kind === 'rate-limited' && mapped.retryAfterSeconds !== undefined) {
+      if (isRateLimitError(mapped) && mapped.retryAfterSeconds !== undefined) {
         setIsCoolingDown(true);
         clearTimeout(cooldownTimer.current);
         cooldownTimer.current = setTimeout(

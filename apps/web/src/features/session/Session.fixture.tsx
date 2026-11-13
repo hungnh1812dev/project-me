@@ -3,7 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import type { Mock } from 'vitest';
 
+import { clientErrorOf } from '@/apis/client/Api.client';
 import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import type { WebApiError } from '@/apis/WebApi.errors';
 import { SiteTextProvider } from '@/features/site-shell';
 
 import type { AuthApi, CurrentUser } from './Auth.api';
@@ -46,6 +48,15 @@ export function httpError(
     config: { headers: new AxiosHeaders() },
   } as AxiosResponse;
   return new AxiosError('failed', undefined, undefined, undefined, response);
+}
+
+/** What the browser client rejects with for that BFF answer. */
+export function bffError(
+  status: number,
+  data: unknown = {},
+  headers: Record<string, string> = {},
+): WebApiError {
+  return clientErrorOf(httpError(status, data, headers));
 }
 
 /** Renders children with the shell text of `SHELL_TEXT`, as the root layout does. */

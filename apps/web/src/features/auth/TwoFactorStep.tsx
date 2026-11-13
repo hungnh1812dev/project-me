@@ -5,9 +5,9 @@ import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import type { Alert, ApiFailure } from '@/apis/client/ApiFailure.errors';
+import type { Alert } from '@/apis/client/ApiFailure.errors';
+import { API_ERROR_CODES, type WebApiError } from '@/apis/WebApi.errors';
 import {
-  BFF_ERROR_CODES,
   LOGIN_CODE_LENGTH,
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
@@ -31,13 +31,13 @@ function methodOf(methods: readonly string[]): TwoFactorMethod | undefined {
 }
 
 /** Failure -> alert, or 'expired' when the challenge is gone. */
-function alertOf(failure: ApiFailure, text: SignInText): Alert | 'expired' {
+function alertOf(failure: WebApiError, text: SignInText): Alert | 'expired' {
   const shared = sharedFailureAlertOf(failure, text.errors);
   if (shared !== null) return shared;
-  if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.TWO_FACTOR_EXPIRED) {
+  if (failure.errorCode === API_ERROR_CODES.BFF.TWO_FACTOR_EXPIRED) {
     return 'expired';
   }
-  if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.INVALID_TWO_FACTOR_CODE) {
+  if (failure.errorCode === API_ERROR_CODES.BFF.INVALID_TWO_FACTOR_CODE) {
     return { tone: 'error', message: text.twoFactor.invalidCode };
   }
   return { tone: 'error', message: text.errors.unexpected };

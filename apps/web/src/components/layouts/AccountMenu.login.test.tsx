@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 
 import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
 import {
+  bffError,
   fakeApi,
-  httpError,
   SHELL_TEXT,
   TEST_USER,
   Wrapper,
@@ -93,7 +93,7 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -106,7 +106,7 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(429, {}, { 'retry-after': '120' })),
+        .mockRejectedValue(bffError(429, {}, { 'retry-after': '120' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -122,7 +122,7 @@ describe('sign-in dialog', () => {
     ['BFF_UPSTREAM_FAILED', 502, login.errors.unexpected],
   ])('maps %s to its message', async (errorCode, status, message) => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockRejectedValue(httpError(status, { errorCode })),
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(bffError(status, { errorCode })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -161,7 +161,7 @@ describe('sign-in dialog', () => {
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -178,7 +178,7 @@ describe('sign-in dialog', () => {
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -281,7 +281,7 @@ describe('human check', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValueOnce(httpError(403, { errorCode: 'BFF_HUMAN_CHECK_FAILED' }))
+        .mockRejectedValueOnce(bffError(403, { errorCode: 'BFF_HUMAN_CHECK_FAILED' }))
         .mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
     });
     const { user } = await openDialog(api);

@@ -1,6 +1,10 @@
-import { AxiosError } from 'axios';
-
 import { SITE_SHELL_MOCK } from '@/apis/server/restful/mocks/SiteShell.mock';
+import {
+  API_ERROR_CODES,
+  API_ERROR_SOURCES,
+  WebApiError,
+  type ApiErrorCode,
+} from '@/apis/WebApi.errors';
 
 import { PrivilegedAccessError } from '../session';
 import { credentialAlertOf, loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
@@ -18,8 +22,13 @@ describe('loginErrorAlertOf', () => {
   });
 
   it('maps any other error through its failure', () => {
-    expect(loginErrorAlertOf(new AxiosError('down'), errors, (failure) => failure.kind)).toBe(
-      'network',
+    const down = new WebApiError({
+      source: API_ERROR_SOURCES.CLIENT,
+      errorCode: API_ERROR_CODES.CLIENT.NETWORK,
+    });
+    expect(loginErrorAlertOf(down, errors, (failure) => failure.errorCode)).toBe('CLIENT_NETWORK');
+    expect(loginErrorAlertOf(new Error('x'), errors, (failure) => failure.errorCode)).toBe(
+      'CLIENT_UNEXPECTED',
     );
   });
 });
@@ -37,8 +46,11 @@ describe('rateLimitedMessage', () => {
 });
 
 describe('credentialAlertOf', () => {
-  const http = (errorCode: string | undefined, status = 400) =>
-    credentialAlertOf({ kind: 'http', status, errorCode }, errors);
+  const http = (errorCode: ApiErrorCode, statusCode = 400) =>
+    credentialAlertOf(
+      new WebApiError({ source: API_ERROR_SOURCES.BFF, errorCode, statusCode }),
+      errors,
+    );
 
   it('reads BFF_INVALID_CREDENTIALS as one generic message', () => {
     expect(http('BFF_INVALID_CREDENTIALS', 401)).toEqual({
@@ -57,15 +69,36 @@ describe('credentialAlertOf', () => {
 
   it('reads any other code, with or without a status, as unexpected', () => {
     expect(http('BFF_INVALID_REQUEST')).toEqual({ tone: 'error', message: errors.unexpected });
-    expect(http(undefined, 500)).toEqual({ tone: 'error', message: errors.unexpected });
+    expect(http(API_ERROR_CODES.CLIENT.HTTP, 500)).toEqual({
+      tone: 'error',
+      message: errors.unexpected,
+    });
   });
 
   it('maps a rate limit to its wait and a network failure to a warning', () => {
-    expect(credentialAlertOf({ kind: 'rate-limited', retryAfterSeconds: 30 }, errors)).toEqual({
+    expect(
+      credentialAlertOf(
+        new WebApiError({
+          source: API_ERROR_SOURCES.BFF,
+          errorCode: API_ERROR_CODES.CLIENT.RATE_LIMITED,
+          statusCode: 429,
+          retryAfterSeconds: 30,
+        }),
+        errors,
+      ),
+    ).toEqual({
       tone: 'warning',
       message: 'Too many sign-in attempts. Try again in 30 seconds.',
     });
-    expect(credentialAlertOf({ kind: 'network' }, errors)).toEqual({
+    expect(
+      credentialAlertOf(
+        new WebApiError({
+          source: API_ERROR_SOURCES.CLIENT,
+          errorCode: API_ERROR_CODES.CLIENT.NETWORK,
+        }),
+        errors,
+      ),
+    ).toEqual({
       tone: 'warning',
       message: errors.network,
     });

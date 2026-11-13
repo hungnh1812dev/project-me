@@ -45,7 +45,7 @@ Tests: 4 files (not listed).
 
 | File | Description |
 |---|---|
-| `LoginAlerts.rules.ts` | Maps sign-in failures (BFF error codes, rate limit, network) to their alerts (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
+| `LoginAlerts.rules.ts` | Maps a `WebApiError` of a sign-in step (its `errorCode` and `retryAfterSeconds`) to its alert (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
 | `Turnstile.client.ts` | Types of the Cloudflare explicit-render API on `window.turnstile` (exports `TurnstileApi`) |
 | `TurnstileWidget.tsx` | Renders one Turnstile challenge for an action and loads the script only while mounted (exports `TurnstileWidget`) |
 | `TwoFactorStep.tsx` | Second sign-in step (code check; the BFF holds the temp token) (exports `TwoFactorStep`) |

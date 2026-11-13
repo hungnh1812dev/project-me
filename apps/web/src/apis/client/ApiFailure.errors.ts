@@ -1,6 +1,5 @@
-import { isAxiosError } from 'axios';
-
-import { HTTP_STATUS, RETRY_AFTER_HEADER, SECONDS_PER_MINUTE } from '@/configs/Http.constants';
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+import { SECONDS_PER_MINUTE } from '@/configs/Http.constants';
 
 export type AlertTone = 'error' | 'warning';
 
@@ -10,13 +9,6 @@ export interface Alert {
   message: string;
 }
 
-/** A failed cms-api call, reduced to what the UI branches on. */
-export type ApiFailure =
-  | { kind: 'network' }
-  | { kind: 'rate-limited'; retryAfterSeconds: number | undefined }
-  | { kind: 'http'; status: number; errorCode: string | undefined }
-  | { kind: 'unexpected' };
-
 /** Whole seconds from a `Retry-After` header, or undefined when unusable. */
 export function retryAfterSecondsOf(retryAfter: unknown): number | undefined {
   const text = typeof retryAfter === 'string' ? retryAfter.trim() : '';
@@ -24,23 +16,22 @@ export function retryAfterSecondsOf(retryAfter: unknown): number | undefined {
   return Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
 }
 
-export function apiFailureOf(error: unknown): ApiFailure {
-  if (!isAxiosError(error)) return { kind: 'unexpected' };
-  const response = error.response;
-  if (response === undefined) return { kind: 'network' };
-  if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
-    const headers = response.headers as Record<string, unknown>;
-    return {
-      kind: 'rate-limited',
-      retryAfterSeconds: retryAfterSecondsOf(headers[RETRY_AFTER_HEADER]),
-    };
-  }
-  const errorCode = (response.data as { errorCode?: unknown } | null)?.errorCode;
-  return {
-    kind: 'http',
-    status: response.status,
-    errorCode: typeof errorCode === 'string' ? errorCode : undefined,
-  };
+/** A rate limit, whether the BFF or the browser client named it. */
+export function isRateLimitError(error: WebApiError): boolean {
+  return (
+    error.errorCode === API_ERROR_CODES.BFF.RATE_LIMITED ||
+    error.errorCode === API_ERROR_CODES.CLIENT.RATE_LIMITED
+  );
+}
+
+/** Any thrown value as a `WebApiError`: the client already made one, anything else is unexpected. */
+export function webApiErrorOf(error: unknown): WebApiError {
+  return error instanceof WebApiError
+    ? error
+    : new WebApiError({
+        source: API_ERROR_SOURCES.CLIENT,
+        errorCode: API_ERROR_CODES.CLIENT.UNEXPECTED,
+      });
 }
 
 /** The wording of a rate-limit message for each size of wait. */
