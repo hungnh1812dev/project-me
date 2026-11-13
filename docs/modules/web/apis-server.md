@@ -43,7 +43,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 - New bucket or limit: `BFF_RATE_LIMITS` in `configs/Http.constants.ts` (and its override key in `BFF_RATE_LIMIT_OVERRIDE_ENV_KEYS`, `configs/Server.env.ts`). Each bucket's limiter is built on its first request with `getServerEnv().bffRateLimitOverrides[bucket]` or the default limit; the override is for test stacks only (ADR 0018 section 2.7).
 - New mock: a plain-data file in `graphql/mocks/` (no imports), spread into `MOCK_VIEW` under a unique key (the root field name, or the `mockKeys` entry of the query).
 - New server call method or header: `restful/ServerApi.client.ts`; a new failure code: `apis/WebApi.errors.ts`.
-- New env key: `configs/Server.env.ts` and `apps/web/.env.example`. `APP_ENV` (value list in `configs/AppEnv.rules.ts`, checked at build by `next.config.ts` and at start against the inlined `APP_ENV_BUILD`) is the only switch of `getServerEnv().isMockFallbackOn`; `ALLOW_MOCK_FALLBACK` no longer exists.
+- New env key: `configs/Server.env.ts` and `apps/web/.env.example`. `APP_ENV` (value list in `configs/AppEnv.rules.ts`, checked at build by `next.config.ts` and at start against the inlined `APP_ENV_BUILD`) is the only switch of `getServerEnv().isMockFallbackOn`; no other key turns the mocks on.
 
 ## Files
 
