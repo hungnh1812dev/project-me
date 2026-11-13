@@ -1,6 +1,7 @@
-# Smoke section: publishes the site-shell and CV content the staging web renders (no mock fallback
-# on a staging web). Sourced by scripts/smoke.sh; runs after the owner exists, before the web
-# container is recreated, so web starts against published content.
+# Smoke section: publishes the site-shell and CV content so the staging web renders real cms-api data
+# and the @web specs read it. The staging web keeps the mock fallback for failed reads only (WEB-5);
+# an unpublished page text is a failed page, never mocked (PS-2). Sourced by scripts/smoke.sh; runs
+# after the owner exists, before the web container is recreated, so web starts against published content.
 
 CONTENT_DOCUMENTS_PATH="/documents"
 CONTENT_PUBLISH_SEGMENT="publish"
