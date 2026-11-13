@@ -21,8 +21,8 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 21 | admin-ui-premium-saas | done | features/admin-ui-premium-saas/ | packages/form-commons (styles, components/ui, index, public API snapshot), apps/cms-admin (index.html, assets/styles, app, components, components/layouts, views, features access/content/media, configs/locales/en, test fixture), apps/e2e (qc), docs/modules, CHANGELOG.md | f72c9317f063c05704602cdc77e8c54d156eac03 | features/admin-ui-premium-saas/SUMMARY.md |
 | 7 | backup | done | features/backup/ | apps/cms-api, apps/cms-admin, docs/deployments | f4c4690 | features/backup/SUMMARY.md |
 | 23 | schema-builder | done (2026-11-12) | features/schema-builder/ | apps/cms-api (content-engine, content-types), apps/cms-admin (features/content-types, components, components/layouts, views/schema-builder), apps/e2e (qc), pnpm-lock.yaml, docs, CHANGELOG.md | Base: 9e686fb00bc433919d226c9b31f42e19abcb95c0 | features/schema-builder/SUMMARY.md |
-| 24 | e2e-flow-tags | todo | features/e2e-flow-tags/ | apps/e2e | - | - |
-| 25 | web-env-errors | todo | features/web-env-errors/ | apps/web, .github, docker-compose.smoke.yml, scripts/, docs/deployments, docs/apps/web, docs/guidelines, docs/modules/web, CHANGELOG.md | - | - |
+| 24 | e2e-flow-tags | done | features/e2e-flow-tags/ | apps/e2e | ff41b4d5c90643d809726c23ba2f10352eef5646 | features/e2e-flow-tags/SUMMARY.md |
+| 25 | web-env-errors | done | features/web-env-errors/ | apps/web, .github, docker-compose.smoke.yml, scripts/, docs/deployments, docs/apps/web, docs/guidelines, docs/modules/web, CHANGELOG.md | be7d545e16077df8f4e848dbc07dbf55f84cdd3c | features/web-env-errors/SUMMARY.md |
 | 9 | mf | todo | features/mf/ | apps/cms-admin, apps/web (planner to confirm when opened) | - | - |
 | 6 | reviewer-console | todo, on hold (user 2026-11-10; after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
@@ -32,6 +32,12 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
 ## Follow-ups
+- web-env-errors: `apps/e2e/src/Apps.contract.ts` is uncommitted (qc's e2e file; user chose to leave it uncommitted 2026-11-13) -> user decides when it is committed.
+- web-env-errors: no web-only tier 3 stack command in project.md yet; qc starts the web subset by hand or uses the full smoke stack -> manager adds the command to project.md, unscheduled.
+- web-env-errors: BFF_HUMAN_CHECK_FAILED (failing Turnstile secret) is not shown dynamically at any tier; verify when a stack with a failing secret is available -> qc, unscheduled.
+- web-env-errors: CWEE-A-7 (sign-in alerts) passed on the Playwright spec, not a DevTools walk; a DevTools rerun is optional -> qc, unscheduled.
+- web-env-errors: about 34 dev-only CSP inline-style console errors per page on web (CWEE-F-4); the proxy CSP file is not in this feature's diff; /favicon.ico returns 404 (no icon in apps/web/public) -> unscheduled.
+- web-env-errors: form-commons build prints rollup-plugin-dts warnings about `NativeFieldProps` not re-exported (outside this feature) -> unscheduled.
 - backup (planner REPLAN 6, 2026-11-10): BK-5 (ui-builder) puts the /backups first state on a card before checkpoint BK-C; BK-C checks downloads with the API mocked, the real-bucket download check is in launch-gate LG-3 -> next step is `CHECKLIST BK` (sonnet), then BK-5.
 - mf: not planned yet; `PLAN mf` (opus) when opened.
 - admin-ui-premium-saas: guest role's read of GET /content-types must be restricted (no read grant, no metadata; CAPSB-19 security pass) -> core-builder, unscheduled.
