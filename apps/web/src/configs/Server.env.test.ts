@@ -1,12 +1,18 @@
 import { TURNSTILE } from './Security.constants';
 import {
   DEFAULT_TRUST_PROXY_HOPS,
-  parseServerEnv,
+  parseServerEnv as parseServerEnvWithBuild,
   SESSION_SECRET_MIN_BYTES,
   SMOKE_STACK_OPT_IN,
 } from './Server.env';
 
+/** The build value defaults to the runtime one, as in a correct image. */
+function parseServerEnv(source: Record<string, string | undefined>, buildAppEnv = source.APP_ENV) {
+  return parseServerEnvWithBuild(source, buildAppEnv);
+}
+
 const VALID = {
+  APP_ENV: 'staging',
   APP_API_URL: 'http://cms-api:3000/api/v1/',
   WEB_ORIGIN: 'https://example.test/',
   WEB_SESSION_SECRET: 'short-dev-secret',
@@ -25,6 +31,7 @@ describe('parseServerEnv', () => {
       appApiUrl: 'http://cms-api:3000/api/v1',
       appApiToken: undefined,
       revalidateOverrideSeconds: 0,
+      appEnv: 'staging',
       isMockFallbackOn: true,
       webOrigin: 'https://example.test',
       sessionSecret: 'short-dev-secret',
@@ -107,39 +114,44 @@ describe('parseServerEnv', () => {
     );
   });
 
-  describe('ALLOW_MOCK_FALLBACK', () => {
-    const PRODUCTION = {
-      ...VALID,
-      ...PRODUCTION_HOSTNAME,
-      NODE_ENV: 'production',
-      WEB_SESSION_SECRET: 'x'.repeat(40),
-      APP_API_TOKEN: 'ak_live_abc',
-    };
-
-    it('is on outside production', () => {
-      expect(parseServerEnv(VALID).isMockFallbackOn).toBe(true);
-      expect(parseServerEnv({ ...VALID, NODE_ENV: 'development' }).isMockFallbackOn).toBe(true);
+  describe('APP_ENV', () => {
+    it.each([undefined, '', ' '])('fails when the key is %j', (value) => {
+      expect(() => parseServerEnv({ ...VALID, APP_ENV: value })).toThrow(/APP_ENV is not set/);
     });
 
-    it.each([undefined, '', ' '])('is off in production when the key is %j', (value) => {
-      expect(parseServerEnv({ ...PRODUCTION, ALLOW_MOCK_FALLBACK: value }).isMockFallbackOn).toBe(
-        false,
-      );
+    it.each(['prod', 'Production', 'test'])('fails on the unknown value %s', (value) => {
+      expect(() => parseServerEnv({ ...VALID, APP_ENV: value })).toThrow(/APP_ENV must be one of/);
     });
 
-    it('is on in production with the smoke opt-in', () => {
-      expect(
-        parseServerEnv({ ...PRODUCTION, ALLOW_MOCK_FALLBACK: SMOKE_STACK_OPT_IN }).isMockFallbackOn,
-      ).toBe(true);
+    it.each([undefined, 'production', 'development'])(
+      'fails when the build value is %j and the runtime value is staging',
+      (build) => {
+        expect(() => parseServerEnvWithBuild(VALID, build)).toThrow(
+          /APP_ENV at runtime must equal/,
+        );
+      },
+    );
+
+    it.each([
+      ['development', true],
+      ['staging', true],
+      ['production', false],
+    ])('%s turns the mock fallback on: %s', (appEnv, isOn) => {
+      const env = parseServerEnv({ ...VALID, APP_ENV: appEnv });
+      expect(env.appEnv).toBe(appEnv);
+      expect(env.isMockFallbackOn).toBe(isOn);
     });
 
-    it.each(['true', '1', 'Smoke'])('refuses the value %s in any environment', (value) => {
-      expect(() => parseServerEnv({ ...VALID, ALLOW_MOCK_FALLBACK: value })).toThrow(
-        /ALLOW_MOCK_FALLBACK/,
-      );
-      expect(() => parseServerEnv({ ...PRODUCTION, ALLOW_MOCK_FALLBACK: value })).toThrow(
-        /ALLOW_MOCK_FALLBACK/,
-      );
+    it('ignores NODE_ENV and the retired ALLOW_MOCK_FALLBACK key', () => {
+      const env = {
+        ...VALID,
+        ...PRODUCTION_HOSTNAME,
+        NODE_ENV: 'production',
+        WEB_SESSION_SECRET: 'x'.repeat(40),
+        ALLOW_MOCK_FALLBACK: SMOKE_STACK_OPT_IN,
+      };
+      expect(parseServerEnv(env).isMockFallbackOn).toBe(true);
+      expect(parseServerEnv({ ...env, APP_ENV: 'production' }).isMockFallbackOn).toBe(false);
     });
   });
 
