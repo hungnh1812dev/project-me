@@ -11,6 +11,7 @@ A Next.js server (standalone output) run by Node, as uid 1000, with no nginx in 
 - Image: `ghcr.io/hungnh1812dev/project-me/web:<app version>`, built from `apps/web/Dockerfile` (build context is the repo root) by CI on a repo tag; tags are immutable ([ci-cd.md](ci-cd.md) sections 3 and 4).
 - Build args, baked into the browser bundle, so a change needs a new release image, never a restart ([ci-cd.md](ci-cd.md) section 3, [configmaps.md](configmaps.md) section 4):
   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: required, public Cloudflare Turnstile site key; the build fails without it.
+  - `APP_ENV`: required, `staging` or `production`; the build fails without it; the same value goes in `web-secrets` and web refuses to start when the two differ.
   - `NEXT_PUBLIC_ADMIN_URL`: optional; where the "Open CMS" header link points; empty hides the link.
 - Both come from GitHub Environment variables ([ci-cd.md](ci-cd.md) section 5). The images set no secret.
 
@@ -35,9 +36,10 @@ Names and meaning only. Values for production: [configmaps.md](configmaps.md) se
 | `TRUST_PROXY_HOPS`            | env, default 1              | proxies in front of web; the visitor IP is the Nth address from the right of `X-Forwarded-For` ([traefik.md](traefik.md) section 3)                   |
 | `CLIENT_IP_HEADER`            | env, optional               | header a trusted CDN sets to the visitor IP; wins over `X-Forwarded-For` when set                                                                     |
 | `APP_API_TOKEN`               | `web-secrets`, required     | cms-api API token (`ak_live_...`) that web sends as Bearer for page content; create it with a read-only account so its reads are the `public` profile |
+| `APP_ENV`                     | `web-secrets`, required     | `staging` or `production`; must equal the build value (GitHub variable `APP_ENV`); not `production` turns the mock fallback on                        |
 | `WEB_PORT`                    | env, default 8080           | port the server listens on                                                                                                                            |
 
-Never set in deploy config (smoke and dev stacks only; production web refuses or ignores them): `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `ALLOW_MOCK_FALLBACK`, `WEB_REVALIDATE_SECONDS` (the cache is 180 s per call without it). Removed keys to delete from the deploy repo: `NEXT_PUBLIC_API_BASE_URL`, `WEB_STATUS_PAGE_ENABLED`, `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS` ([configmaps.md](configmaps.md) section 4).
+Never set in deploy config (smoke and dev stacks only; production web refuses or ignores them): `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `WEB_REVALIDATE_SECONDS` (the cache is 180 s per call without it). Removed keys to delete from the deploy repo: `NEXT_PUBLIC_API_BASE_URL`, `WEB_STATUS_PAGE_ENABLED`, `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS` ([configmaps.md](configmaps.md) section 4).
 
 ## 5. Routing (Traefik)
 

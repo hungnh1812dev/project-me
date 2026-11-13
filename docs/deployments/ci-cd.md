@@ -67,7 +67,7 @@ Release images come only from a `v<x.y.z>` tag made by the `release-tag` skill i
 - Tags: a release image is tagged `<app version>` only (for example `cms-api:0.0.2`), immutable, no moving tag; it is pushed by the run of a repo tag `v<x.y.z>` run (`.github/scripts/release-apps.sh` picks the apps whose version changed since the previous release; it refuses a commit that is not the origin/main tip and any version that is not x.y.z) and the deploy repo `main` is bumped. Branch pushes push nothing (ADR 0016).
 - Each app is bumped only when its own image changed, so the three apps can sit on different tags.
 - Git tags: the repo tag `v<x.y.z>` (starts the release run) and one `<app>@<x.y.z>` per bumped app (a record only). The `staging` branch of the deploy repo is no longer bumped by CI.
-- Build-time values are baked into the images, so a change needs a new image, not a restart: web `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; cms-admin `VITE_API_BASE_URL`.
+- Build-time values are baked into the images, so a change needs a new image, not a restart: web `APP_ENV`, `NEXT_PUBLIC_ADMIN_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; cms-admin `VITE_API_BASE_URL`.
 
 ## 4. Publish and the deploy repo contract
 
@@ -116,6 +116,7 @@ Do the steps in order. Paths are GitHub web UI paths in this repo (`Settings > .
 | `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                            | deploy job                   |
 | `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory of the `<app>-sync-overlay.yaml` files (step 6)                          | deploy job; fails when unset |
 | `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin on the admin host: `https://admin.<domain>/api/v1` | cms-admin image build arg    |
+| `APP_ENV`                        | yes      | `staging` or `production`; must equal `APP_ENV` in the web Secret                  | web image build arg          |
 | `NEXT_PUBLIC_ADMIN_URL`          | no       | admin console URL                                                                  | web image build arg          |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes      | real Cloudflare Turnstile site key (public); the web Dockerfile fails without it   | web image build arg          |
 

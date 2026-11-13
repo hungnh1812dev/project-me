@@ -11,7 +11,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - e2e: every `tests/*.e2e.spec.ts` carries app tags (`@cms-admin`, `@web`, `@cms-api`) and flow tags, checked against `docs/apps` and `docs/flows` by `src/SpecTags.contract.test.ts`; qc selects a test scope with `--grep`.
 - scripts: build and push the three app images to a local k3d registry ([local-registry.md](docs/deployments/local-registry.md)).
 - scripts: `pnpm dev:stack:seed` adds one media file and one document with a draft to a running dev stack, so the media and diff screens can be checked at tier 2.
-- web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a local mock fallback through `MockView.ts` (WEB-1..WEB-8).
+- web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a mock fallback through `MockView.ts` that is on only where `APP_ENV` is not `production` (WEB-1..WEB-9).
 - cms-admin: premium SaaS look (indigo primary, rounded cards, sticky sidebar and header, soft focus halo) and toasts for the outcomes of content, media, access and security actions (ADM-1..ADM-10).
 - form-commons: theme tokens for the premium look, a `Card` component and a `Toast` provider; web is unchanged.
 
@@ -21,10 +21,11 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### DevOps patches
 
-- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped; create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` (`staging` or `production`) is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build (the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 
 ### Changes
 
+- web: the mock fallback is switched by `APP_ENV` (`development`, `staging`, `production`; read at build and at runtime, which must match) instead of `ALLOW_MOCK_FALLBACK`; mocks fill only server GraphQL content reads, on an error, by key; the server, browser and BFF layers raise one error shape `WebApiError` (WEB-9, WEB-10).
 - web: spec for `APP_ENV` (`development`, `staging`, `production`, at build and at runtime) as the one switch of the mock fallback, replacing `ALLOW_MOCK_FALLBACK`; mocks only for server GraphQL content reads, only on an error (GraphQL `errors` with HTTP 200 included), chosen by key, loaded by dynamic import and never cached; and one API error shape `WebApiError` for the server and browser layers and the BFF (WEB-5, WEB-9, WEB-10).
 - cms-api: `POST /content-types/validate` (owner only) checks a content type definition against the registered types and returns the errors of the submitted definition; it stores nothing (flow schema-builder, SB-10).
 - cms-admin: the owner-only schema builder page `/schema-builder` with a field palette, canvas, property panel, live check, JSON import and copy or download; adds the `@dnd-kit` dependency (flow schema-builder, SB-1..SB-14).
