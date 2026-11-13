@@ -126,21 +126,21 @@ pnpm --filter @abyss/web dev
 
 Open `http://domain.localhost:5174`. The browser calls only web's own routes; the Node server reaches cms-api through `APP_API_URL`. Page text and CV data come from cms-api; with no token or no reachable API, outside production, web shows built-in mock content (WEB-5), so web runs alone.
 
-| Key                                    | Kind                | Meaning                                                                    |
-| -------------------------------------- | ------------------- | -------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_ADMIN_URL`                | browser, build time | optional; empty hides the "Open CMS" link                                  |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required). Cloudflare publishes test keys                 |
-| `APP_API_URL`                          | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`      |
-| `APP_API_TOKEN`                        | server, runtime     | cms-api API token for page content (required in production; optional here) |
-| `WEB_ORIGIN`                           | server, runtime     | exact origin of the site (required), `http://domain.localhost:5174` in dev |
-| `WEB_SESSION_SECRET`                   | server, runtime     | session cookie key (required; 32+ bytes in production)                     |
-| `TURNSTILE_SECRET_KEY`                 | server, runtime     | Turnstile secret (required); Cloudflare publishes test secrets             |
-| `TURNSTILE_EXPECTED_HOSTNAME`          | server, runtime     | bare host a Turnstile answer must carry; required in production            |
-| `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER` | server, runtime     | visitor IP source, see `apps/web/.env.example`                             |
-| `WEB_REVALIDATE_SECONDS`               | server, runtime     | optional override of every call's cache (default 180 s); `0` in dev        |
-| `ALLOW_MOCK_FALLBACK`                  | server, runtime     | `smoke` only on the smoke stack; mocks are on in dev by default            |
-| `WEB_PORT`                             | server, runtime     | port of `pnpm start` (production server), default 8080                     |
-| `DEV_SERVER_PORT`                      | dev only            | read from the shell, not `.env.local`; default 5174                        |
+| Key                                    | Kind                | Meaning                                                                                             |
+| -------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_ADMIN_URL`                | browser, build time | optional; empty hides the "Open CMS" link                                                           |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required). Cloudflare publishes test keys                                          |
+| `APP_API_URL`                          | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`                               |
+| `APP_API_TOKEN`                        | server, runtime     | cms-api API token for page content (required in production; optional here)                          |
+| `WEB_ORIGIN`                           | server, runtime     | exact origin of the site (required), `http://domain.localhost:5174` in dev                          |
+| `WEB_SESSION_SECRET`                   | server, runtime     | session cookie key (required; 32+ bytes in production)                                              |
+| `TURNSTILE_SECRET_KEY`                 | server, runtime     | Turnstile secret (required); Cloudflare publishes test secrets                                      |
+| `TURNSTILE_EXPECTED_HOSTNAME`          | server, runtime     | bare host a Turnstile answer must carry; required in production                                     |
+| `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER` | server, runtime     | visitor IP source, see `apps/web/.env.example`                                                      |
+| `WEB_REVALIDATE_SECONDS`               | server, runtime     | optional override of every call's cache (default 180 s); `0` in dev                                 |
+| `APP_ENV`                              | server, build + run | `development`, `staging` or `production`; required, equal at build and run; mocks off in production |
+| `WEB_PORT`                             | server, runtime     | port of `pnpm start` (production server), default 8080                                              |
+| `DEV_SERVER_PORT`                      | dev only            | read from the shell, not `.env.local`; default 5174                                                 |
 
 `NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web holds its secrets (`WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`) as server-only env; admin has none.
 

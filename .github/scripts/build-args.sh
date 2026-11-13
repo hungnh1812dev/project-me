@@ -2,8 +2,8 @@
 # Resolves the Docker build args of one app for _publish.yml.
 # Usage: build-args.sh <app>        (cms-api | cms-admin | web)
 # Reads ENVIRONMENT, TURBO_VERSION, VITE_API_BASE_URL (the admin-host API base,
-# https://admin.<domain>/api/v1), NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY
-# from the environment.
+# https://admin.<domain>/api/v1), NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+# APP_ENV (web: development | staging | production) from the environment.
 # Appends `api_url` (cms-admin only) and a `build_args` block to $GITHUB_OUTPUT
 # (stdout when it is unset). Every check runs before anything is written, so a
 # failure leaves the output empty; it prints one `::error::<KEY> ...` line naming
@@ -21,6 +21,7 @@ turbo_version="${TURBO_VERSION:-}"
 vite_api_base_url="${VITE_API_BASE_URL:-}"
 web_admin_url="${NEXT_PUBLIC_ADMIN_URL:-}"
 web_turnstile_site_key="${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}"
+web_app_env="${APP_ENV:-}"
 
 fail() {
   echo "::error::$1"
@@ -38,6 +39,14 @@ require_value() { # key value
   if [ -z "${2}" ]; then fail "${1} is not set for ${environment}"; fi
 }
 
+require_app_env() { # value
+  require_value APP_ENV "${1}"
+  case "${1}" in
+    development | staging | production) ;;
+    *) fail "APP_ENV for ${environment} must be development, staging or production" ;;
+  esac
+}
+
 validate() {
   require_single_line TURBO_VERSION "${turbo_version}"
   case "${app}" in
@@ -46,6 +55,7 @@ validate() {
       require_value VITE_API_BASE_URL "${vite_api_base_url}"
       ;;
     web)
+      require_app_env "${web_app_env}"
       require_single_line NEXT_PUBLIC_ADMIN_URL "${web_admin_url}"
       require_single_line NEXT_PUBLIC_TURNSTILE_SITE_KEY "${web_turnstile_site_key}"
       ;;
@@ -64,6 +74,7 @@ emit() {
       echo "VITE_API_BASE_URL=${vite_api_base_url}"
       ;;
     web)
+      echo "APP_ENV=${web_app_env}"
       echo "NEXT_PUBLIC_ADMIN_URL=${web_admin_url}"
       echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY=${web_turnstile_site_key}"
       ;;

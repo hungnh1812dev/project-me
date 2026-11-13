@@ -249,9 +249,9 @@ start_apps() {
   # The web server needs the reader-account API token, which needs cms-api up.
   STACK_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX"
   stack_mint_content_token "$COMPOSE_PROJECT" "$LOCAL_ENV_FILE"
-  # web reads APP_API_URL and WEB_REVALIDATE_SECONDS=0 (no data cache); mock text stays on in dev, so no ALLOW_MOCK_FALLBACK.
+  # web reads APP_API_URL and WEB_REVALIDATE_SECONDS=0 (no data cache); APP_ENV=development keeps the mock fallback on.
   DEV_SERVER_PORT="$WEB_PORT_DEV" APP_API_TOKEN="$STACK_APP_API_TOKEN" \
-    APP_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
+    APP_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 APP_ENV=development \
     BFF_AUTH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ALLOW_BFF_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN" \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev

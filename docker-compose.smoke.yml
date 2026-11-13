@@ -146,6 +146,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
+        APP_ENV: staging
         # Cloudflare's public always-pass Turnstile test site key (smoke
         # build only; production builds use the real key).
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
@@ -158,9 +159,8 @@ services:
       WEB_SESSION_SECRET: ${SMOKE_WEB_SESSION_SECRET:?set by scripts/smoke.sh}
       # Smoke runs with no data cache; production uses 60.
       WEB_REVALIDATE_SECONDS: '0'
-      # Mock page text when cms-api has none. Smoke only, never in deploy config:
-      # production web refuses the mock fallback without this opt-in.
-      ALLOW_MOCK_FALLBACK: smoke
+      # Must equal the build arg above; staging keeps the mock fallback on.
+      APP_ENV: staging
       WEB_PORT: ${WEB_PORT:-8080}
       # Cloudflare's always-pass test secret. Smoke only, never in deploy config:
       # production web refuses to start with it unless this opt-in is set (ADR 0018

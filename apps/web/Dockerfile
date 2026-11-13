@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build from the repo root:
-#   docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=... .
+#   docker build -f apps/web/Dockerfile --build-arg APP_ENV=... --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=... .
 ARG NODE_IMAGE=node:24.18-alpine
 
 FROM ${NODE_IMAGE} AS base
@@ -33,9 +33,14 @@ ENV NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN test -n "$NEXT_PUBLIC_TURNSTILE_SITE_KEY" || (echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY build arg is required" >&2; exit 1)
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+# Required: development | staging | production. next build inlines it; the runtime value (the Secret) must match.
+ARG APP_ENV
+RUN test -n "$APP_ENV" || (echo "APP_ENV build arg is required (development, staging or production)" >&2; exit 1)
+ENV APP_ENV=$APP_ENV
 RUN pnpm turbo run build --filter=@abyss/web
 
 # 3. Runtime: the Next.js standalone server on Node, as the numeric non-root user 1000:1000 (the base image's `node`).
+#    APP_ENV is not baked into this stage: it comes from the Secret and must equal the build value.
 #    Server env (APP_API_URL, APP_API_TOKEN, WEB_REVALIDATE_SECONDS) is set at run time.
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production

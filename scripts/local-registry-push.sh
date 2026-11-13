@@ -4,7 +4,7 @@
 #   LOCAL_REGISTRY    registry host:port; default k3d-registry.localhost:5001
 #   LOCAL_IMAGE_TAG   image tag; default the short head hash, plus -dirty when the working tree has changes
 #   Build args come from .github/scripts/build-args.sh run with ENVIRONMENT=local, so it reads TURBO_VERSION,
-#   VITE_API_BASE_URL, NEXT_PUBLIC_ADMIN_URL and NEXT_PUBLIC_TURNSTILE_SITE_KEY from the environment.
+#   VITE_API_BASE_URL, NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY and APP_ENV (web) from the environment.
 # Prints each pushed image ref, one per line. Reads no .env file and never prints a build-arg value.
 set -euo pipefail
 
@@ -63,6 +63,9 @@ check_app() { # app
   load_build_args "${1}"
   if [ "${1}" = web ] && [[ " ${build_args[*]-} " != *" NEXT_PUBLIC_TURNSTILE_SITE_KEY="* ]]; then
     die "NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set for web"
+  fi
+  if [ "${1}" = web ] && [[ " ${build_args[*]-} " != *" APP_ENV="* ]]; then
+    die "APP_ENV is not set for web"
   fi
 }
 
