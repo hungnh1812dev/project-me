@@ -5,7 +5,7 @@ import {
   isRateLimitError,
   retryAfterSecondsOf,
   webApiErrorOf,
-} from './ApiFailure.errors';
+} from './ClientApi.errors';
 
 describe('retryAfterSecondsOf', () => {
   it.each(['0', '-3', 'soon', '', undefined])('rejects %s', (value) => {

@@ -10,7 +10,7 @@ import { BFF_BASE_PATH, BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { API_TIMEOUT_MS, HTTP_STATUS, RETRY_AFTER_HEADER } from '@/configs/Http.constants';
 import { stripTrailingSlashes } from '@/configs/StripTrailingSlashes.rules';
 
-import { retryAfterSecondsOf, webApiErrorOf } from './ApiFailure.errors';
+import { retryAfterSecondsOf, webApiErrorOf } from './ClientApi.errors';
 
 /** A route of this site's BFF, relative to `BFF_BASE_PATH`. */
 export type BffPath = (typeof BFF_ENDPOINTS)[keyof typeof BFF_ENDPOINTS];

@@ -5,7 +5,7 @@ import { Button, FormAlert, TextInput } from '@abyss/form-commons';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import type { Alert } from '@/apis/client/ApiFailure.errors';
+import type { Alert } from '@/apis/client/ClientApi.errors';
 import { API_ERROR_CODES, type WebApiError } from '@/apis/WebApi.errors';
 import {
   LOGIN_CODE_LENGTH,

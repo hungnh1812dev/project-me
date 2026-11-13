@@ -15,7 +15,7 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import type { Alert } from '@/apis/client/ApiFailure.errors';
+import type { Alert } from '@/apis/client/ClientApi.errors';
 import { appEnv } from '@/configs/Browser.env';
 import { TURNSTILE } from '@/configs/Security.constants';
 import { useRequiredSignInText } from '@/features/site-shell';

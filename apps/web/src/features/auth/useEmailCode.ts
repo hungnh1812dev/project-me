@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
-import { isRateLimitError, webApiErrorOf } from '@/apis/client/ApiFailure.errors';
+import { isRateLimitError, webApiErrorOf } from '@/apis/client/ClientApi.errors';
 import type { WebApiError } from '@/apis/WebApi.errors';
 import { MAX_TIMER_DELAY_MS, MS_PER_SECOND } from '@/configs/Http.constants';
 

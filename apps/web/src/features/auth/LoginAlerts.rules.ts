@@ -3,7 +3,7 @@ import {
   isRateLimitError,
   webApiErrorOf,
   type Alert,
-} from '@/apis/client/ApiFailure.errors';
+} from '@/apis/client/ClientApi.errors';
 import { API_ERROR_CODES, type WebApiError } from '@/apis/WebApi.errors';
 import type { SignInText } from '@/features/site-shell';
 import { formatText, pickPlural } from '@/utils/TextTemplate.rules';
