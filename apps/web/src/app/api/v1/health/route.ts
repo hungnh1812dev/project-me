@@ -1,5 +1,5 @@
-import { defineBffRoute } from '../../../../apis/server/bff/BffRoute.server';
-import { answerHealthRead } from '../../../../features/status/Health.server';
+import { defineBffRoute } from '@/apis/server/bff/BffRoute.server';
+import { answerHealthRead } from '@/features/status/Health.server';
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({
   methods: ['GET'],

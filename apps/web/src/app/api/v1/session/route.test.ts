@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { answerSessionRead } from '../../../../features/session/WebSession.server';
+import { answerSessionRead } from '@/features/session/WebSession.server';
 
 const defineBffRoute = vi.hoisted(() =>
   vi.fn<() => Record<string, unknown>>(() => ({ GET: vi.fn<() => void>() })),

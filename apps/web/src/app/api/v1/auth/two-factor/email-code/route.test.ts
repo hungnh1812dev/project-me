@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { TURNSTILE } from '../../../../../../configs/Security.constants';
-import {
-  emailCodeBodySchema,
-  sendTwoFactorEmailCode,
-} from '../../../../../../features/session/SignIn.server';
+import { TURNSTILE } from '@/configs/Security.constants';
+import { emailCodeBodySchema, sendTwoFactorEmailCode } from '@/features/session/SignIn.server';
 
 const defineBffRoute = vi.hoisted(() =>
   vi.fn<() => Record<string, unknown>>(() => ({ POST: vi.fn<() => void>() })),
