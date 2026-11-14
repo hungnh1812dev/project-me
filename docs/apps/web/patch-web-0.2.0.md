@@ -44,3 +44,31 @@ If `_maskedFields` lacks either path, the token was not created as a `guest` acc
 ## Rollback
 
 Set `APP_IMAGE_TAG` back to 0.1.0 and restore `API_INTERNAL_URL` (and `WEB_REVALIDATE_SECONDS` if wanted); the extra `APP_API_TOKEN`, `APP_API_URL` and `APP_ENV` entries are ignored by the old image. cms-api stays on the new release; the old web does not read the new text types.
+
+## Local k3s cluster: BFF route and clean web image (LG-api-1)
+
+Found on the local k3s cluster (`k3d-local-k3s`, namespace `project-me-staging`) during the live check: the web BFF (`/api/v1/*` on `project-me.localhost`) never answered. Two causes, both fixed in the deploy repo (the manifests of that cluster); no code change. The target routes are in [traefik.md](../../deployments/traefik.md) section 1.
+
+| Item                                        | Deploy repo object                                     | Change                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5. Remove the cms-api route on the web host | Ingress `cms-api-staging`                              | remove the host `project-me.localhost` and its `/api/v1` (Prefix) path rule, and its entry in `tls`. Keep only the cms-api host `api.project-me.localhost`. The longer prefix beat the `web-staging` `/` rule, so cms-api answered every `/api/v1/*` request meant for the BFF (D21).                                                                                                   |
+| 6. Remove it from the upload route          | IngressRoute `cms-api-staging-upload`                  | remove the `Host(`project-me.localhost`)` match for `POST /api/v1/media` and `PUT /api/v1/media/*/file`. Media upload then goes only through `api.project-me.localhost`. No cms-api route stays on the web host ([ADR 0018](../../adr/0018-web-bff.md)).                                                                                                                                |
+| 7. Rebuild the web image clean              | image `web` (local registry), Deployment `web-staging` | the running image `web:0.0.1c` was built from `debe158c` with uncommitted edits, among them an `InstrumentationNode.setup.ts` change that prints the server env, secrets included, to the pod log (`Server env validated`). Build again from a clean commit (`git status` empty, no env dump in `InstrumentationNode.setup.ts`), push it under a new tag and set `APP_IMAGE_TAG` to it. |
+
+Secrets: every value the old web pod printed is exposed in the logs of the local cluster. Rotate those values if the cluster or its secrets are reused anywhere else (production secrets are separate, Q-OPS11). Delete the old pod logs where the cluster keeps them. Do not paste a value into any doc or ticket.
+
+Order: items 5 and 6 first (no restart; the router reloads), then item 7 (rolling update of `web-staging`). Item 5 and 6 do not depend on item 7.
+
+Checks, from the test machine (`-k` only while the local CA is not trusted):
+
+```sh
+curl -sk https://project-me.localhost/api/v1/health                      # 200 {"status":"ok"}
+curl -sk https://project-me.localhost/api/v1/session                     # 200 {"user":null}
+curl -sk -i https://project-me.localhost/api/v1/cv                       # 401 BFF_SESSION_REQUIRED (signed out)
+curl -sk -X POST https://project-me.localhost/api/v1/auth/login \
+  -H 'Content-Type: application/json' -H 'Origin: https://project-me.localhost' -d '{}'   # 400 BFF_INVALID_REQUEST
+curl -sk https://api.project-me.localhost/api/v1/health                  # cms-api still answers on its own host
+kubectl -n project-me-staging logs deploy/web-staging | grep -c 'Server env validated'   # 0
+```
+
+Rollback: restore the removed Ingress host and rule and the upload match (the `/api/v1/*` on the web host then goes to cms-api again), and the previous `APP_IMAGE_TAG`. The old image is not safe to keep (it logs the env).

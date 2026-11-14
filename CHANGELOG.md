@@ -23,9 +23,11 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 ### DevOps patches
 
 - web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+- web 0.2.0, local k3s cluster: remove the cms-api route on the web host (Ingress `cms-api-staging`, IngressRoute `cms-api-staging-upload`) so the web BFF answers `/api/v1/*`, and rebuild the web image from a clean commit; the old image logs the server env, so rotate those values if reused ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 
 ### Changes
 
+- root: spec: the first production deploy makes the site public (Q-OPS4), so the launch gate's live check runs on a local k3s cluster with the production config before it, and a read-only check of the public site follows the deploy; the backup secrets are set in production only, so the real backup download is checked there (Q-OPS6).
 - web: the mock fallback is switched by `APP_ENV` (`development`, `staging`, `production`; read at build and at runtime, which must match) instead of `ALLOW_MOCK_FALLBACK`; mocks fill only server GraphQL content reads, on an error, by key; the server, browser and BFF layers raise one error shape `WebApiError` (WEB-9, WEB-10).
 - web: spec for `APP_ENV` (`development`, `staging`, `production`, at build and at runtime) as the one switch of the mock fallback, replacing `ALLOW_MOCK_FALLBACK`; mocks only for server GraphQL content reads, only on an error (GraphQL `errors` with HTTP 200 included), chosen by key, loaded by dynamic import and never cached; and one API error shape `WebApiError` for the server and browser layers and the BFF (WEB-5, WEB-9, WEB-10).
 - cms-api: `POST /content-types/validate` (owner only) checks a content type definition against the registered types and returns the errors of the submitted definition; it stores nothing (flow schema-builder, SB-10).
