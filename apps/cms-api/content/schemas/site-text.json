@@ -31,18 +31,6 @@
     {
       "name": "notFoundDescription",
       "type": "text"
-    },
-    {
-      "name": "errorTitle",
-      "type": "text"
-    },
-    {
-      "name": "errorDescription",
-      "type": "text"
-    },
-    {
-      "name": "errorRetry",
-      "type": "text"
     }
   ]
 }

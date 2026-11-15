@@ -683,9 +683,6 @@ type SiteText {
   signedInAs: String
   notFoundTitle: String
   notFoundDescription: String
-  errorTitle: String
-  errorDescription: String
-  errorRetry: String
 
   """
   Paths of the fields the caller may not read; their values are masked or null.

@@ -490,7 +490,7 @@
       }
     },
     "module-page-status": {
-      "hash": "2f2a124a58cfa5ff9bdc518cd1048e4ea8a045dd9f39f2768fd20ff975b969b3",
+      "hash": "c7e692bf5e03c286b81b9d84ff1a2dbe4aec4ba8d784755b0e8a0d301993ea73",
       "definition": {
         "slug": "module-page-status",
         "displayName": "Module Page Status",
@@ -499,51 +499,63 @@
         "fields": [
           {
             "name": "title",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "description",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "cardTitle",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "cardDescription",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "endpointLabel",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "lastCheckedLabel",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "notCheckedYet",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "stateChecking",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "stateOk",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "stateError",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "errorHint",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           },
           {
             "name": "checkAgain",
-            "type": "text"
+            "type": "text",
+            "width": "1/2"
           }
         ]
       }
@@ -980,7 +992,7 @@
       }
     },
     "site-text": {
-      "hash": "731099f9b3f2a5f459e2bbaa89a3066e28797d36d9cde27d41bd728107571853",
+      "hash": "3c7393e8821ee09624da82a6a0e4ee0d0db21febc2f7b15233bf817c742d274a",
       "definition": {
         "slug": "site-text",
         "displayName": "Site Text",
@@ -1013,18 +1025,6 @@
           },
           {
             "name": "notFoundDescription",
-            "type": "text"
-          },
-          {
-            "name": "errorTitle",
-            "type": "text"
-          },
-          {
-            "name": "errorDescription",
-            "type": "text"
-          },
-          {
-            "name": "errorRetry",
             "type": "text"
           }
         ]
