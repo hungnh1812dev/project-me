@@ -111,6 +111,8 @@ type Query {
   header(status: DocumentStatus = PUBLISHED): Header
   modulePageStatus(status: DocumentStatus = PUBLISHED): ModulePageStatus
   moduleSignIn(status: DocumentStatus = PUBLISHED): ModuleSignIn
+  pageCvA(documentId: ID!, status: DocumentStatus = PUBLISHED): PageCvA
+  pageCvAList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [PageCvASort!], filter: PageCvAFilter): PageCvAPage
   profile(documentId: ID!, status: DocumentStatus = PUBLISHED): Profile
   profileList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ProfileSort!], filter: ProfileFilter): ProfilePage
   resume(documentId: ID!, status: DocumentStatus = PUBLISHED): Resume
@@ -489,6 +491,114 @@ type ModuleSignIn_SignInTwoFactor {
   expired: String
   invalidCode: String
   unsupportedMethod: String
+}
+
+type PageCvA {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  name: String
+  position: String
+  isMain: Boolean
+  summary: String
+  skills: [PageCvA_Skill!]
+  experiences: [PageCvA_Experience!]
+  projects: [PageCvA_Project!]
+  educations: PageCvA_Education
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type PageCvA_Skill {
+  componentUid: ID!
+  skill: String
+  level: String
+}
+
+type PageCvA_Experience {
+  componentUid: ID!
+  company: String
+  location: String
+  period: String
+  roles: [PageCvA_Experience_Role!]
+}
+
+type PageCvA_Experience_Role {
+  componentUid: ID!
+  position: String
+  period: String
+  teamSize: Int
+  projects: String
+  techStacks: JSON
+  responsibilities: String
+}
+
+type PageCvA_Project {
+  componentUid: ID!
+  name: String
+  teamSize: Int
+  role: String
+  liveLink: String
+  repositoryLink: String
+  techStack: JSON
+  responsibilities: String
+}
+
+type PageCvA_Education {
+  componentUid: ID!
+  degree: String
+  institution: String
+  period: String
+  location: String
+}
+
+type PageCvAPage {
+  data: [PageCvA!]!
+  meta: PageMeta!
+}
+
+input PageCvASort {
+  field: PageCvASortField!
+  direction: SortDirection = ASC
+}
+
+enum PageCvASortField {
+  documentId
+  version
+  publishedAt
+  locale
+  createdAt
+  updatedAt
+  createdBy
+  updatedBy
+  name
+  position
+  isMain
+  summary
+}
+
+"""One optional entry per filterable field; entries are AND-ed."""
+input PageCvAFilter {
+  documentId: IdFilter
+  version: IntFilter
+  publishedAt: DateTimeFilter
+  locale: TextFilter
+  createdAt: DateTimeFilter
+  updatedAt: DateTimeFilter
+  createdBy: IntFilter
+  updatedBy: IntFilter
+  name: TextFilter
+  position: TextFilter
+  isMain: BooleanFilter
+  summary: TextFilter
 }
 
 type Profile {

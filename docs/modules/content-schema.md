@@ -226,6 +226,11 @@ cv_page__language                      language, level
 cv_page__reference                     name, phone, role
 ```
 
+Content type `page-cv-a` (migration `0013_content.sql`, collection, no web reader
+yet) has 6 tables: `page_cv_a` (name, position, is_main, summary), `page_cv_a__skill`,
+`page_cv_a__experience`, `page_cv_a__experience__role`, `page_cv_a__project` and
+`page_cv_a__education`.
+
 `resume` and `header` use the same table naming (`resume__experience__role__project`,
 `header__nav__sub_navigation`); their tables were renamed with their data by
 migration `0006_content.sql`.
