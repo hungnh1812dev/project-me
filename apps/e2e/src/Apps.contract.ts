@@ -1,4 +1,6 @@
-import { MOCK_VIEW } from '../../web/src/apis/server/restful/mocks/MockView';
+import { CV_PAGE_MOCK as CV_MOCK } from '../../web/src/apis/server/graphql/mocks/CvPage.mock';
+import { SITE_SHELL_MOCK as SHELL_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteShell.mock';
+import { STATUS_PAGE_MOCK as STATUS_MOCK } from '../../web/src/apis/server/graphql/mocks/StatusPage.mock';
 
 /**
  * The only file in the e2e suite that imports from an app's `src`. Specs import
@@ -26,12 +28,6 @@ export {
   MEDIA_MAX_BYTES_BY_KIND,
 } from '../../cms-admin/src/features/media/Media.constants';
 
-const SHELL_MOCK =
-  MOCK_VIEW.SiteShell as typeof import('../../web/src/apis/server/restful/mocks/SiteShell.mock').SITE_SHELL_MOCK;
-const STATUS_MOCK =
-  MOCK_VIEW.StatusPage as typeof import('../../web/src/apis/server/restful/mocks/StatusPage.mock').STATUS_PAGE_MOCK;
-const CV_MOCK =
-  MOCK_VIEW.CvPage as typeof import('../../web/src/apis/server/restful/mocks/CvPage.mock').CV_PAGE_MOCK;
 const { twoFactor } = SHELL_MOCK.signInText;
 
 /**
