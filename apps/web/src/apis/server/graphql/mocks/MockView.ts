@@ -1,4 +1,7 @@
 import { CV_PAGE_MOCK } from './CvPage.mock';
+import { NOT_FOUND_PAGE_MOCK } from './NotFoundPage.mock';
+import { SIGN_IN_MOCK } from './SignIn.mock';
+import { SITE_HEADER_MOCK } from './SiteHeader.mock';
 import { SITE_SHELL_MOCK } from './SiteShell.mock';
 import { STATUS_PAGE_MOCK } from './StatusPage.mock';
 
@@ -8,6 +11,9 @@ import { STATUS_PAGE_MOCK } from './StatusPage.mock';
  */
 export const MOCK_VIEW = {
   ...CV_PAGE_MOCK,
+  ...NOT_FOUND_PAGE_MOCK,
+  ...SIGN_IN_MOCK,
+  ...SITE_HEADER_MOCK,
   ...SITE_SHELL_MOCK,
   ...STATUS_PAGE_MOCK,
 };

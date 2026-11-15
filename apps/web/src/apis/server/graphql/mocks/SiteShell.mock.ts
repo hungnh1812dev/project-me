@@ -13,10 +13,6 @@ export const SITE_SHELL_MOCK = {
     signedInAs: 'Signed in as {name}',
     notFoundTitle: 'Page not found',
     notFoundDescription: 'There is nothing at this address. Check the link and try again.',
-    errorTitle: 'The CV could not be loaded',
-    errorDescription:
-      'Something went wrong while loading this page. Nothing was changed. Try again, or come back in a few minutes.',
-    errorRetry: 'Try again',
   },
   signInText: {
     title: 'Sign in',

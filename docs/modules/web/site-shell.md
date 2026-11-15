@@ -49,7 +49,7 @@ Tests: 3 files (not listed).
 |---|---|
 | `SiteShell.graphql.ts` | Operation name, root field selections and result types of the shell query (exports `HeaderNavLink`, `HeaderNav`, `SiteHeader`, `SiteText` +4) |
 | `SiteShell.server.ts` | The `SiteShell` query and its cached loader (exports `SITE_SHELL_QUERY`, `loadSiteShell`) |
-| `SiteText.context.tsx` | Text provider, hooks and the last-resort text (exports `LAST_RESORT_TEXT`, `SiteTextProvider`, `useSiteText`, `useSignInText`) |
+| `SiteText.context.tsx` | Text provider and hooks; re-exports the last-resort text from `configs` until WPQ-3 removes this feature (exports `LAST_RESORT_TEXT`, `SiteTextProvider`, `useSiteText`, `useSignInText`) |
 | `index.ts` | Client-safe exports of the feature (exports `SignInText`, `SiteHeader`, `SiteShell`, `SiteText` +4) |
 
 <!-- prettier-ignore-end -->

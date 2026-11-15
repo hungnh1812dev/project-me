@@ -53,8 +53,8 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 ```
 server/ (0 files)
   bff/ (4 files)
-  graphql/ (2 files)
-    mocks/ (4 files)
+  graphql/ (3 files)
+    mocks/ (7 files)
   restful/ (3 files)
 ```
 
@@ -66,10 +66,14 @@ Tests: 10 files (not listed).
 | `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, human-check hook, handle, no-store |
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
+| `graphql/ContentQuery.fixture.ts` | Test helper: `describeContentQueryContract` runs the spec every content query has (valid against the cms-api SDL, mock and selection match both ways, D18 limits); the spec passes `MOCK_VIEW` in (exports `ContentQueryContractInput`, `describeContentQueryContract`) |
 | `graphql/Graphql.server.ts` | Server GraphQL: `defineContentQuery` builds the document from the root fields; `runContentQuery` reads them with the API token, retries each root field alone when all failed and the mocks are on, and fills the failed ones from the mocks; `runVisitorQuery` runs as one visitor, uncached |
 | `graphql/MockFallback.server.ts` | `fillFromMocks`: fills only the failed root fields from the mocks by mock key, loading the mock module by dynamic import behind the build constant and `isMockFallbackOn`; a used mock logs one warn line and opts the render out of caching |
 | `graphql/mocks/CvPage.mock.ts` | Mock data of the CV root fields: sample main CV, contact card and page text, with masked paths (exports `CV_PAGE_MOCK`) |
 | `graphql/mocks/MockView.ts` | Flat map of mock key to mock data, and the `MockKey` type (exports `MOCK_VIEW`, `MockKey`) |
+| `graphql/mocks/NotFoundPage.mock.ts` | Mock data of the not-found page text (`notFoundText`) (exports `NOT_FOUND_PAGE_MOCK`) |
+| `graphql/mocks/SignIn.mock.ts` | Mock data of the sign-in dialog and two-factor text (`signInText`) (exports `SIGN_IN_MOCK`) |
+| `graphql/mocks/SiteHeader.mock.ts` | Mock data of the header (`header`) and its text (`headerText`) (exports `SITE_HEADER_MOCK`) |
 | `graphql/mocks/SiteShell.mock.ts` | Mock data of the site shell root fields: header, shared and sign-in texts (exports `SITE_SHELL_MOCK`) |
 | `graphql/mocks/StatusPage.mock.ts` | Mock data of the status page text root field (exports `STATUS_PAGE_MOCK`) |
 | `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding, raising `WebApiError`, sent through `serverApi` |

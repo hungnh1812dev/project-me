@@ -24,9 +24,6 @@ export interface SiteText {
   signedInAs: string;
   notFoundTitle: string;
   notFoundDescription: string;
-  errorTitle: string;
-  errorDescription: string;
-  errorRetry: string;
 }
 
 /** Text of the sign-in dialog and its two-factor step; the `*Seconds*` and `*Minutes*` texts have the `{count}` placeholder. */
@@ -122,9 +119,6 @@ export const SITE_SHELL_ROOT_FIELDS = {
     signedInAs
     notFoundTitle
     notFoundDescription
-    errorTitle
-    errorDescription
-    errorRetry
   }`,
   signInText: `: moduleSignIn {
     title

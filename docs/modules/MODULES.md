@@ -69,7 +69,9 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 |---|---|---|---|---|---|
 | auth | `apps/web/src/features/auth` | `docs/modules/web/auth.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Web sign-in dialog with the two-factor step and its Turnstile human check |
 | cv | `apps/web/src/features/cv` | `docs/modules/web/cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | CV data of the public site: the GraphQL document and the server loader |
+| not-found | `apps/web/src/features/not-found` | `docs/modules/web/not-found.md` | complete | - | The NotFoundPage content query and its loader for the not-found page text |
 | session | `apps/web/src/features/session` | `docs/modules/web/session.md` | complete | [`public-site`](../flows/public-site/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Who is signed in on the web: the session context and the auth API |
+| site-header | `apps/web/src/features/site-header` | `docs/modules/web/site-header.md` | complete | - | The SiteHeader content query and its loader: the header content and the nav and account-menu text |
 | site-shell | `apps/web/src/features/site-shell` | `docs/modules/web/site-shell.md` | complete | - | The SiteShell content query, its loader and the text context for the header, shared and sign-in texts |
 | status | `apps/web/src/features/status` | `docs/modules/web/status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Health API client for the web service status card |
 | cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The CV page: sections, contact card, masked values |
