@@ -1,7 +1,7 @@
 /** DI token for the frozen `IAppConfig`. */
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
-export const NODE_ENVS = ['development', 'test', 'production'] as const;
+export const NODE_ENVS = ['development', 'staging', 'production'] as const;
 export const MAIL_PROVIDERS = ['console', 'smtp'] as const;
 export const MEDIA_PROVIDERS = ['fake', 'cloudinary', 'local'] as const;
 /** DB_SSL_MODE values (libpq names). `verify-full` checks the CA and the host name. */

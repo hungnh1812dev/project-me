@@ -60,7 +60,7 @@ export const TEST_BACKUP_ENV: Record<string, string> = {
 export function devEnv(
   overrides: Record<string, string | undefined> = {},
 ): Record<string, string | undefined> {
-  return { NODE_ENV: 'test', ...TEST_DB_ENV, ...overrides };
+  return { NODE_ENV: 'development', ...TEST_DB_ENV, ...overrides };
 }
 
 export function productionEnv(

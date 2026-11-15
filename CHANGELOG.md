@@ -18,6 +18,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Bug fixes
 
+- cms-api: accepts `NODE_ENV=staging` (the staging cluster's cms-api crashed at boot on it); the production guards still need `NODE_ENV=production`.
 - e2e: the type check passes again (`jsx` and the `@apis/*` path in `tsconfig.json`; explicit presence checks in three specs).
 
 ### DevOps patches
@@ -27,6 +28,8 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- cms-api: no longer accepts `NODE_ENV=test`; its tests run with `development` (API-2).
+- scripts: `local-registry-push.sh` tags images with a UTC timestamp by default instead of the commit hash (`LOCAL_IMAGE_TAG` still overrides); the build context is unchanged.
 - root: spec: the first production deploy makes the site public (Q-OPS4), so the launch gate's live check runs on a local k3s cluster with the production config before it, and a read-only check of the public site follows the deploy; the backup secrets are set in production only, so the real backup download is checked there (Q-OPS6).
 - web: the mock fallback is switched by `APP_ENV` (`development`, `staging`, `production`; read at build and at runtime, which must match) instead of `ALLOW_MOCK_FALLBACK`; mocks fill only server GraphQL content reads, on an error, by key; the server, browser and BFF layers raise one error shape `WebApiError` (WEB-9, WEB-10).
 - web: spec for `APP_ENV` (`development`, `staging`, `production`, at build and at runtime) as the one switch of the mock fallback, replacing `ALLOW_MOCK_FALLBACK`; mocks only for server GraphQL content reads, only on an error (GraphQL `errors` with HTTP 200 included), chosen by key, loaded by dynamic import and never cached; and one API error shape `WebApiError` for the server and browser layers and the BFF (WEB-5, WEB-9, WEB-10).

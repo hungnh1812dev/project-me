@@ -62,7 +62,8 @@ Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
 must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN`, `JWT_ACCESS_KID`
 and `TOTP_ENC_KID` are required. `TOTP_ENC_PREVIOUS_KEY` (when set) must be
-at least 32 bytes too.
+at least 32 bytes too. `development` and `staging` run without these guards;
+the tests run as `development` (`test` is not accepted).
 
 ## HTTP pipeline
 
