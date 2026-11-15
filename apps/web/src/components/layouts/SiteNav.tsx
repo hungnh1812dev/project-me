@@ -4,7 +4,7 @@ import { useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'r
 import Link from 'next/link';
 
 import { useCanSee } from '../../features/session';
-import { useRequiredSiteText, useSiteHeader } from '../../features/site-shell';
+import type { HeaderNav, HeaderText } from '../../features/site-header/SiteHeader.graphql';
 import { isSafeLinkTarget } from '../../utils/SafeLinkTarget.rules';
 
 interface NavEntry {
@@ -67,9 +67,7 @@ function SubNav({ entries }: { entries: NavEntry[] }) {
 }
 
 /** Header links: the CV link first, then the `header.nav` items the viewer may see. */
-export function SiteNav() {
-  const text = useRequiredSiteText();
-  const nav = useSiteHeader()?.nav ?? [];
+export function SiteNav({ nav, text }: { nav: HeaderNav[] | null; text: HeaderText }) {
   return (
     <ul className="flex items-center gap-4">
       <li>
@@ -77,7 +75,7 @@ export function SiteNav() {
           {text.navCvLink}
         </Link>
       </li>
-      {nav.map((entry, index) => (
+      {(nav ?? []).map((entry, index) => (
         <NavItem key={`${entry.link}-${index}`} entry={entry}>
           {entry.subNavigations && entry.subNavigations.length > 0 ? (
             <SubNav entries={entry.subNavigations} />

@@ -4,16 +4,22 @@ import { useRef, useState } from 'react';
 import { Button } from '@abyss/form-commons';
 
 import { appEnv } from '@/configs/Browser.env';
-import { WebLoginDialog } from '@/features/auth';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
+import { WebLoginDialog, type SignInText } from '@/features/auth';
 import { useWebSession } from '@/features/session';
-import { LAST_RESORT_TEXT, useRequiredSiteText, useSiteHeader } from '@/features/site-shell';
+import type { HeaderContent, HeaderText } from '@/features/site-header/SiteHeader.graphql';
 import { formatText } from '@/utils/TextTemplate.rules';
 
+interface AccountMenuProps {
+  text: HeaderText;
+  author: HeaderContent['author'];
+  /** Without it the sign-in text did not load: no sign-in button and no dialog. */
+  signInText: SignInText | null;
+}
+
 /** Header controls: sign in, or the account name with Open CMS and sign out. */
-export function AccountMenu() {
+export function AccountMenu({ text, author, signInText }: AccountMenuProps) {
   const { status, user, signOut } = useWebSession();
-  const text = useRequiredSiteText();
-  const author = useSiteHeader()?.author;
   const signInButtonRef = useRef<HTMLButtonElement>(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -25,6 +31,7 @@ export function AccountMenu() {
   }
 
   if (status === 'anonymous' || user === null) {
+    if (signInText === null) return null;
     return (
       <div className="flex items-center gap-2">
         <Button
@@ -39,6 +46,7 @@ export function AccountMenu() {
           open={loginOpen}
           onOpenChange={setLoginOpen}
           returnFocusRef={signInButtonRef}
+          text={signInText}
         />
       </div>
     );

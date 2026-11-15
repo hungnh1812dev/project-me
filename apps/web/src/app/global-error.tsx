@@ -1,6 +1,6 @@
 'use client';
 
-import { LAST_RESORT_TEXT } from '@/features/site-shell';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 
 /**
  * Replaces the whole document when the root layout itself fails, so the shell

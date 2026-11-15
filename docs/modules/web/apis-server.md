@@ -54,7 +54,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 server/ (0 files)
   bff/ (4 files)
   graphql/ (3 files)
-    mocks/ (7 files)
+    mocks/ (6 files)
   restful/ (3 files)
 ```
 
@@ -74,7 +74,6 @@ Tests: 10 files (not listed).
 | `graphql/mocks/NotFoundPage.mock.ts` | Mock data of the not-found page text (`notFoundText`) (exports `NOT_FOUND_PAGE_MOCK`) |
 | `graphql/mocks/SignIn.mock.ts` | Mock data of the sign-in dialog and two-factor text (`signInText`) (exports `SIGN_IN_MOCK`) |
 | `graphql/mocks/SiteHeader.mock.ts` | Mock data of the header (`header`) and its text (`headerText`) (exports `SITE_HEADER_MOCK`) |
-| `graphql/mocks/SiteShell.mock.ts` | Mock data of the site shell root fields: header, shared and sign-in texts (exports `SITE_SHELL_MOCK`) |
 | `graphql/mocks/StatusPage.mock.ts` | Mock data of the status page text root field (exports `STATUS_PAGE_MOCK`) |
 | `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding, raising `WebApiError`, sent through `serverApi` |
 | `restful/ServerApi.client.ts` | `serverApi`: GET, POST, PUT, PATCH and DELETE over axios with the fetch adapter, data cache options, timeout, no redirect, `WebApiError` failures |

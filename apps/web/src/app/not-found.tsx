@@ -1,9 +1,8 @@
-'use client';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
+import { loadNotFoundText } from '@/features/not-found/NotFoundPage.server';
 
-import { LAST_RESORT_TEXT, useSiteText } from '@/features/site-shell';
-
-export default function NotFound() {
-  const text = useSiteText() ?? LAST_RESORT_TEXT;
+export default async function NotFound() {
+  const text = (await loadNotFoundText()) ?? LAST_RESORT_TEXT;
   return (
     <>
       <h1 className="text-2xl font-semibold tracking-tight">{text.notFoundTitle}</h1>

@@ -30,7 +30,7 @@ Facade `index.ts`: `WebLoginDialog` (opened from the account menu).
 
 ## Where to change what
 
-Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. The sign-in text comes from the `SignIn` query (`SignIn.graphql.ts`, `loadSignInText`; the `signInText` single type), never from `Copy.constants`; until the components take it as props (WPQ-3) they still read it through `useRequiredSignInText()` of `features/site-shell`. The calls: `features/session` (`Auth.api.ts`).
+Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. The sign-in text comes from the `SignIn` query (`SignIn.graphql.ts`, `loadSignInText`; the `signInText` single type), never from `Copy.constants`. `components/layouts/SiteHeader.tsx` loads it and `AccountMenu` passes it down as the `text` prop of `WebLoginDialog`, `TwoFactorStep`, `TurnstileWidget` and `useHumanCheck`; no component reads text from a context. With no sign-in text the account menu renders no sign-in button and no dialog (Q-PS1b). The calls: `features/session` (`Auth.api.ts`).
 
 ## Files
 

@@ -66,10 +66,10 @@ describe('WebApiError', () => {
       source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
       errorCode: API_ERROR_CODES.GRAPHQL.HTTP,
       statusCode: 500,
-      operation: 'SiteShell',
+      operation: 'SiteHeader',
       upstreamErrorCode: 'SECRET_DETAIL',
     });
-    expect(error.toLogLine()).toBe('cms-api-graphql HTTP_ERROR 500 SiteShell');
+    expect(error.toLogLine()).toBe('cms-api-graphql HTTP_ERROR 500 SiteHeader');
   });
 
   it('writes the log line with `-` for missing values', () => {

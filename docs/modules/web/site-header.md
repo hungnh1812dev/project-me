@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-Owns the `SiteHeader` content query (`header`, `headerText`) and its loader for the root layout ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
+Owns the `SiteHeader` content query (`header`, `headerText`) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
 
 ## Techniques
 

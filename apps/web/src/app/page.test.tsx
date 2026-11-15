@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 
 import { STATUS_PAGE_MOCK } from '@/apis/server/graphql/mocks/StatusPage.mock';
-import { LAST_RESORT_TEXT } from '@/features/site-shell';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 
 import { fetchLiveHealth } from '../features/status/Health.api';
 import { loadStatusPage } from '../features/status/StatusPage.server';

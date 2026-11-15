@@ -1,5 +1,6 @@
 import { CV_PAGE_MOCK as CV_MOCK } from '../../web/src/apis/server/graphql/mocks/CvPage.mock';
-import { SITE_SHELL_MOCK as SHELL_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteShell.mock';
+import { SIGN_IN_MOCK } from '../../web/src/apis/server/graphql/mocks/SignIn.mock';
+import { SITE_HEADER_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteHeader.mock';
 import { STATUS_PAGE_MOCK as STATUS_MOCK } from '../../web/src/apis/server/graphql/mocks/StatusPage.mock';
 
 /**
@@ -28,7 +29,7 @@ export {
   MEDIA_MAX_BYTES_BY_KIND,
 } from '../../cms-admin/src/features/media/Media.constants';
 
-const { twoFactor } = SHELL_MOCK.signInText;
+const { twoFactor } = SIGN_IN_MOCK.signInText;
 
 /**
  * The web text on the stacks: the web mocks are the text (WEB-5). Plural and `{name}` placeholders
@@ -36,13 +37,13 @@ const { twoFactor } = SHELL_MOCK.signInText;
  */
 export const WEB_COPY = {
   session: {
-    signIn: SHELL_MOCK.header.author.btnLoginText,
-    signOut: SHELL_MOCK.header.author.btnLogoutText,
-    openCms: SHELL_MOCK.siteText.openCms,
-    signOutFailed: SHELL_MOCK.siteText.signOutFailed,
+    signIn: SITE_HEADER_MOCK.header.author.btnLoginText,
+    signOut: SITE_HEADER_MOCK.header.author.btnLogoutText,
+    openCms: SITE_HEADER_MOCK.headerText.openCms,
+    signOutFailed: SITE_HEADER_MOCK.headerText.signOutFailed,
   },
   login: {
-    ...SHELL_MOCK.signInText,
+    ...SIGN_IN_MOCK.signInText,
     twoFactor: {
       ...twoFactor,
       errors: { invalidCode: twoFactor.invalidCode },

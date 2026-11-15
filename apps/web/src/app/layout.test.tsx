@@ -1,16 +1,16 @@
 import { render, screen } from '@testing-library/react';
 
-import { SITE_SHELL_MOCK } from '../apis/server/graphql/mocks/SiteShell.mock';
-import { LAST_RESORT_TEXT } from '../features/site-shell';
-import { loadSiteShell } from '../features/site-shell/SiteShell.server';
+import { SITE_HEADER_MOCK } from '../apis/server/graphql/mocks/SiteHeader.mock';
+import { LAST_RESORT_TEXT } from '../configs/LastResort.constants';
+import { loadSiteHeader } from '../features/site-header/SiteHeader.server';
 import RootLayout, { generateMetadata } from './layout';
 
 vi.mock('next/headers', () => ({ headers: () => Promise.resolve(new Headers()) }));
 vi.mock('next/server', () => ({ connection: () => Promise.resolve() }));
-vi.mock('../features/site-shell/SiteShell.server', () => ({
-  loadSiteShell: vi.fn<typeof loadSiteShell>(),
+vi.mock('../features/site-header/SiteHeader.server', () => ({
+  loadSiteHeader: vi.fn<typeof loadSiteHeader>(),
 }));
-vi.mock('../components/layouts/AccountMenu', () => ({ AccountMenu: () => <div>menu</div> }));
+vi.mock('../components/layouts/SiteHeader', () => ({ SiteHeader: () => <header>header</header> }));
 const providersRendered = vi.fn<() => void>();
 vi.mock('../components/layouts/AppProviders', () => ({
   Providers: ({ children }: { children: React.ReactNode }) => {
@@ -20,43 +20,24 @@ vi.mock('../components/layouts/AppProviders', () => ({
 }));
 vi.mock('../components/layouts/CspNonce', () => ({ CspNonce: () => null }));
 
-beforeEach(() => {
-  vi.mocked(loadSiteShell).mockResolvedValue({
-    ...SITE_SHELL_MOCK,
-    header: { ...SITE_SHELL_MOCK.header, nav: [] },
-  });
-});
-
 describe('RootLayout', () => {
-  it('shows the brand, nav label and CV link from the shell text', async () => {
+  it('renders the header and the page inside the providers', async () => {
     render(await RootLayout({ children: <p>page</p> }), { container: document.documentElement });
-    expect(screen.getByRole('link', { name: SITE_SHELL_MOCK.header.name })).toHaveAttribute(
-      'href',
-      '/',
-    );
-    expect(
-      screen.getByRole('navigation', { name: SITE_SHELL_MOCK.siteText.navLabel }),
-    ).toBeVisible();
-    expect(screen.getByRole('link', { name: SITE_SHELL_MOCK.siteText.navCvLink })).toHaveAttribute(
-      'href',
-      '/cv',
-    );
+    expect(screen.getByText('header')).toBeVisible();
+    expect(screen.getByRole('main')).toHaveTextContent('page');
+    expect(providersRendered).toHaveBeenCalled();
   });
 
   it('titles the page with the brand', async () => {
-    expect(await generateMetadata()).toEqual({ title: SITE_SHELL_MOCK.header.name });
+    vi.mocked(loadSiteHeader).mockResolvedValue({
+      header: { ...SITE_HEADER_MOCK.header, nav: [] },
+      headerText: SITE_HEADER_MOCK.headerText,
+    });
+    expect(await generateMetadata()).toEqual({ title: SITE_HEADER_MOCK.header.name });
   });
 
-  it('renders the page with only the brand when the shell is not published', async () => {
-    vi.mocked(loadSiteShell).mockResolvedValue(null);
-    render(await RootLayout({ children: <p>page</p> }), { container: document.documentElement });
-    expect(screen.getByRole('link', { name: LAST_RESORT_TEXT.appName })).toHaveAttribute(
-      'href',
-      '/',
-    );
-    expect(screen.getByText('page')).toBeVisible();
-    expect(providersRendered).toHaveBeenCalled();
-    expect(screen.queryByRole('navigation')).toBeNull();
+  it('titles the page with the last-resort brand when the header did not load', async () => {
+    vi.mocked(loadSiteHeader).mockResolvedValue(null);
     expect(await generateMetadata()).toEqual({ title: LAST_RESORT_TEXT.appName });
   });
 });

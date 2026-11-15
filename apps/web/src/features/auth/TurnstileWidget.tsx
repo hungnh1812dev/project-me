@@ -6,7 +6,8 @@ import Script from 'next/script';
 import './Turnstile.client';
 
 import { TURNSTILE, type TurnstileAction } from '@/configs/Security.constants';
-import { useRequiredSignInText } from '@/features/site-shell';
+
+import type { SignInText } from './SignIn.graphql';
 
 /**
  * Cloudflare Turnstile. The script loads only while this component is
@@ -16,6 +17,7 @@ import { useRequiredSignInText } from '@/features/site-shell';
 export function TurnstileWidget({
   siteKey,
   action,
+  text,
   hasScriptFailed,
   onFailed,
   onToken,
@@ -24,13 +26,13 @@ export function TurnstileWidget({
   siteKey: string;
   /** The BFF checks that the token was issued for the step it protects. */
   action: TurnstileAction;
+  text: SignInText['humanCheck'];
   /** Held by the parent so it survives a remount (Back and Next). */
   hasScriptFailed: boolean;
   onFailed: () => void;
   onToken: (token: string) => void;
   onExpired: () => void;
 }) {
-  const copy = useRequiredSignInText().humanCheck;
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
   const [ready, setReady] = useState(
@@ -69,10 +71,10 @@ export function TurnstileWidget({
       <div ref={container} className="min-h-16" />
       {hasScriptFailed ? (
         <p role="alert" className="text-destructive-strong text-sm">
-          {copy.failed}
+          {text.failed}
         </p>
       ) : !ready ? (
-        <output className="text-muted-foreground block text-sm">{copy.loading}</output>
+        <output className="text-muted-foreground block text-sm">{text.loading}</output>
       ) : null}
     </div>
   );

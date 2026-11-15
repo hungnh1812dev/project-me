@@ -3,7 +3,7 @@
 import { Button } from '@abyss/form-commons';
 
 import { BFF_BASE_PATH, BFF_ENDPOINTS } from '@/configs/Api.endpoints';
-import { LAST_RESORT_TEXT } from '@/features/site-shell';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 import type { StatusPageText } from '@/features/status/StatusPage.graphql';
 
 import { useLiveHealth, type LiveHealthState } from './useLiveHealth';

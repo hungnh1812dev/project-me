@@ -13,10 +13,10 @@ import {
   type TwoFactorMethod,
 } from '@/configs/Auth.constants';
 import { TURNSTILE } from '@/configs/Security.constants';
-import { useRequiredSignInText, type SignInText } from '@/features/site-shell';
 
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
+import type { SignInText } from './SignIn.graphql';
 import { useEmailCode } from './useEmailCode';
 import { useHumanCheck } from './useHumanCheck';
 
@@ -51,17 +51,19 @@ function alertOf(failure: WebApiError, text: SignInText): Alert | 'expired' {
 export function TwoFactorStep({
   challenge,
   siteKey,
+  text,
   onCancel,
   onExpired,
   onDone,
 }: {
   challenge: TwoFactorChallenge;
   siteKey: string;
+  text: SignInText;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
 }) {
-  const copy = useRequiredSignInText().twoFactor;
+  const copy = text.twoFactor;
   const method = methodOf(challenge.methods);
   if (method === undefined) {
     return (
@@ -79,6 +81,7 @@ export function TwoFactorStep({
     <CodeForm
       method={method}
       siteKey={siteKey}
+      text={text}
       onCancel={onCancel}
       onExpired={onExpired}
       onDone={onDone}
@@ -89,21 +92,22 @@ export function TwoFactorStep({
 function CodeForm({
   method,
   siteKey,
+  text,
   onCancel,
   onExpired,
   onDone,
 }: {
   method: TwoFactorMethod;
   siteKey: string;
+  text: SignInText;
   onCancel: () => void;
   onExpired: () => void;
   onDone: () => void;
 }) {
   const session = useWebSession();
-  const text = useRequiredSignInText();
   const copy = text.twoFactor;
   const [alert, setAlert] = useState<Alert | null>(null);
-  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.TWO_FACTOR);
+  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.TWO_FACTOR, text.humanCheck);
   // The emailed code goes out as soon as the first check passes; the next
   // check (a fresh token) is for the verify call.
   const email = useEmailCode(

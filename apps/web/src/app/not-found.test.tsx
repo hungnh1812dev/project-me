@@ -1,25 +1,32 @@
 import { render, screen } from '@testing-library/react';
 
-import { SHELL_TEXT, ShellTextProvider } from '../features/session/Session.fixture';
-import { LAST_RESORT_TEXT } from '../features/site-shell';
+import { NOT_FOUND_PAGE_MOCK } from '../apis/server/graphql/mocks/NotFoundPage.mock';
+import { LAST_RESORT_TEXT } from '../configs/LastResort.constants';
+import { loadNotFoundText } from '../features/not-found/NotFoundPage.server';
 import NotFound from './not-found';
 
+vi.mock('../features/not-found/NotFoundPage.server', () => ({
+  loadNotFoundText: vi.fn<typeof loadNotFoundText>(),
+}));
+
 describe('NotFound', () => {
-  it('explains that the page does not exist, with the shell text', () => {
-    render(
-      <ShellTextProvider>
-        <NotFound />
-      </ShellTextProvider>,
-    );
+  it('explains that the page does not exist, with the text of its own query', async () => {
+    vi.mocked(loadNotFoundText).mockResolvedValue(NOT_FOUND_PAGE_MOCK.notFoundText);
+    render(await NotFound());
     expect(
-      screen.getByRole('heading', { level: 1, name: SHELL_TEXT.siteText.notFoundTitle }),
+      screen.getByRole('heading', {
+        level: 1,
+        name: NOT_FOUND_PAGE_MOCK.notFoundText.notFoundTitle,
+      }),
     ).toBeInTheDocument();
   });
 
-  it('falls back to the last-resort text outside the provider', () => {
-    render(<NotFound />);
+  it('falls back to the last-resort text when the text did not load', async () => {
+    vi.mocked(loadNotFoundText).mockResolvedValue(null);
+    render(await NotFound());
     expect(
       screen.getByRole('heading', { level: 1, name: LAST_RESORT_TEXT.notFoundTitle }),
     ).toBeInTheDocument();
+    expect(screen.getByText(LAST_RESORT_TEXT.notFoundDescription)).toBeInTheDocument();
   });
 });

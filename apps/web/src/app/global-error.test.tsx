@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { LAST_RESORT_TEXT } from '../features/site-shell';
+import { LAST_RESORT_TEXT } from '../configs/LastResort.constants';
 import GlobalError from './global-error';
 
 describe('GlobalError', () => {

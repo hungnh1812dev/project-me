@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { STATUS_PAGE_MOCK } from '@/apis/server/graphql/mocks/StatusPage.mock';
-import { LAST_RESORT_TEXT } from '@/features/site-shell';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 import type { StatusPageText } from '@/features/status/StatusPage.graphql';
 
 import { fetchLiveHealth } from '../../features/status/Health.api';

@@ -1,4 +1,4 @@
-import { SITE_SHELL_MOCK } from '@/apis/server/graphql/mocks/SiteShell.mock';
+import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
 import {
   API_ERROR_CODES,
   API_ERROR_SOURCES,
@@ -9,7 +9,7 @@ import {
 import { PrivilegedAccessError } from '../session';
 import { credentialAlertOf, loginErrorAlertOf, rateLimitedMessage } from './LoginAlerts.rules';
 
-const { errors } = SITE_SHELL_MOCK.signInText;
+const { errors } = SIGN_IN_MOCK.signInText;
 
 describe('loginErrorAlertOf', () => {
   it('checks a privileged account before mapping the failure', () => {

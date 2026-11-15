@@ -29,6 +29,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- web: the root layout renders the new server `SiteHeader` (header and sign-in text loaded in parallel) and the not-found page loads its own text; nav, account menu, sign-in dialog, two-factor step and Turnstile widget take their text as props and `features/site-shell` with its text context is removed (PS-1, PS-2, Q-PS1b).
 - web, cms-api: spec: each part fetches its own text: the header (`SiteHeader`), the sign-in dialog (`SignIn`) and the not-found page (`NotFoundPage`) run their own queries and pass the text to their client components as props; the shared `SiteShell` query, its text context and the `site-shell` feature go; the error page always uses the built-in last-resort text, so cms-api `siteText` drops `errorTitle`, `errorDescription` and `errorRetry`; a failed sign-in text hides only the sign-in button (public-site PS-1, PS-2, WEB-3, WEB-6; Q-PS1a, Q-PS1b, user 2026-11-15).
 - cms-api: migration `0012_content.sql` drops the `site_text` columns `error_title`, `error_description` and `error_retry` (the `siteText` fields are gone from the content schema and GraphQL schema; their text is not kept) (WPQ-1).
 - cms-api: no longer accepts `NODE_ENV=test`; its tests run with `development` (API-2).
@@ -94,6 +95,7 @@ Repo 0.1.0, cms-api, cms-admin and web 0.1.0, e2e 0.0.2: the web BFF, the conten
 
 ### Changes
 
+- web: the root layout renders the new server `SiteHeader` (header and sign-in text loaded in parallel) and the not-found page loads its own text; nav, account menu, sign-in dialog, two-factor step and Turnstile widget take their text as props and `features/site-shell` with its text context is removed (PS-1, PS-2, Q-PS1b).
 - cms-api: content fields take `component`, `displayName` and `width`; five schemas move to the new format ([content-schema](docs/modules/content-schema.md)).
 - cms-api: migration `0006_content.sql` renames two component tables and drops old cv-page columns and tables.
 - cms-api: `identifier.reserved` still applies to every field except a component field's name.

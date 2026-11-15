@@ -2,14 +2,11 @@ import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
+import { SITE_HEADER_MOCK } from '@/apis/server/graphql/mocks/SiteHeader.mock';
+
 import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
-import {
-  bffError,
-  fakeApi,
-  SHELL_TEXT,
-  TEST_USER,
-  Wrapper,
-} from '../../features/session/Session.fixture';
+import { bffError, fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { formatText } from '../../utils/TextTemplate.rules';
 import { AccountMenu } from './AccountMenu';
 
@@ -41,16 +38,17 @@ beforeEach(() => {
   humanCheck.siteKey = 'site-key';
 });
 
-const login = SHELL_TEXT.signInText;
-const { siteText } = SHELL_TEXT;
-const { author } = SHELL_TEXT.header;
+const login = SIGN_IN_MOCK.signInText;
+const siteText = SITE_HEADER_MOCK.headerText;
+const { author } = SITE_HEADER_MOCK.header;
+const MENU_PROPS = { text: siteText, author, signInText: login };
 const signedInAs = (name: string) => formatText(siteText.signedInAs, { name });
 
 async function openDialog(api = fakeApi()) {
   const user = userEvent.setup();
   render(
     <Wrapper api={api}>
-      <AccountMenu />
+      <AccountMenu {...MENU_PROPS} />
     </Wrapper>,
   );
   await user.click(await screen.findByRole('button', { name: author.btnLoginText }));
@@ -304,7 +302,7 @@ describe('human check', () => {
   it('shows no reviewer entry', async () => {
     render(
       <Wrapper api={fakeApi()}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     await screen.findByRole('button', { name: author.btnLoginText });
@@ -350,7 +348,7 @@ describe('account menu', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     await user.click(await screen.findByRole('button', { name: author.btnLogoutText }));
@@ -365,7 +363,7 @@ describe('account menu', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
@@ -380,10 +378,37 @@ describe('account menu', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     await screen.findByText(signedInAs(TEST_USER.displayName));
     expect(screen.queryByRole('link', { name: siteText.openCms })).not.toBeInTheDocument();
+  });
+});
+
+describe('account menu without the sign-in text (Q-PS1b)', () => {
+  it('renders no sign-in button and no dialog for an anonymous visitor', async () => {
+    const api = fakeApi();
+    render(
+      <Wrapper api={api}>
+        <AccountMenu {...MENU_PROPS} signInText={null} />
+      </Wrapper>,
+    );
+    await waitFor(() => expect(api.readSession).toHaveBeenCalled());
+    await waitFor(() => expect(document.querySelector('[aria-hidden="true"]')).toBeNull());
+    expect(screen.queryByRole('button', { name: author.btnLoginText })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps the sign-out button for a signed-in visitor', async () => {
+    const api = fakeApi({
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
+    });
+    render(
+      <Wrapper api={api}>
+        <AccountMenu {...MENU_PROPS} signInText={null} />
+      </Wrapper>,
+    );
+    expect(await screen.findByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 });
