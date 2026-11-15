@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/features/not-found
 app: web
-summary: The NotFoundPage content query and its loader for the not-found page text
+summary: The NotFoundPage content query, its loader and the shared not-found message
 ---
 
 # Not found (web)
@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-Owns the `NotFoundPage` content query (`notFoundText`) and its loader, used by `app/not-found.tsx` ([public-site flow](../../flows/public-site/FLOW.md), PS-1, PS-2).
+Owns the `NotFoundPage` content query (`notFoundText`) and its loader, used only by the catch-all route `app/[...unknownPath]/not-found.tsx` (a query in a `not-found.tsx` runs on every render under its segment, so only a segment that is all not-found renders may hold it; the root `app/not-found.tsx` loads no data and shows `LAST_RESORT_TEXT`). Both render `NotFoundMessage` ([public-site flow](../../flows/public-site/FLOW.md), PS-1, PS-2).
 
 ## Techniques
 
@@ -26,7 +26,7 @@ React (`cache`); `graphql` (dev, in specs).
 
 ## Entry points
 
-`loadNotFoundText`, `NOT_FOUND_PAGE_QUERY` (server file), `NotFoundText`.
+`loadNotFoundText`, `NOT_FOUND_PAGE_QUERY` (server file), `NotFoundText`, `NotFoundMessage`.
 
 ## Where to change what
 
@@ -38,13 +38,14 @@ A new not-found text: add it to `NOT_FOUND_PAGE_ROOT_FIELDS`, the type and `NotF
 <!-- prettier-ignore-start -->
 
 ```
-not-found/ (2 files)
+not-found/ (3 files)
 ```
 
 Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
+| `NotFoundMessage.tsx` | The not-found markup (heading and description) both not-found routes render, from a `NotFoundText` |
 | `NotFoundPage.graphql.ts` | Client-safe `NotFoundPage` query: text type, operation name and root field (exports `NotFoundText`, `NotFoundPage`, `NOT_FOUND_PAGE_OPERATION_NAME`, `NOT_FOUND_PAGE_ROOT_FIELDS`) |
 | `NotFoundPage.server.ts` | `server-only` `NOT_FOUND_PAGE_QUERY` and the cached `loadNotFoundText` (exports `NOT_FOUND_PAGE_QUERY`, `loadNotFoundText`) |
 
