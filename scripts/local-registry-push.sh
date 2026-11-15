@@ -2,7 +2,7 @@
 # Builds the app images and pushes them to the local k3d registry (docs/deployments/local-registry.md).
 # Usage: bash scripts/local-registry-push.sh [cms-api|cms-admin|web ...]    (no argument: all three, in that order)
 #   LOCAL_REGISTRY    registry host:port; default k3d-registry.localhost:5001
-#   LOCAL_IMAGE_TAG   image tag; default the short head hash, plus -dirty when the working tree has changes
+#   LOCAL_IMAGE_TAG   image tag; default a UTC timestamp (YYYYmmdd-HHMMSS), so every build gets a new tag
 #   Build args come from .github/scripts/build-args.sh run with ENVIRONMENT=local, so it reads TURBO_VERSION,
 #   VITE_API_BASE_URL, NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY and APP_ENV (web) from the environment.
 # Prints each pushed image ref, one per line. Reads no .env file and never prints a build-arg value.
@@ -21,13 +21,12 @@ build_args_end='ARGS_EOF'
 all_apps=(cms-api cms-admin web)
 usage="usage: local-registry-push.sh [${all_apps[*]}]"
 
+default_tag_format='%Y%m%d-%H%M%S'
+
 registry="${LOCAL_REGISTRY:-${default_registry}}"
 
 default_tag() {
-  local tag
-  tag="$(git rev-parse --short HEAD)"
-  if [ -n "$(git status --porcelain)" ]; then tag="${tag}-dirty"; fi
-  echo "${tag}"
+  date -u +"${default_tag_format}"
 }
 
 die() {
