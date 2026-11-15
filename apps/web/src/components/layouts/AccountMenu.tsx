@@ -3,11 +3,11 @@
 import { useRef, useState } from 'react';
 import { Button } from '@abyss/form-commons';
 
-import { appEnv } from '../../configs/Browser.env';
-import { WebLoginDialog } from '../../features/auth';
-import { useWebSession } from '../../features/session';
-import { LAST_RESORT_TEXT, useRequiredSiteText, useSiteHeader } from '../../features/site-shell';
-import { formatText } from '../../utils/TextTemplate.rules';
+import { appEnv } from '@/configs/Browser.env';
+import { WebLoginDialog } from '@/features/auth';
+import { useWebSession } from '@/features/session';
+import { LAST_RESORT_TEXT, useRequiredSiteText, useSiteHeader } from '@/features/site-shell';
+import { formatText } from '@/utils/TextTemplate.rules';
 
 /** Header controls: sign in, or the account name with Open CMS and sign out. */
 export function AccountMenu() {
