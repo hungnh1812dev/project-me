@@ -25,7 +25,7 @@ D18 (Decisions below), D13 (rendering richtext), D17 (web CSP), D21 (BFF). New r
   - `CvPageVisitor` (BFF `GET /api/v1/cv` only, not a page render; planner Q-WCP5): the `cvPageList` and `cvContact` selections of `CvPage`, no text, sent with the visitor's token, so a signed-in refetch never depends on a text type.
   - Module text types (user 2026-11-12, feature `schema-builder`): the sign-in text and the status page text are the cms-api single types `module-sign-in` and `module-page-status` (GraphQL root fields `moduleSignIn`, `modulePageStatus`). The query documents select them under the aliases `signInText` and `statusPageText` (`signInText: moduleSignIn { … }`), so the response keys, the web text types, the mocks (WEB-5) and the root-field count (D18) stay as they are.
   - Text field names follow the current `COPY` keys (full list: `DESIGN web-content-api`); English only (Q-WCA11). The committed query documents are the contract the user builds cms-api from; types or fields not served yet fall back to the mocks where WEB-5 allows.
-- **PS-2 States.** Where the mock fallback is off, a failed CV query shows the page error state and no published main CV the empty state, both with texts from `cvPageText` / `siteText`; when the shell text itself cannot load, the global error and not-found pages use the last-resort set (WEB-3). A failed `StatusPage` query never hides the status card, which loads no CV data (criterion 25).
+- **PS-2 States.** Where the mock fallback is off, a failed CV query shows the page error state and no published main CV the empty state, both with texts from `cvPageText` / `siteText`; when the shell text itself cannot load, the global error and not-found pages use the last-resort set (WEB-3). A page text single type (`cvPageText`, `siteText`) that answers null, unpublished, is a failed read on every stack, with or without the mocks (Q-WEM3: a null without an error is never mocked): the page shows its error state, not the empty state, because no text exists to fill it (WEB-3); a published `cvPageText` with no published main CV is the empty state (Q-G7) (Q-PS2a). A failed `StatusPage` query never hides the status card, which loads no CV data (criterion 25).
 
 ## Acceptance
 
@@ -52,6 +52,7 @@ Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md
 | Q-G5 | Introspection in production | Off for everyone; tooling uses the committed SDL |
 | Q-G6 | Web GraphQL client | No client library (fetch on server, Axios in browser); `graphql` as a web devDependency for the SDL contract test |
 | Q-G7 | Which cv-page the web shows (it is a collection) | The published one with `isMain = true`, newest `updatedAt` if several; none → empty state |
+| Q-PS2a | `/cv` when `cvPageText` is not published (planner 2026-11-13, feature `web-env-errors`; confirmed when the user approves this draft) | Page error state, as built (`loadCvPage` raises `NO_DATA`); no empty state without its text |
 
 ## Out of scope
 
