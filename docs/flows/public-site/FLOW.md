@@ -1,6 +1,6 @@
 ---
 flow: public-site
-modules: apps/cms-api/src/modules/graphql, apps/web/src/apis/server, apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, apps/cms-api/src/modules/health, apps/web/src/features/cv, apps/web/src/views/cv, apps/web/src/features/status, apps/web/src/views/status, apps/web/src/features/session
+modules: apps/cms-api/src/modules/graphql, apps/web/src/apis/server, apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, apps/cms-api/src/modules/health, apps/web/src/views/cv, apps/web/src/features/status, apps/web/src/views/status, apps/web/src/features/session
 ---
 
 # Public site: flow
@@ -15,11 +15,11 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 
 ## Steps
 
-1. The visitor opens `/cv`; the Next server renders the CV with a per-request CSP nonce (D17). A signed-in visitor's view reads it again through `GET /api/v1/cv` (D21).
+1. The visitor opens `/cv`; the Next server renders `PageCv` with a per-request CSP nonce (D17), or answers 404 when no main CV is published (PS-2). A signed-in visitor's view reads it again through `GET /api/v1/cv` (D21).
 2. The server posts the page's GraphQL operations (PS-1) to `/api/v1/graphql` with `APP_API_TOKEN` (WEB-2); cms-api applies limits, builds the schema for the actor's readable types and resolves through `DocumentsQueryService` (masked).
 3. Next.js caches each answer for its own revalidate seconds (default 180 s, WEB-4); where WEB-5 allows, a failed or empty root field comes from the mocks.
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
-5. The homepage `/` shows only the status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2).
+5. The homepage `/` and `/status` show only the module status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2, Q-PS5).
 
 ```mermaid
 sequenceDiagram
@@ -54,7 +54,6 @@ sequenceDiagram
 | `apps/cms-api/src/modules/documents` | `DocumentsQueryService`, the one read path | [documents.md](../../modules/cms-api/documents.md) |
 | `apps/cms-api/src/modules/access` | Document auth guard, public field profile, masking | [access-control.md](../../modules/access-control.md) |
 | `apps/cms-api/src/modules/health` | Health endpoints behind the status card | [health.md](../../modules/cms-api/health.md) |
-| `apps/web/src/features/cv` | CV data (GraphQL documents, server code) | [cv.md](../../modules/web/cv.md) |
 | `apps/web/src/views/cv` | CV page | [views-cv.md](../../modules/web/views-cv.md) |
 | `apps/web/src/features/status` | Service status card (`GET /api/v1/health`) | [status.md](../../modules/web/status.md) |
 | `apps/web/src/views/status` | Status view | [views-status.md](../../modules/web/views-status.md) |

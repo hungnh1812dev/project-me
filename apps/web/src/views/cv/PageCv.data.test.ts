@@ -1,16 +1,16 @@
 import { runContentQuery, runVisitorQuery } from '@/apis/server/graphql/Graphql.server';
-import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
+import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
+import { readWebSession } from '@/features/session/WebSession.server';
 
-import { readWebSession } from '../session/WebSession.server';
-import { answerCvRead, loadCvPage } from './CvPage.server';
+import { answerCvRead, loadPageCv } from './PageCv.data';
 
-vi.mock('../../apis/server/graphql/Graphql.server', () => ({
+vi.mock('@/apis/server/graphql/Graphql.server', () => ({
   defineContentQuery: (definition: object) => ({ ...definition, document: {} }),
   runContentQuery: vi.fn<typeof runContentQuery>(),
   runVisitorQuery: vi.fn<typeof runVisitorQuery>(),
 }));
 
-vi.mock('../session/WebSession.server', () => ({
+vi.mock('@/features/session/WebSession.server', () => ({
   readWebSession: vi.fn<typeof readWebSession>(),
 }));
 
@@ -18,12 +18,12 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe('loadCvPage', () => {
+describe('loadPageCv', () => {
   it('sanitizes richtext on the server before it reaches the page', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({
       failedRootFields: [],
       data: {
-        cvPageList: {
+        pageCvAList: {
           data: [
             {
               documentId: 'r1',
@@ -36,46 +36,46 @@ describe('loadCvPage', () => {
             },
           ],
         },
-        cvContact: null,
-        cvPageText: CV_PAGE_MOCK.cvPageText,
+        profile: null,
+        pageCvText: PAGE_CV_MOCK.pageCvText,
       },
     });
 
-    const [resume] = (await loadCvPage()).data.cvPageList.data;
+    const [cv] = (await loadPageCv()).data.pageCvAList.data;
 
-    expect(resume?.summary).toBe('<p>ok</p>');
-    expect(resume?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('<a>go</a>');
+    expect(cv?.summary).toBe('<p>ok</p>');
+    expect(cv?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('<a>go</a>');
   });
 
   it('hands over the page text next to the data', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({
       failedRootFields: [],
-      data: { cvPageList: { data: [] }, cvContact: null, cvPageText: CV_PAGE_MOCK.cvPageText },
+      data: { pageCvAList: { data: [] }, profile: null, pageCvText: PAGE_CV_MOCK.pageCvText },
     });
-    expect((await loadCvPage()).text).toBe(CV_PAGE_MOCK.cvPageText);
+    expect((await loadPageCv()).text).toBe(PAGE_CV_MOCK.pageCvText);
   });
 
-  it('accepts a missing contact card', async () => {
+  it('accepts a missing profile', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({
-      failedRootFields: ['cvContact'],
-      data: { cvPageList: { data: [] }, cvContact: null, cvPageText: CV_PAGE_MOCK.cvPageText },
+      failedRootFields: ['profile'],
+      data: { pageCvAList: { data: [] }, profile: null, pageCvText: PAGE_CV_MOCK.pageCvText },
     } as never);
-    await expect(loadCvPage()).resolves.toMatchObject({ data: { cvContact: null } });
+    await expect(loadPageCv()).resolves.toMatchObject({ data: { profile: null } });
   });
 
-  it.each(['cvPageList', 'cvPageText'] as const)(
+  it.each(['pageCvAList', 'pageCvText'] as const)(
     'throws when %s could not be read',
     async (failed) => {
       vi.mocked(runContentQuery).mockResolvedValue({
         failedRootFields: [failed],
         data: {
-          cvPageList: { data: [] },
-          cvContact: null,
-          cvPageText: CV_PAGE_MOCK.cvPageText,
+          pageCvAList: { data: [] },
+          profile: null,
+          pageCvText: PAGE_CV_MOCK.pageCvText,
           [failed]: null,
         },
       } as never);
-      await expect(loadCvPage()).rejects.toMatchObject({
+      await expect(loadPageCv()).rejects.toMatchObject({
         errorCode: 'NO_DATA',
         source: 'cms-api-graphql',
       });
@@ -97,12 +97,12 @@ describe('answerCvRead', () => {
       accessToken: 'tok-1',
       setCookies: ['web_session=new; Path=/'],
     });
-    vi.mocked(runVisitorQuery).mockResolvedValue({ cvPageList: { data: [] }, cvContact: null });
+    vi.mocked(runVisitorQuery).mockResolvedValue({ pageCvAList: { data: [] }, profile: null });
 
     const response = await answerCvRead(context);
 
     expect(vi.mocked(runVisitorQuery).mock.lastCall?.[1]).toBe('tok-1');
-    expect(await response.json()).toEqual({ cvPageList: { data: [] }, cvContact: null });
+    expect(await response.json()).toEqual({ pageCvAList: { data: [] }, profile: null });
     expect(response.headers.getSetCookie()).toEqual(['web_session=new; Path=/']);
   });
 

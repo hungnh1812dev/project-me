@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 
-import { CV_PAGE_MOCK } from '@/apis/server/graphql/mocks/CvPage.mock';
-import { CvContact } from '@/features/cv/Cv.graphql';
+import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
 
 import { ContactCard } from './ContactCard';
-import { MaskedTextContext } from './ResumeSections';
+import { MaskedTextContext } from './CvSection';
+import type { Profile } from './PageCv.graphql';
 
-function contactOf(overrides: Partial<CvContact> = {}): CvContact {
+function profileOf(overrides: Partial<Profile> = {}): Profile {
   return {
     name: 'Mai Tran',
     address: '12 Example Street, Hanoi',
@@ -21,11 +21,11 @@ function contactOf(overrides: Partial<CvContact> = {}): CvContact {
 }
 
 const FALLBACK = 'Mai Tran';
-const TEXT = CV_PAGE_MOCK.cvPageText.contact;
+const TEXT = PAGE_CV_MOCK.pageCvText.contact;
 
-function Card(props: { contact: CvContact | null; fallbackName: string }) {
+function Card(props: { profile: Profile | null; fallbackName: string }) {
   return (
-    <MaskedTextContext.Provider value={CV_PAGE_MOCK.cvPageText.maskedValue}>
+    <MaskedTextContext.Provider value={PAGE_CV_MOCK.pageCvText.maskedValue}>
       <ContactCard {...props} text={TEXT} />
     </MaskedTextContext.Provider>
   );
@@ -33,7 +33,7 @@ function Card(props: { contact: CvContact | null; fallbackName: string }) {
 
 describe('ContactCard', () => {
   it('renders readable values as links where a link makes sense', () => {
-    render(<Card contact={contactOf()} fallbackName={FALLBACK} />);
+    render(<Card profile={profileOf()} fallbackName={FALLBACK} />);
 
     expect(screen.getByRole('heading', { level: 2, name: TEXT.title })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'mai@example.com' })).toHaveAttribute(
@@ -52,7 +52,7 @@ describe('ContactCard', () => {
   });
 
   it('shows initials when there is no avatar', () => {
-    render(<Card contact={contactOf()} fallbackName={FALLBACK} />);
+    render(<Card profile={profileOf()} fallbackName={FALLBACK} />);
     expect(screen.getByText('MT')).toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
@@ -60,7 +60,7 @@ describe('ContactCard', () => {
   it('shows the avatar image with its alt text when present', () => {
     render(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           avatar: { url: 'https://res.cloudinary.com/x/a.png', alt: 'Mai' },
         })}
         fallbackName={FALLBACK}
@@ -72,7 +72,7 @@ describe('ContactCard', () => {
   it('shows the placeholder and none of the masked values', () => {
     const { container } = render(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           address: '***',
           phone: '***',
           email: '***',
@@ -82,7 +82,7 @@ describe('ContactCard', () => {
         fallbackName={FALLBACK}
       />,
     );
-    expect(screen.getAllByText(CV_PAGE_MOCK.cvPageText.maskedValue)).toHaveLength(4);
+    expect(screen.getAllByText(PAGE_CV_MOCK.pageCvText.maskedValue)).toHaveLength(4);
     expect(container).not.toHaveTextContent('***');
     expect(screen.queryByRole('link', { name: /mailto|tel:/ })).toBeNull();
     expect(screen.getByRole('link', { name: /linkedin/ })).toBeInTheDocument();
@@ -91,7 +91,7 @@ describe('ContactCard', () => {
   it('does not link a value that is not a safe target', () => {
     render(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           linkedin: 'javascript:alert(1)',
           email: 'not an email',
         })}
@@ -104,11 +104,11 @@ describe('ContactCard', () => {
   });
 
   it('renders nothing without a contact or without any value', () => {
-    const { container, rerender } = render(<Card contact={null} fallbackName={FALLBACK} />);
+    const { container, rerender } = render(<Card profile={null} fallbackName={FALLBACK} />);
     expect(container).toBeEmptyDOMElement();
     rerender(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           address: null,
           phone: '',
           email: null,

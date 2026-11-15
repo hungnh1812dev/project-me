@@ -1,5 +1,5 @@
 import { defineBffRoute } from '@/apis/server/bff/BffRoute.server';
-import { answerCvRead } from '@/features/cv/CvPage.server';
+import { answerCvRead } from '@/views/cv/PageCv.data';
 
 export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({
   methods: ['GET'],

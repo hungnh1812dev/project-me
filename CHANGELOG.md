@@ -8,6 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### New features
 
+- web: `/cv` is built from the main `page-cv-a`, the `profile` and `pageCvText` in `views/cv` (queries `PageCv` and `PageCvVisitor`); the new projects section is shown, no main CV answers 404, and `features/cv` is gone (WPQ-9).
 - web: `/status` page, and the module status on `/`, come from one `ModuleStatus` part (query `ModuleStatus`, field `moduleStatus`) in place of the `StatusPage` query (WPQ-13).
 - root: the smoke stack publishes the site-shell, sign-in, status and CV content (built from the web mocks by `scripts/smoke/SeedContent.mjs`) before web starts, so the staging web renders real cms-api text.
 - cms-api: new content type `page-cv-a` (migration `0013_content.sql`; a collection of CV pages with skills, experiences with roles, projects and educations; no web reader yet) (WPQ-7).

@@ -1,7 +1,7 @@
-import { isMaskedField, type CvContact, type CvPageText } from '@/features/cv/Cv.graphql';
 import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
 
-import { ExternalLink, MaskedPlaceholder } from './ResumeSections';
+import { ExternalLink, MaskedPlaceholder } from './CvSection';
+import { isMaskedField, type PageCvText, type Profile } from './PageCv.graphql';
 
 const MAX_INITIALS = 2;
 const EMAIL_SHAPE = /^[^\s<>"'@]+@[^\s<>"'@]+$/;
@@ -33,14 +33,14 @@ function initialsOf(name: string): string {
     .join('');
 }
 
-function Avatar({ contact, name }: { contact: CvContact; name: string }) {
-  const url = contact.avatar?.url;
+function Avatar({ profile, name }: { profile: Profile; name: string }) {
+  const url = profile.avatar?.url;
   if (url && isSafeLinkTarget(url)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- Cloudinary origin is allowed by the CSP; next/image would need a loader
       <img
         src={url}
-        alt={contact.avatar?.alt ?? ''}
+        alt={profile.avatar?.alt ?? ''}
         className="border-border size-16 shrink-0 rounded-full border object-cover"
       />
     );
@@ -67,39 +67,39 @@ function ContactValue({ field, value }: { field: ContactField; value: string }) 
   );
 }
 
-/** Contact details of the resume owner; a masked value shows the placeholder. */
+/** Contact details of the CV owner; a masked value shows the placeholder. */
 export function ContactCard({
-  contact,
+  profile,
   fallbackName,
   text,
 }: {
-  contact: CvContact | null;
-  /** Used for the initials when the contact has no name. */
+  profile: Profile | null;
+  /** Used for the initials when the profile has no name. */
   fallbackName: string;
-  text: CvPageText['contact'];
+  text: PageCvText['contact'];
 }) {
-  if (contact === null) return null;
+  if (profile === null) return null;
 
   const rows = CONTACT_FIELDS.flatMap((field) => {
-    const isMasked = isMaskedField(contact, field);
-    const value = contact[field];
+    const isMasked = isMaskedField(profile, field);
+    const value = profile[field];
     if (!isMasked && !value?.trim()) return [];
     return [{ field, isMasked, value: value ?? '' }];
   });
   if (rows.length === 0) return null;
 
-  const name = contact.name?.trim() || fallbackName;
+  const name = profile.name?.trim() || fallbackName;
   return (
     <section
-      aria-labelledby="cv-contact-title"
+      aria-labelledby="cv-profile-title"
       className="border-border bg-card text-card-foreground mt-6 flex flex-col gap-4 rounded-md border p-5 sm:flex-row sm:items-start"
     >
-      <Avatar contact={contact} name={name} />
+      <Avatar profile={profile} name={name} />
       <div className="min-w-0">
-        <h2 id="cv-contact-title" className="text-base font-semibold">
+        <h2 id="cv-profile-title" className="text-base font-semibold">
           {text.title}
         </h2>
-        {contact.name?.trim() ? <p className="mt-1 text-sm font-medium">{contact.name}</p> : null}
+        {profile.name?.trim() ? <p className="mt-1 text-sm font-medium">{profile.name}</p> : null}
         <dl className="mt-2 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
           {rows.map(({ field, isMasked, value }) => (
             <div key={field} className="contents">

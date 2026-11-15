@@ -68,12 +68,11 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
 | auth | `apps/web/src/features/auth` | `docs/modules/web/auth.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Web sign-in dialog with the two-factor step and its Turnstile human check |
-| cv | `apps/web/src/features/cv` | `docs/modules/web/cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | CV data of the public site: the GraphQL document and the server loader |
 | not-found | `apps/web/src/features/not-found` | `docs/modules/web/not-found.md` | complete | - | The NotFoundPage content query, its loader and the shared not-found message |
 | session | `apps/web/src/features/session` | `docs/modules/web/session.md` | complete | [`public-site`](../flows/public-site/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Who is signed in on the web: the session context and the auth API |
 | site-header | `apps/web/src/features/site-header` | `docs/modules/web/site-header.md` | complete | - | The SiteHeader content query and its loader: the header content and the nav and account-menu text |
 | status | `apps/web/src/features/status` | `docs/modules/web/status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The module status part: its text query, health call, card and live-health hook |
-| cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | draft | [`public-site`](../flows/public-site/FLOW.md) | The CV page: sections, contact card, masked values |
+| cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The CV page: query, loader, BFF read, sections, contact card, masked values |
 | home | `apps/web/src/views/home` | `docs/modules/web/views-home.md` | complete | - | The / page, which renders the module status |
 | status | `apps/web/src/views/status` | `docs/modules/web/views-status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The /status page, which renders the module status |
 | server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | draft | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client |

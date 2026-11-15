@@ -1,9 +1,26 @@
-export interface ResumeSkill {
+export interface PageCvSkill {
   level: string | null;
   skill: string | null;
 }
 
-export interface ResumeProject {
+export interface PageCvRole {
+  position: string | null;
+  period: string | null;
+  teamSize: number | null;
+  /** Free text: the projects of this role in the company, not a list of `PageCvProject`. */
+  projects: string | null;
+  techStacks: unknown;
+  responsibilities: string | null;
+}
+
+export interface PageCvExperience {
+  company: string | null;
+  location: string | null;
+  period: string | null;
+  roles: PageCvRole[] | null;
+}
+
+export interface PageCvProject {
   name: string | null;
   teamSize: number | null;
   role: string | null;
@@ -13,55 +30,27 @@ export interface ResumeProject {
   responsibilities: string | null;
 }
 
-export interface ResumeRole {
-  position: string | null;
-  period: string | null;
-  teamSize: number | null;
-  projects: ResumeProject[] | null;
-  techStack: unknown;
-  responsibilities: string | null;
-}
-
-export interface ResumeExperience {
-  company: string | null;
-  location: string | null;
-  period: string | null;
-  roles: ResumeRole[] | null;
-}
-
-export interface ResumeEducation {
+export interface PageCvEducation {
   degree: string | null;
   institution: string | null;
   period: string | null;
   location: string | null;
-  description: string | null;
 }
 
-export interface ResumeLanguage {
-  language: string | null;
-  level: string | null;
-}
-
-export interface ResumeReference {
-  name: string | null;
-  phone: string | null;
-  role: string | null;
-}
-
-export interface Resume {
+export interface PageCvA {
   documentId: string;
-  position: string | null;
   name: string | null;
+  position: string | null;
   summary: string | null;
-  skills: ResumeSkill[] | null;
-  experiences: ResumeExperience[] | null;
-  educations: ResumeEducation[] | null;
-  languages: ResumeLanguage[] | null;
-  references: ResumeReference[] | null;
+  skills: PageCvSkill[] | null;
+  experiences: PageCvExperience[] | null;
+  projects: PageCvProject[] | null;
+  /** The content type declares one education component, not a repeatable one. */
+  educations: PageCvEducation | null;
   _maskedFields: string[];
 }
 
-export interface CvContact {
+export interface Profile {
   name: string | null;
   address: string | null;
   phone: string | null;
@@ -73,12 +62,10 @@ export interface CvContact {
 }
 
 /** Text of the CV page; `teamSize` has `{size}`, the `*LinkName` texts have `{project}`. */
-export interface CvPageText {
+export interface PageCvText {
   loading: string;
   refetchFailed: string;
   fallbackName: string;
-  emptyTitle: string;
-  emptyDescription: string;
   maskedValue: string;
   contact: {
     title: string;
@@ -92,12 +79,12 @@ export interface CvPageText {
     summary: string;
     skills: string;
     experiences: string;
-    educations: string;
-    languages: string;
-  };
-  experience: {
-    teamSize: string;
     projects: string;
+    educations: string;
+  };
+  role: { teamSize: string; projects: string; techStack: string };
+  project: {
+    teamSize: string;
     techStack: string;
     liveLink: string;
     repositoryLink: string;
@@ -105,37 +92,36 @@ export interface CvPageText {
     repositoryLinkName: string;
     unnamedProject: string;
   };
-  reference: { title: string; phone: string };
 }
 
 /** What a visitor session reads: data only, no text. */
-export interface CvPageData {
-  cvPageList: { data: Resume[] };
-  cvContact: CvContact | null;
+export interface PageCvData {
+  pageCvAList: { data: PageCvA[] };
+  profile: Profile | null;
 }
 
-export interface CvPage extends CvPageData {
-  cvPageText: CvPageText;
+export interface PageCvResult extends PageCvData {
+  pageCvText: PageCvText;
 }
 
-export const CV_PAGE_OPERATION_NAME = 'CvPage';
-export const CV_PAGE_VISITOR_OPERATION_NAME = 'CvPageVisitor';
+export const PAGE_CV_OPERATION_NAME = 'PageCv';
+export const PAGE_CV_VISITOR_OPERATION_NAME = 'PageCvVisitor';
 
-/** The newest published main CV, the contact card and the page text: each root field's text after its name. */
-export const CV_PAGE_ROOT_FIELDS = {
-  cvPageList: `(
+/** The newest published main CV, the profile and the page text: each root field's text after its name. */
+export const PAGE_CV_ROOT_FIELDS = {
+  pageCvAList: `(
     filter: { isMain: { eq: true } }
     sort: [{ field: updatedAt, direction: DESC }]
     pageSize: 1
   ) {
     data {
       documentId
-      position
       name
+      position
       summary
       skills {
-        level
         skill
+        level
       }
       experiences {
         company
@@ -145,39 +131,30 @@ export const CV_PAGE_ROOT_FIELDS = {
           position
           period
           teamSize
-          techStack
+          projects
+          techStacks
           responsibilities
-          projects {
-            name
-            teamSize
-            role
-            liveLink
-            repositoryLink
-            techStack
-            responsibilities
-          }
         }
+      }
+      projects {
+        name
+        teamSize
+        role
+        liveLink
+        repositoryLink
+        techStack
+        responsibilities
       }
       educations {
         degree
         institution
         period
         location
-        description
-      }
-      languages {
-        language
-        level
-      }
-      references {
-        name
-        phone
-        role
       }
       _maskedFields
     }
   }`,
-  cvContact: `{
+  profile: `{
     name
     address
     phone
@@ -190,12 +167,10 @@ export const CV_PAGE_ROOT_FIELDS = {
     }
     _maskedFields
   }`,
-  cvPageText: `{
+  pageCvText: `{
     loading
     refetchFailed
     fallbackName
-    emptyTitle
-    emptyDescription
     maskedValue
     contact {
       title
@@ -209,12 +184,16 @@ export const CV_PAGE_ROOT_FIELDS = {
       summary
       skills
       experiences
+      projects
       educations
-      languages
     }
-    experience {
+    role {
       teamSize
       projects
+      techStack
+    }
+    project {
+      teamSize
       techStack
       liveLink
       repositoryLink
@@ -222,20 +201,16 @@ export const CV_PAGE_ROOT_FIELDS = {
       repositoryLinkName
       unnamedProject
     }
-    reference {
-      title
-      phone
-    }
   }`,
 } as const;
 
-export function mainResumeOf(data: CvPageData): Resume | undefined {
-  return data.cvPageList.data[0];
+export function mainCvOf(data: PageCvData): PageCvA | undefined {
+  return data.pageCvAList.data[0];
 }
 
-/** True when the API masked this field path (`references.phone`) for the viewer. */
+/** True when the API masked this field path (`experiences.company`) for the viewer. */
 export function isMaskedField(
-  { _maskedFields: maskedFields }: Pick<Resume | CvContact, '_maskedFields'>,
+  { _maskedFields: maskedFields }: Pick<PageCvA | Profile, '_maskedFields'>,
   path: string,
 ): boolean {
   return maskedFields.includes(path);
@@ -256,31 +231,26 @@ function sanitizedOrNull(
  * (server load, browser refetch) must pass through here first; the sanitizer
  * is passed in because the server and the browser need different DOMs.
  */
-export function sanitizeCvRichtext(data: CvPageData, sanitize: RichtextSanitizer): CvPageData {
+export function sanitizeCvRichtext(data: PageCvData, sanitize: RichtextSanitizer): PageCvData {
   return {
     ...data,
-    cvPageList: {
-      data: data.cvPageList.data.map((resume) => ({
-        ...resume,
-        summary: sanitizedOrNull(resume.summary, sanitize),
+    pageCvAList: {
+      data: data.pageCvAList.data.map((cv) => ({
+        ...cv,
+        summary: sanitizedOrNull(cv.summary, sanitize),
         experiences:
-          resume.experiences?.map((experience) => ({
+          cv.experiences?.map((experience) => ({
             ...experience,
             roles:
               experience.roles?.map((role) => ({
                 ...role,
                 responsibilities: sanitizedOrNull(role.responsibilities, sanitize),
-                projects:
-                  role.projects?.map((project) => ({
-                    ...project,
-                    responsibilities: sanitizedOrNull(project.responsibilities, sanitize),
-                  })) ?? null,
               })) ?? null,
           })) ?? null,
-        educations:
-          resume.educations?.map((education) => ({
-            ...education,
-            description: sanitizedOrNull(education.description, sanitize),
+        projects:
+          cv.projects?.map((project) => ({
+            ...project,
+            responsibilities: sanitizedOrNull(project.responsibilities, sanitize),
           })) ?? null,
       })),
     },

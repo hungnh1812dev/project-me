@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/views/cv
 app: web
-summary: The CV page: sections, contact card, masked values
+summary: The CV page: query, loader, BFF read, sections, contact card, masked values
 ---
 
 # Cv (web)
@@ -14,23 +14,23 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Renders the public CV from the server data and the page text (`cvPageText`, passed as props from `app/cv/page.tsx`), and refetches it with the visitor's token when someone is signed in ([public-site flow](../../flows/public-site/FLOW.md)).
+Renders the public CV at `/cv`: the main `page-cv-a`, the `profile` as the contact card and the labels of `pageCvText`, all read server-side and passed to the client view; a signed-in visitor refetches the data with their token ([public-site flow](../../flows/public-site/FLOW.md)).
 
 ## Techniques
 
-Server data first: anonymous visitors (and everyone's first paint) get the server-rendered data without a request; a signed-in session refetches through `GET /api/v1/cv` with its own token, cached per actor, and signing out falls back to the server data. Masked values render a placeholder; unsafe link targets render as text; richtext is sanitized on the server only (D13).
+Page layout of web RULES "Page layout": `PageCv.tsx` (Server Component) loads through `PageCv.data.ts` (`loadPageCv`, React `cache`, shared by `generateMetadata` and the page); no main CV calls `notFound()`, a failed read or a null `pageCvText` raises `NO_DATA` (error page). The two content queries (`PageCv`, `PageCvVisitor`) are declared in `PageCv.data.ts` from the selections of `PageCv.graphql.ts`; the BFF route `GET /api/v1/cv` binds `answerCvRead` from the same file. Server data first: anonymous visitors (and everyone's first paint) get the server-rendered data without a request; a signed-in session refetches per actor, signing out falls back to the server data, a failed refetch keeps the server CV and shows the refetch-failed text. Masked values render a placeholder; unsafe link targets render as text; richtext is sanitized on the server only (D13).
 
 ## Technologies
 
-React, TanStack Query, DOMPurify.
+React, TanStack Query.
 
 ## Entry points
 
-`CvView` (rendered by `app/cv/page.tsx`), `useCvContent`.
+`PageCv` and its `generateMetadata` (rendered and re-exported by `app/cv/page.tsx`), `answerCvRead` (bound by `app/api/v1/cv/route.ts`).
 
 ## Where to change what
 
-A new section: `ResumeSections.tsx`; contact items: `ContactCard.tsx`; who sees which data: `useCvContent.ts`.
+A field or label: `PageCv.graphql.ts` (selection and types) and `apis/server/graphql/mocks/PageCv.mock.ts`; a new section: a `<Name>Section.tsx` file plus one line in `PageCv.client.tsx`; contact items: `ContactCard.tsx`; who sees which data: `usePageCvData` in `PageCv.client.tsx`; what is loaded and how it fails: `PageCv.data.ts`.
 
 ## Files
 
@@ -38,17 +38,22 @@ A new section: `ResumeSections.tsx`; contact items: `ContactCard.tsx`; who sees 
 <!-- prettier-ignore-start -->
 
 ```
-cv/ (4 files)
+cv/ (9 files)
 ```
 
-Tests: 3 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
-| `ContactCard.tsx` | Contact details with link targets and masked values (exports `ContactCard`) |
-| `CvView.tsx` | The CV page client view (exports `CvView`) |
-| `ResumeSections.tsx` | Resume sections, masked placeholder and safe links (exports `MaskedTextContext`, `MaskedPlaceholder`, `ExternalLink`, `SummarySection` +6) |
-| `useCvContent.ts` | CV data for the current visitor, per actor (exports `useCvContent`) |
+| `ContactCard.tsx` | Contact card of the `profile` with link targets and masked values (exports `ContactCard`) |
+| `CvSection.tsx` | Section frame, richtext, masked placeholder and context, external link, tech stack, summary and skills sections (exports `MUTED_CLASS`, `MaskedTextContext`, `MaskedPlaceholder`, `ExternalLink` +6) |
+| `EducationsSection.tsx` | The education section (the single education component of the CV) (exports `EducationsSection`) |
+| `ExperiencesSection.tsx` | Experiences with their roles; the company masks by `experiences.company` (exports `ExperiencesSection`) |
+| `PageCv.client.tsx` | The client view: the signed-in refetch per actor, the masked-text context and the page layout (exports `PageCvClient`) |
+| `PageCv.data.ts` | Server-only: the two content queries, `loadPageCv` (cached), `loadPageCvForSession`, `answerCvRead` for the BFF route (exports `PAGE_CV_QUERY`, `PAGE_CV_VISITOR_QUERY`, `PageCvContent`, `loadPageCv` +2) |
+| `PageCv.graphql.ts` | Selections of `PageCv` and `PageCvVisitor`, result types, `mainCvOf`, `isMaskedField`, `sanitizeCvRichtext`; client-safe (exports `PageCvSkill`, `PageCvRole`, `PageCvExperience`, `PageCvProject` +12) |
+| `PageCv.tsx` | The page: loads the CV, 404 with no main CV, `generateMetadata` (`<name> - <position>`) (exports `generateMetadata`, `PageCv`) |
+| `ProjectsSection.tsx` | The top-level projects of the CV, with safe links and tech stack (exports `ProjectsSection`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

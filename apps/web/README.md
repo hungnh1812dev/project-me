@@ -6,18 +6,18 @@ container behind Traefik at `<domain>`; the API lives on the same origin under
 
 Routes:
 
-- `/` is the CV page. `app/page.tsx` (Server Component) loads the `CvPage`
-  GraphQL document through `features/cv` (`loadCvPage`, public role) and hands
-  it to the client `CvView`. Anonymous visitors see the server data; a signed-in
-  account or a reviewer session refetches the same document from the browser
-  with its own Bearer token (`useCvContent`, keyed by actor), and sign-out
-  returns to the server data. No main resume gives an empty state. `CvView`
-  renders `ContactCard` (cv-contact) and `ResumeSections` (summary, skills,
-  experience, education, languages, referees; an empty section is not drawn).
-  A field named in `_maskedFields` shows `MaskedPlaceholder` ("Sign in to
-  view"), never the value. Richtext is sanitized where data enters the page:
-  `loadCvPage` (server, `SafeRichtext.server`) and `useCvContent` (browser
-  refetch, `SafeRichtext.rules`) both call `sanitizeCvRichtext`, so the
+- `/cv` is the CV page. `app/cv/page.tsx` renders only `views/cv/PageCv`
+  (Server Component), which loads the `PageCv` GraphQL document through
+  `PageCv.data.ts` (`loadPageCv`, public role: the main `page-cv-a`, the
+  `profile` and `pageCvText`) and hands it to the client `PageCvClient`. No
+  main CV answers 404. Anonymous visitors see the server data; a signed-in
+  account refetches the `PageCvVisitor` selections through `GET /api/v1/cv`
+  (BFF, keyed by actor), and sign-out returns to the server data. `PageCvClient`
+  renders `ContactCard` (the profile) and the sections `CvSection` (summary,
+  skills), `ExperiencesSection`, `ProjectsSection` and `EducationsSection`; an
+  empty section is not drawn. A field named in `_maskedFields` shows
+  `MaskedPlaceholder` ("Sign in to view"), never the value. Richtext is
+  sanitized on the server (`sanitizeCvRichtext` in `PageCv.data.ts`), so the
   components only see clean HTML.
 - `app/error.tsx` is the error state for any page (client component, "Try
   again" calls Next's `retry`). It never reads the thrown error, so no server
