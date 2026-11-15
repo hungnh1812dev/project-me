@@ -15,6 +15,10 @@ Part of the [project spec](../../../SPEC.md). App `web`: [SPEC.md](SPEC.md) · [
 
 Web rules: Server Components by default; `'use client'` only for state, effects, handlers, browser APIs, TanStack Query, react-hook-form or any `@abyss/form-commons` import. Files that read server env or call `APP_API_URL` import `server-only`. The browser never holds a user token and never calls cms-api: every browser call goes to the BFF Route Handlers under `/api/v1` on the web origin, which keep the cms-api tokens in a sealed HttpOnly cookie (D21, amended 2026-10-31, ADR 0018; replaces the earlier "the Next server never holds a token" rule). No Server Actions. No `store/` on web. No user-facing text literal in web source except the last-resort set of WEB-3; text comes from the page text queries (WEB-3). `APP_API_TOKEN` is read only by `apis/server/graphql` and stays server-only (WEB-2). Every server fetch sets its revalidate seconds; a visitor-token call is `no-store` (WEB-4).
 
+## Not-found pages
+
+Next.js renders every `not-found.tsx` with every route under its segment, not only when a page is missing, so a query in one runs on each of those renders (planner 2026-11-15, finding WPQ-A-qc#1). The root `app/not-found.tsx` loads no data: it shows the last-resort not-found text (WEB-3) and serves only `notFound()` calls of routes that have no not-found page of their own (none today). Unknown URLs reach the catch-all route `app/[...unknownPath]/`, whose page only calls `notFound()` and whose `not-found.tsx` runs the `NotFoundPage` query (public-site PS-1); a query in a `not-found.tsx` is allowed only in a segment whose every render is a not-found render. Both not-found files render the one `NotFoundMessage` component of `features/not-found`.
+
 ## Mock fallback (WEB-5)
 
 Applies to flows: `public-site`, `sign-in`.
