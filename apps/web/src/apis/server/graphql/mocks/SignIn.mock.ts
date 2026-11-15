@@ -56,5 +56,8 @@ export const SIGN_IN_MOCK = {
       unsupportedMethod:
         'This account uses a verification method this site does not support. Sign in through the CMS instead.',
     },
+    openCms: 'Open CMS',
+    signedInAs: 'Signed in as {name}',
+    signOutFailed: 'Sign-out did not reach the server, so you are still signed in. Try again.',
   },
 } as const;

@@ -18,15 +18,11 @@ describe('account menu with an admin URL', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu
-          text={SITE_HEADER_MOCK.headerText}
-          author={SITE_HEADER_MOCK.header.author}
-          signInText={SIGN_IN_MOCK.signInText}
-        />
+        <AccountMenu author={SITE_HEADER_MOCK.header.author} signInText={SIGN_IN_MOCK.signInText} />
       </Wrapper>,
     );
     expect(
-      await screen.findByRole('link', { name: SITE_HEADER_MOCK.headerText.openCms }),
+      await screen.findByRole('link', { name: SIGN_IN_MOCK.signInText.openCms }),
     ).toHaveAttribute('href', 'https://admin.example.com');
   });
 });

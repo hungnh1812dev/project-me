@@ -19,7 +19,7 @@ vi.mock('./AccountMenu', () => ({
   ),
 }));
 vi.mock('./SiteNav', () => ({
-  SiteNav: ({ text }: { text: { navCvLink: string } }) => <a href="/cv">{text.navCvLink}</a>,
+  SiteNav: ({ cvLinkText }: { cvLinkText: string | null }) => <span>{cvLinkText}</span>,
 }));
 
 /** `SiteHeader` is an async server component: its function is awaited, then its result rendered. */
@@ -30,7 +30,6 @@ async function renderHeader() {
 beforeEach(() => {
   vi.mocked(loadSiteHeader).mockResolvedValue({
     header: { ...SITE_HEADER_MOCK.header, nav: [] },
-    headerText: SITE_HEADER_MOCK.headerText,
   });
   vi.mocked(loadSignInText).mockResolvedValue(SIGN_IN_MOCK.signInText);
 });
@@ -43,9 +42,9 @@ describe('SiteHeader', () => {
       '/',
     );
     expect(
-      screen.getByRole('navigation', { name: SITE_HEADER_MOCK.headerText.navLabel }),
+      screen.getByRole('navigation', { name: SITE_HEADER_MOCK.header.navLabel }),
     ).toBeVisible();
-    expect(screen.getByRole('link', { name: SITE_HEADER_MOCK.headerText.navCvLink })).toBeVisible();
+    expect(screen.getByText(SITE_HEADER_MOCK.header.navCvLink)).toBeVisible();
     expect(screen.getByText('menu')).toBeVisible();
   });
 

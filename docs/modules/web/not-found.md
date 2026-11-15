@@ -18,7 +18,7 @@ Owns the `NotFoundPage` content query (`notFoundText`) and its loader, used only
 
 ## Techniques
 
-`NotFoundPage.graphql.ts` is client-safe; `NotFoundPage.server.ts` is `server-only`. `notFoundText` is a GraphQL alias of the cms-api root field `siteText`. `loadNotFoundText` is in React `cache` and returns `null` with one logged `NO_DATA` error when it failed; the page then shows `LAST_RESORT_TEXT`.
+`NotFoundPage.graphql.ts` is client-safe; `NotFoundPage.server.ts` is `server-only`. `notFoundText` is a GraphQL alias of the cms-api root field `header` (`notFoundTitle`, `notFoundDescription`). `loadNotFoundText` is in React `cache` and returns `null` with one logged `NO_DATA` error when it failed; the page then shows `LAST_RESORT_TEXT`.
 
 ## Technologies
 

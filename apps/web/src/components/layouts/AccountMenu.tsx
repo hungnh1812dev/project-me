@@ -7,18 +7,17 @@ import { appEnv } from '@/configs/Browser.env';
 import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 import { WebLoginDialog, type SignInText } from '@/features/auth';
 import { useWebSession } from '@/features/session';
-import type { HeaderContent, HeaderText } from '@/features/site-header/SiteHeader.graphql';
+import type { HeaderContent } from '@/features/site-header/SiteHeader.graphql';
 import { formatText } from '@/utils/TextTemplate.rules';
 
 interface AccountMenuProps {
-  text: HeaderText;
   author: HeaderContent['author'];
   /** Without it the sign-in text did not load: no sign-in button and no dialog. */
   signInText: SignInText | null;
 }
 
 /** Header controls: sign in, or the account name with Open CMS and sign out. */
-export function AccountMenu({ text, author, signInText }: AccountMenuProps) {
+export function AccountMenu({ author, signInText }: AccountMenuProps) {
   const { status, user, signOut } = useWebSession();
   const signInButtonRef = useRef<HTMLButtonElement>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -54,12 +53,14 @@ export function AccountMenu({ text, author, signInText }: AccountMenuProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-muted-foreground hidden max-w-48 truncate text-sm sm:inline">
-        {formatText(text.signedInAs, { name: user.displayName })}
-      </span>
-      {appEnv.adminUrl !== undefined ? (
+      {signInText?.signedInAs ? (
+        <span className="text-muted-foreground hidden max-w-48 truncate text-sm sm:inline">
+          {formatText(signInText.signedInAs, { name: user.displayName })}
+        </span>
+      ) : null}
+      {appEnv.adminUrl !== undefined && signInText?.openCms ? (
         <Button asChild size="sm" variant="secondary">
-          <a href={appEnv.adminUrl}>{text.openCms}</a>
+          <a href={appEnv.adminUrl}>{signInText.openCms}</a>
         </Button>
       ) : null}
       <Button
@@ -76,9 +77,9 @@ export function AccountMenu({ text, author, signInText }: AccountMenuProps) {
       >
         {author?.btnLogoutText ?? LAST_RESORT_TEXT.signOut}
       </Button>
-      {signOutFailed ? (
+      {signOutFailed && signInText?.signOutFailed ? (
         <p role="alert" className="text-destructive-strong text-sm">
-          {text.signOutFailed}
+          {signInText.signOutFailed}
         </p>
       ) : null}
     </div>

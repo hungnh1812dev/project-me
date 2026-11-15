@@ -17,13 +17,12 @@ export async function SiteHeader() {
           {siteHeader?.header.name ?? LAST_RESORT_TEXT.appName}
         </Link>
         {siteHeader === null ? null : (
-          <nav aria-label={siteHeader.headerText.navLabel} className="flex items-center gap-4">
-            <SiteNav nav={siteHeader.header.nav} text={siteHeader.headerText} />
-            <AccountMenu
-              text={siteHeader.headerText}
-              author={siteHeader.header.author}
-              signInText={signInText}
-            />
+          <nav
+            aria-label={siteHeader.header.navLabel ?? undefined}
+            className="flex items-center gap-4"
+          >
+            <SiteNav nav={siteHeader.header.nav} cvLinkText={siteHeader.header.navCvLink} />
+            <AccountMenu author={siteHeader.header.author} signInText={signInText} />
           </nav>
         )}
       </div>

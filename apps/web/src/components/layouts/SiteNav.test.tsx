@@ -28,23 +28,26 @@ function renderNav(user: typeof TEST_USER | null, nav = NAV) {
   const Providers = ({ children }: { children: ReactNode }) => (
     <WebSessionProvider api={api}>{children}</WebSessionProvider>
   );
-  return render(<SiteNav nav={nav} text={SITE_HEADER_MOCK.headerText} />, { wrapper: Providers });
+  return render(<SiteNav nav={nav} cvLinkText={SITE_HEADER_MOCK.header.navCvLink} />, {
+    wrapper: Providers,
+  });
 }
 
 describe('SiteNav', () => {
   it('shows only the CV link when header.nav is empty', async () => {
     renderNav(null, []);
     expect(await screen.findAllByRole('link')).toHaveLength(1);
-    expect(
-      screen.getByRole('link', { name: SITE_HEADER_MOCK.headerText.navCvLink }),
-    ).toHaveAttribute('href', '/cv');
+    expect(screen.getByRole('link', { name: SITE_HEADER_MOCK.header.navCvLink })).toHaveAttribute(
+      'href',
+      '/cv',
+    );
   });
 
   it('puts the CV link first, hides role items when signed out and drops unsafe or untitled items', async () => {
     renderNav(null);
     await screen.findByRole('link', { name: 'Blog' });
     const names = screen.getAllByRole('link').map((link) => link.textContent);
-    expect(names).toEqual([SITE_HEADER_MOCK.headerText.navCvLink, 'Blog']);
+    expect(names).toEqual([SITE_HEADER_MOCK.header.navCvLink, 'Blog']);
   });
 
   it('shows an item to a signed-in viewer with its role, and only the sub items they may see', async () => {

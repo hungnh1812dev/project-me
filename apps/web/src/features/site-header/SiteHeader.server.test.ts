@@ -13,15 +13,15 @@ beforeEach(() => {
 });
 
 describe('loadSiteHeader', () => {
-  it('returns the header and its text', async () => {
+  it('returns the header with its text', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({ data: SITE_HEADER_MOCK, failedRootFields: [] });
     await expect(loadSiteHeader()).resolves.toEqual(SITE_HEADER_MOCK);
   });
 
   it('returns null when a root field failed', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({
-      data: { ...SITE_HEADER_MOCK, headerText: null },
-      failedRootFields: ['headerText'] as never,
+      data: { header: null },
+      failedRootFields: ['header'] as never,
     });
     await expect(loadSiteHeader()).resolves.toBeNull();
   });

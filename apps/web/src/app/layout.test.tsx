@@ -31,7 +31,6 @@ describe('RootLayout', () => {
   it('titles the page with the brand', async () => {
     vi.mocked(loadSiteHeader).mockResolvedValue({
       header: { ...SITE_HEADER_MOCK.header, nav: [] },
-      headerText: SITE_HEADER_MOCK.headerText,
     });
     expect(await generateMetadata()).toEqual({ title: SITE_HEADER_MOCK.header.name });
   });

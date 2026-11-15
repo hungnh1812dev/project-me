@@ -17,13 +17,13 @@ export const SITE_HEADER_QUERY = defineContentQuery<SiteHeader>({
 });
 
 /**
- * The header and its text; one request per render. Returns `null` when a root field
+ * The header with its text; one request per render. Returns `null` when the root field
  * failed or answered null, so the layout renders the brand only instead of failing every page.
  */
 export const loadSiteHeader = cache(async (): Promise<SiteHeader | null> => {
   const { data, failedRootFields } = await runContentQuery(SITE_HEADER_QUERY);
-  const { header, headerText } = data;
-  if (failedRootFields.length === 0 && header && headerText) return { header, headerText };
+  const { header } = data;
+  if (failedRootFields.length === 0 && header) return { header };
   logApiError(
     new WebApiError({
       source: API_ERROR_SOURCES.CMS_API_GRAPHQL,

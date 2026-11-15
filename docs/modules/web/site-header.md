@@ -14,11 +14,11 @@ Flows: none yet.
 
 ## Purpose
 
-Owns the `SiteHeader` content query (`header`, `headerText`) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
+Owns the `SiteHeader` content query (the one root field `header`, with `navLabel` and `navCvLink`) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
 
 ## Techniques
 
-`SiteHeader.graphql.ts` is client-safe; `SiteHeader.server.ts` is `server-only` and builds the query with `defineContentQuery`. `headerText` is a GraphQL alias of the cms-api root field `siteText`. `loadSiteHeader` is in React `cache` and returns `null` with one logged `NO_DATA` error when a root field failed or answered null. Same split as `features/status`.
+`SiteHeader.graphql.ts` is client-safe; `SiteHeader.server.ts` is `server-only` and builds the query with `defineContentQuery`. The account menu text (`openCms`, `signedInAs`, `signOutFailed`) comes from the sign-in query, not from here. `loadSiteHeader` is in React `cache` and returns `null` with one logged `NO_DATA` error when the root field failed or answered null. Same split as `features/status`.
 
 ## Technologies
 
@@ -45,7 +45,7 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `SiteHeader.graphql.ts` | Client-safe `SiteHeader` query: header and text types, operation name and root fields (exports `HeaderNavLink`, `HeaderNav`, `HeaderContent`, `HeaderText` +3) |
+| `SiteHeader.graphql.ts` | Client-safe `SiteHeader` query: header content types, operation name and root field (exports `HeaderNavLink`, `HeaderNav`, `HeaderContent` +3) |
 | `SiteHeader.server.ts` | `server-only` `SITE_HEADER_QUERY` and the cached `loadSiteHeader` (exports `SITE_HEADER_QUERY`, `loadSiteHeader`) |
 
 <!-- prettier-ignore-end -->

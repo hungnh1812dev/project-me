@@ -11,32 +11,23 @@ export interface HeaderNav extends HeaderNavLink {
 export interface HeaderContent {
   name: string | null;
   nav: HeaderNav[] | null;
+  navLabel: string | null;
+  navCvLink: string | null;
   author: { btnLoginText: string | null; btnLogoutText: string | null } | null;
-}
-
-/** Text of the nav and the account menu; `signedInAs` has the `{name}` placeholder. */
-export interface HeaderText {
-  navLabel: string;
-  navCvLink: string;
-  openCms: string;
-  signOutFailed: string;
-  signedInAs: string;
 }
 
 export interface SiteHeader {
   header: HeaderContent;
-  headerText: HeaderText;
 }
 
 export const SITE_HEADER_OPERATION_NAME = 'SiteHeader';
 
-/**
- * The header and its text: each root field's text after its name.
- * `headerText` is a GraphQL alias of the cms-api root field `siteText`.
- */
+/** The header with its text: each root field's text after its name. */
 export const SITE_HEADER_ROOT_FIELDS = {
   header: `{
     name
+    navLabel
+    navCvLink
     nav {
       title
       link
@@ -51,12 +42,5 @@ export const SITE_HEADER_ROOT_FIELDS = {
       btnLoginText
       btnLogoutText
     }
-  }`,
-  headerText: `: siteText {
-    navLabel
-    navCvLink
-    openCms
-    signOutFailed
-    signedInAs
   }`,
 } as const;

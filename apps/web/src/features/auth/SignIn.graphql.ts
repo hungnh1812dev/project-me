@@ -1,4 +1,7 @@
-/** Text of the sign-in dialog and its two-factor step; the `*Seconds*` and `*Minutes*` texts have the `{count}` placeholder. */
+/**
+ * Text of the sign-in dialog, its two-factor step and the signed-in account menu; the `*Seconds*` and
+ * `*Minutes*` texts have the `{count}` placeholder, `signedInAs` has `{name}`.
+ */
 export interface SignInText {
   title: string;
   description: string;
@@ -51,6 +54,9 @@ export interface SignInText {
     invalidCode: string;
     unsupportedMethod: string;
   };
+  openCms: string | null;
+  signedInAs: string | null;
+  signOutFailed: string | null;
 }
 
 export interface SignIn {
@@ -59,9 +65,9 @@ export interface SignIn {
 
 export const SIGN_IN_OPERATION_NAME = 'SignIn';
 
-/** The sign-in dialog text; `signInText` is a GraphQL alias of the cms-api root field `moduleSignIn`, so the response key stays `signInText`. */
+/** The sign-in text; `signInText` is a GraphQL alias of the cms-api root field `moduleAuth`, so the response key stays `signInText`. */
 export const SIGN_IN_ROOT_FIELDS = {
-  signInText: `: moduleSignIn {
+  signInText: `: moduleAuth {
     title
     description
     emailLabel
@@ -113,5 +119,8 @@ export const SIGN_IN_ROOT_FIELDS = {
       invalidCode
       unsupportedMethod
     }
+    openCms
+    signedInAs
+    signOutFailed
   }`,
 } as const;

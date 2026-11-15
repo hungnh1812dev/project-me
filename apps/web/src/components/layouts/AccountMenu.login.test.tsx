@@ -39,10 +39,9 @@ beforeEach(() => {
 });
 
 const login = SIGN_IN_MOCK.signInText;
-const siteText = SITE_HEADER_MOCK.headerText;
 const { author } = SITE_HEADER_MOCK.header;
-const MENU_PROPS = { text: siteText, author, signInText: login };
-const signedInAs = (name: string) => formatText(siteText.signedInAs, { name });
+const MENU_PROPS = { author, signInText: login };
+const signedInAs = (name: string) => formatText(login.signedInAs, { name });
 
 async function openDialog(api = fakeApi()) {
   const user = userEvent.setup();
@@ -352,7 +351,7 @@ describe('account menu', () => {
       </Wrapper>,
     );
     await user.click(await screen.findByRole('button', { name: author.btnLogoutText }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(siteText.signOutFailed);
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.signOutFailed);
     expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 
@@ -382,7 +381,7 @@ describe('account menu', () => {
       </Wrapper>,
     );
     await screen.findByText(signedInAs(TEST_USER.displayName));
-    expect(screen.queryByRole('link', { name: siteText.openCms })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: login.openCms })).not.toBeInTheDocument();
   });
 });
 
@@ -410,5 +409,7 @@ describe('account menu without the sign-in text (Q-PS1b)', () => {
       </Wrapper>,
     );
     expect(await screen.findByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
+    expect(screen.queryByText(signedInAs(TEST_USER.displayName))).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: login.openCms ?? '' })).not.toBeInTheDocument();
   });
 });
