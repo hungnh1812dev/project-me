@@ -7,7 +7,7 @@ import { useCallerAccess } from '@features/access';
 const SCHEMA_BUILDER_NAV_ITEM: NavItem = {
   label: COMMON_TEXT.nav.schemaBuilder,
   path: APP_ROUTES.SCHEMA_BUILDER,
-  section: 'systemSettings',
+  section: 'utilities',
   subject: 'schema_builder',
   action: 'read',
 };
