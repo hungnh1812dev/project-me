@@ -25,9 +25,11 @@ Routes:
   streams cannot change the HTTP status: the response is already `200 OK` and
   the error UI arrives inside the stream (Next 16 streaming guide, "Status
   codes"); a failure before the first byte is a `500`.
-- `/status` is the API status card (`GET /api/v1/health/live` from the browser,
-  built with `@abyss/form-commons`). It is not linked from the header. It answers 404 unless
-  `WEB_STATUS_PAGE_ENABLED=true` (read per request, ADR 0014).
+- `/` and `/status` both render the module status (`ModuleStatus` of
+  `features/status`: the text from the `ModuleStatus` query and the API status
+  card, `GET /api/v1/health` from the browser). `PageHome` and `PageStatus` load
+  no CV data; a failed text query leaves the card with its last-resort words.
+  `/status` is not linked from the header.
 
 ## Run
 
@@ -78,7 +80,7 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
 - User-facing text comes from the cms-api text types (`siteText`, `signInText`,
-  `statusPageText`, `cvPageText`) through the content features, never from literals.
+  `statusText`, `pageCvText`) through the content features, never from literals.
 - `configs/**` may use pure helpers (`StripTrailingSlashes`,
   `SafeLinkTarget`) but never `apis/client/Api.client` or a feature (ESLint). Error
   codes live with their feature constants (`Auth.constants`,

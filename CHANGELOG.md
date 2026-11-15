@@ -8,6 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### New features
 
+- web: `/status` page, and the module status on `/`, come from one `ModuleStatus` part (query `ModuleStatus`, field `moduleStatus`) in place of the `StatusPage` query (WPQ-13).
 - root: the smoke stack publishes the site-shell, sign-in, status and CV content (built from the web mocks by `scripts/smoke/SeedContent.mjs`) before web starts, so the staging web renders real cms-api text.
 - cms-api: new content type `page-cv-a` (migration `0013_content.sql`; a collection of CV pages with skills, experiences with roles, projects and educations; no web reader yet) (WPQ-7).
 - e2e: every `tests/*.e2e.spec.ts` carries app tags (`@cms-admin`, `@web`, `@cms-api`) and flow tags, checked against `docs/apps` and `docs/flows` by `src/SpecTags.contract.test.ts`; qc selects a test scope with `--grep`.

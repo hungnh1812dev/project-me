@@ -4,8 +4,8 @@ import { Button } from '@abyss/form-commons';
 
 import { BFF_BASE_PATH, BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
-import type { StatusPageText } from '@/features/status/StatusPage.graphql';
 
+import type { ModuleStatusText } from './ModuleStatus.graphql';
 import { useLiveHealth, type LiveHealthState } from './useLiveHealth';
 
 const BADGE_TONE: Record<LiveHealthState, string> = {
@@ -22,7 +22,7 @@ const DOT_TONE: Record<LiveHealthState, string> = {
 
 const timeFormat = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
 
-/** The words the card shows when the page text could not load. */
+/** The words the card shows when the status text could not load. */
 const LAST_RESORT_CARD_TEXT = {
   stateChecking: LAST_RESORT_TEXT.statusChecking,
   stateOk: LAST_RESORT_TEXT.statusOperational,
@@ -32,7 +32,7 @@ const LAST_RESORT_CARD_TEXT = {
 
 const HEALTH_PATH = `${BFF_BASE_PATH}${BFF_ENDPOINTS.HEALTH}`;
 
-function StatusCard({ text }: { text: StatusPageText | null }) {
+function StatusCard({ text }: { text: ModuleStatusText | null }) {
   const { state, isFetching, lastCheckedAt, refetch } = useLiveHealth();
   const words = text ?? LAST_RESORT_CARD_TEXT;
   const stateWord = { checking: words.stateChecking, ok: words.stateOk, error: words.stateError }[
@@ -95,8 +95,8 @@ function StatusCard({ text }: { text: StatusPageText | null }) {
   );
 }
 
-/** `text` is `null` when the page text could not load: the card then keeps only its last-resort words. */
-export function StatusView({ text }: { text: StatusPageText | null }) {
+/** `text` is `null` when the status text could not load: the card then keeps only its last-resort words. */
+export function ModuleStatus({ text }: { text: ModuleStatusText | null }) {
   return (
     <>
       {text ? (

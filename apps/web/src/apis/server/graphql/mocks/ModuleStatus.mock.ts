@@ -1,6 +1,6 @@
-/** Mock answer of the `StatusPage` operation: the text the status page showed before it came from the API. */
-export const STATUS_PAGE_MOCK = {
-  statusPageText: {
+/** Mock answer of the `ModuleStatus` operation: the text the module status showed before it came from the API. */
+export const MODULE_STATUS_MOCK = {
+  statusText: {
     title: 'System status',
     description: 'This page confirms the site can reach the content API through its own server.',
     cardTitle: 'Content API',

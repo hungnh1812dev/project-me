@@ -2,30 +2,30 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { STATUS_PAGE_MOCK } from '@/apis/server/graphql/mocks/StatusPage.mock';
+import { MODULE_STATUS_MOCK } from '@/apis/server/graphql/mocks/ModuleStatus.mock';
 import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
-import type { StatusPageText } from '@/features/status/StatusPage.graphql';
 
-import { fetchLiveHealth } from '../../features/status/Health.api';
-import { StatusView } from './StatusView';
+import { fetchLiveHealth } from './Health.api';
+import { ModuleStatus } from './ModuleStatus';
+import type { ModuleStatusText } from './ModuleStatus.graphql';
 
-vi.mock('../../features/status/Health.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../features/status/Health.api')>()),
+vi.mock('./Health.api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./Health.api')>()),
   fetchLiveHealth: vi.fn<typeof fetchLiveHealth>(),
 }));
 const fetchLiveHealthMock = vi.mocked(fetchLiveHealth);
-const TEXT = STATUS_PAGE_MOCK.statusPageText;
+const TEXT = MODULE_STATUS_MOCK.statusText;
 
-function renderView(text: StatusPageText | null = TEXT) {
+function renderView(text: ModuleStatusText | null = TEXT) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <StatusView text={text} />
+      <ModuleStatus text={text} />
     </QueryClientProvider>,
   );
 }
 
-describe('StatusView', () => {
+describe('ModuleStatus', () => {
   beforeEach(() => fetchLiveHealthMock.mockReset());
 
   it('shows the heading, the description and the BFF health path only', async () => {

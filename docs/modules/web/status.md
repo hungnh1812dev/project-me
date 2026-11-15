@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/features/status
 app: web
-summary: Health API client for the web service status card
+summary: The module status part: its text query, health call, card and live-health hook
 ---
 
 # Status (web)
@@ -14,25 +14,25 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Holds the `StatusPage` text query and reads cms-api's liveness for the status card ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api.
+Owns the module status shown on `/` and `/status`: the `ModuleStatus` text query, the status card and the liveness check ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api. `views/home` and `views/status` only render it.
 
 ## Techniques
 
-`statusPageText` is a GraphQL alias of the cms-api root field `modulePageStatus` (response key and web type stay `statusPageText` / `StatusPageText`).
+`statusText` is a GraphQL alias of the cms-api root field `moduleStatus` (web type `ModuleStatusText`).
 
-One fetch function and its query keys, and the `StatusPage` query split into a client-safe `.graphql` file and a `server-only` loader (`null` when `statusPageText` failed); it imports no other feature.
+One fetch function and its query keys, the `ModuleStatus` query split into a client-safe `.graphql` file and a `server-only` loader (`null` when `statusText` failed), and the client component `ModuleStatus` with the hook `useLiveHealth` (checks once on load; the card offers a manual re-check). With a `null` text the card keeps only its last-resort words. It imports no other feature.
 
 ## Technologies
 
-Axios, TanStack Query.
+Axios, React, TanStack Query.
 
 ## Entry points
 
-`fetchLiveHealth`, `HEALTH_QUERY_KEYS`, `loadStatusPage`.
+`fetchLiveHealth`, `HEALTH_QUERY_KEYS`, `loadModuleStatusText`, `ModuleStatus`.
 
 ## Where to change what
 
-Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route); the card is in `views/status`.
+Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route); the card and its text: `ModuleStatus.tsx`; the check: `useLiveHealth.ts`.
 
 ## Files
 
@@ -40,17 +40,19 @@ Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route)
 <!-- prettier-ignore-start -->
 
 ```
-status/ (4 files)
+status/ (6 files)
 ```
 
-Tests: 3 files (not listed).
+Tests: 4 files (not listed).
 
 | File | Description |
 |---|---|
 | `Health.api.ts` | Liveness call, response type and query keys (exports `HealthResponse`, `HEALTH_QUERY_KEYS`, `fetchLiveHealth`) |
 | `Health.server.ts` | Handler of `GET /api/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
-| `StatusPage.graphql.ts` | Client-safe `StatusPage` operation name, root field selection and text type (exports `StatusPageText`, `StatusPage`, `STATUS_PAGE_OPERATION_NAME`, `STATUS_PAGE_ROOT_FIELDS`) |
-| `StatusPage.server.ts` | `STATUS_PAGE_QUERY` and `loadStatusPage` (React `cache`): the page text, or `null` when `statusPageText` failed (exports `STATUS_PAGE_QUERY`, `loadStatusPage`) |
+| `ModuleStatus.graphql.ts` | Client-safe `ModuleStatus` operation name, root field selection and text type (exports `ModuleStatusText`, `ModuleStatus`, `MODULE_STATUS_OPERATION_NAME`, `MODULE_STATUS_ROOT_FIELDS`) |
+| `ModuleStatus.server.ts` | `MODULE_STATUS_QUERY` and `loadModuleStatusText` (React `cache`): the status text, or `null` when `statusText` failed (exports `MODULE_STATUS_QUERY`, `loadModuleStatusText`) |
+| `ModuleStatus.tsx` | Client component: heading, description and health card with the text prop; the last-resort card words when it is `null` (exports `ModuleStatus`) |
+| `useLiveHealth.ts` | Liveness state of cms-api for the card (checking, ok, error) with its re-check (exports `LiveHealthState`, `useLiveHealth`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

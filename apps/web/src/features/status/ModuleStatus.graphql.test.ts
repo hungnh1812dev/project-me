@@ -4,10 +4,10 @@ import { resolve } from 'node:path';
 import { buildSchema, parse, validate, type FieldNode, type SelectionSetNode } from 'graphql';
 
 import { MOCK_VIEW } from '@/apis/server/graphql/mocks/MockView';
-import { STATUS_PAGE_MOCK } from '@/apis/server/graphql/mocks/StatusPage.mock';
+import { MODULE_STATUS_MOCK } from '@/apis/server/graphql/mocks/ModuleStatus.mock';
 
-import { STATUS_PAGE_OPERATION_NAME, STATUS_PAGE_ROOT_FIELDS } from './StatusPage.graphql';
-import { STATUS_PAGE_QUERY } from './StatusPage.server';
+import { MODULE_STATUS_OPERATION_NAME, MODULE_STATUS_ROOT_FIELDS } from './ModuleStatus.graphql';
+import { MODULE_STATUS_QUERY } from './ModuleStatus.server';
 
 // Read by path: the web app never imports cms-api code.
 const SDL_PATH = resolve(import.meta.dirname, '../../../../cms-api/content/schema.graphql');
@@ -18,7 +18,7 @@ const MAX_ROOT_FIELDS = 5;
 const MAX_DEPTH = 8;
 const MAX_FIELD_NODES = 500;
 
-const operation = parse(STATUS_PAGE_QUERY.document.query).definitions[0];
+const operation = parse(MODULE_STATUS_QUERY.document.query).definitions[0];
 if (operation?.kind !== 'OperationDefinition') throw new Error('Expected one operation');
 const rootSelection = operation.selectionSet;
 
@@ -57,30 +57,30 @@ function mockPaths(value: unknown, prefix = ''): string[] {
   });
 }
 
-describe('StatusPage mock and query', () => {
+describe('ModuleStatus mock and query', () => {
   it('is valid against the generated cms-api schema', () => {
-    expect(validate(schema, parse(STATUS_PAGE_QUERY.document.query))).toEqual([]);
+    expect(validate(schema, parse(MODULE_STATUS_QUERY.document.query))).toEqual([]);
   });
 
   it('names its operation and has every mock registered in the mock view by key', () => {
-    expect(STATUS_PAGE_QUERY.document.query).toContain(`query ${STATUS_PAGE_OPERATION_NAME}`);
-    expect(MOCK_VIEW).toMatchObject(STATUS_PAGE_MOCK);
+    expect(MODULE_STATUS_QUERY.document.query).toContain(`query ${MODULE_STATUS_OPERATION_NAME}`);
+    expect(MOCK_VIEW).toMatchObject(MODULE_STATUS_MOCK);
   });
 
   it('has a mock for every root field and a root field for every mock', () => {
-    expect(Object.keys(STATUS_PAGE_MOCK).sort()).toEqual(
-      Object.keys(STATUS_PAGE_ROOT_FIELDS).sort(),
+    expect(Object.keys(MODULE_STATUS_MOCK).sort()).toEqual(
+      Object.keys(MODULE_STATUS_ROOT_FIELDS).sort(),
     );
   });
 
   it('has every field the mock holds in the query, and every query field in the mock', () => {
     const querySelected = selectionPaths(rootSelection);
-    const mocked = mockPaths(STATUS_PAGE_MOCK);
+    const mocked = mockPaths(MODULE_STATUS_MOCK);
     expect(mocked.sort()).toEqual(querySelected.sort());
   });
 });
 
-describe('StatusPage document limits (D18)', () => {
+describe('ModuleStatus document limits (D18)', () => {
   it('has at most the allowed root fields', () => {
     expect(fieldsOf(rootSelection).length).toBeLessThanOrEqual(MAX_ROOT_FIELDS);
   });
