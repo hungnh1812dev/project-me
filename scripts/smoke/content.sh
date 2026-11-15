@@ -1,4 +1,4 @@
-# Smoke section: publishes the site-shell and CV content so the staging web renders real cms-api data
+# Smoke section: publishes the header, sign-in, not-found and CV content so the staging web renders real cms-api data
 # and the @web specs read it. The staging web keeps the mock fallback for failed reads only (WEB-5);
 # an unpublished page text is a failed page, never mocked (PS-2). Sourced by scripts/smoke.sh; runs
 # after the owner exists, before the web container is recreated, so web starts against published content.
@@ -15,7 +15,7 @@ content_send() {
 }
 
 check_seed_content() {
-  echo "Published site-shell and CV content"
+  echo "Published header, sign-in, not-found and CV content"
   local content_dir="$WORK_DIR/content" slug file document_id version login_body
   if ! node "$ROOT_DIR/scripts/smoke/SeedContent.mjs" "$content_dir"; then
     fail "content bodies built from the web mocks"

@@ -12,15 +12,20 @@ const COMPONENT_FIELD_TYPE = 'component';
 /** Mock keys that are not content fields: the API adds them to its answers. */
 const ANSWER_ONLY_KEYS = new Set(['documentId', '_maskedFields']);
 
-const { SITE_SHELL_MOCK } = await import(path.join(MOCKS_DIR, 'SiteShell.mock.ts'));
+const { SITE_HEADER_MOCK } = await import(path.join(MOCKS_DIR, 'SiteHeader.mock.ts'));
+const { NOT_FOUND_PAGE_MOCK } = await import(path.join(MOCKS_DIR, 'NotFoundPage.mock.ts'));
+const { SIGN_IN_MOCK } = await import(path.join(MOCKS_DIR, 'SignIn.mock.ts'));
 const { CV_PAGE_MOCK } = await import(path.join(MOCKS_DIR, 'CvPage.mock.ts'));
 const { STATUS_PAGE_MOCK } = await import(path.join(MOCKS_DIR, 'StatusPage.mock.ts'));
 
 /** One entry per content type: the schema slug, the mock data and the values the mock lacks. */
 const SEEDS = [
-  { slug: 'header', data: SITE_SHELL_MOCK.header },
-  { slug: 'site-text', data: SITE_SHELL_MOCK.siteText },
-  { slug: 'module-sign-in', data: SITE_SHELL_MOCK.signInText },
+  { slug: 'header', data: SITE_HEADER_MOCK.header },
+  {
+    slug: 'site-text',
+    data: { ...SITE_HEADER_MOCK.headerText, ...NOT_FOUND_PAGE_MOCK.notFoundText },
+  },
+  { slug: 'module-sign-in', data: SIGN_IN_MOCK.signInText },
   { slug: 'module-page-status', data: STATUS_PAGE_MOCK.statusPageText },
   { slug: 'cv-page-text', data: CV_PAGE_MOCK.cvPageText },
   { slug: 'cv-contact', data: CV_PAGE_MOCK.cvContact },
