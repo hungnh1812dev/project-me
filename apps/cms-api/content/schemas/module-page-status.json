@@ -6,51 +6,63 @@
   "fields": [
     {
       "name": "title",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "description",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "cardTitle",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "cardDescription",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "endpointLabel",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "lastCheckedLabel",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "notCheckedYet",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "stateChecking",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "stateOk",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "stateError",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "errorHint",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     },
     {
       "name": "checkAgain",
-      "type": "text"
+      "type": "text",
+      "width": "1/2"
     }
   ]
 }
