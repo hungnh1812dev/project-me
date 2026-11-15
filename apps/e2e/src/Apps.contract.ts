@@ -1,7 +1,7 @@
-import { CV_PAGE_MOCK as CV_MOCK } from '../../web/src/apis/server/graphql/mocks/CvPage.mock';
+import { MODULE_STATUS_MOCK as STATUS_MOCK } from '../../web/src/apis/server/graphql/mocks/ModuleStatus.mock';
+import { PAGE_CV_MOCK as CV_MOCK } from '../../web/src/apis/server/graphql/mocks/PageCv.mock';
 import { SIGN_IN_MOCK } from '../../web/src/apis/server/graphql/mocks/SignIn.mock';
 import { SITE_HEADER_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteHeader.mock';
-import { STATUS_PAGE_MOCK as STATUS_MOCK } from '../../web/src/apis/server/graphql/mocks/StatusPage.mock';
 
 /**
  * The only file in the e2e suite that imports from an app's `src`. Specs import
@@ -39,8 +39,8 @@ export const WEB_COPY = {
   session: {
     signIn: SITE_HEADER_MOCK.header.author.btnLoginText,
     signOut: SITE_HEADER_MOCK.header.author.btnLogoutText,
-    openCms: SITE_HEADER_MOCK.headerText.openCms,
-    signOutFailed: SITE_HEADER_MOCK.headerText.signOutFailed,
+    openCms: SIGN_IN_MOCK.signInText.openCms,
+    signOutFailed: SIGN_IN_MOCK.signInText.signOutFailed,
   },
   login: {
     ...SIGN_IN_MOCK.signInText,
@@ -50,11 +50,11 @@ export const WEB_COPY = {
     },
   },
   cv: {
-    maskedValue: CV_MOCK.cvPageText.maskedValue,
-    refetchFailed: CV_MOCK.cvPageText.refetchFailed,
+    maskedValue: CV_MOCK.pageCvText.maskedValue,
+    refetchFailed: CV_MOCK.pageCvText.refetchFailed,
   },
   status: {
-    checkAgain: STATUS_MOCK.statusPageText.checkAgain,
-    state: { ok: STATUS_MOCK.statusPageText.stateOk },
+    checkAgain: STATUS_MOCK.statusText.checkAgain,
+    state: { ok: STATUS_MOCK.statusText.stateOk },
   },
 } as const;

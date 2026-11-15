@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, CONTENT_LIST_PAGE_SIZE, contentListPath } from '../src/Apps.contract';
-import { PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -24,13 +24,13 @@ test.describe(
         const url = new URL(request.url());
         if (
           request.method() === 'GET' &&
-          url.pathname.endsWith(API_PATHS.documents(PROFILE_SLUG))
+          url.pathname.endsWith(API_PATHS.documents(PAGE_CV_A_SLUG))
         ) {
           listRequests.push(url);
         }
       });
       await signInAsOwner(page);
-      await page.goto(contentListPath(PROFILE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
 
       const dialog = page.getByRole('dialog', {
         name: copy.bulk.importDialog.title,
@@ -56,7 +56,7 @@ test.describe(
 
       // Load error, then retry.
       let failNext = true;
-      await page.route(`**/documents/${PROFILE_SLUG}?*`, (route) => {
+      await page.route(`**/documents/${PAGE_CV_A_SLUG}?*`, (route) => {
         if (failNext) {
           return route.fulfill({ status: 500, body: '{}' });
         }

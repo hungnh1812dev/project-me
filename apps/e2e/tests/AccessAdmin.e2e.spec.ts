@@ -8,7 +8,7 @@ import {
   roleSaveButton,
 } from '../src/AccessPages.fixture';
 import { ADMIN_COPY } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith, toast } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
@@ -301,11 +301,11 @@ test.describe.serial(
       await expect(roleSaveButton(page)).toBeDisabled();
 
       // Field access of one content type: only selected fields.
-      const read = permissionCell(page, access.matrix.actions.read, CV_PAGE_SLUG);
+      const read = permissionCell(page, access.matrix.actions.read, PAGE_CV_A_SLUG);
       await read.check();
       await page
         .getByRole('button', {
-          name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+          name: access.matrix.detailsLabel(PAGE_CV_A_SLUG),
           exact: true,
         })
         .click();
@@ -325,7 +325,7 @@ test.describe.serial(
       await expect(read).toBeChecked();
       await page
         .getByRole('button', {
-          name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+          name: access.matrix.detailsLabel(PAGE_CV_A_SLUG),
           exact: true,
         })
         .click();

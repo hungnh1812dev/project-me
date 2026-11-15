@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { accountRow } from '../src/AccessPages.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { fakeMediaApi, PNG_BASE64 } from '../src/FakeMediaApi.fixture';
 import { labelStartingWith, toast } from '../src/Locators.fixture';
 import { accountMenuTrigger, openUserMenu, signInAsOwner } from '../src/Session.fixture';
@@ -147,7 +147,7 @@ test.describe.serial(
     });
 
     test('CAPSD-8 desktop: a draft save shows one success toast top right, replaces on a second save and leaves no inline notice', async () => {
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expect(page.getByLabel(NAME_LABEL)).toBeVisible();
 
       await saveDraft(page, DOC_NAME);

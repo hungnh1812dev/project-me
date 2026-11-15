@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
 
@@ -9,7 +9,7 @@ const NARROW_VIEWPORT = { width: 375, height: 800 };
 const WIDE_VIEWPORT = { width: 1280, height: 800 };
 const OVERFLOW_TOLERANCE_PX = 1;
 /** Screens checked on their own below: roles (its table), and the empty or prompt states of the others. */
-const CARDLESS_PATHS = ['/roles', '/backups', `/content/${CV_PAGE_SLUG}`];
+const CARDLESS_PATHS = ['/roles', '/backups', `/content/${PAGE_CV_A_SLUG}`];
 const CARD_WAIT_MS = 5000;
 const TRANSPARENT = /rgba\(0, 0, 0, 0\)|transparent/;
 
@@ -26,7 +26,7 @@ const CARD_PATHS = [
   '/reviewer',
   '/backups',
   '/media',
-  `/content/${CV_PAGE_SLUG}`,
+  `/content/${PAGE_CV_A_SLUG}`,
 ];
 
 /** Cards of the page: computed radius, border and shadow, and whether one sits inside another. */
@@ -179,7 +179,7 @@ test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api']
   });
 
   test('document edit: sticky action bar stays at the bottom on the card colour', async () => {
-    await page.goto(`/content/${CV_PAGE_SLUG}/new`);
+    await page.goto(`/content/${PAGE_CV_A_SLUG}/new`);
     await page.waitForLoadState('networkidle');
     const bar = page.locator('div.sticky.bottom-0').first();
     await expect(bar).toBeVisible();
@@ -248,7 +248,7 @@ test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api']
   });
 
   test('empty states stay inside a card', async () => {
-    await openScreen(page, `/content/${CV_PAGE_SLUG}`);
+    await openScreen(page, `/content/${PAGE_CV_A_SLUG}`);
     await expect(page.getByText('No documents yet')).toBeVisible();
     const empty = page.getByText('No documents yet');
     await expect(page.locator('[data-slot="card"]').filter({ has: empty })).toHaveCount(1);

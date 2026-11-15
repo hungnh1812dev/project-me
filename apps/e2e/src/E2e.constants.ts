@@ -64,27 +64,24 @@ export const HTTP = {
 /** Distinguishes this run's data from earlier runs against the same stack. */
 export const RUN_ID = Date.now().toString(36);
 
-/** Content type of the smoke stack with lists, rich text and relations. */
-export const CV_PAGE_SLUG = 'cv-page';
+/** Collection of the smoke and dev stacks with lists, rich text and components; the admin specs use it. */
+export const PAGE_CV_A_SLUG = 'page-cv-a';
 
-/** Display name of cv-page; screens show it, never the slug. */
-export const CV_PAGE_NAME = 'CV Page';
+/** Display name of page-cv-a; screens show it, never the slug. */
+export const PAGE_CV_A_NAME = 'Page CV (Type A)';
 
-/** Display names of the six content types of the smoke and dev stacks, by slug. */
+/** Display names of the content types of the smoke and dev stacks (the repo schemas), by slug. */
 export const CONTENT_TYPE_NAMES = {
   'common-text': 'Common Text',
-  'cv-contact': 'CV Contact',
-  'cv-page': CV_PAGE_NAME,
-  'cv-page-text': 'CV Page Text',
   header: 'Header',
+  'module-auth': 'Module Auth',
+  'module-status': 'Module Status',
+  [PAGE_CV_A_SLUG]: PAGE_CV_A_NAME,
+  'page-cv-text': 'Page CV Text',
   profile: 'Profile',
-  resume: 'Resume',
-  'module-page-status': 'Module Page Status',
-  'module-sign-in': 'Module Sign In',
-  'site-text': 'Site Text',
 } as const;
 
-/** Content type of the smoke stack with a media field and a list view. */
+/** Single type of the smoke stack with a media field (avatar). */
 export const PROFILE_SLUG = 'profile';
 
 const UUID_SEGMENT = '[0-9a-f-]{36}';

@@ -194,7 +194,7 @@ test.describe.serial(
     test('a long stored name stays inside the MediaInput frame at 320 px', async () => {
       await page.setViewportSize(NARROW_VIEWPORT);
       await page.goto(contentNewPath(PROFILE_SLUG));
-      const field = page.getByRole('group', { name: 'Photo' });
+      const field = page.getByRole('group', { name: 'Avatar' });
       await field.getByRole('button', { name: copy.input.choose }).click();
       await page
         .getByRole('dialog')

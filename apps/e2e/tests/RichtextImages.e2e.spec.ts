@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentEditPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { pngOf } from '../src/Png.fixture';
 import {
@@ -101,7 +101,7 @@ test.describe.serial(
       api = await playwright.request.newContext();
       draft = await createCvPage(api, token(), `Richtext images ${RUN_ID}`);
       picked = await uploadImage(api, token(), PICKED_NAME, pngOf(SEED + 1));
-      await page.goto(contentEditPath(CV_PAGE_SLUG, draft.documentId));
+      await page.goto(contentEditPath(PAGE_CV_A_SLUG, draft.documentId));
       editor = page.getByRole('textbox', { name: FIELD_LABEL, exact: true });
       toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
       await expect(editor).toBeVisible();
@@ -208,7 +208,7 @@ test.describe.serial(
       const after = await mediaUrlOf(api, token(), picked);
       expect(after).not.toBe(before);
 
-      await page.goto(contentEditPath(CV_PAGE_SLUG, draft.documentId));
+      await page.goto(contentEditPath(PAGE_CV_A_SLUG, draft.documentId));
       const replaced = editor.locator(`img[src="${after}"]`);
       await expect(replaced).toHaveCount(1);
       await expect(editor.locator(`img[src="${before}"]`)).toHaveCount(0);
@@ -230,14 +230,14 @@ test.describe.serial(
   { tag: ['@cms-admin', '@web', '@cms-api', '@content-editing', '@media', '@public-site'] },
   () => {
     let api: APIRequestContext;
-    let resumeId = '';
+    let pageId = '';
     let image: UploadedImage;
 
     test.beforeAll(async ({ playwright }) => {
       api = await playwright.request.newContext();
       expect(ownerToken).not.toBe('');
       image = await uploadImage(api, ownerToken, WEB_NAME, pngOf(SEED + 3));
-      const created = await api.post(apiUrl(API_PATHS.documents(CV_PAGE_SLUG)), {
+      const created = await api.post(apiUrl(API_PATHS.documents(PAGE_CV_A_SLUG)), {
         headers: bearer(ownerToken),
         data: {
           values: {
@@ -254,9 +254,9 @@ test.describe.serial(
       });
       expect(created.status()).toBe(HTTP.CREATED);
       const draft = (await created.json()) as DraftRef;
-      resumeId = draft.documentId;
+      pageId = draft.documentId;
       const published = await api.post(
-        apiUrl(`${API_PATHS.document(CV_PAGE_SLUG, resumeId)}/publish`),
+        apiUrl(`${API_PATHS.document(PAGE_CV_A_SLUG, pageId)}/publish`),
         {
           headers: bearer(ownerToken),
           data: { expectedVersion: draft.version },
@@ -266,7 +266,7 @@ test.describe.serial(
     });
 
     test.afterAll(async () => {
-      const removed = await api.delete(apiUrl(API_PATHS.document(CV_PAGE_SLUG, resumeId)), {
+      const removed = await api.delete(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, pageId)), {
         headers: bearer(ownerToken),
       });
       expect(removed.status()).toBe(HTTP.NO_CONTENT);

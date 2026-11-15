@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, contentListPath, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -66,7 +66,7 @@ test.describe.serial(
     });
 
     test('richtext toolbar: Bold shows pressed while the caret is in bold text', async () => {
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       const toolbar = page.getByRole('toolbar', { name: copy.richtext.toolbar }).first();
       const bold = toolbar.getByRole('button', { name: copy.richtext.bold });
       const editor = page.locator('[contenteditable="true"]').first();

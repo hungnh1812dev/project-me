@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { ADMIN_COPY, APP_ROUTES, contentListPath, contentNewPath } from '../src/Apps.contract';
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
-import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { expectSignedIn, openUserMenu, signInAsOwner, submitLogin } from '../src/Session.fixture';
 
@@ -38,13 +38,13 @@ test.describe(
       await expectSignedIn(page);
       await expectNoViolation(readViolations, 'reloaded /reviewer');
 
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(
         page.getByRole('link', { name: ADMIN_COPY.content.collection.newDocument }).first(),
       ).toBeVisible();
       await expectNoViolation(readViolations, 'a content list');
 
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expectSignedIn(page);
       await expectNoViolation(readViolations, 'a content form');
 

@@ -2,14 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { contentSaveButton, fieldByLabel, listItem } from '../src/Locators.fixture';
 import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const list = copy.list;
-const EDIT_URL = /\/content\/cv-page\/([0-9a-f-]{36})$/;
-const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
+const EDIT_URL = /\/content\/page-cv-a\/([0-9a-f-]{36})$/;
+const DOCUMENTS_PATH = API_PATHS.documents(PAGE_CV_A_SLUG);
 const POSITION = `E2E components ${RUN_ID}`;
 const NAMES = [`Alpha ${RUN_ID}`, `Beta ${RUN_ID}`, `Gamma ${RUN_ID}`] as const;
 const ROLE_NAME = `Role ${RUN_ID}`;
@@ -48,7 +48,7 @@ test.describe.serial(
     test.beforeAll(async ({ browser }) => {
       page = await (await browser.newContext()).newPage();
       await signInAsOwner(page);
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expect(fieldByLabel(page, 'Position')).toBeVisible();
     });
 
@@ -59,7 +59,7 @@ test.describe.serial(
     const readStored = async (): Promise<StoredDocument> => {
       const token = await ownerApiToken(page.request);
       const read = await page.request.get(
-        apiUrl(`${API_PATHS.document(CV_PAGE_SLUG, documentId)}?status=draft`),
+        apiUrl(`${API_PATHS.document(PAGE_CV_A_SLUG, documentId)}?status=draft`),
         { headers: bearer(token) },
       );
       expect(read.status()).toBe(HTTP.OK);
@@ -126,14 +126,11 @@ test.describe.serial(
       await expect(listItem(experience, 'Roles', 0)).toBeVisible();
       await expect(experience.getByRole('button', { name: list.remove('Roles', 0) })).toBeVisible();
       await fieldByLabel(listItem(experience, 'Roles', 0), 'Position').fill(ROLE_NAME);
-      // Projects live under a role (three levels deep).
-      await addSlot(listItem(experience, 'Roles', 0), 'Projects').click();
-      await expect(listItem(listItem(experience, 'Roles', 0), 'Projects', 0)).toBeVisible();
     });
 
     test('two 1/2 fields share one row at desktop width', async () => {
       const position = fieldByLabel(page, 'Position').first();
-      const isMain = page.getByRole('switch', { name: 'Is Main' });
+      const isMain = page.getByRole('switch', { name: 'Main Page' });
       const [positionBox, isMainBox] = await Promise.all([
         position.boundingBox(),
         isMain.boundingBox(),

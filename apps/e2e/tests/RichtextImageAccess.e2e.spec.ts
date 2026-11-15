@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { signInAsOwnerWithRole } from '../src/Session.fixture';
 
 const richtext = ADMIN_COPY.content.richtext;
@@ -14,7 +14,7 @@ interface RoleRow {
   permissions: Record<string, unknown>[];
 }
 
-/** Answers `GET /roles` with the editor role limited to cv-page rights, or left as seeded. */
+/** Answers `GET /roles` with the editor role limited to page-cv-a rights, or left as seeded. */
 async function serveEditorPermissions(page: Page, mediaAllowed: boolean): Promise<void> {
   await page.route(apiUrl(API_PATHS.ROLES), async (route) => {
     const response = await route.fetch();
@@ -26,7 +26,7 @@ async function serveEditorPermissions(page: Page, mediaAllowed: boolean): Promis
             ? {
                 ...role,
                 permissions: CONTENT_ACTIONS.map((action) => ({
-                  subject: CV_PAGE_SLUG,
+                  subject: PAGE_CV_A_SLUG,
                   action,
                   readableFields: null,
                   writableFields: null,
@@ -50,7 +50,7 @@ test.describe(
       });
       await serveEditorPermissions(page, false);
       await signInAsOwnerWithRole(page, EDITOR_ROLE);
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       const toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
       await expect(toolbar).toBeVisible();
       await expect(
@@ -62,7 +62,7 @@ test.describe(
     test('shown with media:read', async ({ page }) => {
       await serveEditorPermissions(page, true);
       await signInAsOwnerWithRole(page, EDITOR_ROLE);
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       const toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
       await expect(
         toolbar.getByRole('button', { name: richtext.insertImage, exact: true }),

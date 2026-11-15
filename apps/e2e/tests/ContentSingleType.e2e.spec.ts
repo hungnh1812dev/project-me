@@ -2,13 +2,13 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentListPath, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
 const list = copy.collection;
 
-// The dev data has no single type, so the catalog entry is faked: cv-page's
+// The dev data has no single type, so the catalog entry is faked: page-cv-a's
 // definition with kind "single" served under its own slug.
 const SINGLE_SLUG = 'e2e-single';
 const DOCUMENT_ID = '11111111-1111-4111-8111-111111111111';
@@ -19,10 +19,10 @@ const RETRY_BACKOFF_MS = 20_000;
 
 const documentsUrl = new RegExp(`${API_PATHS.documents(SINGLE_SLUG)}(\\?|$)`);
 
-async function fakeSingleType(page: Page, cvPage: Record<string, unknown>): Promise<void> {
+async function fakeSingleType(page: Page, pageCvA: Record<string, unknown>): Promise<void> {
   await page.route(new RegExp(`${CONTENT_TYPES_PATH}/${SINGLE_SLUG}$`), (route) =>
     route.fulfill({
-      json: { ...cvPage, slug: SINGLE_SLUG, kind: 'single' },
+      json: { ...pageCvA, slug: SINGLE_SLUG, kind: 'single' },
     }),
   );
 }
@@ -31,17 +31,17 @@ test.describe(
   'single type direct URL',
   { tag: ['@cms-admin', '@cms-api', '@content-editing'] },
   () => {
-    let cvPage: Record<string, unknown>;
+    let pageCvA: Record<string, unknown>;
 
     test.beforeEach(async ({ page, request }) => {
       const token = await ownerApiToken(request);
-      const response = await request.get(apiUrl(`${CONTENT_TYPES_PATH}/${CV_PAGE_SLUG}`), {
+      const response = await request.get(apiUrl(`${CONTENT_TYPES_PATH}/${PAGE_CV_A_SLUG}`), {
         headers: bearer(token),
       });
       expect(response.status()).toBe(HTTP.OK);
-      cvPage = (await response.json()) as Record<string, unknown>;
+      pageCvA = (await response.json()) as Record<string, unknown>;
       await signInAsOwner(page);
-      await fakeSingleType(page, cvPage);
+      await fakeSingleType(page, pageCvA);
     });
 
     test('without a document it replaces the URL with the create form', async ({ page }) => {
@@ -108,8 +108,8 @@ test(
   { tag: ['@cms-admin', '@cms-api', '@content-editing'] },
   async ({ page }) => {
     await signInAsOwner(page);
-    await page.goto(contentListPath(CV_PAGE_SLUG));
-    await expect(page).toHaveURL(new RegExp(`/content/${CV_PAGE_SLUG}$`));
+    await page.goto(contentListPath(PAGE_CV_A_SLUG));
+    await expect(page).toHaveURL(new RegExp(`/content/${PAGE_CV_A_SLUG}$`));
     await expect(page.getByRole('link', { name: list.newDocument }).first()).toBeVisible();
   },
 );

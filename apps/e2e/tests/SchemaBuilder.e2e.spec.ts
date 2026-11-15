@@ -5,7 +5,7 @@ import { expect, test, type Locator, type Page, type Request } from '@playwright
 
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
-import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import {
   chooseUserMenuItem,
@@ -19,13 +19,13 @@ const leave = ADMIN_COPY.common.leaveDialog;
 const nav = ADMIN_COPY.access.nav;
 
 const SCHEMA_DIR = new URL('../../cms-api/content/schemas/', import.meta.url);
-const CV_PAGE_FILE = 'cv-page.json';
+const PAGE_CV_A_FILE = 'page-cv-a.json';
 const VALIDATE_URL = '**/content-types/validate';
 const VALIDATE_PATH_PART = 'content-types/validate';
 const DESKTOP = { width: 1280, height: 800 };
 const PHONE = { width: 375, height: 800 };
 const BLOCKED_STATUS = 429;
-const EDITED_SLUG = 'cv-page-edited';
+const EDITED_SLUG = 'page-cv-a-edited';
 
 const schemaFiles = readdirSync(SCHEMA_DIR).filter((name) => name.endsWith('.json'));
 const readSchema = (name: string) => readFileSync(new URL(name, SCHEMA_DIR), 'utf8');
@@ -89,7 +89,7 @@ test.describe(
       }
     });
 
-    test('import refusals keep the current work; cv-page loads; restart asks first', async ({
+    test('import refusals keep the current work; page-cv-a loads; restart asks first', async ({
       page,
     }) => {
       await signInAsOwner(page);
@@ -103,9 +103,9 @@ test.describe(
       await dialog.getByRole('button', { name: copy.import.cancel }).click();
       await expect(page.getByRole('button', { name: copy.start.newType })).toBeVisible();
 
-      dialog = await importText(page, readSchema(CV_PAGE_FILE));
+      dialog = await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(dialog).toBeHidden();
-      await expect(slugInput(page)).toHaveValue(CV_PAGE_SLUG);
+      await expect(slugInput(page)).toHaveValue(PAGE_CV_A_SLUG);
       await expect(validCheck(page)).toBeVisible();
 
       // Unchanged work: restart needs no question.
@@ -128,7 +128,7 @@ test.describe(
     }) => {
       await signInAsOwner(page);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(validCheck(page)).toBeVisible();
 
       const bodies: unknown[] = [];
@@ -143,7 +143,7 @@ test.describe(
       expect(bodies).toHaveLength(1);
       expect(Object.keys(bodies[0] as object).sort()).toEqual(['definition', 'mode']);
 
-      await slugInput(page).fill(CV_PAGE_SLUG);
+      await slugInput(page).fill(PAGE_CV_A_SLUG);
       await expect(validCheck(page)).toBeVisible();
     });
 
@@ -152,7 +152,7 @@ test.describe(
     }) => {
       await signInAsOwner(page);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(validCheck(page)).toBeVisible();
 
       await page.route(VALIDATE_URL, (route) =>
@@ -177,7 +177,7 @@ test.describe(
       await context.grantPermissions(['clipboard-read', 'clipboard-write']);
       await signInAsOwner(page);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(validCheck(page)).toBeVisible();
 
       const copyButton = page.getByRole('button', { name: copy.export.copy });
@@ -219,7 +219,7 @@ test.describe(
     }) => {
       await signInAsOwner(page);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(validCheck(page)).toBeVisible();
       const menu = page.getByRole('navigation', { name: nav.label });
 
@@ -227,7 +227,7 @@ test.describe(
       await menu.getByRole('link', { name: nav.accounts }).click();
       await expect(page).toHaveURL(/\/accounts$/);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
 
       await slugInput(page).fill(EDITED_SLUG);
       await menu.getByRole('link', { name: nav.accounts }).click();
@@ -245,7 +245,7 @@ test.describe(
       // Export clears the guard.
       await signInAsOwner(page);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await slugInput(page).fill(EDITED_SLUG);
       const download = page.getByRole('button', { name: copy.export.download });
       await expect(download).toBeEnabled();
@@ -259,7 +259,7 @@ test.describe(
       // Reload with changes raises the browser prompt.
       await signInAsOwner(page);
       await openBuilder(page);
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await slugInput(page).fill(EDITED_SLUG);
       const prompt = page.waitForEvent('dialog');
       await page.close({ runBeforeUnload: true });
@@ -287,7 +287,7 @@ test.describe(
         page.on('pageerror', (error) => errors.push(error.message));
         await signInAsOwner(page);
         await openBuilder(page);
-        await importText(page, readSchema(CV_PAGE_FILE));
+        await importText(page, readSchema(PAGE_CV_A_FILE));
         await expect(validCheck(page)).toBeVisible();
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -629,7 +629,7 @@ test.describe(
       const menu = page.getByRole('navigation', { name: nav.label });
       for (const [kind, edit] of edits) {
         await openBuilder(page);
-        await importText(page, readSchema(CV_PAGE_FILE));
+        await importText(page, readSchema(PAGE_CV_A_FILE));
         await expect(validCheck(page), kind).toBeVisible();
         await edit(page);
         await menu.getByRole('link', { name: nav.accounts }).click();
@@ -792,7 +792,7 @@ test.describe(
       const handle = (type: string) =>
         page.getByRole('button', { name: copy.dnd.paletteHandle(type), exact: true });
 
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(validCheck(page)).toBeVisible();
 
       // Pointer: a palette item into the skills component, onto its first row.
@@ -818,11 +818,11 @@ test.describe(
       await page.getByRole('button', { name: copy.row.moveTo(added), exact: true }).focus();
       await page.keyboard.press('Enter');
       await page
-        .getByRole('menuitem', { name: copy.row.moveToComponent('languages'), exact: true })
+        .getByRole('menuitem', { name: copy.row.moveToComponent('educations'), exact: true })
         .press('Enter');
       await expect(
         page
-          .getByRole('list', { name: copy.fields.listLabel('languages') })
+          .getByRole('list', { name: copy.fields.listLabel('educations') })
           .getByRole('button', { name: copy.row.select(added), exact: true }),
       ).toBeVisible();
 
@@ -844,7 +844,7 @@ test.describe(
       const children = (name: string) =>
         exported.fields.find((field) => field.name === name)?.fields?.map((field) => field.name);
       expect(children('skills')).toContain('badge');
-      expect(children('languages')).toContain('extra');
+      expect(children('educations')).toContain('extra');
       for (const body of bodies) expect(Object.keys(body).sort()).toEqual(['definition', 'mode']);
 
       // The export cleared the guard: a menu link leaves without a question.
@@ -859,7 +859,7 @@ test.describe(
     test('a file over the field cap is refused and the work stays; deep nesting shows errors, never a blank page', async ({
       page,
     }) => {
-      await importText(page, readSchema(CV_PAGE_FILE));
+      await importText(page, readSchema(PAGE_CV_A_FILE));
       await expect(validCheck(page)).toBeVisible();
       const failures: string[] = [];
       const pageErrors: string[] = [];
@@ -875,7 +875,7 @@ test.describe(
       let dialog = await importText(page, definitionText(flat));
       await expect(dialog.getByText(copy.import.refusal.tooManyFields(IMPORT_CAP))).toBeVisible();
       await dialog.getByRole('button', { name: copy.import.cancel }).click();
-      await expect(slugInput(page)).toHaveValue(CV_PAGE_SLUG);
+      await expect(slugInput(page)).toHaveValue(PAGE_CV_A_SLUG);
 
       // Past depth 3: loads, the check names the problem on a row.
       dialog = await importText(page, definitionText([nestedComponents(IMPORT_DEPTH_CAP - 1)]));

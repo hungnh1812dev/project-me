@@ -3,12 +3,12 @@ import { expect, test, type BrowserContext, type Page, type Request } from '@pla
 import { inviteAccount } from '../src/Accounts.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath, PRESENCE_HEARTBEAT_MS } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
-const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
+const EDIT_URL = /\/content\/page-cv-a\/[0-9a-f-]{36}$/;
 const BEAT_WAIT_MS = PRESENCE_HEARTBEAT_MS + 10_000;
 /** Server TTL (45 s) plus one beat plus slack. */
 const EXPIRY_WAIT_MS = 45_000 + PRESENCE_HEARTBEAT_MS + 10_000;
@@ -39,7 +39,7 @@ async function open(page: Page, url: string) {
 }
 
 test.describe.serial(
-  'presence banner (cv-page, two accounts)',
+  'presence banner (page-cv-a, two accounts)',
   { tag: ['@cms-admin', '@cms-api', '@content-editing'] },
   () => {
     test.setTimeout(TEST_TIMEOUT_MS);
@@ -63,7 +63,7 @@ test.describe.serial(
     });
 
     test('setup: a draft and a second account that can edit it', async ({ browser }) => {
-      await owner.goto(contentNewPath(CV_PAGE_SLUG));
+      await owner.goto(contentNewPath(PAGE_CV_A_SLUG));
       await position(owner).fill(`Presence ${RUN_ID}`);
       await owner.keyboard.press('Enter');
       await expect(owner).toHaveURL(EDIT_URL);
@@ -105,7 +105,7 @@ test.describe.serial(
 
     test('leaving the page stops the beats; the other banner expires', async () => {
       const recorder = recordBeats(editor);
-      await editor.goto(`/content/${CV_PAGE_SLUG}`);
+      await editor.goto(`/content/${PAGE_CV_A_SLUG}`);
       await editor.waitForLoadState('networkidle');
       const before = recorder.beats.length;
       await editor.waitForTimeout(BEAT_WAIT_MS);
@@ -116,7 +116,7 @@ test.describe.serial(
 
     test('a new document sends no presence request', async () => {
       const recorder = recordBeats(owner);
-      await owner.goto(contentNewPath(CV_PAGE_SLUG));
+      await owner.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expect(position(owner)).toBeVisible();
       await owner.waitForTimeout(copyWait());
       expect(recorder.beats).toHaveLength(0);

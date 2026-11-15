@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import { inviteAccount } from '../src/Accounts.fixture';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';
 
 const EDITOR_ROLE = 'Editor';
@@ -59,7 +59,7 @@ test.describe(
       }
 
       const clash = await post(
-        { definition: { ...validDefinition, slug: CV_PAGE_SLUG }, mode: 'create' },
+        { definition: { ...validDefinition, slug: PAGE_CV_A_SLUG }, mode: 'create' },
         owner,
       );
       expect(clash.status()).toBe(HTTP.OK);
@@ -93,14 +93,14 @@ test.describe(
 
 const SCHEMA_DIR = new URL('../../cms-api/content/schemas/', import.meta.url);
 const COLLISION_RULE = 'identifier.collision';
-const RENAMED_SLUGS = ['module-sign-in', 'module-page-status'];
+const MODULE_SLUGS = ['module-auth', 'module-status'];
 const RETIRED_SLUGS = ['sign-in-text', 'status-page-text'];
 
 test.describe(
   'content-types validate route against the schema files (owner only)',
   { tag: ['@cms-api', '@schema-builder'] },
   () => {
-    test('every schema file is valid in update mode; renamed slugs collide, retired slugs are free', async ({
+    test('every schema file is valid in update mode; module slugs collide, retired slugs are free', async ({
       request,
     }) => {
       const owner = bearer(await ownerApiToken(request));
@@ -114,7 +114,7 @@ test.describe(
       };
 
       const files = readdirSync(SCHEMA_DIR).filter((name) => name.endsWith('.json'));
-      expect(files).toEqual(expect.arrayContaining(RENAMED_SLUGS.map((slug) => `${slug}.json`)));
+      expect(files).toEqual(expect.arrayContaining(MODULE_SLUGS.map((slug) => `${slug}.json`)));
       for (const file of files) {
         const definition = JSON.parse(readFileSync(new URL(file, SCHEMA_DIR), 'utf8')) as {
           slug: string;
@@ -122,7 +122,7 @@ test.describe(
         expect(await post(definition, 'update'), file).toEqual({ valid: true, errors: [] });
       }
 
-      for (const slug of RENAMED_SLUGS) {
+      for (const slug of MODULE_SLUGS) {
         const answer = await post({ ...validDefinition, slug }, 'create');
         expect(answer.valid).toBe(false);
         const collision = answer.errors.find((error) => error.rule === COLLISION_RULE);

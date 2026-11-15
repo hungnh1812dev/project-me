@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentEditPath } from '../src/Apps.contract';
-import { HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { pngOf } from '../src/Png.fixture';
 import {
   watchAccessToken,
@@ -16,7 +16,6 @@ const media = ADMIN_COPY.media;
 const insertCopy = media.imageInsert;
 const uploadCopy = media.uploadDialog;
 
-const RESUME_SLUG = 'resume';
 const SUMMARY_LABEL = 'Summary';
 const UPLOAD_SETTLE_MS = 20_000;
 const PNG_SEED_RANGE = 200;
@@ -24,16 +23,16 @@ const SEED = (Number.parseInt(RUN_ID, 36) % PNG_SEED_RANGE) + 1;
 const STEM = `e2e-chain-${RUN_ID}`;
 const FILE_NAME = `${STEM}.png`;
 const STORED_NAME_PATTERN = new RegExp(`^${STEM}_[0-9a-f]{8}\\.png$`);
-const RESUME_NAME = `E2E media chain ${RUN_ID}`;
+const PAGE_NAME = `E2E media chain ${RUN_ID}`;
 
-interface ResumeRead {
+interface PageRead {
   summary: string | null;
 }
 
 /**
  * The whole media chain on one image: upload in the editor dialog, richtext image,
  * save and publish, REST and GraphQL reads, the file route, replace, delete.
- * The resume is not the main one, so the public CV is never touched.
+ * The page is not the main one, so the public CV is never touched.
  */
 test.describe.serial(
   'media chain: upload to richtext to public read, replace, delete',
@@ -52,25 +51,25 @@ test.describe.serial(
     const images = () => editor.locator('img[data-media-id]');
 
     const restSummary = async (status: 'draft' | 'published'): Promise<string> => {
-      const response = await api.get(apiUrl(API_PATHS.document(RESUME_SLUG, draft.documentId)), {
+      const response = await api.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)), {
         headers: bearer(token()),
         params: { status },
       });
       expect(response.status()).toBe(HTTP.OK);
-      const body = (await response.json()) as { values: ResumeRead };
+      const body = (await response.json()) as { values: PageRead };
       return body.values.summary ?? '';
     };
 
     const graphqlSummary = async (): Promise<string | undefined> => {
       const response = await api.post(apiUrl(API_PATHS.GRAPHQL), {
         data: {
-          query: `query ($name: String!) { resumeList(filter: { name: { eq: $name } }, pageSize: 1) { data { summary } } }`,
-          variables: { name: RESUME_NAME },
+          query: `query ($name: String!) { pageCvAList(filter: { name: { eq: $name } }, pageSize: 1) { data { summary } } }`,
+          variables: { name: PAGE_NAME },
         },
       });
       expect(response.status()).toBe(HTTP.OK);
-      const body = (await response.json()) as { data: { resumeList: { data: ResumeRead[] } } };
-      return body.data.resumeList.data[0]?.summary ?? undefined;
+      const body = (await response.json()) as { data: { pageCvAList: { data: PageRead[] } } };
+      return body.data.pageCvAList.data[0]?.summary ?? undefined;
     };
 
     const mediaItem = async (): Promise<UploadedImage | undefined> => {
@@ -84,13 +83,13 @@ test.describe.serial(
     };
 
     const publish = async (): Promise<void> => {
-      const current = await api.get(apiUrl(API_PATHS.document(RESUME_SLUG, draft.documentId)), {
+      const current = await api.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)), {
         headers: bearer(token()),
         params: { status: 'draft' },
       });
       const { version } = (await current.json()) as { version: number };
       const published = await api.post(
-        apiUrl(`${API_PATHS.document(RESUME_SLUG, draft.documentId)}/publish`),
+        apiUrl(`${API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)}/publish`),
         { headers: bearer(token()), data: { expectedVersion: version } },
       );
       expect(published.ok()).toBe(true);
@@ -101,21 +100,24 @@ test.describe.serial(
       token = watchAccessToken(page);
       await signInAsOwner(page);
       api = await playwright.request.newContext();
-      const created = await api.post(apiUrl(API_PATHS.documents(RESUME_SLUG)), {
+      const created = await api.post(apiUrl(API_PATHS.documents(PAGE_CV_A_SLUG)), {
         headers: bearer(token()),
-        data: { values: { name: RESUME_NAME, position: 'Chain tester', isMain: false } },
+        data: { values: { name: PAGE_NAME, position: 'Chain tester', isMain: false } },
       });
       expect(created.status()).toBe(HTTP.CREATED);
       draft = (await created.json()) as DraftRef;
-      await page.goto(contentEditPath(RESUME_SLUG, draft.documentId));
+      await page.goto(contentEditPath(PAGE_CV_A_SLUG, draft.documentId));
       editor = page.getByRole('textbox', { name: SUMMARY_LABEL, exact: true });
       await expect(editor).toBeVisible();
     });
 
     test.afterAll(async () => {
-      const removed = await api.delete(apiUrl(API_PATHS.document(RESUME_SLUG, draft.documentId)), {
-        headers: bearer(token()),
-      });
+      const removed = await api.delete(
+        apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)),
+        {
+          headers: bearer(token()),
+        },
+      );
       expect(removed.status()).toBe(HTTP.NO_CONTENT);
       await api.dispose();
       await page.context().close();
@@ -199,7 +201,7 @@ test.describe.serial(
       expect(graphql).not.toContain(urlBefore);
 
       expect((await api.get(urlAfter)).status()).toBe(HTTP.OK);
-      await page.goto(contentEditPath(RESUME_SLUG, draft.documentId));
+      await page.goto(contentEditPath(PAGE_CV_A_SLUG, draft.documentId));
       await expect(editor.locator(`img[src="${urlAfter}"]`)).toHaveCount(1);
       urlBefore = urlAfter;
     });
@@ -215,12 +217,12 @@ test.describe.serial(
       await dialog().getByRole('button', { name: media.deleteDialog.cancel }).click();
       await expect(dialog()).toBeHidden();
 
-      const current = await api.get(apiUrl(API_PATHS.document(RESUME_SLUG, draft.documentId)), {
+      const current = await api.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)), {
         headers: bearer(token()),
         params: { status: 'draft' },
       });
       const { version } = (await current.json()) as { version: number };
-      const cleared = await api.put(apiUrl(API_PATHS.document(RESUME_SLUG, draft.documentId)), {
+      const cleared = await api.put(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)), {
         headers: bearer(token()),
         data: { version, values: { summary: '<p>No picture</p>' } },
       });

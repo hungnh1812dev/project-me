@@ -9,7 +9,7 @@ import {
 
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, API_ERROR_CODES, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_NAME, CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_NAME, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { contentSaveButton, fieldByLabel, listItem, toast } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
@@ -17,7 +17,7 @@ import { signInAs } from '../src/Session.fixture';
 const copy = ADMIN_COPY.content;
 const list = copy.list;
 
-const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
+const EDIT_URL = /\/content\/page-cv-a\/[0-9a-f-]{36}$/;
 const NOT_JSON = 'not json';
 const TEAM_SIZE_DECIMAL = '4.5';
 const POSITION = `E2E position ${RUN_ID}`;
@@ -30,7 +30,7 @@ const BAD_LINK_TEXT = 'Bad link';
 const SAFE_LINK = 'https://example.com/e2e';
 const BAD_LINK = 'javascript:alert(1)';
 const FORMAT_SETTLE_MS = 300;
-const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
+const DOCUMENTS_PATH = API_PATHS.documents(PAGE_CV_A_SLUG);
 
 /** Clicks Save, expects a 2xx PUT, then the success notice. */
 const noticeShown: boolean[] = [];
@@ -114,7 +114,7 @@ const bodyOf = (request: Request) =>
   JSON.parse(request.postData() ?? '{}') as Record<string, unknown>;
 
 test.describe.serial(
-  'owner: dynamic document form (cv-page)',
+  'owner: dynamic document form (page-cv-a)',
   { tag: ['@cms-admin', '@cms-api', '@content-editing'] },
   () => {
     let context: BrowserContext;
@@ -133,16 +133,16 @@ test.describe.serial(
       await context.close();
     });
 
-    test('a new cv-page shows every field type, richtext as an editor', async () => {
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+    test('a new page-cv-a shows every field type, richtext as an editor', async () => {
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expect(
         page.getByRole('heading', {
           level: 1,
-          name: copy.newTitle(CV_PAGE_NAME),
+          name: copy.newTitle(PAGE_CV_A_NAME),
         }),
       ).toBeVisible();
       await expect(fieldByLabel(page, 'Position')).toBeVisible();
-      await expect(page.getByRole('switch', { name: 'Is Main' })).toBeVisible();
+      await expect(page.getByRole('switch', { name: 'Main Page' })).toBeVisible();
       await expect(fieldByLabel(page, 'Name')).toBeVisible();
       await expect(fieldByLabel(page, 'Name')).toHaveJSProperty('tagName', 'INPUT');
       await expect(richtextEditor(page, 'Summary')).toBeVisible();
@@ -150,7 +150,7 @@ test.describe.serial(
         page.getByRole('toolbar', { name: copy.richtext.toolbar }).first(),
       ).toBeVisible();
       await expect(page.getByText(copy.notEditableYet)).toHaveCount(0);
-      for (const label of ['Skills', 'Experiences', 'Educations', 'Languages', 'References']) {
+      for (const label of ['Skills', 'Experiences', 'Projects', 'Educations']) {
         await expect(section(page, label)).toBeVisible();
         await expect(addButton(page, label)).toBeVisible();
         await expect(listItemsOf(page, label)).toHaveCount(0);
@@ -158,7 +158,7 @@ test.describe.serial(
     });
 
     test('keyboard: the switch toggles with Space and fields follow DOM order', async () => {
-      const toggle = page.getByRole('switch', { name: 'Is Main' });
+      const toggle = page.getByRole('switch', { name: 'Main Page' });
       await fieldByLabel(page, 'Position').focus();
       await page.keyboard.press('Tab');
       await expect(toggle).toBeFocused();
@@ -210,7 +210,7 @@ test.describe.serial(
       await expect(
         page.getByRole('heading', {
           level: 1,
-          name: copy.editTitle(CV_PAGE_NAME),
+          name: copy.editTitle(PAGE_CV_A_NAME),
         }),
       ).toBeVisible();
       await expect(fieldByLabel(page, 'Position')).toHaveValue(POSITION);
@@ -402,7 +402,7 @@ test.describe.serial(
     });
 
     test('masked fields are read-only "Protected" and never sent', async () => {
-      const masked = ['name', 'references.phone', 'summary'];
+      const masked = ['name', 'experiences.company', 'summary'];
       await page.route(`**${DOCUMENTS_PATH}/*`, async (route) => {
         if (route.request().method() !== 'GET') return route.fallback();
         // The reload below can abort an earlier in-flight read: its route is gone by then.
@@ -427,18 +427,18 @@ test.describe.serial(
       await expect(fieldByLabel(page, 'Summary')).toHaveAttribute('readonly', '');
 
       await fieldByLabel(page, 'Position').fill(`${POSITION_EDITED} masked`);
-      await addButton(page, 'References').click();
-      await expect(fieldByLabel(listItem(page, 'References', 0), 'Phone')).toHaveValue(
+      await addButton(page, 'Experiences').click();
+      await expect(fieldByLabel(listItem(page, 'Experiences', 0), 'Company')).toHaveValue(
         copy.protectedValue,
       );
-      await fieldByLabel(listItem(page, 'References', 0), 'Name').fill('Ref name');
+      await fieldByLabel(listItem(page, 'Experiences', 0), 'Location').fill('Hanoi');
       const recorder = recordWrites(page);
       await saveDraftAndExpectNotice(page);
       recorder.stop();
       const sent = JSON.stringify(bodyOf(recorder.writes[0] as Request));
       const sentValues = bodyOf(recorder.writes[0] as Request)['values'] as Record<string, unknown>;
       expect(Object.keys(sentValues)).not.toContain('name');
-      expect(sent).not.toContain('"phone"');
+      expect(sent).not.toContain('"company"');
       expect(sent).not.toContain('***');
       await page.unroute(`**${DOCUMENTS_PATH}/*`);
     });
@@ -464,7 +464,7 @@ test.describe.serial(
     });
 
     test('an unknown document and an unknown type show a notice', async () => {
-      await page.goto(`/content/${CV_PAGE_SLUG}/00000000-0000-4000-8000-000000000000`);
+      await page.goto(`/content/${PAGE_CV_A_SLUG}/00000000-0000-4000-8000-000000000000`);
       await expect(page.getByText(copy.documentNotFound)).toBeVisible();
       await page.goto('/content/no-such-type/new');
       await expect(page.getByText(copy.typeNotFound)).toBeVisible();

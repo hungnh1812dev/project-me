@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
-import { CONTENT_TYPE_NAMES, CV_PAGE_SLUG } from '../src/E2e.constants';
+import { CONTENT_TYPE_NAMES, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { expectSignedIn, submitLogin } from '../src/Session.fixture';
 
@@ -25,15 +25,12 @@ const PUBLIC_PATHS = ['/login', '/set-password', '/reset-password'];
 // Content types show their display name, in the order the API lists them.
 const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES['common-text'],
-  CONTENT_TYPE_NAMES['cv-contact'],
-  CONTENT_TYPE_NAMES['cv-page-text'],
   CONTENT_TYPE_NAMES.header,
-  CONTENT_TYPE_NAMES['module-page-status'],
-  CONTENT_TYPE_NAMES['module-sign-in'],
-  CONTENT_TYPE_NAMES['site-text'],
-  CONTENT_TYPE_NAMES[CV_PAGE_SLUG],
+  CONTENT_TYPE_NAMES['module-auth'],
+  CONTENT_TYPE_NAMES['module-status'],
+  CONTENT_TYPE_NAMES['page-cv-text'],
   CONTENT_TYPE_NAMES.profile,
-  CONTENT_TYPE_NAMES.resume,
+  CONTENT_TYPE_NAMES[PAGE_CV_A_SLUG],
   nav.media,
   nav.accounts,
   nav.roles,

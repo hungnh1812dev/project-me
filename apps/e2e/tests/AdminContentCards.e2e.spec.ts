@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { contentSaveButton } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
@@ -67,7 +67,7 @@ test.describe.serial(
     test('picker: clickable media card raises on hover, shows halo plus edge on Tab, opens on Enter and Space', async () => {
       await ensureSeedImage(page);
       await page.goto(contentNewPath(PROFILE_SLUG));
-      const field = page.getByRole('group', { name: 'Photo' });
+      const field = page.getByRole('group', { name: 'Avatar' });
       await field.getByRole('button', { name: media.input.choose }).click();
       const dialog = page.getByRole('dialog');
       const pick = dialog.getByRole('button', { name: SEED_PICK_NAME });
@@ -121,7 +121,7 @@ test.describe.serial(
       expect(queueCard.nested).toBe(false);
       await page.keyboard.press('Escape');
 
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await page.getByRole('button', { name: ADMIN_COPY.content.list.addSlot('Skills') }).click();
       const item = page.locator('main [data-slot="card"]').filter({ has: page.locator('input') });
       expect(await item.count()).toBeGreaterThan(0);
@@ -132,11 +132,11 @@ test.describe.serial(
 
     test('diff viewer block is a card in the merge modal', async () => {
       const b = await page.context().newPage();
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       const position = (p: Page) => p.getByLabel('Position', { exact: true });
       await position(page).fill(`Base ${RUN_ID}`);
       await page.keyboard.press('Enter');
-      await expect(page).toHaveURL(/\/content\/cv-page\/[0-9a-f-]{36}$/);
+      await expect(page).toHaveURL(/\/content\/page-cv-a\/[0-9a-f-]{36}$/);
       const url = page.url();
       await b.goto(url);
       await expect(position(b)).toBeVisible();
@@ -158,7 +158,7 @@ test.describe.serial(
     });
 
     test('cleanup: the conflict document is deleted so the collection stays empty', async () => {
-      await page.goto(`/content/${CV_PAGE_SLUG}`);
+      await page.goto(`/content/${PAGE_CV_A_SLUG}`);
       await page.getByRole('checkbox', { name: /^Select all documents/ }).check();
       const rows = await page.getByRole('row').count();
       const count = rows - 1;

@@ -8,7 +8,7 @@ import {
   contentListPath,
   contentNewPath,
 } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { toast } from '../src/Locators.fixture';
 import {
   bearer,
@@ -38,8 +38,8 @@ const FIELD_LIMITED_ROLE = {
   name: `QC field limited ${RUN_ID}`,
   rank: 21,
 };
-const READ_ROW = { subject: CV_PAGE_SLUG, action: 'read' };
-const UPDATE_ROW = { subject: CV_PAGE_SLUG, action: 'update' };
+const READ_ROW = { subject: PAGE_CV_A_SLUG, action: 'read' };
+const UPDATE_ROW = { subject: PAGE_CV_A_SLUG, action: 'update' };
 const LIMITED_UPDATE_ROW = { ...UPDATE_ROW, writableFields: [NAME_FIELD] };
 
 const ROLE_ROWS = {
@@ -47,8 +47,8 @@ const ROLE_ROWS = {
   [FIELD_LIMITED_ROLE.slug]: [
     READ_ROW,
     LIMITED_UPDATE_ROW,
-    { subject: CV_PAGE_SLUG, action: 'publish' },
-    { subject: CV_PAGE_SLUG, action: 'unpublish' },
+    { subject: PAGE_CV_A_SLUG, action: 'publish' },
+    { subject: PAGE_CV_A_SLUG, action: 'unpublish' },
   ],
 };
 
@@ -70,7 +70,7 @@ async function writeApi(
 }
 
 async function createDraft(request: APIRequestContext, token: string, position: string) {
-  const response = await writeApi(request, token, API_PATHS.documents(CV_PAGE_SLUG), {
+  const response = await writeApi(request, token, API_PATHS.documents(PAGE_CV_A_SLUG), {
     values: { [NAME_FIELD]: position },
   });
   expect(response.status()).toBe(HTTP.CREATED);
@@ -78,7 +78,7 @@ async function createDraft(request: APIRequestContext, token: string, position: 
 }
 
 async function openEdit(page: Page, documentId: string) {
-  await page.goto(contentEditPath(CV_PAGE_SLUG, documentId));
+  await page.goto(contentEditPath(PAGE_CV_A_SLUG, documentId));
   await expect(page.getByLabel(NAME_LABEL)).toBeVisible();
 }
 
@@ -133,7 +133,7 @@ test.describe.serial(
     });
 
     test('a new unsaved document shows Save only and no badge; saving gives Draft', async () => {
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expect(page.getByLabel(NAME_LABEL)).toBeVisible();
       await expect(button(page, actions.publish)).toHaveCount(0);
       await expect(button(page, actions.unpublish)).toHaveCount(0);
@@ -142,7 +142,7 @@ test.describe.serial(
 
       await page.getByLabel(NAME_LABEL).fill(FIRST);
       await button(page, copy.save).click();
-      await expect(page).toHaveURL(/\/cv-page\/(?!new$)[^/]+$/);
+      await expect(page).toHaveURL(/\/page-cv-a\/(?!new$)[^/]+$/);
       documentId = page.url().split('/').pop() as string;
       await expect(badge(page, states.draft)).toBeVisible();
     });
@@ -161,7 +161,7 @@ test.describe.serial(
     });
 
     test('Status column shows Draft, with no sort control and no filter', async () => {
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       const header = page.getByRole('columnheader', { name: copy.collection.columns.status });
       await expect(header).toBeVisible();
       await expect(header.getByRole('button')).toHaveCount(0);
@@ -177,7 +177,7 @@ test.describe.serial(
       await expect(button(page, actions.unpublish)).toBeEnabled();
       await expect(button(page, actions.discard)).toBeDisabled();
 
-      const publicRead = await request.get(apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId)));
+      const publicRead = await request.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId)));
       expect(publicRead.status()).toBe(HTTP.OK);
       const body = (await publicRead.json()) as {
         values: Record<string, string>;
@@ -197,11 +197,11 @@ test.describe.serial(
       await expect(button(page, actions.discard)).toBeEnabled();
       await expect(button(page, actions.publish)).toBeEnabled();
 
-      const publicRead = await request.get(apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId)));
+      const publicRead = await request.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId)));
       const body = (await publicRead.json()) as { values: Record<string, string> };
       expect(body.values[NAME_FIELD]).toBe(FIRST);
 
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(listRow(page, EDITED)).toContainText(states.modified);
     });
 
@@ -240,7 +240,7 @@ test.describe.serial(
       await expect(page.getByLabel(NAME_LABEL)).toHaveValue(FIRST);
       await expect(button(page, actions.discard)).toBeDisabled();
 
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(listRow(page, FIRST)).toContainText(states.published);
     });
 
@@ -248,7 +248,7 @@ test.describe.serial(
       request,
     }) => {
       const current = await request.get(
-        `${apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId))}?status=draft`,
+        `${apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId))}?status=draft`,
         { headers: bearer(token) },
       );
       const { version, publishState } = (await current.json()) as {
@@ -259,7 +259,7 @@ test.describe.serial(
       const discard = await writeApi(
         request,
         token,
-        API_PATHS.documentDiscard(CV_PAGE_SLUG, documentId),
+        API_PATHS.documentDiscard(PAGE_CV_A_SLUG, documentId),
         { expectedVersion: version },
       );
       expect(discard.status()).toBe(HTTP.CONFLICT);
@@ -288,10 +288,10 @@ test.describe.serial(
       await expect(badge(page, states.draft)).toBeVisible();
       await expect(button(page, actions.publish)).toBeEnabled();
 
-      const publicRead = await request.get(apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId)));
+      const publicRead = await request.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId)));
       expect(publicRead.status()).toBe(HTTP.NOT_FOUND);
 
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(listRow(page, FIRST)).toContainText(states.draft);
     });
 
@@ -314,7 +314,7 @@ test.describe.serial(
 
     test('bulk publish and unpublish update the Status column', async ({ request }) => {
       await createDraft(request, token, BULK_NAME);
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(listRow(page, BULK_NAME)).toContainText(states.draft);
 
       await page.getByRole('checkbox', { name: copy.collection.selectRow(BULK_NAME) }).check();
@@ -331,7 +331,7 @@ test.describe.serial(
       await openEdit(page, documentId);
       await expectNoHorizontalOverflow(page);
       await expect(button(page, actions.publish)).toBeVisible();
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(
         page.getByRole('columnheader', { name: copy.collection.columns.status }),
       ).toBeAttached();
@@ -348,7 +348,7 @@ test.describe.serial(
       request,
     }) => {
       const draft = await createDraft(request, token, `${FIRST} nopub`);
-      await writeApi(request, token, API_PATHS.documentPublish(CV_PAGE_SLUG, draft.documentId), {
+      await writeApi(request, token, API_PATHS.documentPublish(PAGE_CV_A_SLUG, draft.documentId), {
         expectedVersion: draft.version,
       });
       const roleContext = await browser.newContext();
@@ -370,7 +370,7 @@ test.describe.serial(
       const publish = await writeApi(
         request,
         token,
-        API_PATHS.documentPublish(CV_PAGE_SLUG, draft.documentId),
+        API_PATHS.documentPublish(PAGE_CV_A_SLUG, draft.documentId),
         { expectedVersion: draft.version },
       );
       expect(publish.status()).toBe(HTTP.OK);
@@ -391,7 +391,7 @@ test.describe.serial(
       const discard = await writeApi(
         request,
         created.token,
-        API_PATHS.documentDiscard(CV_PAGE_SLUG, draft.documentId),
+        API_PATHS.documentDiscard(PAGE_CV_A_SLUG, draft.documentId),
         { expectedVersion: draft.version },
       );
       expect(discard.status()).toBe(HTTP.FORBIDDEN);
@@ -417,7 +417,7 @@ test.describe.serial(
 
     test('the owner sees all four actions on a Modified document', async ({ request }) => {
       const draft = await createDraft(request, token, `${FIRST} all four`);
-      await writeApi(request, token, API_PATHS.documentPublish(CV_PAGE_SLUG, draft.documentId), {
+      await writeApi(request, token, API_PATHS.documentPublish(PAGE_CV_A_SLUG, draft.documentId), {
         expectedVersion: draft.version,
       });
       await openEdit(page, draft.documentId);
@@ -433,7 +433,7 @@ test.describe.serial(
       request,
     }) => {
       const draft = await createDraft(request, token, `${FIRST} focus`);
-      await writeApi(request, token, API_PATHS.documentPublish(CV_PAGE_SLUG, draft.documentId), {
+      await writeApi(request, token, API_PATHS.documentPublish(PAGE_CV_A_SLUG, draft.documentId), {
         expectedVersion: draft.version,
       });
       await openEdit(page, draft.documentId);

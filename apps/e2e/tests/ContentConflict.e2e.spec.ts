@@ -11,7 +11,7 @@ import { limitEditorToPositionField, restoreEditorRole } from '../src/AccessPage
 import { inviteAccount } from '../src/Accounts.fixture';
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { contentSaveButton, fieldByLabel, listItem, toast } from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
@@ -20,8 +20,8 @@ const copy = ADMIN_COPY.content;
 const merge = copy.conflict;
 const list = copy.list;
 
-const EDIT_URL = /\/content\/cv-page\/[0-9a-f-]{36}$/;
-const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
+const EDIT_URL = /\/content\/page-cv-a\/[0-9a-f-]{36}$/;
+const DOCUMENTS_PATH = API_PATHS.documents(PAGE_CV_A_SLUG);
 const SKILLS = ['Alpha', 'Beta', 'Gamma'].map((name) => `${name} ${RUN_ID}`);
 
 const mergeDialog = (page: Page) => page.getByRole('dialog', { name: merge.title });
@@ -64,7 +64,7 @@ async function open(page: Page, url: string) {
 }
 
 test.describe.serial(
-  'owner: conflict merge modal (cv-page)',
+  'owner: conflict merge modal (page-cv-a)',
   { tag: ['@cms-admin', '@cms-api', '@content-editing'] },
   () => {
     let context: BrowserContext;
@@ -91,7 +91,7 @@ test.describe.serial(
     });
 
     test('setup: a draft with three skills', async () => {
-      await a.goto(contentNewPath(CV_PAGE_SLUG));
+      await a.goto(contentNewPath(PAGE_CV_A_SLUG));
       await fieldByLabel(a, 'Position').fill(`Base ${RUN_ID}`);
       for (const [index, name] of SKILLS.entries()) {
         await a.getByRole('button', { name: list.addSlot('Skills') }).click();
@@ -326,7 +326,7 @@ test.describe.serial(
       await a.unroute(`**${DOCUMENTS_PATH}/*`);
     });
 
-    test.describe.serial('role with masked fields (Editor, cv-page reads Position only)', () => {
+    test.describe.serial('role with masked fields (Editor, page-cv-a reads Position only)', () => {
       const EDITOR_EMAIL = `e2e-masked-${RUN_ID}@domain.localhost`;
       const EDITOR_NAME = `Masked ${RUN_ID}`;
       const EDITOR_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 40)}-masked`;

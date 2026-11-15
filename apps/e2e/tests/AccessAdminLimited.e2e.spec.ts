@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { accountRow, openRole, roleSaveButton } from '../src/AccessPages.fixture';
 import { ADMIN_COPY } from '../src/Apps.contract';
-import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { expectSignedIn, submitLogin } from '../src/Session.fixture';
@@ -57,7 +57,7 @@ test.describe(
       // The field picker of a view-only role ignores changes too.
       await page
         .getByRole('button', {
-          name: access.matrix.detailsLabel(CV_PAGE_SLUG),
+          name: access.matrix.detailsLabel(PAGE_CV_A_SLUG),
           exact: true,
         })
         .click();

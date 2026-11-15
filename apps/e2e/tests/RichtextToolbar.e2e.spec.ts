@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, contentEditPath, contentNewPath } from '../src/Apps.contract';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import {
   createCvPage,
   putSummary,
@@ -62,7 +62,7 @@ test.describe.serial(
     test.beforeAll(async ({ browser }) => {
       page = await (await browser.newContext()).newPage();
       await signInAsOwner(page);
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       editor = page.getByRole('textbox', { name: FIELD_LABEL, exact: true });
       toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
     });
@@ -141,7 +141,7 @@ test.describe.serial(
     test.beforeAll(async ({ browser }) => {
       page = await (await browser.newContext()).newPage();
       await signInAsOwner(page);
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
       await expect(toolbar).toBeVisible();
     });
@@ -258,7 +258,7 @@ test.describe.serial(
       await signInAsOwner(page);
       api = await playwright.request.newContext();
       draft = await createCvPage(api, token(), `Toolbar round trip ${RUN_ID}`);
-      await page.goto(contentEditPath(CV_PAGE_SLUG, draft.documentId));
+      await page.goto(contentEditPath(PAGE_CV_A_SLUG, draft.documentId));
       editor = page.getByRole('textbox', { name: FIELD_LABEL, exact: true });
       toolbar = page.getByRole('toolbar', { name: richtext.toolbar }).first();
       await expect(editor).toBeVisible();

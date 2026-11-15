@@ -1,10 +1,10 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
-import { CV_PAGE_SLUG, HTTP, RUN_ID } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { bearer, ownerApiToken } from '../src/Session.fixture';
 
-const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
+const DOCUMENTS_PATH = API_PATHS.documents(PAGE_CV_A_SLUG);
 const POSITION = `E2E values ${RUN_ID}`;
 const SAFE_TEXT = `Summary ${RUN_ID}`;
 const DIRTY_RICHTEXT = `<p>${SAFE_TEXT}</p><img src=x onerror="alert(1)"><script>alert(2)</script>`;

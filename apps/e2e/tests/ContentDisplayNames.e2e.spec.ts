@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentListPath, contentNewPath } from '../src/Apps.contract';
-import { CONTENT_TYPE_NAMES, CV_PAGE_NAME, CV_PAGE_SLUG } from '../src/E2e.constants';
+import { CONTENT_TYPE_NAMES, PAGE_CV_A_NAME, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -12,7 +12,7 @@ const LOADING_DELAY_MS = 1_500;
 const DESKTOP = { width: 1280, height: 800 };
 const PHONE = { width: 375, height: 700 };
 
-const typeUrl = new RegExp(`${CONTENT_TYPES_PATH}/${CV_PAGE_SLUG}$`);
+const typeUrl = new RegExp(`${CONTENT_TYPES_PATH}/${PAGE_CV_A_SLUG}$`);
 const listUrl = new RegExp(`${CONTENT_TYPES_PATH}$`);
 
 test.describe(
@@ -25,25 +25,25 @@ test.describe(
     }) => {
       await page.setViewportSize(DESKTOP);
       await signInAsOwner(page);
-      await page.goto(contentListPath(CV_PAGE_SLUG));
-      await expect(page.getByRole('heading', { level: 1, name: CV_PAGE_NAME })).toBeVisible();
-      await expect(page.getByRole('table', { name: `${CV_PAGE_NAME} documents` })).toBeAttached();
-      await expect(page.getByRole('heading', { level: 1, name: CV_PAGE_SLUG })).toHaveCount(0);
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
+      await expect(page.getByRole('heading', { level: 1, name: PAGE_CV_A_NAME })).toBeVisible();
+      await expect(page.getByRole('table', { name: `${PAGE_CV_A_NAME} documents` })).toBeAttached();
+      await expect(page.getByRole('heading', { level: 1, name: PAGE_CV_A_SLUG })).toHaveCount(0);
 
-      await page.goto(contentNewPath(CV_PAGE_SLUG));
+      await page.goto(contentNewPath(PAGE_CV_A_SLUG));
       await expect(
-        page.getByRole('heading', { level: 1, name: copy.newTitle(CV_PAGE_NAME) }),
+        page.getByRole('heading', { level: 1, name: copy.newTitle(PAGE_CV_A_NAME) }),
       ).toBeVisible();
 
       const token = await ownerApiToken(request);
-      const documents = await request.get(apiUrl(API_PATHS.documents(CV_PAGE_SLUG)), {
+      const documents = await request.get(apiUrl(API_PATHS.documents(PAGE_CV_A_SLUG)), {
         headers: bearer(token),
       });
       const first = ((await documents.json()) as { data?: { id: string }[] }).data?.[0];
       if (first !== undefined) {
-        await page.goto(`/content/${CV_PAGE_SLUG}/${first.id}`);
+        await page.goto(`/content/${PAGE_CV_A_SLUG}/${first.id}`);
         await expect(
-          page.getByRole('heading', { level: 1, name: copy.editTitle(CV_PAGE_NAME) }),
+          page.getByRole('heading', { level: 1, name: copy.editTitle(PAGE_CV_A_NAME) }),
         ).toBeVisible();
       }
 
@@ -63,10 +63,10 @@ test.describe(
         await new Promise((resolve) => setTimeout(resolve, LOADING_DELAY_MS));
         await route.continue();
       });
-      await page.goto(contentListPath(CV_PAGE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await expect(page.getByText(copy.titleLoading)).toBeAttached();
-      await expect(page.getByRole('heading', { level: 1, name: /cv-page/i })).toHaveCount(0);
-      await expect(page.getByRole('heading', { level: 1, name: CV_PAGE_NAME })).toBeVisible();
+      await expect(page.getByRole('heading', { level: 1, name: /page-cv-a/i })).toHaveCount(0);
+      await expect(page.getByRole('heading', { level: 1, name: PAGE_CV_A_NAME })).toBeVisible();
     });
 
     for (const viewport of [DESKTOP, PHONE]) {
@@ -88,7 +88,7 @@ test.describe(
             slug: string;
           }[];
           const patched = items.map((item) =>
-            item.slug === CV_PAGE_SLUG ? { ...item, displayName: LONG_NAME } : item,
+            item.slug === PAGE_CV_A_SLUG ? { ...item, displayName: LONG_NAME } : item,
           );
           await route.fulfill({
             response,
@@ -96,7 +96,7 @@ test.describe(
           });
         });
         await signInAsOwner(page);
-        await page.goto(contentListPath(CV_PAGE_SLUG));
+        await page.goto(contentListPath(PAGE_CV_A_SLUG));
         await expect(page.getByRole('heading', { level: 1, name: LONG_NAME })).toBeVisible();
         expect(
           await page.evaluate(
