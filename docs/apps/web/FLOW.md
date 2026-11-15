@@ -39,6 +39,6 @@ flowchart LR
 Applies to flows: `public-site`.
 
 1. `src/proxy.ts` creates the per-request nonce and sets the CSP header (D17).
-2. The root layout runs the shell query and the page its page query (public-site PS-1), through server GraphQL → server RESTful on `APP_API_URL` with `APP_API_TOKEN`, each cached for its own revalidate seconds (default 180 s, WEB-4).
+2. The header runs its header and sign-in queries and the page its page query (public-site PS-1), through server GraphQL → server RESTful on `APP_API_URL` with `APP_API_TOKEN`, each cached for its own revalidate seconds (default 180 s, WEB-4).
 3. Where `APP_ENV` is not `production` (WEB-9), a root field whose read failed (GraphQL `errors` with HTTP 200 included) is filled from `MockView.ts` by its mock key, above the fetch and never cached; otherwise it shows its error state. A null or empty root field without an error shows its empty state (WEB-5).
-4. Client components get their text from the layout's text context and call only the BFF under `/api/v1`, through the client RESTful layer (WEB-1, WEB-3).
+4. Client components get their text as props from the server component of their part and call only the BFF under `/api/v1`, through the client RESTful layer (WEB-1, WEB-3).

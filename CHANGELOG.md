@@ -29,6 +29,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- web, cms-api: spec: each part fetches its own text: the header (`SiteHeader`), the sign-in dialog (`SignIn`) and the not-found page (`NotFoundPage`) run their own queries and pass the text to their client components as props; the shared `SiteShell` query, its text context and the `site-shell` feature go; the error page always uses the built-in last-resort text, so cms-api `siteText` drops `errorTitle`, `errorDescription` and `errorRetry`; a failed sign-in text hides only the sign-in button (public-site PS-1, PS-2, WEB-3, WEB-6; Q-PS1a, Q-PS1b, user 2026-11-15).
 - cms-api: no longer accepts `NODE_ENV=test`; its tests run with `development` (API-2).
 - scripts: `local-registry-push.sh` tags images with a UTC timestamp by default instead of the commit hash (`LOCAL_IMAGE_TAG` still overrides); the build context is unchanged.
 - root: spec: the first production deploy makes the site public (Q-OPS4), so the launch gate's live check runs on a local k3s cluster with the production config before it, and a read-only check of the public site follows the deploy; the backup secrets are set in production only, so the real backup download is checked there (Q-OPS6).
