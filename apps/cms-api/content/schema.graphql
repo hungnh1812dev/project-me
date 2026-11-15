@@ -300,7 +300,7 @@ type PageCvA {
   skills: [PageCvA_Skill!]
   experiences: [PageCvA_Experience!]
   projects: [PageCvA_Project!]
-  educations: PageCvA_Education
+  educations: [PageCvA_Education!]
 
   """
   Paths of the fields the caller may not read; their values are masked or null.

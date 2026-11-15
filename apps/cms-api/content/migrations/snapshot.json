@@ -405,7 +405,7 @@
       }
     },
     "page-cv-a": {
-      "hash": "19ab6298cc362aa4a09d121cbd01fa06062fc54251b3a2734fd746914e780019",
+      "hash": "8f8383787fad355c06c93a89ca4e36762aad70a26b4a2d165b60c1edb3b825a1",
       "definition": {
         "slug": "page-cv-a",
         "displayName": "Page CV (Type A)",
@@ -557,6 +557,7 @@
             "name": "educations",
             "type": "component",
             "component": "education",
+            "repeatable": true,
             "fields": [
               {
                 "name": "degree",

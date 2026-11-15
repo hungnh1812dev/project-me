@@ -36,12 +36,20 @@ export const PAGE_CV_MOCK = {
             responsibilities: '<p>Designed the invoicing model.</p>',
           },
         ],
-        educations: {
-          degree: 'BSc Computer Science',
-          institution: 'Example University',
-          period: '2016 - 2020',
-          location: 'Hanoi',
-        },
+        educations: [
+          {
+            degree: 'BSc Computer Science',
+            institution: 'Example University',
+            period: '2016 - 2020',
+            location: 'Hanoi',
+          },
+          {
+            degree: 'MSc Software Engineering',
+            institution: 'Example Institute',
+            period: '2020 - 2022',
+            location: null,
+          },
+        ],
         _maskedFields: ['experiences.company'],
       },
     ],

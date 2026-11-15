@@ -149,6 +149,7 @@
       "name": "educations",
       "type": "component",
       "component": "education",
+      "repeatable": true,
       "fields": [
         {
           "name": "degree",

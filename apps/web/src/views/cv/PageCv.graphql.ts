@@ -45,8 +45,7 @@ export interface PageCvA {
   skills: PageCvSkill[] | null;
   experiences: PageCvExperience[] | null;
   projects: PageCvProject[] | null;
-  /** The content type declares one education component, not a repeatable one. */
-  educations: PageCvEducation | null;
+  educations: PageCvEducation[] | null;
   _maskedFields: string[];
 }
 
