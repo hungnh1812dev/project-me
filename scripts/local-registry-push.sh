@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the app images and pushes them to the local k3d registry (docs/deployments/local-registry.md).
-# Usage: bash scripts/local-registry-push.sh [cms-api|cms-admin|web ...]    (no argument: all three, in that order)
+# Usage: bash scripts/local-registry-push.sh [--no-cache] [cms-api|cms-admin|web ...]    (no app: all three, in that order)
+#   --no-cache        passed to every docker build of the run; accepted before or after the app names
 #   LOCAL_REGISTRY    registry host:port; default k3d-registry.localhost:5001
 #   LOCAL_IMAGE_TAG   image tag; default a UTC timestamp (YYYYmmdd-HHMMSS), so every build gets a new tag
 #   Build args come from .github/scripts/build-args.sh run with ENVIRONMENT=local, so it reads TURBO_VERSION,
@@ -19,7 +20,8 @@ build_args_environment=local
 build_args_start='build_args<<ARGS_EOF'
 build_args_end='ARGS_EOF'
 all_apps=(cms-api cms-admin web)
-usage="usage: local-registry-push.sh [${all_apps[*]}]"
+no_cache_option=--no-cache
+usage="usage: local-registry-push.sh [${no_cache_option}] [${all_apps[*]}]"
 
 default_tag_format='%Y%m%d-%H%M%S'
 
@@ -73,7 +75,15 @@ check_registry() {
     die "registry ${registry} is not reachable; see ${registry_doc}"
 }
 
-apps=("$@")
+apps=()
+build_options=()
+for argument in "$@"; do
+  case "${argument}" in
+    "${no_cache_option}") build_options+=("${no_cache_option}") ;;
+    -*) die "unknown option '${argument}'; ${usage}" ;;
+    *) apps+=("${argument}") ;;
+  esac
+done
 if [ "${#apps[@]}" -eq 0 ]; then apps=("${all_apps[@]}"); fi
 
 for app in "${apps[@]}"; do check_app "${app}"; done
@@ -84,7 +94,7 @@ pushed_refs=()
 for app in "${apps[@]}"; do
   ref="${registry}/${app}:${tag}"
   load_build_args "${app}"
-  docker build -f "apps/${app}/Dockerfile" -t "${ref}" ${build_args[@]+"${build_args[@]}"} "${repo_root}"
+  docker build ${build_options[@]+"${build_options[@]}"} -f "apps/${app}/Dockerfile" -t "${ref}" ${build_args[@]+"${build_args[@]}"} "${repo_root}"
   docker push "${ref}"
   pushed_refs+=("${ref}")
 done

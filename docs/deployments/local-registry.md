@@ -47,11 +47,14 @@ bash scripts/local-registry-push.sh
 bash scripts/local-registry-push.sh cms-admin
 bash scripts/local-registry-push.sh cms-api web
 
+# build without the Docker layer cache (before or after the app names)
+bash scripts/local-registry-push.sh --no-cache web
+
 # a fixed tag
 LOCAL_IMAGE_TAG=dev1 bash scripts/local-registry-push.sh
 ```
 
-An unknown app name stops the script with its usage line. On success it prints each pushed image ref, one per line.
+`--no-cache` is passed to every `docker build` of the run; without it the builds are unchanged. An unknown app name or option stops the script with its usage line, before any build. On success it prints each pushed image ref, one per line.
 
 ## 4. Use the images in k3s
 

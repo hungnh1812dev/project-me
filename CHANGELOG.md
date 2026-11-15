@@ -11,6 +11,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: the smoke stack publishes the site-shell, sign-in, status and CV content (built from the web mocks by `scripts/smoke/SeedContent.mjs`) before web starts, so the staging web renders real cms-api text.
 - e2e: every `tests/*.e2e.spec.ts` carries app tags (`@cms-admin`, `@web`, `@cms-api`) and flow tags, checked against `docs/apps` and `docs/flows` by `src/SpecTags.contract.test.ts`; qc selects a test scope with `--grep`.
 - scripts: build and push the three app images to a local k3d registry ([local-registry.md](docs/deployments/local-registry.md)).
+- scripts: `local-registry-push.sh --no-cache` builds the app images without the Docker layer cache.
 - scripts: `pnpm dev:stack:seed` adds one media file and one document with a draft to a running dev stack, so the media and diff screens can be checked at tier 2.
 - web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a mock fallback through `MockView.ts` that is on only where `APP_ENV` is not `production` (WEB-1..WEB-9).
 - cms-admin: premium SaaS look (indigo primary, rounded cards, sticky sidebar and header, soft focus halo) and toasts for the outcomes of content, media, access and security actions (ADM-1..ADM-10).

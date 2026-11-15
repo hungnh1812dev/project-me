@@ -91,12 +91,23 @@ run TURBO_VERSION=1 -- cms-api
 grep -qE '^ARG k3d-registry\.localhost:5001/cms-api:[0-9]{8}-[0-9]{6}$' "${docker_log}"; check "dirty tree keeps the timestamp tag" $?
 rm dirty-file
 
+run "${full_env[@]}" LOCAL_IMAGE_TAG=t1 -- --no-cache
+[ "$(grep -c '^ARG --no-cache$' "${docker_log}")" = 3 ] && [ "$(count_calls build)" = 3 ]; check "--no-cache reaches all three builds" $?
+run TURBO_VERSION=1 LOCAL_IMAGE_TAG=t1 -- cms-api --no-cache
+[ "$(grep -c '^ARG --no-cache$' "${docker_log}")" = 1 ] && [ "$(count_calls build)" = 1 ]; check "--no-cache after an app name" $?
+run TURBO_VERSION=1 LOCAL_IMAGE_TAG=t1 -- --no-cache cms-api
+[ "$(grep -c '^ARG --no-cache$' "${docker_log}")" = 1 ]; check "--no-cache before an app name" $?
+run "${full_env[@]}" LOCAL_IMAGE_TAG=t1 --
+! grep -q '^ARG --no-cache$' "${docker_log}"; check "no --no-cache without the flag" $?
+
 expect_refusal() { # description
   [ "${status}" -ne 0 ] && [ ! -s "${docker_log}" ] && ! grep -q "${secret_value}" "${out}"
   check "$1" $?
 }
 run -- nope
 expect_refusal "unknown app"; grep -q '^unknown app' "${out}"; check "unknown app prints usage" $?
+run "${full_env[@]}" -- --bogus cms-admin
+expect_refusal "unknown option"; grep -q "^unknown option '--bogus'.*--no-cache" "${out}"; check "unknown option prints usage with --no-cache" $?
 run "${full_env[@]}" -- cms-admin nope
 expect_refusal "unknown app after a valid one"
 run NEXT_PUBLIC_TURNSTILE_SITE_KEY=x -- cms-admin
