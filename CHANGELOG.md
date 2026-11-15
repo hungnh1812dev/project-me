@@ -10,7 +10,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 - web: `/cv` is built from the main `page-cv-a`, the `profile` and `pageCvText` in `views/cv` (queries `PageCv` and `PageCvVisitor`); the new projects section is shown, no main CV answers 404, and `features/cv` is gone (WPQ-9).
 - web: `/status` page, and the module status on `/`, come from one `ModuleStatus` part (query `ModuleStatus`, field `moduleStatus`) in place of the `StatusPage` query (WPQ-13).
-- root: the smoke stack publishes the site-shell, sign-in, status and CV content (built from the web mocks by `scripts/smoke/SeedContent.mjs`) before web starts, so the staging web renders real cms-api text.
+- root: the smoke stack publishes the header, sign-in, status, CV text, profile and `page-cv-a` content (built from the web mocks by `scripts/smoke/SeedContent.mjs`) before web starts, so the staging web renders real cms-api text.
 - cms-api: new content type `page-cv-a` (migration `0013_content.sql`; a collection of CV pages with skills, experiences with roles, projects and educations; no web reader yet) (WPQ-7).
 - e2e: every `tests/*.e2e.spec.ts` carries app tags (`@cms-admin`, `@web`, `@cms-api`) and flow tags, checked against `docs/apps` and `docs/flows` by `src/SpecTags.contract.test.ts`; qc selects a test scope with `--grep`.
 - scripts: build and push the three app images to a local k3d registry ([local-registry.md](docs/deployments/local-registry.md)).
@@ -27,6 +27,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### DevOps patches
 
+- scripts: the smoke and dev stacks seed the new content types (`header`, `module-auth`, `module-status`, `page-cv-text`, `profile`, `page-cv-a`) from the web mocks; `pnpm dev:stack demo` runs `SeedContent.mjs` instead of `scripts/demo/content/`, and the start check reads `pageCvAList` and `experiences.company`. No deploy-repo change (WPQ-10).
 - web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 - web 0.2.0, local k3s cluster: remove the cms-api route on the web host (Ingress `cms-api-staging`, IngressRoute `cms-api-staging-upload`) so the web BFF answers `/api/v1/*`, and rebuild the web image from a clean commit; the old image logs the server env, so rotate those values if reused ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 

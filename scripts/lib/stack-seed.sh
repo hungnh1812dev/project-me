@@ -160,10 +160,10 @@ STACK_TOKEN_SCOPE='{"permissions":[{"subject":"*","action":"read"}]}'
 STACK_GRANT_ROLE_SLUG="guest"
 STACK_GRANT_SUBJECT="api_tokens"
 STACK_GRANT_ACTION="create"
-STACK_MASKED_PATH="references.phone"
+STACK_MASKED_PATH="experiences.company"
 STACK_API_TIMEOUT_SECONDS=30
 STACK_HTTP_STATUS_FORMAT='%{http_code}'
-STACK_CONTENT_CHECK_QUERY='{"query":"{ cvPageList(pageSize: 1) { data { references { phone } _maskedFields } } }"}'
+STACK_CONTENT_CHECK_QUERY='{"query":"{ pageCvAList(pageSize: 1) { data { experiences { company } _maskedFields } } }"}'
 
 # stack_json_eval <json> <js expression over `data`>: prints the result (nothing for null).
 stack_json_eval() {
@@ -283,18 +283,18 @@ stack_mint_with_temporary_grant() {
 }
 
 # stack_check_masked_profile <api token>: the token must read through the public profile,
-# so references.phone is listed in _maskedFields of a cvPage. With no published cvPage
+# so experiences.company is listed in _maskedFields of a pageCvA. With no published pageCvA
 # the list is empty (masking is reported per record), so the check says so and skips.
 stack_check_masked_profile() {
   local record_count masked
-  stack_content_token_reads_cv_pages "$1" || { echo "Start check 'cvPageList with the content token': HTTP $STACK_API_STATUS." >&2; return 1; }
-  record_count="$(stack_json_eval "$STACK_API_BODY" 'data.data.cvPageList.data.length')"
+  stack_content_token_reads_cv_pages "$1" || { echo "Start check 'pageCvAList with the content token': HTTP $STACK_API_STATUS." >&2; return 1; }
+  record_count="$(stack_json_eval "$STACK_API_BODY" 'data.data.pageCvAList.data.length')"
   if [[ "$record_count" == "0" ]]; then
-    echo "Start check 'cvPageList masks $STACK_MASKED_PATH': skipped, no published cvPage yet."
+    echo "Start check 'pageCvAList masks $STACK_MASKED_PATH': skipped, no published pageCvA yet."
     return 0
   fi
-  masked="$(stack_json_eval "$STACK_API_BODY" "data.data.cvPageList.data[0]._maskedFields.includes('$STACK_MASKED_PATH')")"
-  [[ "$masked" == "true" ]] || { echo "Start check 'cvPageList masks $STACK_MASKED_PATH' failed: the content token reads wider than the public profile." >&2; return 1; }
+  masked="$(stack_json_eval "$STACK_API_BODY" "data.data.pageCvAList.data[0]._maskedFields.includes('$STACK_MASKED_PATH')")"
+  [[ "$masked" == "true" ]] || { echo "Start check 'pageCvAList masks $STACK_MASKED_PATH' failed: the content token reads wider than the public profile." >&2; return 1; }
 }
 
 # stack_drop_leftover_grant <owner token>: removes an api_tokens row a killed run left on guest.

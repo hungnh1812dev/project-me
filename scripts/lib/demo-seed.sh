@@ -13,7 +13,7 @@ DEMO_TOKEN_FIELD="accessToken"
 DEMO_REQUEST_TIMEOUT_SECONDS=30
 DEMO_DOCUMENTS_PATH="/documents"
 DEMO_PUBLISH_SEGMENT="publish"
-DEMO_CONTENT_DIR="$ROOT_DIR/scripts/demo/content"
+DEMO_SEED_CONTENT_SCRIPT="$ROOT_DIR/scripts/smoke/SeedContent.mjs"
 DEMO_CONTENT_EXTENSION=".json"
 
 demo_api_url() { echo "http://$LOOPBACK:$API_PORT$API_PREFIX$1"; }
@@ -70,16 +70,19 @@ demo_json_field() {
     'let body = ""; process.stdin.on("data", (chunk) => (body += chunk)).on("end", () => process.stdout.write(String(JSON.parse(body)[process.env.DEMO_FIELD] ?? "")))'
 }
 
-# demo_seed_content: creates and publishes one document per file in
-# scripts/demo/content/. The file name is the content type slug; the file is the
-# create body. A new type needs only a new file.
+# demo_seed_content: creates and publishes one document per content type, from the
+# create bodies SeedContent.mjs builds from the web mocks (the smoke stack seeds the
+# same ones). The file name is the content type slug; the file is the create body.
 demo_seed_content() {
-  local file slug document_id version
-  for file in "$DEMO_CONTENT_DIR"/*"$DEMO_CONTENT_EXTENSION"; do
+  local file slug document_id version content_dir
+  content_dir="$(mktemp -d)"
+  node "$DEMO_SEED_CONTENT_SCRIPT" "$content_dir" || { rm -rf "$content_dir"; echo "Demo setup: building the content bodies failed." >&2; return 1; }
+  for file in "$content_dir"/*"$DEMO_CONTENT_EXTENSION"; do
     slug="$(basename "$file" "$DEMO_CONTENT_EXTENSION")"
     demo_post_json "$DEMO_DOCUMENTS_PATH/$slug" "$(cat "$file")"
     if [[ "$DEMO_RESPONSE_STATUS" != 2* ]]; then
       echo "Demo setup: creating '$slug' failed (HTTP $DEMO_RESPONSE_STATUS)." >&2
+      rm -rf "$content_dir"
       return 1
     fi
     document_id="$(demo_json_field "$DEMO_RESPONSE_BODY" documentId)"
@@ -87,16 +90,19 @@ demo_seed_content() {
     demo_post_json "$DEMO_DOCUMENTS_PATH/$slug/$document_id/$DEMO_PUBLISH_SEGMENT" "{\"expectedVersion\":$version}"
     if [[ "$DEMO_RESPONSE_STATUS" != 2* ]]; then
       echo "Demo setup: publishing '$slug' failed (HTTP $DEMO_RESPONSE_STATUS)." >&2
+      rm -rf "$content_dir"
       return 1
     fi
   done
+  rm -rf "$content_dir"
 }
 
 # Used by `dev-stack.sh seed` (an opt-in extra on a running dev stack, so specs that expect
 # an empty library or an empty collection keep working): one media file and one document
 # that is published and then edited, so it holds a draft that differs from the published copy.
+# The document is not the main CV (isMain false), so /cv keeps the seeded main one.
 DEMO_MEDIA_PATH="/media"
-DEMO_SEED_DOCUMENT_SLUG="resume"
+DEMO_SEED_DOCUMENT_SLUG="page-cv-a"
 DEMO_SEED_DRAFT_VALUES='{"summary":"<p>Edited after publishing, so this document holds a draft.</p>"}'
 DEMO_SEED_MEDIA_NAME="seed-image.png"
 DEMO_SEED_MEDIA_ALT="Seed image"
@@ -122,8 +128,13 @@ demo_seed_media() {
 
 # demo_seed_document_with_draft: creates and publishes the sample document, then saves an edit.
 demo_seed_document_with_draft() {
-  local document_id version path
-  demo_post_json "$DEMO_DOCUMENTS_PATH/$DEMO_SEED_DOCUMENT_SLUG" "$(cat "$DEMO_CONTENT_DIR/$DEMO_SEED_DOCUMENT_SLUG$DEMO_CONTENT_EXTENSION")"
+  local document_id version path content_dir body
+  content_dir="$(mktemp -d)"
+  node "$DEMO_SEED_CONTENT_SCRIPT" "$content_dir" || { rm -rf "$content_dir"; echo "Seed: building the content bodies failed." >&2; return 1; }
+  body="$(node -e 'const body = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); body.values.isMain = false; process.stdout.write(JSON.stringify(body))' \
+    "$content_dir/$DEMO_SEED_DOCUMENT_SLUG$DEMO_CONTENT_EXTENSION")"
+  rm -rf "$content_dir"
+  demo_post_json "$DEMO_DOCUMENTS_PATH/$DEMO_SEED_DOCUMENT_SLUG" "$body"
   [[ "$DEMO_RESPONSE_STATUS" == 2* ]] || { echo "Seed: creating the document failed (HTTP $DEMO_RESPONSE_STATUS)." >&2; return 1; }
   document_id="$(demo_json_field "$DEMO_RESPONSE_BODY" documentId)"
   version="$(demo_json_field "$DEMO_RESPONSE_BODY" version)"

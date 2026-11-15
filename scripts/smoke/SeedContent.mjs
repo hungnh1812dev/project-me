@@ -15,21 +15,17 @@ const ANSWER_ONLY_KEYS = new Set(['documentId', '_maskedFields']);
 const { SITE_HEADER_MOCK } = await import(path.join(MOCKS_DIR, 'SiteHeader.mock.ts'));
 const { NOT_FOUND_PAGE_MOCK } = await import(path.join(MOCKS_DIR, 'NotFoundPage.mock.ts'));
 const { SIGN_IN_MOCK } = await import(path.join(MOCKS_DIR, 'SignIn.mock.ts'));
-const { CV_PAGE_MOCK } = await import(path.join(MOCKS_DIR, 'CvPage.mock.ts'));
-const { STATUS_PAGE_MOCK } = await import(path.join(MOCKS_DIR, 'StatusPage.mock.ts'));
+const { MODULE_STATUS_MOCK } = await import(path.join(MOCKS_DIR, 'ModuleStatus.mock.ts'));
+const { PAGE_CV_MOCK } = await import(path.join(MOCKS_DIR, 'PageCv.mock.ts'));
 
 /** One entry per content type: the schema slug, the mock data and the values the mock lacks. */
 const SEEDS = [
-  { slug: 'header', data: SITE_HEADER_MOCK.header },
-  {
-    slug: 'site-text',
-    data: { ...SITE_HEADER_MOCK.headerText, ...NOT_FOUND_PAGE_MOCK.notFoundText },
-  },
-  { slug: 'module-sign-in', data: SIGN_IN_MOCK.signInText },
-  { slug: 'module-page-status', data: STATUS_PAGE_MOCK.statusPageText },
-  { slug: 'cv-page-text', data: CV_PAGE_MOCK.cvPageText },
-  { slug: 'cv-contact', data: CV_PAGE_MOCK.cvContact },
-  { slug: 'cv-page', data: { ...CV_PAGE_MOCK.cvPageList.data[0], isMain: true } },
+  { slug: 'header', data: { ...SITE_HEADER_MOCK.header, ...NOT_FOUND_PAGE_MOCK.notFoundText } },
+  { slug: 'module-auth', data: SIGN_IN_MOCK.signInText },
+  { slug: 'module-status', data: MODULE_STATUS_MOCK.statusText },
+  { slug: 'page-cv-text', data: PAGE_CV_MOCK.pageCvText },
+  { slug: 'profile', data: PAGE_CV_MOCK.profile },
+  { slug: 'page-cv-a', data: { ...PAGE_CV_MOCK.pageCvAList.data[0], isMain: true } },
 ];
 
 function toTree(fields, data, where) {
