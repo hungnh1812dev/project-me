@@ -118,16 +118,16 @@ Field names are what the API uses as property names. Write them in
 camelCase (`teamSize`); snake_case is accepted too. The SQL name is the
 snake_case form.
 
-| Object                 | Rule                                              | cv-page example                  |
-| ---------------------- | ------------------------------------------------- | -------------------------------- |
-| Column                 | field name, each capital becomes `_` + lowercase  | `teamSize` → `team_size`         |
-| Root table             | slug with `-` → `_`                               | `cv-page` → `cv_page`            |
-| Component table        | parent table + `__` + `component` value column    | `cv_page__experience__role`      |
-| Primary key            | `<table>_pk`                                      | `cv_page_pk`                     |
-| Draft / published uniq | `<root>_draft_uq`, `<root>_published_uq`          | `cv_page_published_uq`           |
-| Published list index   | `<root>_published_idx`                            | `cv_page_published_idx`          |
-| Parent FK / index      | `<component>_parent_fk`, `<component>_parent_idx` | `cv_page__experience_parent_idx` |
-| Media FK               | `<table>_<column>_media_fk`                       | `post_cover_image_media_fk`      |
+| Object                 | Rule                                              | page-cv-a example                  |
+| ---------------------- | ------------------------------------------------- | ---------------------------------- |
+| Column                 | field name, each capital becomes `_` + lowercase  | `teamSize` → `team_size`           |
+| Root table             | slug with `-` → `_`                               | `page-cv-a` → `page_cv_a`          |
+| Component table        | parent table + `__` + `component` value column    | `page_cv_a__experience__role`      |
+| Primary key            | `<table>_pk`                                      | `page_cv_a_pk`                     |
+| Draft / published uniq | `<root>_draft_uq`, `<root>_published_uq`          | `page_cv_a_published_uq`           |
+| Published list index   | `<root>_published_idx`                            | `page_cv_a_published_idx`          |
+| Parent FK / index      | `<component>_parent_fk`, `<component>_parent_idx` | `page_cv_a__experience_parent_idx` |
+| Media FK               | `<table>_<column>_media_fk`                       | `post_cover_image_media_fk`        |
 
 `__` appears only as the path separator, which is why names may not contain
 it. Table, index and constraint names share one namespace in the `content`
@@ -171,22 +171,21 @@ bytes (`_published_idx` adds 14), a component table at most 52 bytes
 (`_parent_idx` adds 11). Shape errors are reported alone; length and
 collision checks run only once every name is well formed.
 
-## Worked example: `cv-page`
+## Worked example: `page-cv-a`
 
-`apps/cms-api/content/schemas/cv-page.json` (ported from the old ERD; the
-old `responsitoryLink` is spelled `repositoryLink`, and the old
-`reviewerSessionId` column is gone, SPEC D2). A component field carries its
-`component` value, which names its table; `width` is `1/3`, `1/2` or `full`:
+`apps/cms-api/content/schemas/page-cv-a.json` (a collection of CV pages, no
+web reader yet). A component field carries its `component` value, which names
+its table; `width` is `1/3`, `1/2` or `full`:
 
 ```json
 {
-  "slug": "cv-page",
+  "slug": "page-cv-a",
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [
-    { "name": "position", "type": "text", "width": "1/2" },
-    { "name": "isMain", "type": "boolean", "width": "1/2" },
-    { "name": "name", "type": "text" },
+    { "name": "position", "type": "text", "width": "1/3" },
+    { "name": "isMain", "type": "boolean", "width": "1/3" },
+    { "name": "name", "type": "text", "width": "1/3" },
     { "name": "summary", "type": "richtext" },
     {
       "name": "experiences",
@@ -194,15 +193,15 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
       "component": "experience",
       "repeatable": true,
       "fields": [
-        { "name": "company", "type": "text", "width": "1/2" },
+        { "name": "company", "type": "text", "width": "1/2", "sensitive": true },
         {
           "name": "roles",
           "type": "component",
           "component": "role",
           "repeatable": true,
           "fields": [
-            { "name": "teamSize", "type": "integer", "width": "1/2" },
-            { "name": "techStack", "type": "json" }
+            { "name": "teamSize", "type": "integer", "width": "1/3" },
+            { "name": "techStacks", "type": "json" }
           ]
         }
       ]
@@ -211,34 +210,23 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
 }
 ```
 
-(Shortened: the real file also has `skills`, `educations`, `languages`,
-`references` (component `reference`) and, inside a role, `projects`.) It
-produces 8 tables:
+(Shortened: the real file also has `skills`, `projects` and, as a single
+component, `educations`.) It produces 6 tables (acceptance criterion 16):
 
 ```
-cv_page                                root: position, is_main, name, summary
-cv_page__skill                         level, skill
-cv_page__experience                    company, location, period
-cv_page__experience__role              position, period, team_size, tech_stack, responsibilities
-cv_page__experience__role__project     name, team_size, role, live_link, repository_link, tech_stack, responsibilities
-cv_page__education                     degree, institution, period, location, description
-cv_page__language                      language, level
-cv_page__reference                     name, phone, role
+page_cv_a                      root: name, position, is_main, summary
+page_cv_a__skill               skill, level
+page_cv_a__experience          company, location, period
+page_cv_a__experience__role    position, period, team_size, projects, tech_stacks, responsibilities
+page_cv_a__project             name, team_size, role, live_link, repository_link, tech_stack, responsibilities
+page_cv_a__education           degree, institution, period, location
 ```
 
-Content type `page-cv-a` (migration `0013_content.sql`, collection, no web reader
-yet) has 6 tables: `page_cv_a` (name, position, is_main, summary), `page_cv_a__skill`,
-`page_cv_a__experience`, `page_cv_a__experience__role`, `page_cv_a__project` and
-`page_cv_a__education`.
+`header` uses the same table naming (`header__nav__sub_navigation`).
 
-`resume` and `header` use the same table naming (`resume__experience__role__project`,
-`header__nav__sub_navigation`); their tables were renamed with their data by
-migration `0006_content.sql`.
-
-Sensitive fields: `cv-contact` `address`, `phone`, `email`, `github`, and
-`resume` `experiences.company`, `referees.phone` (migration
-`0004_sensitive_site_fields.sql`, no DDL); `cv-page` `experiences.company`,
-`references.phone` (migration `0008_content.sql`, no DDL).
+Sensitive fields: `profile` `address`, `phone`, `email`, `github`, and
+`page-cv-a` `experiences.company`. Integration specs that need a type deeper
+than depth 2 use a fixture definition inside the spec, never a repo schema.
 
 ## Data-migration notes
 
@@ -271,6 +259,21 @@ over is written here.
   the same tables), so existing rows are read under `references` with no data
   loss and no re-save needed. Clients that send or query `referees` for
   `cv-page` must use `references`; `resume` keeps `referees`.
+
+### `0014_content.sql` (public-site content types reshaped, Q-PS7)
+
+- Dropped with their rows (written with `content:generate --allow-destructive`,
+  accepted by the user, 2026-11-15; no data is carried over): `cv-contact`,
+  `cv-page`, `resume`, `site-text`, `module-sign-in`, `module-page-status` and
+  `cv-page-text`, each with its component tables. A rename is a drop and a
+  create: `module-sign-in` became `module-auth`, `module-page-status` became
+  `module-status`, `cv-page-text` became `page-cv-text`, all created empty.
+- `profile.photo` dropped; the old `profile` collection becomes a single, so
+  its extra rows are not carried over.
+- New empty types: `module-auth`, `module-status`, `page-cv-text`; `header`
+  gains `navLabel`, `navCvLink`, `notFoundTitle`, `notFoundDescription`.
+- The stacks reseed from the web mocks; production content is entered again
+  in cms-admin.
 
 ## Migrations
 

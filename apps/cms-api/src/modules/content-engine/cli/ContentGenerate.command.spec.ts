@@ -10,7 +10,7 @@ import {
   type GenerateOptions,
 } from './ContentGenerate.command';
 
-const CV_PAGE_FILE = 'cv-page.json';
+const PAGE_CV_A_FILE = 'page-cv-a.json';
 
 describe('content:generate --check', () => {
   let root: string;
@@ -21,8 +21,8 @@ describe('content:generate --check', () => {
     const schemasDir = join(root, 'schemas');
     await mkdir(schemasDir);
     await copyFile(
-      join(DEFAULT_CONTENT_PATHS.schemasDir, CV_PAGE_FILE),
-      join(schemasDir, CV_PAGE_FILE),
+      join(DEFAULT_CONTENT_PATHS.schemasDir, PAGE_CV_A_FILE),
+      join(schemasDir, PAGE_CV_A_FILE),
     );
     options = {
       schemasDir,

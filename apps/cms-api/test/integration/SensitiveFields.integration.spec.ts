@@ -39,8 +39,8 @@ import { createTestApp } from '../fixtures/TestApp.fixture';
 
 const PASSWORD = 'correct horse battery staple';
 const API = '/api/v1';
-const CONTACT = `${API}/documents/cv-contact`;
-const RESUME = `${API}/documents/resume`;
+const PROFILE = `${API}/documents/profile`;
+const PAGE_CV_A = `${API}/documents/page-cv-a`;
 const GRAPHQL = `${API}/graphql`;
 const RAW = {
   phone: 'RAW-PHONE-5550100',
@@ -48,10 +48,9 @@ const RAW = {
   address: 'RAW-ADDRESS-1',
   github: 'RAW-GITHUB',
   company: 'RAW-COMPANY',
-  refereePhone: 'RAW-REFEREE-PHONE',
 };
 const VISIBLE = { name: 'Visible Name', linkedin: 'visible-linkedin' };
-const MASKED_CONTACT_FIELDS = ['address', 'email', 'github', 'phone'];
+const MASKED_PROFILE_FIELDS = ['address', 'email', 'github', 'phone'];
 
 let ipCounter = 0;
 const nextIp = () => `10.51.0.${(ipCounter += 1)}`;
@@ -94,7 +93,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
     content = createContentDb(databaseUrl);
     const repository = new KyselyContentRepository(registry);
     await inContentUnit(content, async (unit) => {
-      await repository.insertTree(unit, 'cv-contact', {
+      await repository.insertTree(unit, 'profile', {
         documentId: randomUUID(),
         publishedAt: new Date(),
         values: {
@@ -103,7 +102,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
         },
         components: {},
       });
-      await repository.insertTree(unit, 'resume', {
+      await repository.insertTree(unit, 'page-cv-a', {
         documentId: randomUUID(),
         publishedAt: new Date(),
         values: { position: 'Engineer', isMain: true },
@@ -115,10 +114,10 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
               components: {},
             },
           ],
-          referees: [
+          projects: [
             {
               componentUid: randomUUID(),
-              values: { name: 'Ref Name', phone: RAW.refereePhone },
+              values: { name: 'Project Name' },
               components: {},
             },
           ],
@@ -205,9 +204,9 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
     return (res.body as { accessToken: string }).accessToken;
   }
 
-  const contactOf = (token?: string) =>
+  const profileOf = (token?: string) =>
     http()
-      .get(`${CONTACT}?status=published`)
+      .get(`${PROFILE}?status=published`)
       .set(token === undefined ? from() : bearer(token));
 
   describe.each([
@@ -219,46 +218,44 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
       token = await tokenOf();
     });
 
-    it('REST: cv-contact masks every sensitive field and sends no raw value', async () => {
-      const res = await contactOf(token);
+    it('REST: profile masks every sensitive field and sends no raw value', async () => {
+      const res = await profileOf(token);
       expect(res.status).toBe(200);
       const [record] = (res.body as Page).data;
       expect(record?.values).toMatchObject(VISIBLE);
       expect(record?.values.phone).toBe('***');
-      expect(record?.[MASKED_FIELDS_KEY]).toEqual(expect.arrayContaining(MASKED_CONTACT_FIELDS));
+      expect(record?.[MASKED_FIELDS_KEY]).toEqual(expect.arrayContaining(MASKED_PROFILE_FIELDS));
       expectNoRawValue(res.body);
     });
 
-    it('REST: resume masks experiences.company and referees.phone', async () => {
+    it('REST: page-cv-a masks experiences.company', async () => {
       const res = await http()
-        .get(`${RESUME}?status=published`)
+        .get(`${PAGE_CV_A}?status=published`)
         .set(token === undefined ? from() : bearer(token));
       expect(res.status).toBe(200);
       const [record] = (res.body as Page).data;
-      expect(record?.[MASKED_FIELDS_KEY]).toEqual(
-        expect.arrayContaining(['experiences.company', 'referees.phone']),
-      );
+      expect(record?.[MASKED_FIELDS_KEY]).toEqual(expect.arrayContaining(['experiences.company']));
       expect(record?.components.experiences?.[0]?.values.location).toBe('Remote');
-      expect(record?.components.referees?.[0]?.values.name).toBe('Ref Name');
+      expect(record?.components.projects?.[0]?.values.name).toBe('Project Name');
       expectNoRawValue(res.body);
     });
 
-    it('GraphQL: cvContact masks the same fields and sends no raw value', async () => {
+    it('GraphQL: profile masks the same fields and sends no raw value', async () => {
       const res = await http()
         .post(GRAPHQL)
         .set(token === undefined ? from() : bearer(token))
         .send({
-          query: '{ cvContact { name phone _maskedFields } }',
+          query: '{ profile { name phone _maskedFields } }',
         });
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
-        data: { cvContact: { name: VISIBLE.name, phone: MASK_SENTINEL } },
+        data: { profile: { name: VISIBLE.name, phone: MASK_SENTINEL } },
       });
       expect(
-        (res.body as { data: { cvContact: Record<string, string[]> } }).data.cvContact[
+        (res.body as { data: { profile: Record<string, string[]> } }).data.profile[
           MASKED_FIELDS_KEY
         ],
-      ).toEqual(expect.arrayContaining(MASKED_CONTACT_FIELDS));
+      ).toEqual(expect.arrayContaining(MASKED_PROFILE_FIELDS));
       expect(JSON.stringify(res.body)).toContain('phone');
       expectNoRawValue(res.body);
     });
@@ -270,7 +267,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
         `?filter[email][eq]=${RAW.email}`,
       ]) {
         const res = await http()
-          .get(`${CONTACT}${query}`)
+          .get(`${PROFILE}${query}`)
           .set(token === undefined ? from() : bearer(token));
         expect(res.status).toBe(400);
         expect(res.body).toMatchObject({ errorCode: 'FIELD_NOT_READABLE' });
@@ -281,7 +278,7 @@ describe('sensitive fields start masked for public and reviewer (SPEC D2, RV-mas
 
   it('an editor (wildcard grant) still reads the raw values', async () => {
     const editor = await signedIn('editor');
-    const res = await contactOf(editor);
+    const res = await profileOf(editor);
     const [record] = (res.body as Page).data;
     expect(record?.values.phone).toBe(RAW.phone);
     expect(record?.[MASKED_FIELDS_KEY]).toEqual([]);

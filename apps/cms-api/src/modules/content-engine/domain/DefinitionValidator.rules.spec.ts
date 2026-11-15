@@ -15,7 +15,16 @@ import {
   type DefinitionValidationError,
 } from './DefinitionValidator.rules';
 
-const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
+const PAGE_CV_A_PATH = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'content',
+  'schemas',
+  'page-cv-a.json',
+);
 
 type Field = Record<string, unknown>;
 
@@ -56,24 +65,21 @@ function rulesOf(input: unknown): string[] {
 }
 
 describe('validateDefinition', () => {
-  describe('cv-page.json', () => {
-    const cvPage: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
+  describe('page-cv-a.json', () => {
+    const pageCvA: unknown = JSON.parse(readFileSync(PAGE_CV_A_PATH, 'utf8'));
 
     it('is accepted', () => {
-      expect(validateDefinition(cvPage)).toMatchObject({
+      expect(validateDefinition(pageCvA)).toMatchObject({
         ok: true,
-        definition: { slug: 'cv-page' },
-        tables: { length: 8 },
+        definition: { slug: 'page-cv-a' },
+        tables: { length: 6 },
       });
     });
 
-    it('flags only experiences.company and references.phone as sensitive', () => {
-      expect(JSON.stringify(cvPage).match(/"sensitive":true/g)).toHaveLength(2);
-      expect(JSON.stringify(cvPage)).toContain(
+    it('flags only experiences.company as sensitive', () => {
+      expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(1);
+      expect(JSON.stringify(pageCvA)).toContain(
         '"name":"company","type":"text","width":"1/2","sensitive":true',
-      );
-      expect(JSON.stringify(cvPage)).toContain(
-        '"name":"phone","type":"text","width":"1/2","sensitive":true',
       );
     });
   });

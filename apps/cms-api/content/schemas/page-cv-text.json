@@ -1,6 +1,6 @@
 {
-  "slug": "cv-page-text",
-  "displayName": "CV Page Text",
+  "slug": "page-cv-text",
+  "displayName": "Page CV Text",
   "kind": "single",
   "draftAndPublish": true,
   "fields": [
@@ -17,21 +17,13 @@
       "type": "text"
     },
     {
-      "name": "emptyTitle",
-      "type": "text"
-    },
-    {
-      "name": "emptyDescription",
-      "type": "text"
-    },
-    {
       "name": "maskedValue",
       "type": "text"
     },
     {
       "name": "contact",
       "type": "component",
-      "component": "cvPageTextContact",
+      "component": "pageCvTextContact",
       "fields": [
         {
           "name": "title",
@@ -62,7 +54,7 @@
     {
       "name": "sections",
       "type": "component",
-      "component": "cvPageTextSections",
+      "component": "pageCvTextSections",
       "fields": [
         {
           "name": "summary",
@@ -77,19 +69,19 @@
           "type": "text"
         },
         {
-          "name": "educations",
+          "name": "projects",
           "type": "text"
         },
         {
-          "name": "languages",
+          "name": "educations",
           "type": "text"
         }
       ]
     },
     {
-      "name": "experience",
+      "name": "role",
       "type": "component",
-      "component": "cvPageTextExperience",
+      "component": "pageCvTextRole",
       "fields": [
         {
           "name": "teamSize",
@@ -97,6 +89,21 @@
         },
         {
           "name": "projects",
+          "type": "text"
+        },
+        {
+          "name": "techStack",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "project",
+      "type": "component",
+      "component": "pageCvTextProject",
+      "fields": [
+        {
+          "name": "teamSize",
           "type": "text"
         },
         {
@@ -121,21 +128,6 @@
         },
         {
           "name": "unnamedProject",
-          "type": "text"
-        }
-      ]
-    },
-    {
-      "name": "reference",
-      "type": "component",
-      "component": "cvPageTextReference",
-      "fields": [
-        {
-          "name": "title",
-          "type": "text"
-        },
-        {
-          "name": "phone",
           "type": "text"
         }
       ]

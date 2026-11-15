@@ -104,20 +104,13 @@ input IdFilter {
 
 type Query {
   commonText(status: DocumentStatus = PUBLISHED): CommonText
-  cvContact(status: DocumentStatus = PUBLISHED): CvContact
-  cvPage(documentId: ID!, status: DocumentStatus = PUBLISHED): CvPage
-  cvPageList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [CvPageSort!], filter: CvPageFilter): CvPagePage
-  cvPageText(status: DocumentStatus = PUBLISHED): CvPageText
   header(status: DocumentStatus = PUBLISHED): Header
-  modulePageStatus(status: DocumentStatus = PUBLISHED): ModulePageStatus
-  moduleSignIn(status: DocumentStatus = PUBLISHED): ModuleSignIn
+  moduleAuth(status: DocumentStatus = PUBLISHED): ModuleAuth
+  moduleStatus(status: DocumentStatus = PUBLISHED): ModuleStatus
   pageCvA(documentId: ID!, status: DocumentStatus = PUBLISHED): PageCvA
   pageCvAList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [PageCvASort!], filter: PageCvAFilter): PageCvAPage
-  profile(documentId: ID!, status: DocumentStatus = PUBLISHED): Profile
-  profileList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ProfileSort!], filter: ProfileFilter): ProfilePage
-  resume(documentId: ID!, status: DocumentStatus = PUBLISHED): Resume
-  resumeList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [ResumeSort!], filter: ResumeFilter): ResumePage
-  siteText(status: DocumentStatus = PUBLISHED): SiteText
+  pageCvText(status: DocumentStatus = PUBLISHED): PageCvText
+  profile(status: DocumentStatus = PUBLISHED): Profile
 }
 
 type CommonText {
@@ -137,215 +130,6 @@ type CommonText {
   _maskedFields: [String!]!
 }
 
-type CvContact {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  name: String
-  address: String
-  phone: String
-  email: String
-  linkedin: String
-  github: String
-  avatar: Media
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type CvPage {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  position: String
-  isMain: Boolean
-  name: String
-  summary: String
-  skills: [CvPage_Skill!]
-  experiences: [CvPage_Experience!]
-  educations: [CvPage_Education!]
-  languages: [CvPage_Language!]
-  references: [CvPage_Reference!]
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type CvPage_Skill {
-  componentUid: ID!
-  level: String
-  skill: String
-}
-
-type CvPage_Experience {
-  componentUid: ID!
-  company: String
-  location: String
-  period: String
-  roles: [CvPage_Experience_Role!]
-}
-
-type CvPage_Experience_Role {
-  componentUid: ID!
-  position: String
-  period: String
-  teamSize: Int
-  projects: [CvPage_Experience_Role_Project!]
-  techStack: JSON
-  responsibilities: String
-}
-
-type CvPage_Experience_Role_Project {
-  componentUid: ID!
-  name: String
-  teamSize: Int
-  role: String
-  liveLink: String
-  repositoryLink: String
-  techStack: JSON
-  responsibilities: String
-}
-
-type CvPage_Education {
-  componentUid: ID!
-  degree: String
-  institution: String
-  period: String
-  location: String
-  description: String
-}
-
-type CvPage_Language {
-  componentUid: ID!
-  language: String
-  level: String
-}
-
-type CvPage_Reference {
-  componentUid: ID!
-  name: String
-  phone: String
-  role: String
-}
-
-type CvPagePage {
-  data: [CvPage!]!
-  meta: PageMeta!
-}
-
-input CvPageSort {
-  field: CvPageSortField!
-  direction: SortDirection = ASC
-}
-
-enum CvPageSortField {
-  documentId
-  version
-  publishedAt
-  locale
-  createdAt
-  updatedAt
-  createdBy
-  updatedBy
-  position
-  isMain
-  name
-  summary
-}
-
-"""One optional entry per filterable field; entries are AND-ed."""
-input CvPageFilter {
-  documentId: IdFilter
-  version: IntFilter
-  publishedAt: DateTimeFilter
-  locale: TextFilter
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-  createdBy: IntFilter
-  updatedBy: IntFilter
-  position: TextFilter
-  isMain: BooleanFilter
-  name: TextFilter
-  summary: TextFilter
-}
-
-type CvPageText {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  loading: String
-  refetchFailed: String
-  fallbackName: String
-  emptyTitle: String
-  emptyDescription: String
-  maskedValue: String
-  contact: CvPageText_CvPageTextContact
-  sections: CvPageText_CvPageTextSections
-  experience: CvPageText_CvPageTextExperience
-  reference: CvPageText_CvPageTextReference
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type CvPageText_CvPageTextContact {
-  componentUid: ID!
-  title: String
-  email: String
-  phone: String
-  address: String
-  linkedin: String
-  github: String
-}
-
-type CvPageText_CvPageTextSections {
-  componentUid: ID!
-  summary: String
-  skills: String
-  experiences: String
-  educations: String
-  languages: String
-}
-
-type CvPageText_CvPageTextExperience {
-  componentUid: ID!
-  teamSize: String
-  projects: String
-  techStack: String
-  liveLink: String
-  repositoryLink: String
-  liveLinkName: String
-  repositoryLinkName: String
-  unnamedProject: String
-}
-
-type CvPageText_CvPageTextReference {
-  componentUid: ID!
-  title: String
-  phone: String
-}
-
 type Header {
   documentId: ID!
   version: Int!
@@ -356,6 +140,10 @@ type Header {
   createdBy: Int
   updatedBy: Int
   name: String
+  navLabel: String
+  navCvLink: String
+  notFoundTitle: String
+  notFoundDescription: String
   nav: [Header_Nav!]
   author: Header_Author
 
@@ -386,7 +174,89 @@ type Header_Author {
   btnLogoutText: String
 }
 
-type ModulePageStatus {
+type ModuleAuth {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  title: String
+  description: String
+  emailLabel: String
+  passwordLabel: String
+  rememberMeLabel: String
+  rememberMeHint: String
+  submit: String
+  cancel: String
+  humanCheck: ModuleAuth_SignInHumanCheck
+  validation: ModuleAuth_SignInValidation
+  errors: ModuleAuth_SignInErrors
+  twoFactor: ModuleAuth_SignInTwoFactor
+  openCms: String
+  signedInAs: String
+  signOutFailed: String
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type ModuleAuth_SignInHumanCheck {
+  componentUid: ID!
+  loading: String
+  required: String
+  expired: String
+  failed: String
+  unavailable: String
+}
+
+type ModuleAuth_SignInValidation {
+  componentUid: ID!
+  emailRequired: String
+  emailInvalid: String
+  passwordRequired: String
+}
+
+type ModuleAuth_SignInErrors {
+  componentUid: ID!
+  invalidCredentials: String
+  rateLimitedSecondsOne: String
+  rateLimitedSecondsOther: String
+  rateLimitedMinutesOne: String
+  rateLimitedMinutesOther: String
+  rateLimited: String
+  network: String
+  unexpected: String
+  humanCheckFailed: String
+  humanCheckUnavailable: String
+  privileged: String
+}
+
+type ModuleAuth_SignInTwoFactor {
+  componentUid: ID!
+  title: String
+  totpDescription: String
+  emailDescription: String
+  emailWarning: String
+  totpLabel: String
+  emailLabel: String
+  totpHint: String
+  emailHint: String
+  codeInvalid: String
+  submit: String
+  cancel: String
+  resend: String
+  resent: String
+  expired: String
+  invalidCode: String
+  unsupportedMethod: String
+}
+
+type ModuleStatus {
   documentId: ID!
   version: Int!
   publishedAt: DateTime
@@ -412,85 +282,6 @@ type ModulePageStatus {
   Paths of the fields the caller may not read; their values are masked or null.
   """
   _maskedFields: [String!]!
-}
-
-type ModuleSignIn {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  title: String
-  description: String
-  emailLabel: String
-  passwordLabel: String
-  rememberMeLabel: String
-  rememberMeHint: String
-  submit: String
-  cancel: String
-  humanCheck: ModuleSignIn_SignInHumanCheck
-  validation: ModuleSignIn_SignInValidation
-  errors: ModuleSignIn_SignInErrors
-  twoFactor: ModuleSignIn_SignInTwoFactor
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type ModuleSignIn_SignInHumanCheck {
-  componentUid: ID!
-  loading: String
-  required: String
-  expired: String
-  failed: String
-  unavailable: String
-}
-
-type ModuleSignIn_SignInValidation {
-  componentUid: ID!
-  emailRequired: String
-  emailInvalid: String
-  passwordRequired: String
-}
-
-type ModuleSignIn_SignInErrors {
-  componentUid: ID!
-  invalidCredentials: String
-  rateLimitedSecondsOne: String
-  rateLimitedSecondsOther: String
-  rateLimitedMinutesOne: String
-  rateLimitedMinutesOther: String
-  rateLimited: String
-  network: String
-  unexpected: String
-  humanCheckFailed: String
-  humanCheckUnavailable: String
-  privileged: String
-}
-
-type ModuleSignIn_SignInTwoFactor {
-  componentUid: ID!
-  title: String
-  totpDescription: String
-  emailDescription: String
-  emailWarning: String
-  totpLabel: String
-  emailLabel: String
-  totpHint: String
-  emailHint: String
-  codeInvalid: String
-  submit: String
-  cancel: String
-  resend: String
-  resent: String
-  expired: String
-  invalidCode: String
-  unsupportedMethod: String
 }
 
 type PageCvA {
@@ -601,6 +392,67 @@ input PageCvAFilter {
   summary: TextFilter
 }
 
+type PageCvText {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  loading: String
+  refetchFailed: String
+  fallbackName: String
+  maskedValue: String
+  contact: PageCvText_PageCvTextContact
+  sections: PageCvText_PageCvTextSections
+  role: PageCvText_PageCvTextRole
+  project: PageCvText_PageCvTextProject
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type PageCvText_PageCvTextContact {
+  componentUid: ID!
+  title: String
+  email: String
+  phone: String
+  address: String
+  linkedin: String
+  github: String
+}
+
+type PageCvText_PageCvTextSections {
+  componentUid: ID!
+  summary: String
+  skills: String
+  experiences: String
+  projects: String
+  educations: String
+}
+
+type PageCvText_PageCvTextRole {
+  componentUid: ID!
+  teamSize: String
+  projects: String
+  techStack: String
+}
+
+type PageCvText_PageCvTextProject {
+  componentUid: ID!
+  teamSize: String
+  techStack: String
+  liveLink: String
+  repositoryLink: String
+  liveLinkName: String
+  repositoryLinkName: String
+  unnamedProject: String
+}
+
 type Profile {
   documentId: ID!
   version: Int!
@@ -611,188 +463,12 @@ type Profile {
   createdBy: Int
   updatedBy: Int
   name: String
-  photo: Media
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type ProfilePage {
-  data: [Profile!]!
-  meta: PageMeta!
-}
-
-input ProfileSort {
-  field: ProfileSortField!
-  direction: SortDirection = ASC
-}
-
-enum ProfileSortField {
-  documentId
-  version
-  publishedAt
-  locale
-  createdAt
-  updatedAt
-  createdBy
-  updatedBy
-  name
-}
-
-"""One optional entry per filterable field; entries are AND-ed."""
-input ProfileFilter {
-  documentId: IdFilter
-  version: IntFilter
-  publishedAt: DateTimeFilter
-  locale: TextFilter
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-  createdBy: IntFilter
-  updatedBy: IntFilter
-  name: TextFilter
-}
-
-type Resume {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  position: String
-  isMain: Boolean
-  name: String
-  summary: String
-  skills: [Resume_Skill!]
-  experiences: [Resume_Experience!]
-  educations: [Resume_Education!]
-  languages: [Resume_Language!]
-  referees: [Resume_Referee!]
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type Resume_Skill {
-  componentUid: ID!
-  level: String
-  skill: String
-}
-
-type Resume_Experience {
-  componentUid: ID!
-  company: String
-  location: String
-  period: String
-  roles: [Resume_Experience_Role!]
-}
-
-type Resume_Experience_Role {
-  componentUid: ID!
-  position: String
-  period: String
-  teamSize: Int
-  projects: [Resume_Experience_Role_Project!]
-  techStack: JSON
-  responsibilities: String
-}
-
-type Resume_Experience_Role_Project {
-  componentUid: ID!
-  name: String
-  teamSize: Int
-  role: String
-  liveLink: String
-  repositoryLink: String
-  techStack: JSON
-  responsibilities: String
-}
-
-type Resume_Education {
-  componentUid: ID!
-  degree: String
-  institution: String
-  period: String
-  location: String
-  description: String
-}
-
-type Resume_Language {
-  componentUid: ID!
-  language: String
-  level: String
-}
-
-type Resume_Referee {
-  componentUid: ID!
-  name: String
+  address: String
   phone: String
-  role: String
-}
-
-type ResumePage {
-  data: [Resume!]!
-  meta: PageMeta!
-}
-
-input ResumeSort {
-  field: ResumeSortField!
-  direction: SortDirection = ASC
-}
-
-enum ResumeSortField {
-  documentId
-  version
-  publishedAt
-  locale
-  createdAt
-  updatedAt
-  createdBy
-  updatedBy
-  position
-  isMain
-  name
-  summary
-}
-
-"""One optional entry per filterable field; entries are AND-ed."""
-input ResumeFilter {
-  documentId: IdFilter
-  version: IntFilter
-  publishedAt: DateTimeFilter
-  locale: TextFilter
-  createdAt: DateTimeFilter
-  updatedAt: DateTimeFilter
-  createdBy: IntFilter
-  updatedBy: IntFilter
-  position: TextFilter
-  isMain: BooleanFilter
-  name: TextFilter
-  summary: TextFilter
-}
-
-type SiteText {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  navLabel: String
-  navCvLink: String
-  openCms: String
-  signOutFailed: String
-  signedInAs: String
-  notFoundTitle: String
-  notFoundDescription: String
+  email: String
+  linkedin: String
+  github: String
+  avatar: Media
 
   """
   Paths of the fields the caller may not read; their values are masked or null.

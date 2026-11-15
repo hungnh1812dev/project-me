@@ -39,14 +39,14 @@ import { loadRegistryFromDatabase } from '../fixtures/ContentRegistry.fixture';
 import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 
-const SLUG = 'cv-page';
+const SLUG = 'page-cv-a';
 const ACCOUNT = accountActor(1, systemRole('editor'));
 const ANONYMOUS = anonymousActor(systemRole('public'));
 const CREATED_BY = 7_654_321;
 const SECRET = {
   company: 'RAW-root-company',
   experienceCompany: 'RAW-experience-company',
-  phone: 'RAW-reference-phone',
+  liveLink: 'RAW-project-live-link',
   summary: '<p>RAW-summary</p>',
 };
 
@@ -131,7 +131,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
         },
         components: {
           experiences: [{ values: { company: SECRET.experienceCompany, location: 'HN' } }],
-          references: [{ values: { name: 'Ref', phone: SECRET.phone } }],
+          projects: [{ values: { name: 'Ref', liveLink: SECRET.liveLink } }],
           skills: [{ values: { skill: 'SQL', level: 'expert' } }],
         },
       }),
@@ -144,8 +144,8 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
   });
 
   const fields: FieldAccess = {
-    readable: FieldSelection.of(['position', 'experiences.location', 'references.name']),
-    writable: FieldSelection.of(['position', 'experiences', 'references']),
+    readable: FieldSelection.of(['position', 'experiences.location', 'projects.name']),
+    writable: FieldSelection.of(['position', 'experiences', 'projects']),
   };
 
   it('never selects unreadable columns or tables, and serializes masks', async () => {
@@ -153,7 +153,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
     const access = recordReadAccess(ACCOUNT, fields.readable);
     const record = await loadProjected(db, type, documentId, access);
     const sql = queries.join('\n');
-    expect(sql).not.toMatch(/"company"|"summary"|"phone"|cv_page__skill/);
+    expect(sql).not.toMatch(/"company"|"summary"|"live_link"|page_cv_a__skill/);
     expect(sql).toMatch(/"location"/);
 
     const out = new RecordSerializer(type).serialize(record, access);
@@ -169,7 +169,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
         'summary',
         'skills',
         'experiences.company',
-        'references.phone',
+        'projects.liveLink',
       ]),
     );
   });
@@ -185,7 +185,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
         values: { position: 'Staff', name: served.values.name },
         components: {
           experiences: served.components.experiences,
-          references: served.components.references,
+          projects: served.components.projects,
           skills: served.components.skills,
         },
         [MASKED_FIELDS_KEY]: [],
@@ -208,7 +208,7 @@ describe('field masking against Postgres (D3/D4, §12-4/§12-5 building blocks)'
       summary: SECRET.summary,
     });
     expect(stored.components.experiences?.[0]?.values.company).toBe(SECRET.experienceCompany);
-    expect(stored.components.references?.[0]?.values.phone).toBe(SECRET.phone);
+    expect(stored.components.projects?.[0]?.values.liveLink).toBe(SECRET.liveLink);
     expect(stored.components.skills).toHaveLength(1);
   });
 
