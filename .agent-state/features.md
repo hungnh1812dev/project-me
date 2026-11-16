@@ -28,6 +28,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
 | 26 | web-part-queries | done (summary: .agent-state/features/web-part-queries/SUMMARY.md) | features/web-part-queries/ | apps/web, apps/cms-api (site-text schema, migration), apps/e2e (Apps.contract.ts), scripts/smoke, docs/modules/web, CHANGELOG.md | 764c4687 | - |
 | 27 | cv-states-fix | done (2026-11-16) | features/cv-states-fix/ | apps/cms-api (content type rename), apps/web (apis/server/graphql, query declarations, views/cv), apps/e2e, scripts/smoke, docs/modules (web, graphql), docs/flows/public-site, docs/apps/web, CHANGELOG.md | 8e758c979c3f71e41d7920a687f49595b2d2b2f1 | features/cv-states-fix/SUMMARY.md |
+| 29 | crawler-files | done | features/crawler-files/ | apps/web (favicon, robots.txt, sitemap.xml, proxy matcher), apps/cms-admin (robots.txt), docs/modules, docs/flows/public-site, apps/e2e (qc) | 70c8368d1e200a23efbf92e2f2d3f384df2b89b6 | features/crawler-files/SUMMARY.md |
 | 10 | launch-gate | todo (paused 2026-11-15 by user; resumes after web-part-queries) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
 
