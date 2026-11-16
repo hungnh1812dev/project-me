@@ -14,11 +14,11 @@ Flows: none yet.
 
 ## Purpose
 
-Owns the `SiteHeader` content query (the one root field `header`, with `navLabel` and `navCvLink`) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
+Owns the `SiteHeader` query (`SITE_HEADER_QUERY`, the one root field `header`, with `navLabel` and `navCvLink`) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
 
 ## Techniques
 
-`SiteHeader.graphql.ts` is client-safe; `SiteHeader.server.ts` is `server-only` and builds the query with `defineContentQuery`. The account menu text (`openCms`, `signedInAs`, `signOutFailed`) comes from the sign-in query, not from here. `loadSiteHeader` is in React `cache` and returns `null` with one logged `NO_DATA` error when the root field failed or answered null. Same split as `features/status`.
+`SiteHeader.graphql.ts` is client-safe; `SiteHeader.server.ts` is `server-only` and calls `executeGraphql` with the mock key `site-header`. The account menu text (`openCms`, `signedInAs`, `signOutFailed`) comes from the sign-in query, not from here. `loadSiteHeader` is in React `cache` and returns `null` when the read failed or the root field answered null (`executeGraphql` logged it; no second line). Same split as `features/status`.
 
 ## Technologies
 
@@ -30,7 +30,7 @@ React (`cache`); `graphql` (dev, in specs).
 
 ## Where to change what
 
-A new header text: add it to `SITE_HEADER_ROOT_FIELDS`, the type and `SiteHeader.mock.ts` together; `SiteHeader.graphql.test.ts` fails when they differ. Keep the D18 limits.
+A new header text: add it to `SITE_HEADER_QUERY`, the type and `SiteHeader.mock.ts` together; `SiteHeader.graphql.test.ts` fails when they differ. Keep the D18 limits.
 
 ## Files
 
@@ -45,8 +45,8 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `SiteHeader.graphql.ts` | Client-safe `SiteHeader` query: header content types, operation name and root field (exports `HeaderNavLink`, `HeaderNav`, `HeaderContent` +3) |
-| `SiteHeader.server.ts` | `server-only` `SITE_HEADER_QUERY` and the cached `loadSiteHeader` (exports `SITE_HEADER_QUERY`, `loadSiteHeader`) |
+| `SiteHeader.graphql.ts` | Client-safe `SiteHeader` query: header content types and the query string (exports `HeaderNavLink`, `HeaderNav`, `HeaderContent` +3) |
+| `SiteHeader.server.ts` | `server-only` cached `loadSiteHeader`: `executeGraphql` with the mock key `site-header`, `null` when the read failed (exports `loadSiteHeader`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

@@ -1,216 +1,48 @@
 import 'server-only';
 
-import {
-  graphqlFailureOf,
-  readGraphqlRootFields,
-  unwrapGraphqlResponse,
-  type GraphqlDocument,
-} from '@/apis/GraphqlResponse.rules';
-import { fillFromMocks } from '@/apis/server/graphql/MockFallback.server';
+import { operationNameOf, unwrapGraphqlResponse } from '@/apis/GraphqlResponse.rules';
+import { readMock } from '@/apis/server/graphql/MockFallback.server';
 import type { MockKey } from '@/apis/server/graphql/mocks/MockView';
-import { serverApi } from '@/apis/server/restful/ServerApi.client';
-import {
-  API_ERROR_CODES,
-  API_ERROR_SOURCES,
-  logApiError,
-  WebApiError,
-  type ApiErrorCode,
-} from '@/apis/WebApi.errors';
+import { serverApi, type ServerApiNextOptions } from '@/apis/server/restful/ServerApi.client';
+import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from '@/apis/WebApi.errors';
 import { API_ENDPOINTS } from '@/configs/Api.endpoints';
 import { BEARER_PREFIX } from '@/configs/Auth.constants';
-import {
-  ACCEPT_HEADER,
-  AUTHORIZATION_HEADER,
-  DEFAULT_REVALIDATE_SECONDS,
-  JSON_MEDIA_TYPE,
-} from '@/configs/Http.constants';
+import { ACCEPT_HEADER, AUTHORIZATION_HEADER, JSON_MEDIA_TYPE } from '@/configs/Http.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
-const ACCEPT_JSON = { [ACCEPT_HEADER]: JSON_MEDIA_TYPE };
-
-/**
- * A page query declared once: `rootFields` maps each root field to the text
- * after its name (arguments and selection), so the document, the single-field
- * retries and the mock keys all come from the same list.
- */
-export interface ContentQuery<T> {
-  operationName: string;
-  rootFields: Readonly<Record<keyof T & string, string>>;
-  /** Mock key of a root field whose mock is not stored under the root field's own name. */
-  mockKeys?: Partial<Record<keyof T & string, MockKey>>;
-  /** Root fields that are a single type; one not listed is a collection. A null single type is mocked where the mocks are on. */
-  singleTypeRootFields?: ReadonlyArray<keyof T & string>;
-  /** Data cache lifetime of this query; defaults to `DEFAULT_REVALIDATE_SECONDS`. */
-  revalidateSeconds?: number;
-  document: GraphqlDocument;
+export interface ExecuteGraphqlOptions<T> {
+  /** The key of this query's answer in `MOCK_VIEW`, used where the mocks are on when the read fails. */
+  mock?: MockKey;
+  /** Turns the answer's `data` into `T`; a throw is a failed read. Without it `data` is returned as is. */
+  resolveData?: (data: unknown) => T;
+  next?: ServerApiNextOptions;
+  /** A signed-in visitor's token: the call is sent with it, never cached and never mocked. */
+  accessToken?: string;
 }
 
-export interface ContentQueryDefinition<T> {
-  operationName: string;
-  rootFields: Readonly<Record<keyof T & string, string>>;
-  mockKeys?: Partial<Record<keyof T & string, MockKey>>;
-  singleTypeRootFields?: ReadonlyArray<keyof T & string>;
-  revalidateSeconds?: number;
+const NO_CACHE: ServerApiNextOptions = { revalidate: 0 };
+
+function bearerHeaderOf(token: string | undefined): Record<string, string> {
+  return token === undefined ? {} : { [AUTHORIZATION_HEADER]: `${BEARER_PREFIX}${token}` };
 }
 
-/** Each root field as the API answered it, or `null` when no source could give it. */
-export interface ContentResult<T> {
-  data: { [K in keyof T]: T[K] | null };
-  failedRootFields: Array<keyof T & string>;
-}
-
-function documentOf(
-  operationName: string,
-  rootFields: Readonly<Record<string, string>>,
-  names: readonly string[],
-): GraphqlDocument {
-  const fields = names.map((name) => `${name}${rootFields[name]}`).join('\n');
-  return { operationName, query: `query ${operationName} {\n${fields}\n}` };
-}
-
-export function defineContentQuery<T>(definition: ContentQueryDefinition<T>): ContentQuery<T> {
-  return {
-    ...definition,
-    document: documentOf(
-      definition.operationName,
-      definition.rootFields,
-      Object.keys(definition.rootFields),
-    ),
-  };
-}
-
-/** What one call gave: its `data` and, for each root field it failed, the code of the failure. */
-interface RootFieldsRead {
-  data: Readonly<Record<string, unknown>> | null;
-  failures: Map<string, ApiErrorCode>;
-}
-
-function failureOfEach(
-  names: readonly string[],
-  errorCode: ApiErrorCode,
-): Map<string, ApiErrorCode> {
-  return new Map(names.map((name) => [name, errorCode]));
-}
-
-async function postDocument(
-  document: GraphqlDocument,
-  headers: Record<string, string>,
-  revalidateSeconds: number,
-): Promise<{ status: number; body: unknown }> {
-  return serverApi.post(API_ENDPOINTS.GRAPHQL, {
-    headers,
-    body: document,
-    resolveData: ({ status, body }) => ({ status, body }),
-    next: { revalidate: revalidateSeconds },
-  });
-}
-
-async function readRootFields(
-  document: GraphqlDocument,
-  names: readonly string[],
-  headers: Record<string, string>,
-  revalidateSeconds: number,
-): Promise<RootFieldsRead> {
-  try {
-    const { status, body } = await postDocument(document, headers, revalidateSeconds);
-    const read = readGraphqlRootFields(status, body);
-    const failure = graphqlFailureOf(
-      status,
-      read.errorCode,
-      read.data !== null,
-      document.operationName,
-    );
-    if (failure === undefined) return { data: read.data, failures: new Map() };
-    logApiError(failure);
-    const failedNames =
-      read.failedRootFields === 'all'
-        ? names
-        : names.filter((name) => (read.failedRootFields as ReadonlySet<string>).has(name));
-    return { data: read.data, failures: failureOfEach(failedNames, failure.errorCode) };
-  } catch (error) {
-    const errorCode =
-      error instanceof WebApiError ? error.errorCode : API_ERROR_CODES.SERVER_API.NETWORK;
-    return { data: null, failures: failureOfEach(names, errorCode) };
-  }
-}
-
-/** Asks each root field alone so one the API cannot serve yet does not hide the others (dev and smoke only). */
-async function readRootFieldsOneByOne(
-  query: ContentQuery<never>,
-  names: readonly string[],
-  headers: Record<string, string>,
-  revalidateSeconds: number,
-): Promise<RootFieldsRead> {
-  const reads = await Promise.all(
-    names.map((name) =>
-      readRootFields(
-        documentOf(query.operationName, query.rootFields, [name]),
-        [name],
-        headers,
-        revalidateSeconds,
-      ),
-    ),
-  );
-  const data: Record<string, unknown> = {};
-  const failures = new Map<string, ApiErrorCode>();
-  names.forEach((name, index) => {
-    data[name] = reads[index]?.data?.[name];
-    const errorCode = reads[index]?.failures.get(name);
-    if (errorCode !== undefined) failures.set(name, errorCode);
-  });
-  return { data, failures };
-}
-
-/**
- * Runs a page query as the site (the API token when set, else anonymous),
- * cached for every visitor. Never throws for a content failure: a root field
- * that failed and has no mock is `null` and listed in `failedRootFields`; a root field
- * the API answered with null or empty, without an error, is returned as answered, except a
- * single type (`singleTypeRootFields`) that answered null, which is mocked where the mocks are on.
- */
-export async function runContentQuery<T>(query: ContentQuery<T>): Promise<ContentResult<T>> {
-  const { appApiToken, isMockFallbackOn } = getServerEnv();
-  const headers: Record<string, string> =
-    appApiToken === undefined
-      ? ACCEPT_JSON
-      : { ...ACCEPT_JSON, [AUTHORIZATION_HEADER]: `${BEARER_PREFIX}${appApiToken}` };
-  const revalidateSeconds = query.revalidateSeconds ?? DEFAULT_REVALIDATE_SECONDS;
-
-  const names = Object.keys(query.rootFields);
-  let read = await readRootFields(query.document, names, headers, revalidateSeconds);
-  if (read.failures.size === names.length && isMockFallbackOn) {
-    read = await readRootFieldsOneByOne(query, names, headers, revalidateSeconds);
-  }
-  const filled = await fillFromMocks({
-    operationName: query.operationName,
-    rootFields: names,
-    mockKeys: query.mockKeys ?? {},
-    data: read.data,
-    failures: read.failures,
-    singleTypeRootFields: query.singleTypeRootFields ?? [],
-  });
-  return {
-    data: filled.data as ContentResult<T>['data'],
-    failedRootFields: filled.failedRootFields as ContentResult<T>['failedRootFields'],
-  };
-}
-
-/**
- * Runs a page query as one signed-in visitor: their Bearer token only, never
- * cached, never mocked. Any failure throws `WebApiError`.
- */
-export async function runVisitorQuery<T>(
-  query: Pick<ContentQuery<T>, 'document'>,
-  accessToken: string,
-): Promise<T> {
-  const operation = query.document.operationName;
+async function postQuery(
+  query: string,
+  operation: string,
+  { accessToken, next }: ExecuteGraphqlOptions<unknown>,
+): Promise<unknown> {
+  const { appApiToken } = getServerEnv();
   let answer: { status: number; body: unknown };
   try {
-    answer = await postDocument(
-      query.document,
-      { ...ACCEPT_JSON, [AUTHORIZATION_HEADER]: `${BEARER_PREFIX}${accessToken}` },
-      0,
-    );
+    answer = await serverApi.post(API_ENDPOINTS.GRAPHQL, {
+      headers: {
+        [ACCEPT_HEADER]: JSON_MEDIA_TYPE,
+        ...bearerHeaderOf(accessToken ?? appApiToken),
+      },
+      body: { query },
+      resolveData: ({ status, body }) => ({ status, body }),
+      next: accessToken === undefined ? (next ?? {}) : NO_CACHE,
+    });
   } catch (error) {
     // `serverApi` logged the transport failure; this one carries the GraphQL network code.
     if (!(error instanceof WebApiError)) throw error;
@@ -222,9 +54,72 @@ export async function runVisitorQuery<T>(
     });
   }
   try {
-    return unwrapGraphqlResponse<T>(answer.status, answer.body, operation);
+    return unwrapGraphqlResponse<unknown>(answer.status, answer.body, operation);
   } catch (error) {
     if (error instanceof WebApiError) logApiError(error);
     throw error;
   }
+}
+
+function resolveOrFail<T>(
+  data: unknown,
+  operation: string,
+  resolveData: ExecuteGraphqlOptions<T>['resolveData'],
+): T {
+  if (resolveData === undefined) return data as T;
+  try {
+    return resolveData(data);
+  } catch (error) {
+    const failure = new WebApiError({
+      source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
+      errorCode: error instanceof WebApiError ? error.errorCode : API_ERROR_CODES.GRAPHQL.UNKNOWN,
+      operation,
+    });
+    logApiError(failure);
+    throw failure;
+  }
+}
+
+/**
+ * Runs one GraphQL query on the content API: the API token when set (or the visitor's
+ * `accessToken`), cached per `next`. A failed read (transport, non-2xx, any `errors` entry,
+ * no `data`, a throwing `resolveData`) is logged once; where the mocks are on and the query
+ * has a `mock` key and no `accessToken`, its mock answers instead, otherwise `WebApiError`
+ * is thrown. An empty collection is an answer, not a failure.
+ */
+export async function executeGraphql<T = unknown>(
+  query: string,
+  options: ExecuteGraphqlOptions<T> = {},
+): Promise<T> {
+  const operation = operationNameOf(query);
+  try {
+    const data = await postQuery(query, operation, options);
+    return resolveOrFail(data, operation, options.resolveData);
+  } catch (error) {
+    if (!(error instanceof WebApiError)) throw error;
+    const { mock, accessToken, resolveData } = options;
+    const mocked =
+      mock === undefined || accessToken !== undefined
+        ? undefined
+        : await readMock(mock, operation, error.errorCode);
+    if (mocked === undefined) throw error;
+    return resolveData === undefined ? (mocked as T) : resolveData(mocked);
+  }
+}
+
+/** A `resolveData` that returns `data` and fails with `NO_DATA` when `data[rootField]` is null or missing. */
+export function requireRootField<T>(rootField: string): (data: unknown) => T {
+  return (data) => {
+    const value =
+      typeof data === 'object' && data !== null
+        ? (data as Record<string, unknown>)[rootField]
+        : null;
+    if (value === null || value === undefined) {
+      throw new WebApiError({
+        source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
+        errorCode: API_ERROR_CODES.GRAPHQL.NO_DATA,
+      });
+    }
+    return data as T;
+  };
 }

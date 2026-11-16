@@ -78,16 +78,7 @@ export interface PageCvData {
   profile: Profile | null;
 }
 
-export interface PageCvResult extends PageCvData {
-  cvCommonText: CvCommonText | null;
-}
-
-export const PAGE_CV_OPERATION_NAME = 'PageCv';
-export const PAGE_CV_VISITOR_OPERATION_NAME = 'PageCvVisitor';
-
-/** The newest published main CV, the profile and the CV labels: each root field's text after its name. */
-export const PAGE_CV_ROOT_FIELDS = {
-  pageCvAList: `(
+const PAGE_CV_A_FIELD = `pageCvAList(
     filter: { isMain: { eq: true } }
     sort: [{ field: updatedAt, direction: DESC }]
     pageSize: 1
@@ -131,8 +122,9 @@ export const PAGE_CV_ROOT_FIELDS = {
       }
       _maskedFields
     }
-  }`,
-  profile: `{
+  }`;
+
+const PROFILE_FIELD = `profile {
     name
     address
     phone
@@ -144,8 +136,9 @@ export const PAGE_CV_ROOT_FIELDS = {
       alt
     }
     _maskedFields
-  }`,
-  cvCommonText: `{
+  }`;
+
+const CV_COMMON_TEXT_FIELD = `cvCommonText {
     summary
     skills
     experiences
@@ -154,8 +147,18 @@ export const PAGE_CV_ROOT_FIELDS = {
     technologies
     teamSize
     noCvText
-  }`,
-} as const;
+  }`;
+
+/** The newest published main CV. */
+export const PAGE_CV_A_QUERY = `query PageCvA {\n  ${PAGE_CV_A_FIELD}\n}`;
+
+export const PROFILE_QUERY = `query Profile {\n  ${PROFILE_FIELD}\n}`;
+
+/** The labels shared by every CV. */
+export const CV_COMMON_TEXT_QUERY = `query CvCommonText {\n  ${CV_COMMON_TEXT_FIELD}\n}`;
+
+/** The data of a signed-in visitor: the main CV and the profile in one operation, without the text. */
+export const PAGE_CV_VISITOR_QUERY = `query PageCvVisitor {\n  ${PAGE_CV_A_FIELD}\n  ${PROFILE_FIELD}\n}`;
 
 export function mainCvOf(data: PageCvData): PageCvA | undefined {
   return data.pageCvAList.data[0];

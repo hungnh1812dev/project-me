@@ -7,12 +7,10 @@ export interface NotFoundPage {
   notFoundText: NotFoundText;
 }
 
-export const NOT_FOUND_PAGE_OPERATION_NAME = 'NotFoundPage';
-
 /** The not-found page text; `notFoundText` is a GraphQL alias of the cms-api root field `header`. */
-export const NOT_FOUND_PAGE_ROOT_FIELDS = {
-  notFoundText: `: header {
+export const NOT_FOUND_PAGE_QUERY = `query NotFoundPage {
+notFoundText: header {
     notFoundTitle
     notFoundDescription
-  }`,
-} as const;
+  }
+}`;

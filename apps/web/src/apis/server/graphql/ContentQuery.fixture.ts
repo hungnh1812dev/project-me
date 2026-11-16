@@ -3,6 +3,9 @@ import { resolve } from 'node:path';
 
 import { buildSchema, parse, validate, type FieldNode, type SelectionSetNode } from 'graphql';
 
+import { operationNameOf } from '@/apis/GraphqlResponse.rules';
+import type { MockKey } from '@/apis/server/graphql/mocks/MockView';
+
 // Read by path: the web app never imports cms-api code.
 const SDL_PATH = resolve(import.meta.dirname, '../../../../../cms-api/content/schema.graphql');
 const schema = buildSchema(readFileSync(SDL_PATH, 'utf8'));
@@ -48,11 +51,9 @@ function mockPaths(value: unknown, prefix = ''): string[] {
 }
 
 export interface ContentQueryContractInput {
-  operationName: string;
-  /** The built document text of the query (`<QUERY>.document.query`). */
-  queryText: string;
-  rootFields: Readonly<Record<string, string>>;
-  mock: Readonly<Record<string, unknown>>;
+  query: string;
+  /** The `MOCK_VIEW` key of this query's answer; a query with no mock (the visitor's) leaves it out. */
+  mockKey?: MockKey;
   /** `MOCK_VIEW`, passed by the spec: only specs import the mock view by value. */
   mockView: Readonly<Record<string, unknown>>;
   /** Selection paths left out of the two-way mock check because the mock holds an empty list there. */
@@ -61,29 +62,32 @@ export interface ContentQueryContractInput {
 
 /** The spec every content query has: valid against the cms-api schema, mock and selection match both ways, D18 limits. */
 export function describeContentQueryContract({
-  operationName,
-  queryText,
-  rootFields,
-  mock,
+  query,
+  mockKey,
   mockView,
   emptyMockPathPrefixes = [],
 }: ContentQueryContractInput): void {
-  const operation = parse(queryText).definitions[0];
+  const operation = parse(query).definitions[0];
   if (operation?.kind !== 'OperationDefinition') throw new Error('Expected one operation');
   const rootSelection = operation.selectionSet;
+  const operationName = operationNameOf(query);
 
-  describe(`${operationName} mock and query`, () => {
+  describe(`${operationName} query`, () => {
     it('is valid against the generated cms-api schema', () => {
-      expect(validate(schema, parse(queryText))).toEqual([]);
+      expect(validate(schema, parse(query))).toEqual([]);
     });
 
-    it('names its operation and has every mock registered in the mock view by key', () => {
-      expect(queryText).toContain(`query ${operationName}`);
-      expect(mockView).toMatchObject(mock);
+    if (mockKey === undefined) return;
+    const mock = mockView[mockKey];
+
+    it('has a mock in the mock view under its key', () => {
+      expect(mock).toBeDefined();
     });
 
     it('has a mock for every root field and a root field for every mock', () => {
-      expect(Object.keys(mock).sort()).toEqual(Object.keys(rootFields).sort());
+      expect(Object.keys(mock as object).sort()).toEqual(
+        fieldsOf(rootSelection).map(responseKeyOf).sort(),
+      );
     });
 
     it('has every field the mock holds in the query, and every query field in the mock', () => {

@@ -20,11 +20,9 @@ export interface SiteHeader {
   header: HeaderContent;
 }
 
-export const SITE_HEADER_OPERATION_NAME = 'SiteHeader';
-
-/** The header with its text: each root field's text after its name. */
-export const SITE_HEADER_ROOT_FIELDS = {
-  header: `{
+/** The header with its text. */
+export const SITE_HEADER_QUERY = `query SiteHeader {
+header {
     name
     navLabel
     navCvLink
@@ -42,5 +40,5 @@ export const SITE_HEADER_ROOT_FIELDS = {
       btnLoginText
       btnLogoutText
     }
-  }`,
-} as const;
+  }
+}`;

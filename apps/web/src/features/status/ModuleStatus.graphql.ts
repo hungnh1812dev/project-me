@@ -18,11 +18,9 @@ export interface ModuleStatus {
   statusText: ModuleStatusText;
 }
 
-export const MODULE_STATUS_OPERATION_NAME = 'ModuleStatus';
-
-/** The module status text: each root field's text after its name; `statusText` is a GraphQL alias of the cms-api root field `moduleStatus`. */
-export const MODULE_STATUS_ROOT_FIELDS = {
-  statusText: `: moduleStatus {
+/** The module status text; `statusText` is a GraphQL alias of the cms-api root field `moduleStatus`. */
+export const MODULE_STATUS_QUERY = `query ModuleStatus {
+statusText: moduleStatus {
     title
     description
     cardTitle
@@ -35,5 +33,5 @@ export const MODULE_STATUS_ROOT_FIELDS = {
     stateError
     errorHint
     checkAgain
-  }`,
-} as const;
+  }
+}`;

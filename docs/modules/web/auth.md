@@ -46,8 +46,8 @@ Tests: 6 files (not listed).
 | File | Description |
 |---|---|
 | `LoginAlerts.rules.ts` | Maps a `WebApiError` of a sign-in step (its `errorCode` and `retryAfterSeconds`) to its alert (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
-| `SignIn.graphql.ts` | Client-safe `SignIn` query: the sign-in text type and the `signInText` root field (exports `SignInText`, `SignIn`, `SIGN_IN_OPERATION_NAME`, `SIGN_IN_ROOT_FIELDS`) |
-| `SignIn.server.ts` | `server-only` `SIGN_IN_QUERY` and the cached `loadSignInText` (`null` and one logged `NO_DATA` error when it fails) (exports `SIGN_IN_QUERY`, `loadSignInText`) |
+| `SignIn.graphql.ts` | Client-safe `SignIn` query: the sign-in text type and the query string (exports `SignInText`, `SignIn`, `SIGN_IN_QUERY`) |
+| `SignIn.server.ts` | `server-only` cached `loadSignInText`: `executeGraphql` with the mock key `sign-in`, `null` when the read fails (exports `loadSignInText`) |
 | `Turnstile.client.ts` | Types of the Cloudflare explicit-render API on `window.turnstile` (exports `TurnstileApi`) |
 | `TurnstileWidget.tsx` | Renders one Turnstile challenge for an action and loads the script only while mounted (exports `TurnstileWidget`) |
 | `TwoFactorStep.tsx` | Second sign-in step (code check; the BFF holds the temp token) (exports `TwoFactorStep`) |

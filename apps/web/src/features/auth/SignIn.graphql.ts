@@ -63,11 +63,9 @@ export interface SignIn {
   signInText: SignInText;
 }
 
-export const SIGN_IN_OPERATION_NAME = 'SignIn';
-
 /** The sign-in text; `signInText` is a GraphQL alias of the cms-api root field `moduleAuth`, so the response key stays `signInText`. */
-export const SIGN_IN_ROOT_FIELDS = {
-  signInText: `: moduleAuth {
+export const SIGN_IN_QUERY = `query SignIn {
+signInText: moduleAuth {
     title
     description
     emailLabel
@@ -122,5 +120,5 @@ export const SIGN_IN_ROOT_FIELDS = {
     openCms
     signedInAs
     signOutFailed
-  }`,
-} as const;
+  }
+}`;

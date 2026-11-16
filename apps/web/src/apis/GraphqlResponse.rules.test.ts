@@ -3,7 +3,7 @@ import { API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
 import {
   graphqlFailureOf,
   isUnauthenticatedGraphqlError,
-  readGraphqlRootFields,
+  operationNameOf,
   unwrapGraphqlResponse,
 } from './GraphqlResponse.rules';
 
@@ -103,42 +103,12 @@ describe('isUnauthenticatedGraphqlError', () => {
   });
 });
 
-describe('readGraphqlRootFields', () => {
-  it('keeps the data of a partial answer and fails only the root field named by an error path', () => {
-    expect(
-      readGraphqlRootFields(200, {
-        data: { a: 1, b: null },
-        errors: [{ path: ['b', 'x'], extensions: { code: 'X' } }],
-      }),
-    ).toEqual({
-      data: { a: 1, b: null },
-      errorCode: 'X',
-      status: 200,
-      failedRootFields: new Set(['b']),
-    });
+describe('operationNameOf', () => {
+  it('reads the name after the query keyword', () => {
+    expect(operationNameOf('query SiteHeader {\n header { name }\n}')).toBe('SiteHeader');
   });
 
-  it('fails every root field for an error without a path', () => {
-    const read = readGraphqlRootFields(200, {
-      data: { a: 1 },
-      errors: [{ extensions: { code: 'X' } }],
-    });
-    expect(read.failedRootFields).toBe('all');
-  });
-
-  it('does not fail a null or empty root field that has no error', () => {
-    const read = readGraphqlRootFields(200, { data: { a: null, b: [] } });
-    expect(read.failedRootFields).toEqual(new Set());
-  });
-
-  it('gives no data for a non-200 answer or a body without a data object', () => {
-    expect(readGraphqlRootFields(500, { data: { a: 1 } }).data).toBeNull();
-    expect(readGraphqlRootFields(200, { errors: [{}] })).toMatchObject({
-      data: null,
-      errorCode: 'UNKNOWN_ERROR',
-    });
-    expect(readGraphqlRootFields(500, { data: { a: 1 } }).failedRootFields).toBe('all');
-    expect(readGraphqlRootFields(200, 'nope').data).toBeNull();
-    expect(readGraphqlRootFields(200, { data: [1] }).data).toBeNull();
+  it('gives anonymous for a query with no name', () => {
+    expect(operationNameOf('{ header { name } }')).toBe('anonymous');
   });
 });

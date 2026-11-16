@@ -49,8 +49,8 @@ Tests: 4 files (not listed).
 |---|---|
 | `Health.api.ts` | Liveness call, response type and query keys (exports `HealthResponse`, `HEALTH_QUERY_KEYS`, `fetchLiveHealth`) |
 | `Health.server.ts` | Handler of `GET /api/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
-| `ModuleStatus.graphql.ts` | Client-safe `ModuleStatus` operation name, root field selection and text type (exports `ModuleStatusText`, `ModuleStatus`, `MODULE_STATUS_OPERATION_NAME`, `MODULE_STATUS_ROOT_FIELDS`) |
-| `ModuleStatus.server.ts` | `MODULE_STATUS_QUERY` and `loadModuleStatusText` (React `cache`): the status text, or `null` when `statusText` failed (exports `MODULE_STATUS_QUERY`, `loadModuleStatusText`) |
+| `ModuleStatus.graphql.ts` | Client-safe `ModuleStatus` query string and text type (exports `ModuleStatusText`, `ModuleStatus`, `MODULE_STATUS_QUERY`) |
+| `ModuleStatus.server.ts` | `loadModuleStatusText` (React `cache`): `executeGraphql` with the mock key `module-status`, the status text or `null` when the read failed (exports `loadModuleStatusText`) |
 | `ModuleStatus.tsx` | Client component: heading, description and health card with the text prop; the last-resort card words when it is `null` (exports `ModuleStatus`) |
 | `useLiveHealth.ts` | Liveness state of cms-api for the card (checking, ok, error) with its re-check (exports `LiveHealthState`, `useLiveHealth`) |
 
