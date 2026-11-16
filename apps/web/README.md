@@ -79,8 +79,8 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
-- User-facing text comes from the cms-api text types (`siteText`, `signInText`,
-  `statusText`, `pageCvText`) through the content features, never from literals.
+- User-facing text comes from the cms-api content types (`moduleAuth`, `moduleStatus`,
+  `author`, `pageCvText`) through the content features, never from literals.
 - `configs/**` may use pure helpers (`StripTrailingSlashes`,
   `SafeLinkTarget`) but never `apis/client/Api.client` or a feature (ESLint). Error
   codes live with their feature constants (`Auth.constants`,
