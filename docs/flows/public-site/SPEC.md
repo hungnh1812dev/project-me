@@ -1,7 +1,7 @@
 ---
 flow: public-site
 replaces: D18, §14 Q5, §14 Q-G1..Q-G7
-summary: The public site: the module status on `/` and `/status`, the CV from published content on `/cv`, page text from cms-api over GraphQL, the web BFF reads
+summary: The public site: the module status on `/` and `/status`, the CV from published content on `/cv`, page text from cms-api over GraphQL, the web BFF reads, the crawler files `robots.txt`, `sitemap.xml` and `favicon.ico`
 ---
 
 # Public site: spec
@@ -42,10 +42,16 @@ D18 (Decisions below), D13 (rendering richtext), D17 (web CSP), D21 (BFF). New r
   - `cv-common-text` (single; renamed from `page-cv-text` 2026-11-16 by the user, Q-PS2e, a destructive rename under Q-PS7): the labels shared by every CV and `noCvText` (richtext, the no-CV-live text, PS-2). Its field list is the schema file `content/schemas/cv-common-text.json` (user 2026-11-16); how its fields map to the CV labels: Q-PS2d.
   - `page-cv-a` (collection): the main CV (WPQ-7); `experiences.company` is sensitive (Q5, Q-PS6).
   - Removed with their tables and data, no data carried over (Q-PS7): `cv-page`, `cv-contact`, `resume`, `site-text` (its fields move to `header` and `module-auth`, Q-PS4). Each removal and each rename (a rename is a drop and a create in the content engine) is a destructive content migration, run with `--allow-destructive` only after the user approves it. The smoke seed and the web mocks follow the new types.
+- **PS-4 Crawler files** (user 2026-11-16, Q-PS8..Q-PS14). The public site serves three files at its root, each with HTTP 200 and its own content type, never the not-found page. None calls cms-api, so none falls back to a mock (WEB-5).
+  - `/robots.txt` (Q-PS13): where `APP_ENV` is `production` (WEB-9), `User-agent: *`, `Allow: /`, `Disallow: /api/`; on any other stack `User-agent: *`, `Disallow: /`, so a development or staging site is never indexed. Always a `Sitemap:` line with the absolute URL of `/sitemap.xml`. Next.js writes the field name as `User-Agent:`; accepted, as field names are read case-insensitively (RFC 9309, Q-PS15).
+  - `/sitemap.xml`: the public pages `/` and `/status` only (Q-PS10); `/cv` is not listed. No sign-in step, BFF route (`/api/...`), not-found or error page is ever listed. The paths are one static list in web config: no cms-api call and no `lastmod` (Q-PS11); a new public page in the sitemap is one entry in that list. URLs are absolute on `WEB_ORIGIN`, no new env key (Q-PS9).
+  - `/favicon.ico`: a simple letter mark of the app name in palette A, designed by the planner (`DESIGN favicon`) and built as a static asset (Q-PS12).
+  - Cache and CSP (Q-PS14): `robots.txt` and `sitemap.xml` are built per request (they read the runtime `WEB_ORIGIN` and `APP_ENV`) and answer `Cache-Control: public, max-age=3600`; `favicon.ico` keeps the Next.js static file caching. All three are skipped by the proxy matcher, so they carry no per-request nonce CSP, and keep the static security headers of `next.config.ts` (D17). The matcher change is checked on the full stack (tier 3).
+  - The admin host (`admin.<domain>`, cms-admin) serves its own `/robots.txt` with `User-agent: *`, `Disallow: /` on every stack (Q-PS13).
 
 ## Acceptance
 
-Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 14, 19, 21, 25.
+Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 14, 19, 21, 25, 28.
 
 ## Decisions
 
@@ -78,6 +84,14 @@ Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md
 | Q-PS5 | `/status` on web (user 2026-11-15: module status "used on / and /status"; confirmed when the user approves this draft) | A `/status` page (`PageStatus`) shows the same module status as `/`; criterion 25 and this flow's RULES change with it |
 | Q-PS6 | Sensitive fields of `page-cv-a` (planner 2026-11-15, Q5 carried over; confirmed when the user approves this draft) | `experiences.company`, as on `cv-page`; `page-cv-a` has no references |
 | Q-PS7 | Data of the removed and renamed types (planner 2026-11-15; confirmed when the user approves this draft) | Not carried over: the smoke and dev stacks seed again from the web mocks; the content is entered again in cms-admin where it is needed |
+| Q-PS8 | Crawler files (user 2026-11-16, verbatim: "Serve all three: robots.txt, sitemap.xml and favicon.ico. Sitemap: public pages only, no sign-in pages.") | PS-4 |
+| Q-PS9 | Site origin of the absolute sitemap URLs (user 2026-11-16) | `WEB_ORIGIN`, no new env key (PS-4) |
+| Q-PS10 | Pages the sitemap lists (user 2026-11-16: "only `/` and `/status`"; the web has no sign-in page, sign-in is a dialog) | `/` and `/status`; `/cv` is not listed (PS-4) |
+| Q-PS11 | Static page list or built from content (user 2026-11-16) | A static list of public paths in web config; no cms-api call, no `lastmod` (PS-4) |
+| Q-PS12 | The favicon (no asset in `apps/web/public`; user 2026-11-16) | A simple letter mark of the app name in palette A, designed by the planner (`DESIGN favicon`), then built (PS-4) |
+| Q-PS13 | Crawler rules (user 2026-11-16, as recommended) | Production: `User-agent: *`, `Allow: /`, `Disallow: /api/`; other stacks: `Disallow: /`; the cms-admin host serves its own `robots.txt` with `Disallow: /` (PS-4) |
+| Q-PS14 | Cache and CSP of the three files (user 2026-11-16, as recommended) | `robots.txt` and `sitemap.xml` built per request with `Cache-Control: public, max-age=3600`; `favicon.ico` static caching; all three skipped by the proxy matcher (no nonce CSP), checked at tier 3 (PS-4) |
+| Q-PS15 | Field-name case of the web `robots.txt` (user 2026-11-16, Q-CRF2 of PLAN crawler-files) | Next.js's `User-Agent:` is an accepted difference from the `User-agent:` written above; the admin host's static file keeps `User-agent:` (PS-4) |
 
 ## Out of scope
 

@@ -36,6 +36,7 @@ Part of the [project spec](../../SPEC.md). `§12-n` means success criterion n be
 25. The web serves no reviewer entry; the homepage `/` and `/status` show only the service status card (`/status` added 2026-11-15, public-site Q-PS5), which reads `GET /api/v1/health` and loads no CV data, and the CV is served on `/cv` (Q-BFF2; amended 2026-11-05, path 2026-11-06); web responses carry the D17 headers including `Cross-Origin-Opener-Policy`, `Permissions-Policy`, `X-Frame-Options: DENY` and a CSP whose `connect-src` is `'self'` (plus `ws:` in dev only).
 26. cms-admin sign-in (§16 acceptance 4, 5): `POST /auth/login` with `rememberMe: true` sets `__Secure-abyss_rt` with `Max-Age=2592000`; with `false` or absent it is a session cookie (no `Max-Age`, no `Expires`); refresh and both 2FA paths keep the family's mode; a not-remembered refresh token presented 12 hours plus 1 s after its last rotation → 401 and the cookie is cleared, while a remembered one still rotates.
 27. Web sign-in (§16 acceptance 10): unticked, with and without 2FA, `__Host-abyss_web_session` is a session cookie; ticked, it expires about 30 days from now; a BFF refresh keeps each mode; the browser still holds no access or refresh token (criterion 22).
+28. The public site answers `/robots.txt`, `/sitemap.xml` and `/favicon.ico` with HTTP 200 and no nonce CSP (public-site PS-4, added 2026-11-16); `robots.txt` names the absolute sitemap URL and, in production, disallows `/api/` and, on any other stack, `/`; the sitemap lists exactly `/` and `/status` as absolute URLs on `WEB_ORIGIN`, each answering 200; `robots.txt` and `sitemap.xml` carry `Cache-Control: public, max-age=3600`; the admin host's `/robots.txt` disallows `/`.
 
 ### By flow
 
@@ -48,7 +49,7 @@ Part of the [project spec](../../SPEC.md). `§12-n` means success criterion n be
 | [content-modeling](../flows/content-modeling/SPEC.md)                  | 16                                                                     |
 | [content-editing](../flows/content-editing/SPEC.md)                    | 4, 5, 12, 14                                                           |
 | [media](../flows/media/SPEC.md)                                        | 13                                                                     |
-| [public-site](../flows/public-site/SPEC.md)                            | 14, 19, 21, 25                                                         |
+| [public-site](../flows/public-site/SPEC.md)                            | 14, 19, 21, 25, 28                                                     |
 | [reviewer](../flows/reviewer/SPEC.md)                                  | 3, 20                                                                  |
 | [security-audit](../flows/security-audit/SPEC.md)                      | 18                                                                     |
 | several flows ([RULES.md](RULES.md), [apps/web](../apps/web/RULES.md)) | 8 (client IP, D7), 15 (production guards, D17), 23 (BFF pipeline, D21) |
