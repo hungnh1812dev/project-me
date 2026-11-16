@@ -36,7 +36,7 @@ Every table has `id` (int identity PK), `created_at`, `updated_at`. User-facing 
   - `INDEX (parent_id, order_index)`
   - **No `_lnk` tables**: components are owned exclusively, so cascade delete removes orphans by construction.
 - The generator **fails** (never truncates) when a composed name exceeds 63 bytes or two names collide after normalisation.
-- `cv-page.json` produces **8 tables**: root + skill, experience, experience__role, experience__role__project, education, language, reference (after migration 0006, feature `cv-page-schema`; before it, `project` was a root-level component).
+- `page-cv-a.json` produces **6 tables**: root + skill, experience, experience__role, project, education (migration 0013, feature `web-part-queries`). `cv-page.json` (8 tables) is removed (public-site PS-3).
 
 ### 8.3 Conditions DSL (ABAC)
 
