@@ -9,7 +9,7 @@ Routes:
 - `/cv` is the CV page. `app/cv/page.tsx` renders only `views/cv/PageCv`
   (Server Component), which loads the `PageCv` GraphQL document through
   `PageCv.data.ts` (`loadPageCv`, public role: the main `page-cv-a`, the
-  `profile` and `pageCvText`) and hands it to the client `PageCvClient`. No
+  `profile` and `cvCommonText`) and hands it to the client `PageCvClient`. No
   main CV answers 404. Anonymous visitors see the server data; a signed-in
   account refetches the `PageCvVisitor` selections through `GET /api/v1/cv`
   (BFF, keyed by actor), and sign-out returns to the server data. `PageCvClient`
@@ -80,7 +80,7 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
 - User-facing text comes from the cms-api content types (`moduleAuth`, `moduleStatus`,
-  `author`, `pageCvText`) through the content features, never from literals.
+  `author`, `cvCommonText`) through the content features, never from literals.
 - `configs/**` may use pure helpers (`StripTrailingSlashes`,
   `SafeLinkTarget`) but never `apis/client/Api.client` or a feature (ESLint). Error
   codes live with their feature constants (`Auth.constants`,
