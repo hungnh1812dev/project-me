@@ -10,7 +10,7 @@ Part of the [project spec](../../../SPEC.md). Flow `backups`: [SPEC.md](SPEC.md)
 ## Actors
 
 - **Owner**: the only actor; no role grant opens this flow.
-- **Nightly job** (deploy repo): dumps as `abyss_backup`, encrypts with `age`, uploads to R2.
+- **Nightly job** (CronJob in the deploy repo, running the cms-api image, BK-6): dumps as `abyss_backup`, encrypts with `age`, uploads to R2.
 - **Cloudflare R2**: holds the dumps; cms-api holds a read-only token.
 
 ## Steps
