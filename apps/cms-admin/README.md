@@ -282,6 +282,8 @@ on `nginx-unprivileged` (non-root, port 8080). `nginx.conf` sets
 internal host or port behind Traefik, and falls back to `index.html` for client
 routes. The build fails without `VITE_API_BASE_URL`.
 
+`public/robots.txt` disallows every crawler on the admin host (public-site PS-4); Vite copies it to the root of `dist/` and nginx serves it before the SPA fallback.
+
 ## Scripts
 
 | Script      | What it does                                                                          |
