@@ -53,6 +53,9 @@ bump_nvmrc() { printf '26\n' >"$1/.nvmrc"; }
 bump_dockerfile_node() { sed -i.bak 's/node:24.18/node:22.1/' "$1/apps/cms-api/Dockerfile"; }
 drop_dockerfile_turbo() { sed -i.bak '/TURBO_VERSION/d' "$1/apps/web/Dockerfile"; }
 bump_dev_compose_postgres() { sed -i.bak 's/postgres:17/postgres:18/' "$1/docker-compose.dev.yml"; }
+bump_smoke_compose_postgres() { sed -i.bak 's/postgres:17/postgres:18/' "$1/docker-compose.smoke.yml"; }
+bump_fixture_postgres() { sed -i.bak 's/postgres:17/postgres:18/' "$1/apps/cms-api/test/fixtures/Postgres.fixture.ts"; }
+bump_dockerfile_postgres() { sed -i.bak 's/POSTGRES_MAJOR=17/POSTGRES_MAJOR=18/' "$1/apps/cms-api/Dockerfile"; }
 
 run_case "all pins agree" 0 "turbo 2.0.0" keep_consistent
 run_case "ci.yml turbo differs" 1 "package.json pins 2.0.0, expected 2.1.0" bump_ci_turbo
@@ -63,6 +66,9 @@ run_case "Dockerfile node differs" 1 "node major: apps/cms-api/Dockerfile pins 2
 run_case "missing turbo pin" 1 "no pin found in apps/web/Dockerfile" drop_dockerfile_turbo
 run_case "postgres pins agree" 0 "postgres major 17" keep_consistent
 run_case "compose postgres differs" 1 "postgres major: docker-compose.dev.yml pins 18, expected 17" bump_dev_compose_postgres
+run_case "smoke compose postgres differs" 1 "postgres major: docker-compose.smoke.yml pins 18" bump_smoke_compose_postgres
+run_case "fixture postgres differs" 1 "postgres major: apps/cms-api/test/fixtures/Postgres.fixture.ts pins 18" bump_fixture_postgres
+run_case "Dockerfile postgres differs" 1 "postgres major" bump_dockerfile_postgres
 
 echo "${passed} passed, ${failed} failed"
 [ "${failed}" -eq 0 ]

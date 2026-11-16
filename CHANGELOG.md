@@ -30,7 +30,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### DevOps patches
 
-- cms-api 0.2.0: the backup CronJob runs the cms-api image and its script; the backup time is set by the Secret `postgres-backup-schedule`; ConfigMap and `postgres-backup` unchanged ([patch-cms-api-0.2.0.md](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
+- cms-api 0.2.0: backup CronJob runs the cms-api image; time set by Secret `postgres-backup-schedule` ([patch](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
 - root: `SMOKE_WEB_PRODUCTION=1 pnpm smoke` builds and runs web with `APP_ENV=production` and its default data cache window (`SMOKE_WEB_APP_ENV`, `SMOKE_WEB_REVALIDATE_SECONDS` in `docker-compose.smoke.yml`); the default stays staging with no cache.
 - scripts: the smoke and dev stacks seed the new content types (`header`, `module-auth`, `module-status`, `page-cv-text`, `profile`, `page-cv-a`) from the web mocks; `pnpm dev:stack demo` runs `SeedContent.mjs` instead of `scripts/demo/content/`, and the start check reads `pageCvAList` and `experiences.company`. No deploy-repo change (WPQ-10).
 - web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
