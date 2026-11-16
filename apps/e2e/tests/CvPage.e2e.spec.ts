@@ -17,6 +17,9 @@ import { WEB_COPY } from '../src/Apps.contract';
 import { HTTP, PAGE_CV_A_SLUG, PROFILE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 
+/** Next.js keeps one empty role=alert live region for route changes; it is not an app message. */
+const NEXT_ROUTE_ANNOUNCER_SELECTOR = '#__next-route-announcer__';
+
 /**
  * apps/web `/cv` (CV page) and `/` and `/status` (module status). The server renders the
  * main page-cv-a and the profile as the public role; a reader session refetches once through
@@ -194,7 +197,9 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
 
     await expect(page.getByRole('button', { name: WEB_COPY.session.signOut })).toBeVisible();
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.locator(`[role="alert"]:not(${NEXT_ROUTE_ANNOUNCER_SELECTOR})`)).toHaveCount(
+      0,
+    );
     await expect(page.getByRole('heading', { level: 1, name: CV_NAME })).toBeVisible();
     await expect(page.getByText(CV_POSITION)).toBeVisible();
   });
