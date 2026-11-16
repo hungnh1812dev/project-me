@@ -115,20 +115,20 @@ Reviewer access is open only when the switch is `true`, the owner toggle is on, 
 
 ## 6. Not proven yet
 
-| Item                                                                   | Proven by                                                             | Recorded under    |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------- |
-| CI publish and the deploy repo bump (contract verified earlier)        | [ci-cd.md](ci-cd.md) section 5, step 8                                | LG-0 item 3       |
-| The GitOps tool applies the bump; `$` substitution is safe for the job | the rendered manifests, then the first production rollout (section 4) | LG-0 item 4, LG-4 |
-| GHCR pull from the cluster                                             | the pull test in [kubernetes.md](kubernetes.md) section 1             | LG-0 item 4       |
-| DB TLS `verify-full` from cms-api                                      | DB-2, then DB-7                                                       | LG-db-7           |
-| Roles and grants on the production database                            | DB-3 and the DB-6 self-check                                          | LG-db-7           |
-| The database's data API closed                                         | DB-7                                                                  | LG-db-7           |
-| Connection budget                                                      | [database.md](database.md) section 8                                  | LG-0 item 4       |
-| Real client IP through Cloudflare and Traefik                          | [release.md](release.md) section 4, check 5; success criterion 8      | LG-0 item 4, LG-4 |
-| Backup job, bucket tokens, lifecycle, lock                             | [backups.md](backups.md) section 6                                    | LG-0 item 4       |
-| Restore drill                                                          | [backups.md](backups.md) section 4                                    | LG-0 item 4       |
-| Rollback by revert                                                     | one revert in production after the second release                     | LG-0 item 4       |
-| `readOnlyRootFilesystem` on cms-admin                                  | [kubernetes.md](kubernetes.md) section 5                              | LG-0 item 4       |
+| Item                                                                                                                                                         | Proven by                                                             | Recorded under    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------- | ----------------- |
+| CI publish and the deploy repo bump (contract verified earlier)                                                                                              | [ci-cd.md](ci-cd.md) section 5, step 8                                | LG-0 item 3       |
+| The GitOps tool applies the bump; `$` substitution is safe for the job, and the rendered CronJob carries the schedule and zone of `postgres-backup-schedule` | the rendered manifests, then the first production rollout (section 4) | LG-0 item 4, LG-4 |
+| GHCR pull from the cluster                                                                                                                                   | the pull test in [kubernetes.md](kubernetes.md) section 1             | LG-0 item 4       |
+| DB TLS `verify-full` from cms-api                                                                                                                            | DB-2, then DB-7                                                       | LG-db-7           |
+| Roles and grants on the production database                                                                                                                  | DB-3 and the DB-6 self-check                                          | LG-db-7           |
+| The database's data API closed                                                                                                                               | DB-7                                                                  | LG-db-7           |
+| Connection budget                                                                                                                                            | [database.md](database.md) section 8                                  | LG-0 item 4       |
+| Real client IP through Cloudflare and Traefik                                                                                                                | [release.md](release.md) section 4, check 5; success criterion 8      | LG-0 item 4, LG-4 |
+| Backup job, bucket tokens, lifecycle, lock                                                                                                                   | [backups.md](backups.md) section 6                                    | LG-0 item 4       |
+| Restore drill                                                                                                                                                | [backups.md](backups.md) section 4                                    | LG-0 item 4       |
+| Rollback by revert                                                                                                                                           | one revert in production after the second release                     | LG-0 item 4       |
+| `readOnlyRootFilesystem` on cms-admin                                                                                                                        | [kubernetes.md](kubernetes.md) section 5                              | LG-0 item 4       |
 
 ## 7. Open owner decisions
 

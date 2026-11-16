@@ -8,7 +8,7 @@ What the backup covers: the whole database (accounts, audit logs, `file_library`
 
 1. The bucket, its lifecycle rules, the two tokens and the bucket lock rules (section 2).
 2. The age key pair on the owner's machine (section 2, step 5).
-3. The deploy repo adds the CronJob (it runs the cms-api image; no image is built in the deploy repo, Q-OPS8) the ConfigMap `postgres-backup-config` ([configmaps.md](configmaps.md) section 6) and the Secret `postgres-backup` ([secrets.md](secrets.md)).
+3. The deploy repo adds the CronJob (it runs the cms-api image; no image is built in the deploy repo, Q-OPS8) the ConfigMap `postgres-backup-config` ([configmaps.md](configmaps.md) section 6) and the Secret `postgres-backup` ([secrets.md](secrets.md)) and the Secret `postgres-backup-schedule`, which sets the time of the job (section 3).
 4. cms-api gets the read-only token as `BACKUP_STORAGE_*` (section 5).
 5. Alerts (deploy repo): the job failed, or no new `daily/` object in 26 hours. The cms-admin Backups page also shows a stale warning after 26 hours.
 6. Run the job once by hand, then the restore drill (section 6). Those two runs are the proof.
@@ -40,7 +40,8 @@ metadata:
   name: postgres-backup
   namespace: <ns>
 spec:
-  schedule: '15 2 * * *' # UTC
+  schedule: '${BACKUP_SCHEDULE:=15 2 * * *}'
+  timeZone: '${BACKUP_TIME_ZONE:=Etc/UTC}'
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -71,6 +72,10 @@ spec:
               configMap: { name: database-ca }
 ```
 
+- The time comes from the Secret `postgres-backup-schedule` (keys `BACKUP_SCHEDULE` and `BACKUP_TIME_ZONE`, nothing else; [secrets.md](secrets.md) section 1) through the GitOps tool's substitution: with Flux, `postBuild.substituteFrom` of that Secret only, never of `postgres-backup`. The Secret is applied by a sync step that the CronJob's step depends on. A manifest applied without substitution is rejected, so it must go through that step.
+- The schedule fires once a day at most; the reason is in [BK-7](../flows/backups/SPEC.md).
+- To change the time, edit the Secret and let the GitOps tool sync. Moving the time earlier can skip one night, so run the job once by hand after the change (section 6, step 1).
+- The object stamp and the day-01 monthly copy stay UTC, whatever the zone.
 - `-n public -n content`: the app's two schemas only; the backup role cannot read a managed service's own schemas, and the dump must not contain them.
 - `set -o pipefail` makes a failed `pg_dump` fail the job. An S3 multipart upload becomes visible only when it completes, so a half-written dump is never listed.
 - The size checks warn, keep the dump and exit 1 at the end, so the failure alert fires and a backup still exists: before the dump, the database size against `BACKUP_MAX_DATABASE_BYTES` (about 80 percent of a plan's size limit); after the upload, the object size against `BACKUP_MAX_DUMP_BYTES` (200000000).
