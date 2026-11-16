@@ -15,7 +15,12 @@ export interface FillFromMocksInput {
   data: Readonly<Record<string, unknown>> | null;
   /** The root fields that failed, each with the `WebApiError` code of its failure. */
   failures: ReadonlyMap<string, ApiErrorCode>;
+  /** The root fields that are a single type: one that answers null without failing is mocked too. */
+  singleTypeRootFields: readonly string[];
 }
+
+/** The warn-line code of a single type that answered null without failing. */
+const NULL_SINGLE_TYPE = 'NULL_SINGLE_TYPE';
 
 export interface FillFromMocksResult {
   data: Record<string, unknown>;
@@ -34,9 +39,11 @@ async function loadMockView(): Promise<Readonly<Record<string, unknown>> | undef
 }
 
 /**
- * Fills each failed root field with its mock where the fallback is on; a root field that did not
- * fail keeps what the API answered (`null` when it gave nothing). The fields it cannot fill stay
- * null and are listed as failed. A render that used a mock opts out of caching. The warn line
+ * Fills each failed root field, and each single type that answered null, with its mock where
+ * the fallback is on; any other root field keeps what the API answered (`null` when it gave
+ * nothing, so a collection that answers empty is never mocked). A failed field it cannot fill
+ * stays null and is listed as failed; a null single type with no mock stays null and is not
+ * listed. A render that used a mock opts out of caching. The warn line (one per mocked field)
  * carries no data and no token.
  */
 export async function fillFromMocks({
@@ -45,15 +52,20 @@ export async function fillFromMocks({
   mockKeys,
   data,
   failures,
+  singleTypeRootFields,
 }: FillFromMocksInput): Promise<FillFromMocksResult> {
-  const mockView = failures.size > 0 ? await loadMockView() : undefined;
+  const isNullSingleType = (rootField: string) =>
+    singleTypeRootFields.includes(rootField) && (data?.[rootField] ?? null) === null;
+  const needsMock = failures.size > 0 || rootFields.some(isNullSingleType);
+  const mockView = needsMock ? await loadMockView() : undefined;
   const filled: Record<string, unknown> = {};
   const failedRootFields: string[] = [];
   let isMockUsed = false;
 
   for (const rootField of rootFields) {
     const errorCode = failures.get(rootField);
-    if (errorCode === undefined) {
+    const isFailed = errorCode !== undefined;
+    if (!isFailed && !isNullSingleType(rootField)) {
       filled[rootField] = data?.[rootField] ?? null;
       continue;
     }
@@ -61,10 +73,12 @@ export async function fillFromMocks({
     if (mockView !== undefined && mockKey in mockView) {
       filled[rootField] = mockView[mockKey];
       isMockUsed = true;
-      console.warn(`[mock] ${operationName} ${rootField} ${mockKey} ${errorCode}`);
+      console.warn(
+        `[mock] ${operationName} ${rootField} ${mockKey} ${errorCode ?? NULL_SINGLE_TYPE}`,
+      );
     } else {
       filled[rootField] = null;
-      failedRootFields.push(rootField);
+      if (isFailed) failedRootFields.push(rootField);
     }
   }
   if (isMockUsed) await connection();

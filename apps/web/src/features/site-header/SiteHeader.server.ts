@@ -14,6 +14,7 @@ import {
 export const SITE_HEADER_QUERY = defineContentQuery<SiteHeader>({
   operationName: SITE_HEADER_OPERATION_NAME,
   rootFields: SITE_HEADER_ROOT_FIELDS,
+  singleTypeRootFields: ['header'],
 });
 
 /**

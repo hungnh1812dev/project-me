@@ -38,6 +38,8 @@ export interface ContentQuery<T> {
   rootFields: Readonly<Record<keyof T & string, string>>;
   /** Mock key of a root field whose mock is not stored under the root field's own name. */
   mockKeys?: Partial<Record<keyof T & string, MockKey>>;
+  /** Root fields that are a single type; one not listed is a collection. A null single type is mocked where the mocks are on. */
+  singleTypeRootFields?: ReadonlyArray<keyof T & string>;
   /** Data cache lifetime of this query; defaults to `DEFAULT_REVALIDATE_SECONDS`. */
   revalidateSeconds?: number;
   document: GraphqlDocument;
@@ -47,6 +49,7 @@ export interface ContentQueryDefinition<T> {
   operationName: string;
   rootFields: Readonly<Record<keyof T & string, string>>;
   mockKeys?: Partial<Record<keyof T & string, MockKey>>;
+  singleTypeRootFields?: ReadonlyArray<keyof T & string>;
   revalidateSeconds?: number;
 }
 
@@ -162,7 +165,8 @@ async function readRootFieldsOneByOne(
  * Runs a page query as the site (the API token when set, else anonymous),
  * cached for every visitor. Never throws for a content failure: a root field
  * that failed and has no mock is `null` and listed in `failedRootFields`; a root field
- * the API answered with null or empty, without an error, is returned as answered.
+ * the API answered with null or empty, without an error, is returned as answered, except a
+ * single type (`singleTypeRootFields`) that answered null, which is mocked where the mocks are on.
  */
 export async function runContentQuery<T>(query: ContentQuery<T>): Promise<ContentResult<T>> {
   const { appApiToken, isMockFallbackOn } = getServerEnv();
@@ -185,6 +189,7 @@ export async function runContentQuery<T>(query: ContentQuery<T>): Promise<Conten
     mockKeys: query.mockKeys ?? {},
     data: read.data,
     failures: read.failures,
+    singleTypeRootFields: query.singleTypeRootFields ?? [],
   });
   return {
     data: filled.data as ContentResult<T>['data'],

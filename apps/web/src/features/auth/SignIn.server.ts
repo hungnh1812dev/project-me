@@ -15,6 +15,7 @@ import {
 export const SIGN_IN_QUERY = defineContentQuery<SignIn>({
   operationName: SIGN_IN_OPERATION_NAME,
   rootFields: SIGN_IN_ROOT_FIELDS,
+  singleTypeRootFields: ['signInText'],
 });
 
 /** The sign-in dialog text; one request per render. `null` when it could not load (the header then shows no sign-in button). */

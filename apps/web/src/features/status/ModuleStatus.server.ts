@@ -14,6 +14,7 @@ import {
 export const MODULE_STATUS_QUERY = defineContentQuery<ModuleStatus>({
   operationName: MODULE_STATUS_OPERATION_NAME,
   rootFields: MODULE_STATUS_ROOT_FIELDS,
+  singleTypeRootFields: ['statusText'],
 });
 
 /**

@@ -15,6 +15,7 @@ import {
 export const NOT_FOUND_PAGE_QUERY = defineContentQuery<NotFoundPage>({
   operationName: NOT_FOUND_PAGE_OPERATION_NAME,
   rootFields: NOT_FOUND_PAGE_ROOT_FIELDS,
+  singleTypeRootFields: ['notFoundText'],
 });
 
 /** The not-found page text; one request per render. `null` when it could not load (the page then shows the last-resort text). */

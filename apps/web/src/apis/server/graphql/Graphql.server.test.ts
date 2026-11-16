@@ -123,6 +123,24 @@ describe('runContentQuery', () => {
     expect(console.warn).toHaveBeenCalledWith('[mock] Page beta beta UNKNOWN_ERROR');
   });
 
+  it('mocks a single type answered null with HTTP 200 and no errors when the mocks are on', async () => {
+    env.isMockFallbackOn = true;
+    mockView.MOCK_VIEW = { alpha: { title: 'mock' }, beta: { items: ['mock'] } };
+    postMock.mockResolvedValue(answer(200, { data: { alpha: null, beta: { items: [] } } }));
+
+    const result = await runContentQuery(
+      defineContentQuery<PageData>({
+        operationName: 'Page',
+        rootFields: ROOT_FIELDS,
+        singleTypeRootFields: ['alpha'],
+      }),
+    );
+
+    expect(result.data).toEqual({ alpha: { title: 'mock' }, beta: { items: [] } });
+    expect(result.failedRootFields).toEqual([]);
+    expect(console.warn).toHaveBeenCalledWith('[mock] Page alpha alpha NULL_SINGLE_TYPE');
+  });
+
   it('lists the failed root fields as null when the mocks are off, without retrying', async () => {
     postMock.mockResolvedValue(
       answer(200, { errors: [{ extensions: { code: 'GRAPHQL_VALIDATION_FAILED' } }] }),

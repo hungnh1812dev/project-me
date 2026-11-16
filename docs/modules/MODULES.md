@@ -75,7 +75,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 | cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The CV page: query, loader, BFF read, sections, contact card, masked values |
 | home | `apps/web/src/views/home` | `docs/modules/web/views-home.md` | complete | - | The / page, which renders the module status |
 | status | `apps/web/src/views/status` | `docs/modules/web/views-status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The /status page, which renders the module status |
-| server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | draft | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client |
+| server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client |
 
 ## form-commons
 
