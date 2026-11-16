@@ -32,7 +32,6 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
   const PROFILE_NAME = `E2E Profile ${Date.now()}`;
   const SECRET_PHONE = '+1 555 0142';
   const SECRET_EMAIL = 'e2e-secret@example.com';
-  const MIN_MASKED_PLACEHOLDERS = 2;
 
   const cvUrl = `${e2eEnv.webUrl}/cv`;
 
@@ -128,7 +127,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     expect(graphqlCalls).toEqual([]);
   });
 
-  test('anonymous visit shows placeholders for masked fields and never the raw values or richtext handlers', async ({
+  test('anonymous visit leaves out masked fields and never shows the raw values or richtext handlers', async ({
     page,
     request,
   }) => {
@@ -139,9 +138,8 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     expect(html).not.toContain('onerror');
 
     await page.goto(cvUrl);
-    await expect
-      .poll(() => page.getByText(WEB_COPY.cv.maskedValue, { exact: true }).count())
-      .toBeGreaterThanOrEqual(MIN_MASKED_PLACEHOLDERS);
+    await expect(page.getByRole('heading', { level: 1, name: CV_NAME })).toBeVisible();
+    await expect(page.getByText(SECRET_COMPANY)).toHaveCount(0);
     await expect(page.getByText('***', { exact: false })).toHaveCount(0);
     await expect(page.getByText(PROFILE_NAME)).toBeVisible();
     expect(await page.evaluate(() => (window as { e2ePwned?: number }).e2ePwned)).toBeUndefined();
@@ -181,7 +179,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     expect(apiCalls).toEqual([]);
   });
 
-  test('a failed signed-in refetch keeps the anonymous CV visible with an alert and the shell intact', async ({
+  test('a failed signed-in refetch keeps the anonymous CV visible with no message and the shell intact', async ({
     page,
   }) => {
     await page.route(`**${BFF_PATHS.CV}`, (route) =>
@@ -196,9 +194,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
 
     await expect(page.getByRole('button', { name: WEB_COPY.session.signOut })).toBeVisible();
-    await expect(
-      page.getByRole('alert').filter({ hasText: WEB_COPY.cv.refetchFailed }),
-    ).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 1, name: CV_NAME })).toBeVisible();
     await expect(page.getByText(CV_POSITION)).toBeVisible();
   });

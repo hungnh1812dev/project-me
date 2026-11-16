@@ -1,5 +1,4 @@
 import { MODULE_STATUS_MOCK as STATUS_MOCK } from '../../web/src/apis/server/graphql/mocks/ModuleStatus.mock';
-import { PAGE_CV_MOCK as CV_MOCK } from '../../web/src/apis/server/graphql/mocks/PageCv.mock';
 import { SIGN_IN_MOCK } from '../../web/src/apis/server/graphql/mocks/SignIn.mock';
 import { SITE_HEADER_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteHeader.mock';
 
@@ -48,10 +47,6 @@ export const WEB_COPY = {
       ...twoFactor,
       errors: { invalidCode: twoFactor.invalidCode },
     },
-  },
-  cv: {
-    maskedValue: CV_MOCK.pageCvText.maskedValue,
-    refetchFailed: CV_MOCK.pageCvText.refetchFailed,
   },
   status: {
     checkAgain: STATUS_MOCK.statusText.checkAgain,

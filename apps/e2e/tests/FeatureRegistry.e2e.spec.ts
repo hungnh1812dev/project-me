@@ -25,10 +25,10 @@ const PUBLIC_PATHS = ['/login', '/set-password', '/reset-password'];
 // Content types show their display name, in the order the API lists them.
 const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES['common-text'],
+  CONTENT_TYPE_NAMES['cv-common-text'],
   CONTENT_TYPE_NAMES.header,
   CONTENT_TYPE_NAMES['module-auth'],
   CONTENT_TYPE_NAMES['module-status'],
-  CONTENT_TYPE_NAMES['page-cv-text'],
   CONTENT_TYPE_NAMES.profile,
   CONTENT_TYPE_NAMES[PAGE_CV_A_SLUG],
   nav.media,

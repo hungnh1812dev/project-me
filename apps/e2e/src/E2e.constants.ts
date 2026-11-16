@@ -73,11 +73,11 @@ export const PAGE_CV_A_NAME = 'Page CV (Type A)';
 /** Display names of the content types of the smoke and dev stacks (the repo schemas), by slug. */
 export const CONTENT_TYPE_NAMES = {
   'common-text': 'Common Text',
+  'cv-common-text': 'CV Common Text',
   header: 'Header',
   'module-auth': 'Module Auth',
   'module-status': 'Module Status',
   [PAGE_CV_A_SLUG]: PAGE_CV_A_NAME,
-  'page-cv-text': 'Page CV Text',
   profile: 'Profile',
 } as const;
 
