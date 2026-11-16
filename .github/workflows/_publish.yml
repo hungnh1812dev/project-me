@@ -102,6 +102,11 @@ jobs:
         env:
           IMAGE: ${{ inputs.app }}:ci
         run: bash .github/scripts/image-user.sh "$IMAGE"
+      - name: Backup tools guard
+        if: inputs.app == 'cms-api'
+        env:
+          IMAGE: ${{ inputs.app }}:ci
+        run: bash .github/scripts/backup-tools.sh "$IMAGE"
       - name: Bundle smoke check
         if: inputs.app == 'cms-admin'
         env:

@@ -10,7 +10,7 @@ trap 'rm -rf "${work}"' EXIT
 passed=0
 failed=0
 
-# Writes a consistent tree (turbo 2.0.0, node 24) into $1
+# Writes a consistent tree (turbo 2.0.0, node 24, postgres 17) into $1
 write_tree() {
   local root="$1" app
   mkdir -p "${root}/.github/workflows"
@@ -21,6 +21,10 @@ write_tree() {
     mkdir -p "${root}/apps/${app}"
     printf 'ARG NODE_IMAGE=node:24.18-alpine\nARG TURBO_VERSION=2.0.0\n' >"${root}/apps/${app}/Dockerfile"
   done
+  printf 'ARG POSTGRES_MAJOR=17\n' >>"${root}/apps/cms-api/Dockerfile"
+  printf 'services:\n  postgres:\n    image: postgres:17-alpine\n' | tee "${root}/docker-compose.smoke.yml" >"${root}/docker-compose.dev.yml"
+  mkdir -p "${root}/apps/cms-api/test/fixtures"
+  printf "export const POSTGRES_TEST_IMAGE = 'postgres:17-alpine';\n" >"${root}/apps/cms-api/test/fixtures/Postgres.fixture.ts"
 }
 
 # run_case <name> <expected exit> <expected output fragment> <tree setup command...>
@@ -48,6 +52,7 @@ bump_package_turbo() { sed -i.bak 's/"turbo": "2.0.0"/"turbo": "2.3.0"/' "$1/pac
 bump_nvmrc() { printf '26\n' >"$1/.nvmrc"; }
 bump_dockerfile_node() { sed -i.bak 's/node:24.18/node:22.1/' "$1/apps/cms-api/Dockerfile"; }
 drop_dockerfile_turbo() { sed -i.bak '/TURBO_VERSION/d' "$1/apps/web/Dockerfile"; }
+bump_dev_compose_postgres() { sed -i.bak 's/postgres:17/postgres:18/' "$1/docker-compose.dev.yml"; }
 
 run_case "all pins agree" 0 "turbo 2.0.0" keep_consistent
 run_case "ci.yml turbo differs" 1 "package.json pins 2.0.0, expected 2.1.0" bump_ci_turbo
@@ -56,6 +61,8 @@ run_case "package.json turbo differs" 1 "package.json pins 2.3.0" bump_package_t
 run_case ".nvmrc major differs" 1 "node major: apps/cms-api/Dockerfile pins 24, expected 26" bump_nvmrc
 run_case "Dockerfile node differs" 1 "node major: apps/cms-api/Dockerfile pins 22, expected 24" bump_dockerfile_node
 run_case "missing turbo pin" 1 "no pin found in apps/web/Dockerfile" drop_dockerfile_turbo
+run_case "postgres pins agree" 0 "postgres major 17" keep_consistent
+run_case "compose postgres differs" 1 "postgres major: docker-compose.dev.yml pins 18, expected 17" bump_dev_compose_postgres
 
 echo "${passed} passed, ${failed} failed"
 [ "${failed}" -eq 0 ]
