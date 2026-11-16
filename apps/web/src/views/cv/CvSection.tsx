@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, type ReactNode } from 'react';
 
 import { isSafeLinkTarget } from '@/utils/SafeLinkTarget.rules';
