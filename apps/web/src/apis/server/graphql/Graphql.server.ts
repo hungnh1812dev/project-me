@@ -8,7 +8,7 @@ import {
 } from '@/apis/GraphqlResponse.rules';
 import { fillFromMocks } from '@/apis/server/graphql/MockFallback.server';
 import type { MockKey } from '@/apis/server/graphql/mocks/MockView';
-import { serverApi, type ServerApiCache } from '@/apis/server/restful/ServerApi.client';
+import { serverApi } from '@/apis/server/restful/ServerApi.client';
 import {
   API_ERROR_CODES,
   API_ERROR_SOURCES,
@@ -95,24 +95,24 @@ function failureOfEach(
 async function postDocument(
   document: GraphqlDocument,
   headers: Record<string, string>,
-  cache: ServerApiCache,
+  revalidateSeconds: number,
 ): Promise<{ status: number; body: unknown }> {
-  const { status, body } = await serverApi.post(API_ENDPOINTS.GRAPHQL, {
+  return serverApi.post(API_ENDPOINTS.GRAPHQL, {
     headers,
     body: document,
-    cache,
+    resolveData: ({ status, body }) => ({ status, body }),
+    next: { revalidate: revalidateSeconds },
   });
-  return { status, body };
 }
 
 async function readRootFields(
   document: GraphqlDocument,
   names: readonly string[],
   headers: Record<string, string>,
-  cache: ServerApiCache,
+  revalidateSeconds: number,
 ): Promise<RootFieldsRead> {
   try {
-    const { status, body } = await postDocument(document, headers, cache);
+    const { status, body } = await postDocument(document, headers, revalidateSeconds);
     const read = readGraphqlRootFields(status, body);
     const failure = graphqlFailureOf(
       status,
@@ -139,7 +139,7 @@ async function readRootFieldsOneByOne(
   query: ContentQuery<never>,
   names: readonly string[],
   headers: Record<string, string>,
-  cache: ServerApiCache,
+  revalidateSeconds: number,
 ): Promise<RootFieldsRead> {
   const reads = await Promise.all(
     names.map((name) =>
@@ -147,7 +147,7 @@ async function readRootFieldsOneByOne(
         documentOf(query.operationName, query.rootFields, [name]),
         [name],
         headers,
-        cache,
+        revalidateSeconds,
       ),
     ),
   );
@@ -174,14 +174,12 @@ export async function runContentQuery<T>(query: ContentQuery<T>): Promise<Conten
     appApiToken === undefined
       ? ACCEPT_JSON
       : { ...ACCEPT_JSON, [AUTHORIZATION_HEADER]: `${BEARER_PREFIX}${appApiToken}` };
-  const cache: ServerApiCache = {
-    revalidateSeconds: query.revalidateSeconds ?? DEFAULT_REVALIDATE_SECONDS,
-  };
+  const revalidateSeconds = query.revalidateSeconds ?? DEFAULT_REVALIDATE_SECONDS;
 
   const names = Object.keys(query.rootFields);
-  let read = await readRootFields(query.document, names, headers, cache);
+  let read = await readRootFields(query.document, names, headers, revalidateSeconds);
   if (read.failures.size === names.length && isMockFallbackOn) {
-    read = await readRootFieldsOneByOne(query, names, headers, cache);
+    read = await readRootFieldsOneByOne(query, names, headers, revalidateSeconds);
   }
   const filled = await fillFromMocks({
     operationName: query.operationName,
@@ -211,7 +209,7 @@ export async function runVisitorQuery<T>(
     answer = await postDocument(
       query.document,
       { ...ACCEPT_JSON, [AUTHORIZATION_HEADER]: `${BEARER_PREFIX}${accessToken}` },
-      'no-store',
+      0,
     );
   } catch (error) {
     // `serverApi` logged the transport failure; this one carries the GraphQL network code.

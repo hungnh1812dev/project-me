@@ -15,13 +15,21 @@ const env = vi.hoisted(() => {
 });
 vi.mock('../../../configs/Server.env', () => ({ getServerEnv: () => env }));
 
-type PostOptions = { headers: Record<string, string>; body: { query: string }; cache: unknown };
+type PostOptions = {
+  headers: Record<string, string>;
+  body: { query: string };
+  next: { revalidate: number };
+  resolveData: (answer: { status: number; body: unknown }) => unknown;
+};
 const postMock = vi.hoisted(() =>
   vi.fn<(path: string, options: PostOptions) => Promise<unknown>>(),
 );
 vi.mock('../restful/ServerApi.client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../restful/ServerApi.client')>()),
-  serverApi: { post: postMock },
+  serverApi: {
+    post: async (path: string, options: PostOptions) =>
+      options.resolveData((await postMock(path, options)) as { status: number; body: unknown }),
+  },
 }));
 
 function restFailure(errorCode: 'NETWORK' | 'TIMEOUT'): WebApiError {
@@ -89,7 +97,7 @@ describe('runContentQuery', () => {
     });
     expect(postMock.mock.calls[0]?.[0]).toBe('/graphql');
     expect(callOptions(0).headers).toMatchObject({ authorization: 'Bearer api-token-secret' });
-    expect(callOptions(0).cache).toEqual({ revalidateSeconds: 180 });
+    expect(callOptions(0).next.revalidate).toBe(180);
     expect(callOptions(0).body).toBe(PAGE.document);
   });
 
@@ -102,7 +110,7 @@ describe('runContentQuery', () => {
     await runContentQuery(SLOW_PAGE);
 
     expect(Object.keys(callOptions(0).headers)).not.toContain('authorization');
-    expect(callOptions(0).cache).toEqual({ revalidateSeconds: 30 });
+    expect(callOptions(0).next.revalidate).toBe(30);
   });
 
   it('fills only the failed root field of a partial answer', async () => {
@@ -170,7 +178,7 @@ describe('runContentQuery', () => {
       'query Page {\nbeta{ items }\n}',
     ]);
     for (const index of [1, 2]) {
-      expect(callOptions(index).cache).toEqual({ revalidateSeconds: 180 });
+      expect(callOptions(index).next.revalidate).toBe(180);
       expect(callOptions(index).headers).toMatchObject({
         authorization: 'Bearer api-token-secret',
       });
@@ -268,7 +276,7 @@ describe('runVisitorQuery', () => {
     expect(data).toEqual({ alpha: { title: 'a' } });
     expect(callOptions(0).headers).toMatchObject({ authorization: 'Bearer visitor-token' });
     expect(JSON.stringify(callOptions(0).headers)).not.toContain('api-token-secret');
-    expect(callOptions(0).cache).toBe('no-store');
+    expect(callOptions(0).next.revalidate).toBe(0);
   });
 
   it('throws the first error code, never fills a mock and never retries', async () => {

@@ -125,11 +125,11 @@ async function callCmsApi(options: CallOptions): Promise<ServerApiAnswer> {
   let response: ServerApiAnswer;
   try {
     // Inside the try: a token that is not a valid header value throws here.
-    const send = options.method === 'GET' ? serverApi.get : serverApi.post;
-    response = await send(options.path, {
+    response = await serverApi.request(options.method, options.path, {
       headers: validatedHeadersOf(options),
       ...(options.body === undefined ? {} : { body: options.body }),
-      cache: 'no-store',
+      resolveData: (answer) => answer,
+      next: { revalidate: 0 },
     });
   } catch (error) {
     if (error instanceof WebApiError) throw error;

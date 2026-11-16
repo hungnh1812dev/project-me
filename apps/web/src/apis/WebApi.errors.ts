@@ -22,6 +22,7 @@ export const API_ERROR_CODES = {
     TIMEOUT: 'TIMEOUT',
     REDIRECT: 'REDIRECT',
     INVALID_BODY: 'INVALID_BODY',
+    HTTP: 'HTTP_ERROR',
   },
   GRAPHQL: {
     HTTP: 'HTTP_ERROR',

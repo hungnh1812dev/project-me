@@ -7,6 +7,7 @@ import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from './
 describe('API_ERROR_CODES', () => {
   it('keeps every code of the server RESTful, GraphQL and BFF layers', () => {
     expect(Object.values(API_ERROR_CODES.SERVER_API).sort()).toEqual([
+      'HTTP_ERROR',
       'INVALID_BODY',
       'NETWORK',
       'REDIRECT',

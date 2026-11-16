@@ -17,19 +17,6 @@ import {
 } from '@/configs/Http.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
-export type ServerApiCache = { revalidateSeconds: number } | 'no-store';
-
-export interface ServerApiOptions {
-  headers?: Record<string, string>;
-  /** Sent as JSON. */
-  body?: unknown;
-  /** Defaults to `DEFAULT_REVALIDATE_SECONDS`; `WEB_REVALIDATE_SECONDS`, when set, replaces any value (`no-store` stays). */
-  cache?: ServerApiCache;
-  timeoutMs?: number;
-  /** When true, an answer body that is not JSON throws `INVALID_BODY`; otherwise the body is `undefined`. */
-  needsBody?: boolean;
-}
-
 export interface ServerApiAnswer {
   status: number;
   headers: Headers;
@@ -37,7 +24,23 @@ export interface ServerApiAnswer {
   body: unknown;
 }
 
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+/** Next's own meaning: seconds, or `false` for no expiry; `0` means no cache. */
+export interface ServerApiNextOptions {
+  revalidate?: number | false;
+  tags?: string[];
+}
+
+export interface ServerApiOptions<T = unknown> {
+  headers?: Record<string, string>;
+  /** Sent as JSON. */
+  body?: unknown;
+  /** Turns any non-redirect answer into `T`; without it a 2xx gives its body and other statuses throw. */
+  resolveData?: (answer: ServerApiAnswer) => T;
+  /** `revalidate` defaults to `DEFAULT_REVALIDATE_SECONDS`; `WEB_REVALIDATE_SECONDS`, when set, replaces any value except `0`. */
+  next?: ServerApiNextOptions;
+}
+
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS';
 
 const TIMEOUT_AXIOS_CODES: ReadonlySet<string | undefined> = new Set(['ETIMEDOUT', 'ECONNABORTED']);
 
@@ -55,9 +58,14 @@ const http = axios.create({
 });
 
 /** `next` is Next's addition to `RequestInit`, unknown to axios' types. */
-function fetchOptionsOf(cache: ServerApiCache, overrideSeconds: number | undefined): RequestInit {
-  if (cache === 'no-store') return { cache };
-  return { next: { revalidate: overrideSeconds ?? cache.revalidateSeconds } };
+function fetchOptionsOf(
+  next: ServerApiNextOptions,
+  overrideSeconds: number | undefined,
+): RequestInit {
+  const requested = next.revalidate ?? DEFAULT_REVALIDATE_SECONDS;
+  const revalidate = requested === 0 ? 0 : (overrideSeconds ?? requested);
+  if (revalidate === 0) return { cache: 'no-store' };
+  return { next: { revalidate, ...(next.tags === undefined ? {} : { tags: next.tags }) } };
 }
 
 /** Why a call gave no answer; any HTTP status, 4xx and 5xx included, is an answer. Logged here, once. */
@@ -72,15 +80,11 @@ function failure(errorCode: ApiErrorCode, statusCode?: number): WebApiError {
   return error;
 }
 
-function parseBody(raw: unknown, needsBody: boolean): unknown {
-  if (typeof raw !== 'string' || raw === '') {
-    if (needsBody) throw failure(API_ERROR_CODES.SERVER_API.INVALID_BODY);
-    return undefined;
-  }
+function parseBody(raw: unknown): unknown {
+  if (typeof raw !== 'string' || raw === '') return undefined;
   try {
     return JSON.parse(raw);
   } catch {
-    if (needsBody) throw failure(API_ERROR_CODES.SERVER_API.INVALID_BODY);
     return undefined;
   }
 }
@@ -102,11 +106,11 @@ function failureOf(error: unknown): WebApiError {
   );
 }
 
-async function call(
+async function request<T>(
   method: HttpMethod,
   path: string,
-  options: ServerApiOptions,
-): Promise<ServerApiAnswer> {
+  options: ServerApiOptions<T> = {},
+): Promise<T> {
   const { appApiUrl, revalidateOverrideSeconds } = getServerEnv();
   let response: AxiosResponse;
   try {
@@ -115,11 +119,8 @@ async function call(
       method,
       ...(options.headers === undefined ? {} : { headers: options.headers }),
       ...(options.body === undefined ? {} : { data: options.body }),
-      timeout: options.timeoutMs ?? API_TIMEOUT_MS,
-      fetchOptions: fetchOptionsOf(
-        options.cache ?? { revalidateSeconds: DEFAULT_REVALIDATE_SECONDS },
-        revalidateOverrideSeconds,
-      ),
+      timeout: API_TIMEOUT_MS,
+      fetchOptions: fetchOptionsOf(options.next ?? {}, revalidateOverrideSeconds),
     });
   } catch (error) {
     throw failureOf(error);
@@ -127,21 +128,35 @@ async function call(
   if (response.status >= REDIRECT_STATUS_MIN && response.status < HTTP_STATUS.BAD_REQUEST) {
     throw failure(API_ERROR_CODES.SERVER_API.REDIRECT, response.status);
   }
-  return {
+  const answer: ServerApiAnswer = {
     status: response.status,
     headers: headersOf(response),
-    body: parseBody(response.data, options.needsBody === true),
+    body: parseBody(response.data),
   };
+  if (options.resolveData !== undefined) return options.resolveData(answer);
+  if (response.status >= HTTP_STATUS.BAD_REQUEST) {
+    throw failure(API_ERROR_CODES.SERVER_API.HTTP, response.status);
+  }
+  return answer.body as T;
 }
+
+type VerbCall = <T = unknown>(path: string, options?: ServerApiOptions<T>) => Promise<T>;
+
+const verb =
+  (method: HttpMethod): VerbCall =>
+  (path, options) =>
+    request(method, path, options);
 
 /**
  * The one transport for cms-api calls made by the Next server (WEB-1). `path`
  * is a value of `API_ENDPOINTS`. Does not know tokens: the caller sets headers.
  */
 export const serverApi = {
-  get: (path: string, options: ServerApiOptions = {}) => call('GET', path, options),
-  post: (path: string, options: ServerApiOptions = {}) => call('POST', path, options),
-  put: (path: string, options: ServerApiOptions = {}) => call('PUT', path, options),
-  patch: (path: string, options: ServerApiOptions = {}) => call('PATCH', path, options),
-  delete: (path: string, options: ServerApiOptions = {}) => call('DELETE', path, options),
+  request,
+  get: verb('GET'),
+  post: verb('POST'),
+  put: verb('PUT'),
+  patch: verb('PATCH'),
+  delete: verb('DELETE'),
+  options: verb('OPTIONS'),
 };

@@ -89,21 +89,19 @@ describe('every call', () => {
     [API_ERROR_CODES.SERVER_API.REDIRECT, 'BFF_UPSTREAM_FAILED'],
     [API_ERROR_CODES.SERVER_API.INVALID_BODY, 'BFF_UPSTREAM_FAILED'],
   ])('maps the transport failure %s to %s', async (failure, mapped) => {
-    vi.spyOn(serverApi, 'post').mockRejectedValue(
+    vi.spyOn(serverApi, 'request').mockRejectedValue(
       new WebApiError({ source: API_ERROR_SOURCES.CMS_API_REST, errorCode: failure }),
     );
     expect(await errorCodeOf(cmsApiClient.logOut('rt', IP))).toBe(mapped);
   });
 
-  it('sends a GET through serverApi.get and a POST through serverApi.post', async () => {
-    const get = vi.spyOn(serverApi, 'get');
-    const post = vi.spyOn(serverApi, 'post');
+  it('sends every call through serverApi.request with its method', async () => {
+    const request = vi.spyOn(serverApi, 'request');
     answer(200, { status: 'ok' });
     await cmsApiClient.readLiveHealth();
     answer(204);
     await cmsApiClient.logOut('rt', IP);
-    expect(get).toHaveBeenCalledTimes(1);
-    expect(post).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls.map(([method]) => method)).toEqual(['GET', 'POST']);
   });
 
   it('raises a cms-api-rest WebApiError for a 429 and the BFF answers with its Retry-After', async () => {
