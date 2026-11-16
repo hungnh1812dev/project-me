@@ -15,9 +15,9 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 
 ## Steps
 
-1. The visitor opens `/cv`; the Next server renders `PageCv` with a per-request CSP nonce (D17), or answers 404 when no main CV is published (PS-2). A signed-in visitor's view reads it again through `GET /api/v1/cv` (D21).
+1. The visitor opens `/cv`; the Next server renders `PageCv` with a per-request CSP nonce (D17), or the no-CV-live state when no main CV is published or its read failed with no mock (PS-2). A signed-in visitor's view reads it again through `GET /api/v1/cv` (D21).
 2. The server posts the page's GraphQL operations (PS-1) to `/api/v1/graphql` with `APP_API_TOKEN` (WEB-2); cms-api applies limits, builds the schema for the actor's readable types and resolves through `DocumentsQueryService` (masked).
-3. Next.js caches each answer for its own revalidate seconds (default 180 s, WEB-4); where WEB-5 allows, a failed or empty root field comes from the mocks.
+3. Next.js caches each answer for its own revalidate seconds (default 180 s, WEB-4); where WEB-5 allows, a failed query (a null single type included) comes from the mocks; an empty list never does.
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
 5. The homepage `/` and `/status` show only the module status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2, Q-PS5).
 

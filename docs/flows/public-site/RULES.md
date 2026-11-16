@@ -8,14 +8,13 @@ Rules of this flow only. Rules it shares with other flows are in the files under
 
 1. GraphQL authz is the REST read path, not a copy: `DocumentAuthGuard`, then `DocumentsQueryService` unchanged; no other data path (D18).
 2. Keep the GraphQL limits, introspection off in production and `Cache-Control: no-store` (D18).
-3. The homepage `/` shows only the service status view and loads no CV data; the CV is served on `/cv` (D21, Q-BFF2, criterion 25).
-4. The web shows the published `cv-page` with `isMain = true`, the newest `updatedAt` if several (Q-G7).
+3. The homepage `/` and `/status` show only the module status and load no CV data; the CV is served on `/cv` (D21, Q-BFF2, Q-PS5, criterion 25).
+4. The web shows the published `page-cv-a` with `isMain = true`, the newest `updatedAt` if several, and shows the no-CV-live state (HTTP 200) when there is none or its read failed with no mock; `/cv` never answers 404 or 500 for its content (Q-G7, PS-2).
 5. Page content reads use `APP_API_TOKEN`, whose read profile is the `public` role's and no wider; sensitive fields stay masked on cached pages (WEB-2, Q5).
 
 ## Must never
 
-1. Add a `/status` route on web (D21, criterion 25).
-2. Add GraphQL mutations or subscriptions (v2, [out of scope](../../../SPEC.md)).
+1. Add GraphQL mutations or subscriptions (v2, [out of scope](../../../SPEC.md)).
 
 ## Also follows
 
