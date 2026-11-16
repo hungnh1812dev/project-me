@@ -1,6 +1,6 @@
 ---
 flow: public-site
-modules: apps/cms-api/src/modules/graphql, apps/web/src/apis/server, apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, apps/cms-api/src/modules/health, apps/web/src/views/cv, apps/web/src/features/status, apps/web/src/views/status, apps/web/src/features/session
+modules: apps/cms-api/src/modules/graphql, apps/web/src/apis/server, apps/cms-api/src/modules/documents, apps/cms-api/src/modules/access, apps/cms-api/src/modules/health, apps/web/src/views/cv, apps/web/src/features/status, apps/web/src/views/status, apps/web/src/features/session, apps/web/src/features/crawler-files
 ---
 
 # Public site: flow
@@ -20,6 +20,7 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 3. Next.js caches each answer for its own revalidate seconds (default 180 s, WEB-4); where WEB-5 allows, a failed query (a null single type included) comes from the mocks; an empty list never does.
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
 5. The homepage `/` and `/status` show only the module status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2, Q-PS5).
+6. A crawler reads `/robots.txt`, follows its `Sitemap:` line to `/sitemap.xml` and reads the pages listed there (`/` and `/status`); a browser fetches `/favicon.ico`. The web server answers all three itself from its own config, without a cms-api call (PS-4). On the admin host, cms-admin's `/robots.txt` disallows everything (PS-4).
 
 ```mermaid
 sequenceDiagram
@@ -58,6 +59,7 @@ sequenceDiagram
 | `apps/web/src/features/status` | Service status card (`GET /api/v1/health`) | [status.md](../../modules/web/status.md) |
 | `apps/web/src/views/status` | Status view | [views-status.md](../../modules/web/views-status.md) |
 | `apps/web/src/features/session` | Who is signed in, for `GET /api/v1/cv` | [session.md](../../modules/web/session.md) |
+| `apps/web/src/features/crawler-files` | `robots.txt` and `sitemap.xml`, per request (PS-4) | [crawler-files.md](../../modules/web/crawler-files.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

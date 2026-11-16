@@ -30,6 +30,9 @@ Routes:
   card, `GET /api/v1/health` from the browser). `PageHome` and `PageStatus` load
   no CV data; a failed text query leaves the card with its last-resort words.
   `/status` is not linked from the header.
+- `/robots.txt` and `/sitemap.xml` are built per request by
+  `features/crawler-files` (PS-4): only `APP_ENV=production` allows crawling,
+  the sitemap lists the public pages, and `proxy.ts` skips both (no CSP nonce).
 
 ## Run
 

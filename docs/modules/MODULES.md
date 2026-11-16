@@ -68,6 +68,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
 | auth | `apps/web/src/features/auth` | `docs/modules/web/auth.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Web sign-in dialog with the two-factor step and its Turnstile human check |
+| crawler-files | `apps/web/src/features/crawler-files` | `docs/modules/web/crawler-files.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Per-request robots.txt and sitemap.xml of the public site |
 | not-found | `apps/web/src/features/not-found` | `docs/modules/web/not-found.md` | complete | - | The NotFoundPage content query, its loader and the shared not-found message |
 | session | `apps/web/src/features/session` | `docs/modules/web/session.md` | complete | [`public-site`](../flows/public-site/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Who is signed in on the web: the session context and the auth API |
 | site-header | `apps/web/src/features/site-header` | `docs/modules/web/site-header.md` | complete | - | The SiteHeader content query and its loader: the header content and the nav and account-menu text |

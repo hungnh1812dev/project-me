@@ -2,7 +2,9 @@ import path from 'node:path';
 
 import type { NextConfig } from 'next';
 
+import { CRAWLER_FILE_PATHS } from './src/configs/Api.endpoints';
 import { APP_ENV_BUILD_KEY, parseAppEnv } from './src/configs/AppEnv.rules';
+import { CACHE_CONTROL_HEADER, CRAWLER_FILES_CACHE_CONTROL } from './src/configs/Http.constants';
 import {
   BFF_RESPONSE_HEADERS,
   SECURITY_RESPONSE_HEADERS,
@@ -22,6 +24,11 @@ const nextConfig: NextConfig = {
   headers: () =>
     Promise.resolve([
       { source: '/:path*', headers: [...SECURITY_RESPONSE_HEADERS] },
+      // A metadata route sends `max-age=0`; a `headers()` entry is applied after it and wins (PS-4).
+      ...Object.values(CRAWLER_FILE_PATHS).map((source) => ({
+        source,
+        headers: [{ key: CACHE_CONTROL_HEADER, value: CRAWLER_FILES_CACHE_CONTROL }],
+      })),
       // BFF_BASE_PATH is a route folder here; keep this literal in step with it.
       { source: '/api/:path*', headers: [...BFF_RESPONSE_HEADERS] },
     ]),

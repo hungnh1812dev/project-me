@@ -34,3 +34,12 @@ export const BFF_ENDPOINTS = {
   VERIFY_TWO_FACTOR: '/auth/two-factor/verify',
   LOGOUT: '/auth/logout',
 } as const;
+
+/** Crawler files the site serves (PS-4); `proxy.ts` and `next.config.ts` name these paths too. */
+export const CRAWLER_FILE_PATHS = {
+  ROBOTS: '/robots.txt',
+  SITEMAP: '/sitemap.xml',
+} as const;
+
+/** Public pages the sitemap lists (PS-4); a new public page is one entry. */
+export const SITEMAP_PAGE_PATHS = ['/', '/status'] as const;
