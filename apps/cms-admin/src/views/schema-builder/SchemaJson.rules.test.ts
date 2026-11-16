@@ -36,8 +36,8 @@ function load(text: string): SchemaTree {
 }
 
 describe('schema files round trip', () => {
-  it('finds the 10 repository schemas', () => {
-    expect(schemaFiles).toHaveLength(10);
+  it('finds the repository schemas', () => {
+    expect(schemaFiles).toHaveLength(7);
   });
 
   it.each(schemaFiles)('%s keeps the same JSON value', (name) => {

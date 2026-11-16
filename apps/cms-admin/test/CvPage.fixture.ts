@@ -12,9 +12,12 @@ interface Definition {
   fields?: Definition[];
 }
 
-/** The real cv-page definition of cms-api, so tests follow the schema. */
+/** The real page-cv-a definition of cms-api, so tests follow the schema. */
 const definition = JSON.parse(
-  readFileSync(resolve(import.meta.dirname, '../../cms-api/content/schemas/cv-page.json'), 'utf8'),
+  readFileSync(
+    resolve(import.meta.dirname, '../../cms-api/content/schemas/page-cv-a.json'),
+    'utf8',
+  ),
 ) as {
   slug: string;
   displayName: string;
