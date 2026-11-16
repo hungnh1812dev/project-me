@@ -23,7 +23,7 @@ const SEEDS = [
   { slug: 'header', data: { ...SITE_HEADER_MOCK.header, ...NOT_FOUND_PAGE_MOCK.notFoundText } },
   { slug: 'module-auth', data: SIGN_IN_MOCK.signInText },
   { slug: 'module-status', data: MODULE_STATUS_MOCK.statusText },
-  { slug: 'page-cv-text', data: PAGE_CV_MOCK.pageCvText },
+  { slug: 'cv-common-text', data: PAGE_CV_MOCK.cvCommonText },
   { slug: 'profile', data: PAGE_CV_MOCK.profile },
   { slug: 'page-cv-a', data: { ...PAGE_CV_MOCK.pageCvAList.data[0], isMain: true } },
 ];
