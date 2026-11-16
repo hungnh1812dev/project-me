@@ -18,11 +18,11 @@ Owns the `SiteHeader` query (`SITE_HEADER_QUERY`, the one root field `header`, w
 
 ## Techniques
 
-`SiteHeader.graphql.ts` is client-safe; `SiteHeader.server.ts` is `server-only` and calls `executeGraphql` with the mock key `site-header`. The account menu text (`openCms`, `signedInAs`, `signOutFailed`) comes from the sign-in query, not from here. `loadSiteHeader` is in React `cache` and returns `null` when the read failed or the root field answered null (`executeGraphql` logged it; no second line). Same split as `features/status`.
+`SiteHeader.graphql.ts` is client-safe; `SiteHeader.server.ts` is `server-only` and calls `executeGraphql` with the mock key `site-header`. The account menu text (`openCms`, `signedInAs`, `signOutFailed`) comes from the sign-in query, not from here. `loadSiteHeader` keeps one result per request (ADR 0023): React `cache` outside, and inside it a module-level `WeakMap` keyed on the request's `await headers()` object holds the promise, so a 404 (which renders the layout twice) reads the header once and the mock or failure is reused; a new request has a new headers object, so nothing is shared across requests. It returns `null` when the read failed or the root field answered null (`executeGraphql` logged it; no second line). Same split as `features/status`.
 
 ## Technologies
 
-React (`cache`); `graphql` (dev, in specs).
+React (`cache`); `next/headers`; `graphql` (dev, in specs).
 
 ## Entry points
 
@@ -46,7 +46,7 @@ Tests: 2 files (not listed).
 | File | Description |
 |---|---|
 | `SiteHeader.graphql.ts` | Client-safe `SiteHeader` query: header content types and the query string (exports `HeaderNavLink`, `HeaderNav`, `HeaderContent` +3) |
-| `SiteHeader.server.ts` | `server-only` cached `loadSiteHeader`: `executeGraphql` with the mock key `site-header`, `null` when the read failed (exports `loadSiteHeader`) |
+| `SiteHeader.server.ts` | `server-only` `loadSiteHeader`, one result per request (React `cache` + `WeakMap` on the request headers): `executeGraphql` with the mock key `site-header`, `null` when the read failed (exports `loadSiteHeader`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->
