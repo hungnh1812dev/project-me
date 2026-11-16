@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY, contentListPath, contentNewPath } from '../src/Apps.contract';
-import { PAGE_CV_A_SLUG, PROFILE_SLUG, RUN_ID } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { signInAsOwner } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -27,7 +27,7 @@ test.describe.serial(
     });
 
     test('list sheet: select-all is indeterminate, then checked; sort headers toggle aria-sort', async () => {
-      await page.goto(contentListPath(PROFILE_SLUG));
+      await page.goto(contentListPath(PAGE_CV_A_SLUG));
       await page.getByRole('button', { name: bulk.import, exact: true }).click();
       const dialog = page.getByRole('dialog', { name: importCopy.title });
       await dialog

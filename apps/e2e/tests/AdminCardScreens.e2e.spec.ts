@@ -248,10 +248,20 @@ test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api']
   });
 
   test('empty states stay inside a card', async () => {
+    // The seeded stack holds page-cv-a documents, so the list answer is emptied.
+    await page.route(`**/documents/${PAGE_CV_A_SLUG}?*`, async (route) => {
+      const response = await route.fetch();
+      const body = (await response.json()) as { data: unknown[]; meta: Record<string, unknown> };
+      await route.fulfill({
+        response,
+        json: { ...body, data: [], meta: { ...body.meta, total: 0, totalPages: 0 } },
+      });
+    });
     await openScreen(page, `/content/${PAGE_CV_A_SLUG}`);
     await expect(page.getByText('No documents yet')).toBeVisible();
     const empty = page.getByText('No documents yet');
     await expect(page.locator('[data-slot="card"]').filter({ has: empty })).toHaveCount(1);
+    await page.unroute(`**/documents/${PAGE_CV_A_SLUG}?*`);
   });
   test('a failed request shows the inline error with a retry, no broken layout', async () => {
     await page.route('**/api/v1/accounts*', (route) => route.abort());

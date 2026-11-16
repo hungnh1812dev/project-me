@@ -22,8 +22,8 @@ const actions = copy.actions;
 const states = copy.publishState;
 const bulk = copy.bulk;
 
-const NAME_FIELD = 'position';
-const NAME_LABEL = /^Position/;
+const NAME_FIELD = 'name';
+const NAME_LABEL = /^Name/;
 const FIRST = `Lifecycle ${RUN_ID}`;
 const EDITED = `${FIRST} edited`;
 const SECOND = `Lifecycle second ${RUN_ID}`;

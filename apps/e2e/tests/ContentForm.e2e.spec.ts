@@ -159,7 +159,9 @@ test.describe.serial(
 
     test('keyboard: the switch toggles with Space and fields follow DOM order', async () => {
       const toggle = page.getByRole('switch', { name: 'Main Page' });
-      await fieldByLabel(page, 'Position').focus();
+      await fieldByLabel(page, 'Name').focus();
+      await page.keyboard.press('Tab');
+      await expect(fieldByLabel(page, 'Position')).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(toggle).toBeFocused();
       await expect(toggle).not.toBeChecked();
@@ -167,8 +169,8 @@ test.describe.serial(
       await expect(toggle).toBeChecked();
       await page.keyboard.press('Space');
       await expect(toggle).not.toBeChecked();
-      await page.keyboard.press('Tab');
-      await expect(fieldByLabel(page, 'Name')).toBeFocused();
+      await page.keyboard.press('Shift+Tab');
+      await expect(fieldByLabel(page, 'Position')).toBeFocused();
     });
 
     test('nested validation shows inline errors and sends nothing', async () => {
@@ -178,7 +180,7 @@ test.describe.serial(
       await addButton(experience, 'Roles').click();
       const role = listItem(experience, 'Roles', 0);
       await fieldByLabel(role, 'Team Size').fill(TEAM_SIZE_DECIMAL);
-      await fieldByLabel(role, 'Tech Stack').fill(NOT_JSON);
+      await fieldByLabel(role, 'Technical Stacks').fill(NOT_JSON);
       await contentSaveButton(page).click();
       await expect(role).toContainText(copy.invalidInteger);
       await expect(role).toContainText(copy.invalidJson);

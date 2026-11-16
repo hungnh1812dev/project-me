@@ -32,12 +32,12 @@ const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES.profile,
   CONTENT_TYPE_NAMES[PAGE_CV_A_SLUG],
   nav.media,
+  ADMIN_COPY.access.nav.backups,
+  ADMIN_COPY.schemaBuilder.title,
   nav.accounts,
   nav.roles,
   nav.apiTokens,
   nav.reviewer,
-  ADMIN_COPY.access.nav.backups,
-  ADMIN_COPY.schemaBuilder.title,
 ];
 
 test.describe('anonymous', { tag: ['@cms-admin', '@cms-api'] }, () => {
