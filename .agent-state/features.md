@@ -27,6 +27,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 6 | reviewer-console | todo, on hold (user 2026-11-10; after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
 | 26 | web-part-queries | done (summary: .agent-state/features/web-part-queries/SUMMARY.md) | features/web-part-queries/ | apps/web, apps/cms-api (site-text schema, migration), apps/e2e (Apps.contract.ts), scripts/smoke, docs/modules/web, CHANGELOG.md | 764c4687 | - |
+| 27 | cv-states-fix | done (2026-11-16) | features/cv-states-fix/ | apps/cms-api (content type rename), apps/web (apis/server/graphql, query declarations, views/cv), apps/e2e, scripts/smoke, docs/modules (web, graphql), docs/flows/public-site, docs/apps/web, CHANGELOG.md | 8e758c979c3f71e41d7920a687f49595b2d2b2f1 | features/cv-states-fix/SUMMARY.md |
 | 10 | launch-gate | todo (paused 2026-11-15 by user; resumes after web-part-queries) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
 
@@ -39,6 +40,8 @@ Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (
 - web-part-queries: qc left a production build in apps/web/.next (untracked, harmless) -> delete if unwanted (user approval needed).
 - web-env-errors: `apps/e2e/src/Apps.contract.ts` is uncommitted (qc's e2e file; user chose to leave it uncommitted 2026-11-13) -> user decides when it is committed.
 - web-env-errors: no web-only tier 3 stack command in project.md yet; qc starts the web subset by hand or uses the full smoke stack -> manager adds the command to project.md, unscheduled.
+- cv-states-fix: no e2e spec for the no-CV-live state (200 + noindex); needs a stack with no live page-cv-a -> unscheduled (user to decide; the CSF-A checkpoint did not add one).
+- cv-states-fix: plan defaults never asked the user: missing-label behaviour (hide masked items, no h1 without a name, loading output with aria-busy); PageCvVisitor stays one operation; four other single types marked in CSF-1 (header, signInText, notFoundText, statusText) -> user to confirm or change, unscheduled.
 - web-env-errors: BFF_HUMAN_CHECK_FAILED (failing Turnstile secret) is not shown dynamically at any tier; verify when a stack with a failing secret is available -> qc, unscheduled.
 - web-env-errors: CWEE-A-7 (sign-in alerts) passed on the Playwright spec, not a DevTools walk; a DevTools rerun is optional -> qc, unscheduled.
 - web-env-errors: about 34 dev-only CSP inline-style console errors per page on web (CWEE-F-4); the proxy CSP file is not in this feature's diff; /favicon.ico returns 404 (no icon in apps/web/public) -> unscheduled.
