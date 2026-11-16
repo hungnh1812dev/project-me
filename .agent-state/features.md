@@ -26,13 +26,17 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 9 | mf | dropped (user 2026-11-13; folder kept as record) | features/mf/ | apps/cms-admin, apps/web | - | - |
 | 6 | reviewer-console | todo, on hold (user 2026-11-10; after web-bff-hardening, draft-publish) | features/reviewer-console/ | apps/cms-admin, apps/cms-api, apps/e2e, docker-compose.smoke.yml, scripts/, docs/deployments | - | - |
 | 8 | ci | done (2026-11-04) | features/ci/ | .github, scripts, .claude/skills/release-tag, docs/deployments, docs/apps (patch notes), CHANGELOG.md, docs/global/FLOW.md | 9db3759 | features/ci/SUMMARY.md |
-| 26 | web-part-queries | todo (planned 2026-11-15, user-approved; before launch-gate resumes) | features/web-part-queries/ | apps/web, apps/cms-api (site-text schema, migration), apps/e2e (Apps.contract.ts), scripts/smoke, docs/modules/web, CHANGELOG.md | - | - |
-| 10 | launch-gate | in-progress | features/launch-gate/ | whole project | 9d6a334 | - |
+| 26 | web-part-queries | done (summary: .agent-state/features/web-part-queries/SUMMARY.md) | features/web-part-queries/ | apps/web, apps/cms-api (site-text schema, migration), apps/e2e (Apps.contract.ts), scripts/smoke, docs/modules/web, CHANGELOG.md | 764c4687 | - |
+| 10 | launch-gate | todo (paused 2026-11-15 by user; resumes after web-part-queries) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
 
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
 ## Follow-ups
+- web-part-queries: apps/web/README.md still lists WEB_STATUS_PAGE_ENABLED in the runtime env list; no code reads that key -> unscheduled (user to decide when to clean up).
+- web-part-queries: CWPQ-39 sign-in leg (reader sign-in, one refetch, sign-out) was not walked in the browser; covered by the e2e specs in CWPQ-40 -> qc walk on request, unscheduled (needs user approval to read STACK_READER_* from .localEnv.agent).
+- web-part-queries: CWPQ-44 failure half (last-resort text when profile or page-cv-text fails) was passed on code review and logs, not run live -> optional security RECHECK with a mock-off web, unscheduled.
+- web-part-queries: qc left a production build in apps/web/.next (untracked, harmless) -> delete if unwanted (user approval needed).
 - web-env-errors: `apps/e2e/src/Apps.contract.ts` is uncommitted (qc's e2e file; user chose to leave it uncommitted 2026-11-13) -> user decides when it is committed.
 - web-env-errors: no web-only tier 3 stack command in project.md yet; qc starts the web subset by hand or uses the full smoke stack -> manager adds the command to project.md, unscheduled.
 - web-env-errors: BFF_HUMAN_CHECK_FAILED (failing Turnstile secret) is not shown dynamically at any tier; verify when a stack with a failing secret is available -> qc, unscheduled.
