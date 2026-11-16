@@ -2,6 +2,7 @@
 Updated: 2026-10-30 after migration to feature folders
 
 ## In progress / next
+- 2026-11-16 PAUSED by user (no agent running). Next: ask the user for the TOTP secret for CLG-15/16, the CLG-56 stage 2 data, and the Q2/Q3 answers (LG-0). The Apps.contract.ts commit item is closed: the working tree has no diff for it (last change committed in a58405a3); nothing to commit; the commit message the user chose is not needed.
 - DR4 Support --no-cache in local-registry-push.sh - done, committed aaa3ddca (2026-11-15).
 Next: ask the user which open launch-gate item to take: commit message for apps/e2e/src/Apps.contract.ts; TOTP secret for CLG-15/16; CLG-56 stage 2 data; Q2/Q3 (LG-0).
 - Status 2026-11-15: LG-env-1 committed cbb5e4de; DR3 committed 6d802b83; CLG-34 pass on 0.0.1l (LG-E-qc#1 closed; cms-admin cached build accepted in writing by the user). Open for the user: commit message for apps/e2e/src/Apps.contract.ts; TOTP secret for CLG-15/16; CLG-56 stage 2 data; Q2/Q3 (LG-0). Open for the manager: LG-E checkpoint rows CLG-14 (LG-2), CLG-32 full suite on the kept smoke stack.
