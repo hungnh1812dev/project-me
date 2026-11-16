@@ -60,37 +60,16 @@ export interface Profile {
   _maskedFields: string[];
 }
 
-/** Text of the CV page; `teamSize` has `{size}`, the `*LinkName` texts have `{project}`. */
-export interface PageCvText {
-  loading: string;
-  refetchFailed: string;
-  fallbackName: string;
-  maskedValue: string;
-  contact: {
-    title: string;
-    email: string;
-    phone: string;
-    address: string;
-    linkedin: string;
-    github: string;
-  };
-  sections: {
-    summary: string;
-    skills: string;
-    experiences: string;
-    projects: string;
-    educations: string;
-  };
-  role: { teamSize: string; projects: string; techStack: string };
-  project: {
-    teamSize: string;
-    techStack: string;
-    liveLink: string;
-    repositoryLink: string;
-    liveLinkName: string;
-    repositoryLinkName: string;
-    unnamedProject: string;
-  };
+/** The labels shared by every CV; `noCvText` is richtext, the other fields plain text. */
+export interface CvCommonText {
+  summary: string | null;
+  skills: string | null;
+  experiences: string | null;
+  projects: string | null;
+  educations: string | null;
+  technologies: string | null;
+  teamSize: string | null;
+  noCvText: string | null;
 }
 
 /** What a visitor session reads: data only, no text. */
@@ -100,13 +79,13 @@ export interface PageCvData {
 }
 
 export interface PageCvResult extends PageCvData {
-  pageCvText: PageCvText;
+  cvCommonText: CvCommonText | null;
 }
 
 export const PAGE_CV_OPERATION_NAME = 'PageCv';
 export const PAGE_CV_VISITOR_OPERATION_NAME = 'PageCvVisitor';
 
-/** The newest published main CV, the profile and the page text: each root field's text after its name. */
+/** The newest published main CV, the profile and the CV labels: each root field's text after its name. */
 export const PAGE_CV_ROOT_FIELDS = {
   pageCvAList: `(
     filter: { isMain: { eq: true } }
@@ -166,40 +145,15 @@ export const PAGE_CV_ROOT_FIELDS = {
     }
     _maskedFields
   }`,
-  pageCvText: `{
-    loading
-    refetchFailed
-    fallbackName
-    maskedValue
-    contact {
-      title
-      email
-      phone
-      address
-      linkedin
-      github
-    }
-    sections {
-      summary
-      skills
-      experiences
-      projects
-      educations
-    }
-    role {
-      teamSize
-      projects
-      techStack
-    }
-    project {
-      teamSize
-      techStack
-      liveLink
-      repositoryLink
-      liveLinkName
-      repositoryLinkName
-      unnamedProject
-    }
+  cvCommonText: `{
+    summary
+    skills
+    experiences
+    projects
+    educations
+    technologies
+    teamSize
+    noCvText
   }`,
 } as const;
 

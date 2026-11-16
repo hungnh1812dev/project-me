@@ -5,7 +5,7 @@ import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
 import type { PageCvA } from './PageCv.graphql';
 import { ProjectsSection } from './ProjectsSection';
 
-const TEXT = PAGE_CV_MOCK.pageCvText;
+const TEXT = PAGE_CV_MOCK.cvCommonText;
 
 function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
   return {
@@ -35,28 +35,34 @@ function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
 describe('ProjectsSection', () => {
   it('renders each top-level project under the projects title', () => {
     render(<ProjectsSection cv={cvOf()} text={TEXT} />);
-    expect(
-      screen.getByRole('heading', { level: 2, name: TEXT.sections.projects }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: TEXT.projects })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Billing core' })).toBeInTheDocument();
-    expect(screen.getByText('Owner · Team of 4')).toBeInTheDocument();
+    expect(screen.getByText('Owner · Team size: 4')).toBeInTheDocument();
     expect(screen.getByText('NestJS')).toBeInTheDocument();
     expect(screen.getByText('Designed the invoicing model.')).toBeInTheDocument();
   });
 
-  it('links with accessible names and refuses an unsafe target', () => {
+  it('shows each link as its URL and refuses an unsafe target', () => {
     render(<ProjectsSection cv={cvOf()} text={TEXT} />);
     const project = screen.getByRole('heading', { name: 'Billing core' })
       .parentElement as HTMLElement;
 
-    const live = within(project).getByRole('link', { name: 'Live site of Billing core' });
+    const live = within(project).getByRole('link', { name: 'https://billing.example.com' });
     expect(live).toHaveAttribute('href', 'https://billing.example.com');
     expect(live).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(within(project).queryByRole('link', { name: /Repository/ })).toBeNull();
-    expect(project.innerHTML).not.toContain('javascript:');
+    expect(within(project).getAllByRole('link')).toHaveLength(1);
+    expect(project.innerHTML).not.toContain('href="javascript:');
   });
 
-  it('names an unnamed project with the page text', () => {
+  it('renders the projects with no title or team size when there is no text', () => {
+    render(<ProjectsSection cv={cvOf()} text={null} />);
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Billing core' })).toBeInTheDocument();
+    expect(screen.getByText('Owner')).toBeInTheDocument();
+    expect(screen.getByText('NestJS')).toBeInTheDocument();
+  });
+
+  it('gives a project with no name no heading', () => {
     render(
       <ProjectsSection
         cv={cvOf({
@@ -64,7 +70,7 @@ describe('ProjectsSection', () => {
             {
               name: null,
               teamSize: null,
-              role: null,
+              role: 'Owner',
               liveLink: null,
               repositoryLink: null,
               techStack: null,
@@ -75,9 +81,8 @@ describe('ProjectsSection', () => {
         text={TEXT}
       />,
     );
-    expect(
-      screen.getByRole('heading', { level: 3, name: TEXT.project.unnamedProject }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument();
+    expect(screen.getByText('Owner')).toBeInTheDocument();
   });
 
   it('renders nothing without projects', () => {

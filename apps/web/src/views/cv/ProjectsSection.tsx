@@ -1,17 +1,22 @@
-import { formatText } from '@/utils/TextTemplate.rules';
+import {
+  CvSection,
+  ExternalLink,
+  hasText,
+  MUTED_CLASS,
+  Richtext,
+  teamSizeText,
+  TechStack,
+} from './CvSection';
+import type { CvCommonText, PageCvA, PageCvProject } from './PageCv.graphql';
 
-import { CvSection, ExternalLink, hasText, MUTED_CLASS, Richtext, TechStack } from './CvSection';
-import type { PageCvA, PageCvProject, PageCvText } from './PageCv.graphql';
-
-function ProjectItem({ project, text }: { project: PageCvProject; text: PageCvText['project'] }) {
-  const name = project.name ?? text.unnamedProject;
+function ProjectItem({ project, text }: { project: PageCvProject; text: CvCommonText | null }) {
   return (
     <li className="mt-6 first:mt-0">
-      <h3 className="text-base font-medium">{name}</h3>
+      {hasText(project.name) ? <h3 className="text-base font-medium">{project.name}</h3> : null}
       <p className={MUTED_CLASS}>
         {[
           hasText(project.role) ? project.role : null,
-          project.teamSize === null ? null : formatText(text.teamSize, { size: project.teamSize }),
+          teamSizeText(text?.teamSize, project.teamSize),
         ]
           .filter(Boolean)
           .join(' · ')}
@@ -19,24 +24,14 @@ function ProjectItem({ project, text }: { project: PageCvProject; text: PageCvTe
       {hasText(project.liveLink) || hasText(project.repositoryLink) ? (
         <p className="mt-1 flex flex-wrap gap-x-4 text-sm">
           {hasText(project.liveLink) ? (
-            <ExternalLink
-              href={project.liveLink}
-              label={formatText(text.liveLinkName, { project: name })}
-            >
-              {text.liveLink}
-            </ExternalLink>
+            <ExternalLink href={project.liveLink}>{project.liveLink}</ExternalLink>
           ) : null}
           {hasText(project.repositoryLink) ? (
-            <ExternalLink
-              href={project.repositoryLink}
-              label={formatText(text.repositoryLinkName, { project: name })}
-            >
-              {text.repositoryLink}
-            </ExternalLink>
+            <ExternalLink href={project.repositoryLink}>{project.repositoryLink}</ExternalLink>
           ) : null}
         </p>
       ) : null}
-      <TechStack value={project.techStack} label={text.techStack} />
+      <TechStack value={project.techStack} label={text?.technologies} />
       {hasText(project.responsibilities) ? (
         <div className="mt-2">
           <Richtext html={project.responsibilities} />
@@ -46,14 +41,14 @@ function ProjectItem({ project, text }: { project: PageCvProject; text: PageCvTe
   );
 }
 
-export function ProjectsSection({ cv, text }: { cv: PageCvA; text: PageCvText }) {
+export function ProjectsSection({ cv, text }: { cv: PageCvA; text: CvCommonText | null }) {
   const projects = cv.projects ?? [];
   if (projects.length === 0) return null;
   return (
-    <CvSection title={text.sections.projects}>
+    <CvSection title={text?.projects}>
       <ul>
         {projects.map((project, index) => (
-          <ProjectItem key={`${project.name}-${index}`} project={project} text={text.project} />
+          <ProjectItem key={`${project.name}-${index}`} project={project} text={text} />
         ))}
       </ul>
     </CvSection>

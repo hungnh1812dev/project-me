@@ -1,4 +1,4 @@
-/** Mock answer of the `PageCv` operation: a sample main CV, the profile and the text the page showed before it came from the API. */
+/** Mock answer of the `PageCv` operation: a sample main CV, the profile and the CV labels. */
 export const PAGE_CV_MOCK = {
   pageCvAList: {
     data: [
@@ -64,39 +64,14 @@ export const PAGE_CV_MOCK = {
     avatar: { url: null, alt: null },
     _maskedFields: [],
   },
-  pageCvText: {
-    loading: 'Loading the CV',
-    refetchFailed: 'The CV could not be loaded for your session. Reload the page to try again.',
-    fallbackName: 'Curriculum vitae',
-    maskedValue: 'Sign in to view',
-    contact: {
-      title: 'Contact',
-      email: 'Email',
-      phone: 'Phone',
-      address: 'Address',
-      linkedin: 'LinkedIn',
-      github: 'GitHub',
-    },
-    sections: {
-      summary: 'Summary',
-      skills: 'Skills',
-      experiences: 'Experience',
-      projects: 'Projects',
-      educations: 'Education',
-    },
-    role: {
-      teamSize: 'Team of {size}',
-      projects: 'Projects',
-      techStack: 'Tech stack',
-    },
-    project: {
-      teamSize: 'Team of {size}',
-      techStack: 'Tech stack',
-      liveLink: 'Live site',
-      repositoryLink: 'Repository',
-      liveLinkName: 'Live site of {project}',
-      repositoryLinkName: 'Repository of {project}',
-      unnamedProject: 'Project',
-    },
+  cvCommonText: {
+    summary: 'Summary',
+    skills: 'Skills',
+    experiences: 'Experience',
+    projects: 'Projects',
+    educations: 'Education',
+    technologies: 'Tech stack',
+    teamSize: 'Team size',
+    noCvText: '<p>No CV is live yet.</p>',
   },
 };

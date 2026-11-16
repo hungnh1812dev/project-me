@@ -7,10 +7,10 @@ import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { useWebSession, type WebSession } from '@/features/session';
 
 import { ContactCard } from './ContactCard';
-import { MaskedTextContext, SkillsSection, SummarySection } from './CvSection';
+import { SkillsSection, SummarySection } from './CvSection';
 import { EducationsSection } from './EducationsSection';
 import { ExperiencesSection } from './ExperiencesSection';
-import { mainCvOf, type PageCvData, type PageCvText } from './PageCv.graphql';
+import { mainCvOf, type CvCommonText, type PageCvData } from './PageCv.graphql';
 import { ProjectsSection } from './ProjectsSection';
 
 const ANONYMOUS_ACTOR = 'anonymous';
@@ -47,42 +47,31 @@ function usePageCvData(serverData: PageCvData) {
 interface PageCvClientProps {
   /** What the server rendered for the public role. */
   initialData: PageCvData;
-  text: PageCvText;
+  /** The CV labels; `null` leaves every label out. */
+  text: CvCommonText | null;
 }
 
 export function PageCvClient({ initialData, text }: PageCvClientProps) {
   const { data: fetchedData, isPending, isError } = usePageCvData(initialData);
 
   if (isPending) {
-    return <output className="text-muted-foreground block text-sm">{text.loading}</output>;
+    return <output aria-busy="true" className="block" />;
   }
-  // A failed signed-in refetch keeps the anonymous CV the server rendered.
+  // A failed signed-in refetch keeps the anonymous CV the server rendered, with no message.
   const data = isError ? initialData : fetchedData;
   const cv = mainCvOf(data);
   if (cv === undefined) return null;
 
   return (
-    <MaskedTextContext.Provider value={text.maskedValue}>
-      {isError ? (
-        <p
-          role="alert"
-          className="bg-destructive-soft text-destructive-strong mb-4 rounded-md px-3 py-2 text-sm"
-        >
-          {text.refetchFailed}
-        </p>
-      ) : null}
-      <h1 className="text-2xl font-semibold tracking-tight">{cv.name ?? text.fallbackName}</h1>
+    <>
+      {cv.name ? <h1 className="text-2xl font-semibold tracking-tight">{cv.name}</h1> : null}
       {cv.position ? <p className="text-muted-foreground mt-1 text-base">{cv.position}</p> : null}
-      <ContactCard
-        profile={data.profile}
-        fallbackName={cv.name ?? text.fallbackName}
-        text={text.contact}
-      />
+      <ContactCard profile={data.profile} />
       <SummarySection cv={cv} text={text} />
       <SkillsSection cv={cv} text={text} />
       <ExperiencesSection cv={cv} text={text} />
       <ProjectsSection cv={cv} text={text} />
       <EducationsSection cv={cv} text={text} />
-    </MaskedTextContext.Provider>
+    </>
   );
 }

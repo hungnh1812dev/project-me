@@ -4,9 +4,10 @@ import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
 
 import { MaskedTextContext } from './CvSection';
 import { ExperiencesSection } from './ExperiencesSection';
-import type { PageCvA } from './PageCv.graphql';
+import type { CvCommonText, PageCvA } from './PageCv.graphql';
 
-const TEXT = PAGE_CV_MOCK.pageCvText;
+const TEXT = PAGE_CV_MOCK.cvCommonText;
+const MASKED_TEXT = 'Sign in to view';
 
 function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
   return {
@@ -39,10 +40,14 @@ function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
   };
 }
 
-function renderSection(cv: PageCvA) {
+function renderSection(
+  cv: PageCvA,
+  text: CvCommonText | null = TEXT,
+  maskedText: string | null = MASKED_TEXT,
+) {
   return render(
-    <MaskedTextContext.Provider value={TEXT.maskedValue}>
-      <ExperiencesSection cv={cv} text={TEXT} />
+    <MaskedTextContext.Provider value={maskedText}>
+      <ExperiencesSection cv={cv} text={text} />
     </MaskedTextContext.Provider>,
   );
 }
@@ -50,12 +55,10 @@ function renderSection(cv: PageCvA) {
 describe('ExperiencesSection', () => {
   it('renders the company, its roles and the role text', () => {
     renderSection(cvOf());
-    expect(
-      screen.getByRole('heading', { level: 2, name: TEXT.sections.experiences }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: TEXT.experiences })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Northwind Labs' })).toBeInTheDocument();
     expect(screen.getByText('Tech lead')).toBeInTheDocument();
-    expect(screen.getByText('2022 - 2024 · Team of 6')).toBeInTheDocument();
+    expect(screen.getByText('2022 - 2024 · Team size: 6')).toBeInTheDocument();
     expect(screen.getByText('Billing core, portal')).toBeInTheDocument();
     expect(screen.getByText('Node.js')).toBeInTheDocument();
     expect(screen.getByText('Led the platform team.')).toBeInTheDocument();
@@ -68,8 +71,29 @@ describe('ExperiencesSection', () => {
         _maskedFields: ['experiences.company'],
       }),
     );
-    expect(screen.getByText(TEXT.maskedValue)).toBeInTheDocument();
+    expect(screen.getByText(MASKED_TEXT)).toBeInTheDocument();
     expect(container).not.toHaveTextContent('***');
+  });
+
+  it('leaves a masked company out, never raw, when there is no masked text', () => {
+    const { container } = renderSection(
+      cvOf({
+        experiences: [{ company: '***', location: null, period: '2020', roles: null }],
+        _maskedFields: ['experiences.company'],
+      }),
+      TEXT,
+      null,
+    );
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument();
+    expect(container).not.toHaveTextContent('***');
+  });
+
+  it('renders the experiences with no title or team size when there is no text', () => {
+    renderSection(cvOf(), null);
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Northwind Labs' })).toBeInTheDocument();
+    expect(screen.getByText('2022 - 2024')).toBeInTheDocument();
+    expect(screen.getByText('Billing core, portal')).toBeInTheDocument();
   });
 
   it('keeps the company visible when only other fields are masked', () => {

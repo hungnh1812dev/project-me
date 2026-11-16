@@ -5,7 +5,7 @@ import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
 import { EducationsSection } from './EducationsSection';
 import type { PageCvA } from './PageCv.graphql';
 
-const TEXT = PAGE_CV_MOCK.pageCvText;
+const TEXT = PAGE_CV_MOCK.cvCommonText;
 
 function cvOf(educations: PageCvA['educations']): PageCvA {
   return {
@@ -37,9 +37,7 @@ describe('EducationsSection', () => {
         text={TEXT}
       />,
     );
-    expect(
-      screen.getByRole('heading', { level: 2, name: TEXT.sections.educations }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: TEXT.educations })).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { level: 3, name: 'BSc Computer Science' }),
     ).toBeInTheDocument();
@@ -47,6 +45,17 @@ describe('EducationsSection', () => {
     expect(
       screen.getByRole('heading', { level: 3, name: 'MSc Software Engineering' }),
     ).toBeInTheDocument();
+  });
+
+  it('renders the degrees without a title when there is no text', () => {
+    render(
+      <EducationsSection
+        cv={cvOf([{ degree: 'BSc', institution: null, period: null, location: null }])}
+        text={null}
+      />,
+    );
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'BSc' })).toBeInTheDocument();
   });
 
   it('renders nothing for a null or empty education', () => {

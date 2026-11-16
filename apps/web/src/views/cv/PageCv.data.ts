@@ -19,9 +19,9 @@ import {
   PAGE_CV_ROOT_FIELDS,
   PAGE_CV_VISITOR_OPERATION_NAME,
   sanitizeCvRichtext,
+  type CvCommonText,
   type PageCvData,
   type PageCvResult,
-  type PageCvText,
 } from './PageCv.graphql';
 
 export const PAGE_CV_QUERY = defineContentQuery<PageCvResult>({
@@ -40,7 +40,7 @@ export const PAGE_CV_VISITOR_QUERY = defineContentQuery<PageCvData>({
 export interface PageCvContent {
   /** The public data with its richtext sanitized. */
   data: PageCvData;
-  text: PageCvText;
+  text: CvCommonText;
 }
 
 /**
@@ -50,7 +50,7 @@ export interface PageCvContent {
  */
 export const loadPageCv = cache(async (): Promise<PageCvContent> => {
   const { data } = await runContentQuery(PAGE_CV_QUERY);
-  if (data.pageCvAList === null || data.pageCvText === null) {
+  if (data.pageCvAList === null || data.cvCommonText === null) {
     const error = new WebApiError({
       source: API_ERROR_SOURCES.CMS_API_GRAPHQL,
       errorCode: API_ERROR_CODES.GRAPHQL.NO_DATA,
@@ -64,7 +64,7 @@ export const loadPageCv = cache(async (): Promise<PageCvContent> => {
       { pageCvAList: data.pageCvAList, profile: data.profile },
       sanitizeRichtextOnServer,
     ),
-    text: data.pageCvText,
+    text: data.cvCommonText,
   };
 });
 

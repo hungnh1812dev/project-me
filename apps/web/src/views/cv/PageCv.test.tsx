@@ -13,7 +13,7 @@ vi.mock('@/apis/server/graphql/Graphql.server', () => ({
 }));
 const runContentQueryMock = vi.mocked(runContentQuery);
 const resultOf = (data: Pick<PageCvResult, 'pageCvAList' | 'profile'>) =>
-  ({ failedRootFields: [], data: { ...data, pageCvText: PAGE_CV_MOCK.pageCvText } }) as never;
+  ({ failedRootFields: [], data: { ...data, cvCommonText: PAGE_CV_MOCK.cvCommonText } }) as never;
 
 const EMPTY = { pageCvAList: { data: [] }, profile: null };
 const WITH_CV = {
@@ -50,10 +50,10 @@ describe('PageCv', () => {
     expect((error as { digest: string }).digest).toContain('404');
   });
 
-  it('lets a null page text reach the error boundary', async () => {
+  it('lets a null cvCommonText reach the error boundary', async () => {
     runContentQueryMock.mockResolvedValue({
-      failedRootFields: ['pageCvText'],
-      data: { ...WITH_CV, pageCvText: null },
+      failedRootFields: ['cvCommonText'],
+      data: { ...WITH_CV, cvCommonText: null },
     } as never);
     await expect(PageCv()).rejects.toMatchObject({ errorCode: 'NO_DATA' });
   });

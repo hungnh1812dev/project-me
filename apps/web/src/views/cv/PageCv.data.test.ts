@@ -37,7 +37,7 @@ describe('loadPageCv', () => {
           ],
         },
         profile: null,
-        pageCvText: PAGE_CV_MOCK.pageCvText,
+        cvCommonText: PAGE_CV_MOCK.cvCommonText,
       },
     });
 
@@ -47,23 +47,23 @@ describe('loadPageCv', () => {
     expect(cv?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('<a>go</a>');
   });
 
-  it('hands over the page text next to the data', async () => {
+  it('hands over the CV labels next to the data', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({
       failedRootFields: [],
-      data: { pageCvAList: { data: [] }, profile: null, pageCvText: PAGE_CV_MOCK.pageCvText },
+      data: { pageCvAList: { data: [] }, profile: null, cvCommonText: PAGE_CV_MOCK.cvCommonText },
     });
-    expect((await loadPageCv()).text).toBe(PAGE_CV_MOCK.pageCvText);
+    expect((await loadPageCv()).text).toBe(PAGE_CV_MOCK.cvCommonText);
   });
 
   it('accepts a missing profile', async () => {
     vi.mocked(runContentQuery).mockResolvedValue({
       failedRootFields: ['profile'],
-      data: { pageCvAList: { data: [] }, profile: null, pageCvText: PAGE_CV_MOCK.pageCvText },
+      data: { pageCvAList: { data: [] }, profile: null, cvCommonText: PAGE_CV_MOCK.cvCommonText },
     } as never);
     await expect(loadPageCv()).resolves.toMatchObject({ data: { profile: null } });
   });
 
-  it.each(['pageCvAList', 'pageCvText'] as const)(
+  it.each(['pageCvAList', 'cvCommonText'] as const)(
     'throws when %s could not be read',
     async (failed) => {
       vi.mocked(runContentQuery).mockResolvedValue({
@@ -71,7 +71,7 @@ describe('loadPageCv', () => {
         data: {
           pageCvAList: { data: [] },
           profile: null,
-          pageCvText: PAGE_CV_MOCK.pageCvText,
+          cvCommonText: PAGE_CV_MOCK.cvCommonText,
           [failed]: null,
         },
       } as never);
