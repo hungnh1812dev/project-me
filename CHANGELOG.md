@@ -30,7 +30,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### DevOps patches
 
-- cms-api 0.2.0: backup CronJob runs the cms-api image; time set by Secret `postgres-backup-schedule` ([patch](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
+- cms-api 0.2.0: backup CronJob runs the cms-api image; time set by Secret `postgres-backup-schedule`; `NODE_ENV=production` in `postgres-backup` ([patch](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
 - root: `SMOKE_WEB_PRODUCTION=1 pnpm smoke` builds and runs web with `APP_ENV=production` and its default data cache window (`SMOKE_WEB_APP_ENV`, `SMOKE_WEB_REVALIDATE_SECONDS` in `docker-compose.smoke.yml`); the default stays staging with no cache.
 - scripts: the smoke and dev stacks seed the new content types (`header`, `module-auth`, `module-status`, `page-cv-text`, `profile`, `page-cv-a`) from the web mocks; `pnpm dev:stack demo` runs `SeedContent.mjs` instead of `scripts/demo/content/`, and the start check reads `pageCvAList` and `experiences.company`. No deploy-repo change (WPQ-10).
 - web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
@@ -38,6 +38,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- cms-api: the backup job uploads only when `NODE_ENV=production`, otherwise dump only ([backups flow](docs/flows/backups/SPEC.md)).
 - web, cms-admin: spec: the public site serves `/robots.txt` (production: disallow `/api/`; other stacks: disallow `/`), `/sitemap.xml` (a static list of `/` and `/status` on `WEB_ORIGIN`, no `lastmod`) and `/favicon.ico` (a letter mark of the app name in palette A); robots and sitemap are built per request with a one-hour public cache, and none of the three gets the nonce CSP; the cms-admin host serves a `robots.txt` that disallows `/` ; the web `robots.txt` keeps Next.js's `User-Agent:` field-name case (public-site PS-4, Q-PS8..Q-PS15, criterion 28; user 2026-11-16).
 - web: the server fetch layers are simpler (user 2026-11-16): the server RESTful layer is one `request` function plus `get`, `post`, `put`, `patch`, `delete` and `options`, each with `headers`, `body`, `resolveData` and Next.js `next` (`revalidate`, `tags`) options; the server GraphQL layer is one `executeGraphql(query, options)` with a `mock` key, `resolveData`, `next` and a visitor `accessToken`; a failed query is mocked as a whole by its key (`page-cv-a`, `profile`, `cv-common-text`, `site-header`, `sign-in`, `not-found-page`, `module-status`) where `APP_ENV` is not `production`, and no root field is retried alone (WEB-1, WEB-5, Q-WFL1..Q-WFL7).
 - cms-api: `page-cv-a.educations` is a repeatable list (`[PageCvA_Education!]`); migration `0015_page_cv_educations.sql` has no DDL (the child table already exists), the snapshot and `schema.graphql` are regenerated (DR1).

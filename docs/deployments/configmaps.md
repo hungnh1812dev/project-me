@@ -123,7 +123,7 @@ No Secret and no ConfigMap. `VITE_API_BASE_URL` is a **build arg**: the full API
 
 ## 6. ConfigMap `postgres-backup-config`
 
-For the backup job ([backups.md](backups.md) section 3): `DB_HOST`, `DB_PORT`, `DB_NAME` (the same values as `cms-api-config`), `PGSSLMODE` and `PGSSLROOTCERT` (with TLS: `verify-full` and `/etc/abyss/database-ca/ca.crt`), `BACKUP_BUCKET`, `BACKUP_PREFIX=postgres/`, `BACKUP_MAX_DATABASE_BYTES`, `BACKUP_MAX_DUMP_BYTES=200000000`, and optionally `RCLONE_S3_UPLOAD_CONCURRENCY` / `RCLONE_S3_CHUNK_SIZE`.
+For the backup job ([backups.md](backups.md) section 3): `DB_HOST`, `DB_PORT`, `DB_NAME` (the same values as `cms-api-config`), `PGSSLMODE` and `PGSSLROOTCERT` (with TLS: `verify-full` and `/etc/abyss/database-ca/ca.crt`), `BACKUP_BUCKET`, `BACKUP_PREFIX=postgres/` (both read only by a production run), `BACKUP_MAX_DATABASE_BYTES`, `BACKUP_MAX_DUMP_BYTES=200000000`, and optionally `RCLONE_S3_UPLOAD_CONCURRENCY` / `RCLONE_S3_CHUNK_SIZE`.
 
 ## 7. Keys the app no longer reads
 

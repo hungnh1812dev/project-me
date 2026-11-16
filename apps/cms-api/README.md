@@ -922,7 +922,7 @@ files are never copied into the build context (`.dockerignore`).
 
 The image also carries `postgresql17-client`, `age` and `rclone` and the nightly
 backup job script `/app/backup/nightly-backup.sh` (source `backup/nightly-backup.sh`,
-the `postgres-backup` CronJob runs it with the cms-api tag; ADR 0025).
+the `postgres-backup` CronJob runs it with the cms-api tag; it uploads only when `NODE_ENV=production`; ADR 0025).
 
 ### Two containers: init + main
 

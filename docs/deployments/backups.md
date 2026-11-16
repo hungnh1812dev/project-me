@@ -73,12 +73,13 @@ spec:
 ```
 
 - The time comes from the Secret `postgres-backup-schedule` (keys `BACKUP_SCHEDULE` and `BACKUP_TIME_ZONE`, nothing else; [secrets.md](secrets.md) section 1) through the GitOps tool's substitution: with Flux, `postBuild.substituteFrom` of that Secret only, never of `postgres-backup`. The Secret is applied by a sync step that the CronJob's step depends on. A manifest applied without substitution is rejected, so it must go through that step.
+- The job uploads only when `NODE_ENV=production` in the Secret `postgres-backup`; any other value, or none, is a dump-only run (dump, encrypt, count the bytes, no bucket access, exit 0), per [BK-6](../flows/backups/SPEC.md). A production Secret without the key uploads nothing; the `mode:` log line and the 26-hour alert show it.
 - The schedule fires once a day at most; the reason is in [BK-7](../flows/backups/SPEC.md).
 - To change the time, edit the Secret and let the GitOps tool sync. Moving the time earlier can skip one night, so run the job once by hand after the change (section 6, step 1).
 - The object stamp and the day-01 monthly copy stay UTC, whatever the zone.
 - `-n public -n content`: the app's two schemas only; the backup role cannot read a managed service's own schemas, and the dump must not contain them.
 - `set -o pipefail` makes a failed `pg_dump` fail the job. An S3 multipart upload becomes visible only when it completes, so a half-written dump is never listed.
-- The size checks warn, keep the dump and exit 1 at the end, so the failure alert fires and a backup still exists: before the dump, the database size against `BACKUP_MAX_DATABASE_BYTES` (about 80 percent of a plan's size limit); after the upload, the object size against `BACKUP_MAX_DUMP_BYTES` (200000000).
+- The size checks warn, keep the dump and exit 1 at the end, so the failure alert fires and a backup still exists: before the dump, the database size against `BACKUP_MAX_DATABASE_BYTES` (about 80 percent of a plan's size limit); after the dump, its size against `BACKUP_MAX_DUMP_BYTES` (200000000), taken from the stored object in production and from the byte count in a dump-only run.
 - On the first day of each month (UTC) the job also copies that night's object to `monthly/` with a server-side copy; the bytes never pass through the cluster.
 - Space bound: about 14 to 16 daily plus 3 to 4 monthly objects. At the 200 MB cap the bucket stays under 4 GB.
 - If the pod is killed for memory, lower `RCLONE_S3_UPLOAD_CONCURRENCY` or `RCLONE_S3_CHUNK_SIZE` in `postgres-backup-config` before raising the limit.
@@ -121,6 +122,6 @@ The owner can list and download the encrypted dumps from the Backups page in cms
 
 ## 6. First proof
 
-1. Trigger the job by hand: `kubectl -n <ns> create job --from=cronjob/postgres-backup backup-manual-1`. The object appears in the bucket and on the admin Backups page.
+1. Trigger the job by hand: `kubectl -n <ns> create job --from=cronjob/postgres-backup backup-manual-1`. The log shows `mode: upload`, the object appears in the bucket and on the admin Backups page.
 2. A delete attempt with the job key fails (section 2, step 4).
 3. Run the restore drill once (section 4).
