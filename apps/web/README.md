@@ -56,6 +56,7 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 - The Next server never sends, receives or stores a user token. No Server
   Actions, Route Handlers or `cookies()` for auth: the browser calls the API
   with a Bearer token held in memory.
+- `public/favicon.ico` is the "A" letter-mark (16, 32 and 48 px layers), served as-is at `/favicon.ico`; no `<link rel="icon">` (ADR 0024).
 
 ## Config
 
