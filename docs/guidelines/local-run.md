@@ -156,7 +156,7 @@ pnpm --filter @abyss/e2e browsers:install    # first time only
 docker compose -p abyss-smoke down -v        # stop a kept stack
 ```
 
-URLs with a kept stack: `http://domain.localhost:8080` (web, `/api` to cms-api) and `http://admin.domain.localhost:8080` (admin). Other switches (`SMOKE_DOMAIN`, `SMOKE_HTTP_PORT`, `SMOKE_TIMEOUT_SECONDS`, `SMOKE_NO_BUILD`) are listed at the top of `scripts/smoke.sh`. Run one e2e spec against a kept stack with `pnpm e2e:spec <spec> [-g <name>]`; the e2e keys are in `apps/e2e/.env.example`, and `pnpm smoke` sets them for you.
+URLs with a kept stack: `http://domain.localhost:8080` (web, `/api` to cms-api) and `http://admin.domain.localhost:8080` (admin). Other switches (`SMOKE_DOMAIN`, `SMOKE_HTTP_PORT`, `SMOKE_TIMEOUT_SECONDS`, `SMOKE_NO_BUILD`, `SMOKE_WEB_PRODUCTION`) are listed at the top of `scripts/smoke.sh`. Run one e2e spec against a kept stack with `pnpm e2e:spec <spec> [-g <name>]`; the e2e keys are in `apps/e2e/.env.example`, and `pnpm smoke` sets them for you.
 
 ## 7. Everyday commands
 
