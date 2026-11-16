@@ -785,7 +785,7 @@ Rules, the default role matrix, the DSL and the revocation flow: [docs/modules/a
 
 ## Content types
 
-Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
+Content types are JSON files in `content/schemas/` (e.g. `page-cv-a.json`).
 `src/modules/content-engine/domain/DefinitionValidator.rules.ts` checks them (shape,
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
 `domain/Naming.rules.ts` is the single source of generated SQL names. Tables are created

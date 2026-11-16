@@ -268,8 +268,9 @@ over is written here.
   `cv-page-text`, each with its component tables. A rename is a drop and a
   create: `module-sign-in` became `module-auth`, `module-page-status` became
   `module-status`, `cv-page-text` became `page-cv-text`, all created empty.
-- `profile.photo` dropped; the old `profile` collection becomes a single, so
-  its extra rows are not carried over.
+- `profile.photo` dropped; the old `profile` collection becomes a single; migration
+  0014 keeps every existing row (it does not delete extra rows), so remove surplus
+  `profile` rows by hand where an environment has more than one.
 - New empty types: `module-auth`, `module-status`, `page-cv-text`; `header`
   gains `navLabel`, `navCvLink`, `notFoundTitle`, `notFoundDescription`.
 - The stacks reseed from the web mocks; production content is entered again

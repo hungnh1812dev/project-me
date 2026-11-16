@@ -340,7 +340,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 
 ## apps/web usage
 
-- Query documents live next to the feature (`features/cv/cv.query.ts`): a
+- Query documents live next to the feature (the feature's query file under `features/`): a
   plain string + hand-written result types, no client library (Q-G6).
 - Server: `lib/graphql/graphql-fetch.server.ts` (`server-only`) POSTs to
   `${APP_API_URL}/graphql` with the `APP_API_TOKEN` Bearer (public profile) and no forwarded
