@@ -29,7 +29,7 @@ function answerWith({ pageCvAList, profile, cvCommonText = PAGE_CV_MOCK.cvCommon
   });
 }
 
-const EMPTY = { pageCvAList: { data: [] }, profile: null };
+const EMPTY = { pageCvAList: { data: [] }, profile: null } as CvAnswers;
 const WITH_CV = {
   pageCvAList: {
     data: [
@@ -58,24 +58,29 @@ describe('PageCv', () => {
     expect(screen.getByText('Engineer')).toBeInTheDocument();
   });
 
-  it('answers 404 when no main CV is published', async () => {
-    answerWith(EMPTY);
-    const error = await PageCv().catch((caught: unknown) => caught);
-    expect((error as { digest: string }).digest).toContain('404');
+  it('shows the sanitized noCvText with no main CV, never notFound', async () => {
+    answerWith({
+      ...EMPTY,
+      cvCommonText: { ...PAGE_CV_MOCK.cvCommonText, noCvText: '<p>Back soon</p>' },
+    });
+    render(await PageCv());
+    expect(screen.getByText('Back soon')).toBeInTheDocument();
   });
 
-  it('lets a null cvCommonText reach the error boundary', async () => {
+  it('shows the last-resort text when the list fails and there is no text', async () => {
+    executeGraphqlMock.mockImplementation(() => Promise.reject(new Error('down')));
+    render(await PageCv());
+    expect(screen.getByText('No CV is live yet.')).toBeInTheDocument();
+  });
+
+  it('still renders the CV when only the text fails', async () => {
     executeGraphqlMock.mockImplementation((query: string) =>
       query === CV_COMMON_TEXT_QUERY
-        ? Promise.reject(Object.assign(new Error('NO_DATA'), { errorCode: 'NO_DATA' }))
-        : Promise.resolve({ ...WITH_CV }),
+        ? Promise.reject(new Error('down'))
+        : Promise.resolve(query === PAGE_CV_A_QUERY ? WITH_CV : { profile: null }),
     );
-    await expect(PageCv()).rejects.toMatchObject({ errorCode: 'NO_DATA' });
-  });
-
-  it('lets a failed read reach the error boundary', async () => {
-    executeGraphqlMock.mockImplementation(() => Promise.reject(new Error('down')));
-    await expect(PageCv()).rejects.toThrow('down');
+    render(<Wrapper api={fakeApi()}>{await PageCv()}</Wrapper>);
+    expect(screen.getByRole('heading', { level: 1, name: 'Mai Server' })).toBeInTheDocument();
   });
 });
 
@@ -89,10 +94,15 @@ describe('generateMetadata', () => {
     await expect(generateMetadata()).resolves.toEqual({ title: 'Mai Server - Engineer' });
   });
 
-  it('keeps the default title when there is no CV or the load fails', async () => {
+  it('keeps the default title when the CV has no name', async () => {
+    answerWith({ ...WITH_CV, pageCvAList: { data: [{ documentId: 'c1', _maskedFields: [] }] } });
+    await expect(generateMetadata()).resolves.toEqual({});
+  });
+
+  it('asks search engines to skip the no-CV-live state, also when the read fails', async () => {
     answerWith(EMPTY);
-    await expect(generateMetadata()).resolves.toEqual({});
+    await expect(generateMetadata()).resolves.toEqual({ robots: { index: false } });
     executeGraphqlMock.mockImplementation(() => Promise.reject(new Error('down')));
-    await expect(generateMetadata()).resolves.toEqual({});
+    await expect(generateMetadata()).resolves.toEqual({ robots: { index: false } });
   });
 });

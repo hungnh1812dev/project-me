@@ -10,6 +10,7 @@ export const LAST_RESORT_TEXT = {
   errorRetry: 'Try again',
   notFoundTitle: 'Page not found',
   notFoundDescription: 'There is nothing at this address. Check the link and try again.',
+  noCvLive: 'No CV is live yet.',
   statusChecking: 'Checking',
   statusOperational: 'Operational',
   statusUnreachable: 'Unreachable',

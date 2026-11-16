@@ -1,6 +1,6 @@
 import { executeGraphql } from '@/apis/server/graphql/Graphql.server';
 import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
-import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+import { API_ERROR_CODES, API_ERROR_SOURCES, logApiError, WebApiError } from '@/apis/WebApi.errors';
 import { readWebSession } from '@/features/session/WebSession.server';
 
 import { answerCvRead, loadPageCv } from './PageCv.data';
@@ -11,9 +11,16 @@ vi.mock('@/apis/server/graphql/Graphql.server', () => ({
   requireRootField: () => (data: unknown) => data,
 }));
 
+vi.mock('@/apis/WebApi.errors', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/apis/WebApi.errors')>()),
+  logApiError: vi.fn<typeof logApiError>(),
+}));
+
 vi.mock('@/features/session/WebSession.server', () => ({
   readWebSession: vi.fn<typeof readWebSession>(),
 }));
+
+const LIST_WITH_CV = { data: [{ documentId: 'c1', name: 'Mai', _maskedFields: [] }] };
 
 const noData = () =>
   new WebApiError({
@@ -63,28 +70,54 @@ describe('loadPageCv', () => {
       },
     });
 
-    const [cv] = (await loadPageCv()).data.pageCvAList.data;
+    const content = await loadPageCv();
+    if (content.state !== 'cv') throw new Error('expected a CV');
+    const [cv] = content.data.pageCvAList.data;
 
     expect(cv?.summary).toBe('<p>ok</p>');
     expect(cv?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('<a>go</a>');
   });
 
-  it('hands over the CV labels next to the data', async () => {
-    answerWith();
-    expect((await loadPageCv()).text).toBe(PAGE_CV_MOCK.cvCommonText);
+  it('hands over the CV labels next to the data, with noCvText sanitized', async () => {
+    answerWith({
+      list: LIST_WITH_CV,
+      text: { ...PAGE_CV_MOCK.cvCommonText, noCvText: '<p>none</p><script>x()</script>' },
+    });
+    expect(await loadPageCv()).toMatchObject({
+      state: 'cv',
+      text: { summary: PAGE_CV_MOCK.cvCommonText.summary, noCvText: '<p>none</p>' },
+    });
   });
 
   it('accepts a profile that could not be read', async () => {
-    answerWith({ profile: noData() });
-    await expect(loadPageCv()).resolves.toMatchObject({ data: { profile: null } });
+    answerWith({ list: LIST_WITH_CV, profile: noData() });
+    await expect(loadPageCv()).resolves.toMatchObject({ state: 'cv', data: { profile: null } });
   });
 
-  it.each(['list', 'text'] as const)('throws when the %s could not be read', async (failed) => {
-    answerWith({ [failed]: noData() });
-    await expect(loadPageCv()).rejects.toMatchObject({
-      errorCode: 'NO_DATA',
-      source: 'cms-api-graphql',
+  it('keeps the CV with no labels when the text could not be read', async () => {
+    answerWith({ list: LIST_WITH_CV, text: noData() });
+    await expect(loadPageCv()).resolves.toMatchObject({ state: 'cv', text: null });
+  });
+
+  it('is the no-CV-live state when the list holds no main CV', async () => {
+    answerWith();
+    await expect(loadPageCv()).resolves.toEqual({
+      state: 'no-cv-live',
+      text: PAGE_CV_MOCK.cvCommonText,
     });
+    expect(logApiError).not.toHaveBeenCalled();
+  });
+
+  it('is the no-CV-live state, with no second log line, when the list could not be read', async () => {
+    answerWith({ list: noData(), text: noData() });
+    await expect(loadPageCv()).resolves.toEqual({ state: 'no-cv-live', text: null });
+    expect(logApiError).not.toHaveBeenCalled();
+  });
+
+  it('starts the three queries together', async () => {
+    answerWith();
+    await loadPageCv();
+    expect(executeGraphql).toHaveBeenCalledTimes(3);
   });
 });
 

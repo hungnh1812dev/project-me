@@ -366,7 +366,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 - **Q-G6 web client**: no GraphQL client library; `graphql` as a web
   devDependency for the contract test.
 - **Q-G7 which CV**: the web shows the published cv-page with `isMain = true`
-  (newest `updatedAt` if several; none = empty state).
+  (newest `updatedAt` if several; none = the no-CV-live state on `/cv` (public-site PS-2)).
 
 ## Implementation notes
 
