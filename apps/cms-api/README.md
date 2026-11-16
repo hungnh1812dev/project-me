@@ -920,6 +920,10 @@ and `pnpm deploy --prod` copies production dependencies into a runtime image
 that runs as the numeric `node` user (`USER 1000:1000`) on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
 
+The image also carries `postgresql17-client`, `age` and `rclone` and the nightly
+backup job script `/app/backup/nightly-backup.sh` (source `backup/nightly-backup.sh`,
+the `postgres-backup` CronJob runs it with the cms-api tag; ADR 0025).
+
 ### Two containers: init + main
 
 cms-api ships as one image run as two containers in one pod (or compose

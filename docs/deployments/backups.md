@@ -8,7 +8,7 @@ What the backup covers: the whole database (accounts, audit logs, `file_library`
 
 1. The bucket, its lifecycle rules, the two tokens and the bucket lock rules (section 2).
 2. The age key pair on the owner's machine (section 2, step 5).
-3. The deploy repo builds the job image (Q-OPS8) and adds the CronJob, the ConfigMap `postgres-backup-config` ([configmaps.md](configmaps.md) section 6) and the Secret `postgres-backup` ([secrets.md](secrets.md)).
+3. The deploy repo adds the CronJob (it runs the cms-api image; no image is built in the deploy repo, Q-OPS8) the ConfigMap `postgres-backup-config` ([configmaps.md](configmaps.md) section 6) and the Secret `postgres-backup` ([secrets.md](secrets.md)).
 4. cms-api gets the read-only token as `BACKUP_STORAGE_*` (section 5).
 5. Alerts (deploy repo): the job failed, or no new `daily/` object in 26 hours. The cms-admin Backups page also shows a stale warning after 26 hours.
 6. Run the job once by hand, then the restore drill (section 6). Those two runs are the proof.
@@ -27,7 +27,9 @@ Object keys: `<prefix>daily/abyss-<YYYYMMDDTHHMMSSZ>.dump.age` and `<prefix>mont
 
 ## 3. Nightly CronJob
 
-One stream, no temporary file, no volume: `pg_dump -Fc | age | rclone rcat`. The job pod has no writable volume besides the read-only CA mount. The image (built in the deploy repo, Q-OPS8) needs `pg_dump` and `psql` 17, `age`, `rclone` and a shell with `pipefail` (check `sh -c 'set -o pipefail'`; Alpine's busybox `sh` supports it).
+One stream, no temporary file, no volume: `pg_dump -Fc | age | rclone rcat`. The job pod has no writable volume besides the read-only CA mount. The job runs the **cms-api image** (ADR 0025): it carries `pg_dump`, `pg_restore` and `psql` 17, `age`, `rclone` and the script [`apps/cms-api/backup/nightly-backup.sh`](../../apps/cms-api/backup/nightly-backup.sh), which holds every step (key check, size checks, dump, upload, monthly copy). Read the script and [ADR 0025](../adr/0025-backup-job-image.md) for the steps; this page does not repeat them. The CI guard `backup-tools.sh` fails a cms-api image that lacks a tool ([ci-cd.md](ci-cd.md) section 4).
+
+The CronJob uses the same tag as the cms-api Deployment: point `image` at the `APP_IMAGE_TAG` of `cms-api-sync-overlay.yaml`, so one bump moves both.
 
 The job connects as the backup role, with the host, port and database of `cms-api-config` and, when TLS is on, `PGSSLMODE=verify-full` with the mounted CA ([database.md](database.md) section 4).
 
@@ -51,37 +53,8 @@ spec:
           securityContext: { runAsNonRoot: true, runAsUser: 1000, runAsGroup: 1000 }
           containers:
             - name: dump
-              image: <image with pg_dump 17, psql, age, rclone>
-              command: ['sh', '-c']
-              args:
-                - |
-                  set -eu -o pipefail
-                  export PGPASSWORD="$$DB_PASSWORD"
-                  conn="-h $$DB_HOST -p $$DB_PORT -U $$DB_USERNAME -d $$DB_NAME"
-                  stamp="$$(date -u +%Y%m%dT%H%M%SZ)"
-                  name="abyss-$${stamp}.dump.age"
-                  daily="offsite:$${BACKUP_BUCKET}/$${BACKUP_PREFIX}daily/$${name}"
-                  status=0
-
-                  size="$$(psql $$conn -Atc 'select pg_database_size(current_database())')"
-                  echo "database size: $${size} bytes"
-                  if [ "$$size" -gt "$$BACKUP_MAX_DATABASE_BYTES" ]; then echo "WARN database over limit"; status=1; fi
-
-                  pg_dump $$conn -Fc -n public -n content \
-                    | age -r "$$BACKUP_AGE_RECIPIENT" \
-                    | rclone rcat \
-                        --header-upload "Content-Type: application/octet-stream" \
-                        --header-upload "Content-Disposition: attachment; filename=\"$${name}\"" \
-                        "$$daily"
-
-                  dump="$$(rclone size --json "$$daily" | sed -n 's/.*"bytes":\([0-9]*\).*/\1/p')"
-                  echo "dump size: $${dump} bytes"
-                  if [ "$$dump" -gt "$$BACKUP_MAX_DUMP_BYTES" ]; then echo "WARN dump over limit"; status=1; fi
-
-                  if [ "$$(date -u +%d)" = 01 ]; then
-                    rclone copyto "$$daily" "offsite:$${BACKUP_BUCKET}/$${BACKUP_PREFIX}monthly/$${name}"
-                  fi
-                  exit "$$status"
+              image: ghcr.io/hungnh1812dev/project-me/cms-api:<cms-api version> # the cms-api Deployment's tag
+              command: ['sh', '/app/backup/nightly-backup.sh']
               envFrom:
                 - configMapRef: { name: postgres-backup-config }
                 - secretRef: { name: postgres-backup }
@@ -98,7 +71,6 @@ spec:
               configMap: { name: database-ca }
 ```
 
-- `$$` escapes `$` for a GitOps tool that substitutes `${...}` variables in manifests. Without such substitution, write plain `$`; or keep this manifest out of the substitution. Check the rendered manifest before the first apply.
 - `-n public -n content`: the app's two schemas only; the backup role cannot read a managed service's own schemas, and the dump must not contain them.
 - `set -o pipefail` makes a failed `pg_dump` fail the job. An S3 multipart upload becomes visible only when it completes, so a half-written dump is never listed.
 - The size checks warn, keep the dump and exit 1 at the end, so the failure alert fires and a backup still exists: before the dump, the database size against `BACKUP_MAX_DATABASE_BYTES` (about 80 percent of a plan's size limit); after the upload, the object size against `BACKUP_MAX_DUMP_BYTES` (200000000).
@@ -116,10 +88,10 @@ age -d -i abyss-backup.agekey abyss-<stamp>.dump.age > abyss-<stamp>.dump
 # 1. on the scratch server: run scripts/db/database-roles.sql (hosting=self_managed) once,
 #    then, as the superuser, create the scratch database owned by the migrator
 createdb -h <db-host> -U <superuser> -O abyss_migrator abyss_restore
-# 2. restore as the migrator (stop at the first error); the dump's grants for abyss_api come with it
+# 2. restore as the migrator, with `pg_restore` from the cms-api image or a client of major 17 (stop at the first error); the dump's grants for abyss_api come with it
 pg_restore -h <db-host> -U abyss_migrator -d abyss_restore --no-owner --exit-on-error abyss-<stamp>.dump
 # 3. the schema is complete: the migration commands find nothing pending
-#    (run the cms-api image with DB_NAME=abyss_restore and the migrator credentials)
+#    (run the cms-api image, which also holds `pg_restore` and `psql` 17, with DB_NAME=abyss_restore and the migrator credentials)
 npm run --silent deploy:migrate        # expect exit 0, "No pending ..." twice
 # 4. spot-check data
 psql -h <db-host> -U abyss_migrator -d abyss_restore -c 'select count(*) from accounts' \

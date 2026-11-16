@@ -8,6 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### New features
 
+- cms-api: the image runs the nightly backup job, with client tools and script ([backups flow](docs/flows/backups/SPEC.md)).
 - web: `/cv` is built from the main `page-cv-a`, the `profile` and `pageCvText` in `views/cv` (queries `PageCv` and `PageCvVisitor`); the new projects section is shown, no main CV answers 404, and `features/cv` is gone (WPQ-9).
 - web: `/status` page, and the module status on `/`, come from one `ModuleStatus` part (query `ModuleStatus`, field `moduleStatus`) in place of the `StatusPage` query (WPQ-13).
 - root: the smoke stack publishes the header, sign-in, status, CV text, profile and `page-cv-a` content (built from the web mocks by `scripts/smoke/SeedContent.mjs`) before web starts, so the staging web renders real cms-api text.
@@ -29,6 +30,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### DevOps patches
 
+- cms-api 0.2.0: the backup CronJob runs the cms-api image and its script; ConfigMap and Secret unchanged ([patch-cms-api-0.2.0.md](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
 - root: `SMOKE_WEB_PRODUCTION=1 pnpm smoke` builds and runs web with `APP_ENV=production` and its default data cache window (`SMOKE_WEB_APP_ENV`, `SMOKE_WEB_REVALIDATE_SECONDS` in `docker-compose.smoke.yml`); the default stays staging with no cache.
 - scripts: the smoke and dev stacks seed the new content types (`header`, `module-auth`, `module-status`, `page-cv-text`, `profile`, `page-cv-a`) from the web mocks; `pnpm dev:stack demo` runs `SeedContent.mjs` instead of `scripts/demo/content/`, and the start check reads `pageCvAList` and `experiences.company`. No deploy-repo change (WPQ-10).
 - web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).

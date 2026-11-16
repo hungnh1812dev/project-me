@@ -58,11 +58,11 @@ Release images come only from a `v<x.y.z>` tag made by the `release-tag` skill i
 | push `main`         | `production`       | `linux/amd64`  | `ubuntu-24.04` | none (image not pushed)   |
 | push tag `v<x.y.z>` | `production`       | `linux/amd64`  | `ubuntu-24.04` | `main`                    |
 
-| Image                                        | Port | User | Used by                                                                      |
-| -------------------------------------------- | ---- | ---- | ---------------------------------------------------------------------------- |
-| `ghcr.io/hungnh1812dev/project-me/cms-api`   | 3000 | 1000 | both cms-api containers, init `migrate` and main `cms-api`, with **one tag** |
-| `ghcr.io/hungnh1812dev/project-me/web`       | 8080 | 1000 | public site (Next.js standalone)                                             |
-| `ghcr.io/hungnh1812dev/project-me/cms-admin` | 8080 | 101  | admin console (nginx)                                                        |
+| Image                                        | Port | User | Used by                                                                                                         |
+| -------------------------------------------- | ---- | ---- | --------------------------------------------------------------------------------------------------------------- |
+| `ghcr.io/hungnh1812dev/project-me/cms-api`   | 3000 | 1000 | both cms-api containers, init `migrate` and main `cms-api`, and the `postgres-backup` CronJob, with **one tag** |
+| `ghcr.io/hungnh1812dev/project-me/web`       | 8080 | 1000 | public site (Next.js standalone)                                                                                |
+| `ghcr.io/hungnh1812dev/project-me/cms-admin` | 8080 | 101  | admin console (nginx)                                                                                           |
 
 - Tags: a release image is tagged `<app version>` only (for example `cms-api:0.0.2`), immutable, no moving tag; it is pushed by the run of a repo tag `v<x.y.z>` run (`.github/scripts/release-apps.sh` picks the apps whose version changed since the previous release; it refuses a commit that is not the origin/main tip and any version that is not x.y.z) and the deploy repo `main` is bumped. Branch pushes push nothing (ADR 0016).
 - Each app is bumped only when its own image changed, so the three apps can sit on different tags.
@@ -73,7 +73,7 @@ Release images come only from a `v<x.y.z>` tag made by the `release-tag` skill i
 
 `publish-cms-api`, `publish-cms-admin` and `publish-web` in `ci.yml` call `.github/workflows/_publish.yml`. Each runs on a push to `main` (image built and guarded, nothing pushed) or on a repo tag (full run), when the app is in the image set (`<app>_image`; on a tag, the release set) and its app flow (`Checks` and `Build`) succeeded. It does not wait for the `repo` job, and e2e is not a gate. Only a tag run pushes, tags and bumps.
 
-Per platform: build and load, the non-root guard (`.github/scripts/image-user.sh`: numeric non-zero `USER`), for cms-admin `.github/scripts/bundle-check.sh` (the bundle contains `VITE_API_BASE_URL`), then (tag run) push by digest; the manifest job merges the digests and applies the one tag `<app version>`. If `<image>:<app version>` already exists, the job skips tagging when its `org.opencontainers.image.revision` label equals this commit (a re-run) and fails otherwise: a release tag is never overwritten. Before any app job, `release-apps.sh` fails the run when the tag is not `v` + the root version, or the commit is not on `origin/main`.
+Per platform: build and load, the non-root guard (`.github/scripts/image-user.sh`: numeric non-zero `USER`), for cms-api the backup tools guard (`.github/scripts/backup-tools.sh`: `pg_dump`, `pg_restore`, `psql` of the Dockerfile's `POSTGRES_MAJOR`, `age`, `rclone`, `pipefail`, and the root-owned script), for cms-admin `.github/scripts/bundle-check.sh` (the bundle contains `VITE_API_BASE_URL`), then (tag run) push by digest; the manifest job merges the digests and applies the one tag `<app version>`. If `<image>:<app version>` already exists, the job skips tagging when its `org.opencontainers.image.revision` label equals this commit (a re-run) and fails otherwise: a release tag is never overwritten. Before any app job, `release-apps.sh` fails the run when the tag is not `v` + the root version, or the commit is not on `origin/main`.
 
 The deploy job (contract **verified earlier**; this repo's `_publish.yml` **not run**):
 
