@@ -16,6 +16,91 @@
         ]
       }
     },
+    "cv-common-text": {
+      "hash": "93ee6bfde32989a07455fcf4c7631dda241d2190fc88fb26a8555188378a9a90",
+      "definition": {
+        "slug": "cv-common-text",
+        "displayName": "CV Common Text",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "summary",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "experiences",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "achievements",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "skills",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "educations",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "languages",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "reference",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "technologies",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "teamSize",
+            "displayName": "Team Size",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "projects",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "projectLink",
+            "displayName": "Project Link",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "webLink",
+            "displayName": "Web Link",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "adminLink",
+            "displayName": "Admin Link",
+            "type": "string",
+            "width": "1/2"
+          },
+          {
+            "name": "noCvText",
+            "displayName": "No CV Text",
+            "type": "richtext"
+          }
+        ]
+      }
+    },
     "header": {
       "hash": "a26ba0ef4ca149c081fcca96c88b0d9b6106ad138c434332684692c1ddd643b0",
       "definition": {
@@ -578,145 +663,6 @@
                 "name": "location",
                 "type": "text",
                 "width": "1/2"
-              }
-            ]
-          }
-        ]
-      }
-    },
-    "page-cv-text": {
-      "hash": "ee4475403cc435a1cbad696682df018e4cd8dd72eda248e83f0409b988aa6a2d",
-      "definition": {
-        "slug": "page-cv-text",
-        "displayName": "Page CV Text",
-        "kind": "single",
-        "draftAndPublish": true,
-        "fields": [
-          {
-            "name": "loading",
-            "type": "text"
-          },
-          {
-            "name": "refetchFailed",
-            "type": "text"
-          },
-          {
-            "name": "fallbackName",
-            "type": "text"
-          },
-          {
-            "name": "maskedValue",
-            "type": "text"
-          },
-          {
-            "name": "contact",
-            "type": "component",
-            "component": "pageCvTextContact",
-            "fields": [
-              {
-                "name": "title",
-                "type": "text"
-              },
-              {
-                "name": "email",
-                "type": "text"
-              },
-              {
-                "name": "phone",
-                "type": "text"
-              },
-              {
-                "name": "address",
-                "type": "text"
-              },
-              {
-                "name": "linkedin",
-                "type": "text"
-              },
-              {
-                "name": "github",
-                "type": "text"
-              }
-            ]
-          },
-          {
-            "name": "sections",
-            "type": "component",
-            "component": "pageCvTextSections",
-            "fields": [
-              {
-                "name": "summary",
-                "type": "text"
-              },
-              {
-                "name": "skills",
-                "type": "text"
-              },
-              {
-                "name": "experiences",
-                "type": "text"
-              },
-              {
-                "name": "projects",
-                "type": "text"
-              },
-              {
-                "name": "educations",
-                "type": "text"
-              }
-            ]
-          },
-          {
-            "name": "role",
-            "type": "component",
-            "component": "pageCvTextRole",
-            "fields": [
-              {
-                "name": "teamSize",
-                "type": "text"
-              },
-              {
-                "name": "projects",
-                "type": "text"
-              },
-              {
-                "name": "techStack",
-                "type": "text"
-              }
-            ]
-          },
-          {
-            "name": "project",
-            "type": "component",
-            "component": "pageCvTextProject",
-            "fields": [
-              {
-                "name": "teamSize",
-                "type": "text"
-              },
-              {
-                "name": "techStack",
-                "type": "text"
-              },
-              {
-                "name": "liveLink",
-                "type": "text"
-              },
-              {
-                "name": "repositoryLink",
-                "type": "text"
-              },
-              {
-                "name": "liveLinkName",
-                "type": "text"
-              },
-              {
-                "name": "repositoryLinkName",
-                "type": "text"
-              },
-              {
-                "name": "unnamedProject",
-                "type": "text"
               }
             ]
           }

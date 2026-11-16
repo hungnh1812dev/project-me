@@ -104,12 +104,12 @@ input IdFilter {
 
 type Query {
   commonText(status: DocumentStatus = PUBLISHED): CommonText
+  cvCommonText(status: DocumentStatus = PUBLISHED): CvCommonText
   header(status: DocumentStatus = PUBLISHED): Header
   moduleAuth(status: DocumentStatus = PUBLISHED): ModuleAuth
   moduleStatus(status: DocumentStatus = PUBLISHED): ModuleStatus
   pageCvA(documentId: ID!, status: DocumentStatus = PUBLISHED): PageCvA
   pageCvAList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [PageCvASort!], filter: PageCvAFilter): PageCvAPage
-  pageCvText(status: DocumentStatus = PUBLISHED): PageCvText
   profile(status: DocumentStatus = PUBLISHED): Profile
 }
 
@@ -123,6 +123,36 @@ type CommonText {
   createdBy: Int
   updatedBy: Int
   text: JSON
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
+}
+
+type CvCommonText {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  summary: String
+  experiences: String
+  achievements: String
+  skills: String
+  educations: String
+  languages: String
+  reference: String
+  technologies: String
+  teamSize: String
+  projects: String
+  projectLink: String
+  webLink: String
+  adminLink: String
+  noCvText: String
 
   """
   Paths of the fields the caller may not read; their values are masked or null.
@@ -390,67 +420,6 @@ input PageCvAFilter {
   position: TextFilter
   isMain: BooleanFilter
   summary: TextFilter
-}
-
-type PageCvText {
-  documentId: ID!
-  version: Int!
-  publishedAt: DateTime
-  locale: String
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  createdBy: Int
-  updatedBy: Int
-  loading: String
-  refetchFailed: String
-  fallbackName: String
-  maskedValue: String
-  contact: PageCvText_PageCvTextContact
-  sections: PageCvText_PageCvTextSections
-  role: PageCvText_PageCvTextRole
-  project: PageCvText_PageCvTextProject
-
-  """
-  Paths of the fields the caller may not read; their values are masked or null.
-  """
-  _maskedFields: [String!]!
-}
-
-type PageCvText_PageCvTextContact {
-  componentUid: ID!
-  title: String
-  email: String
-  phone: String
-  address: String
-  linkedin: String
-  github: String
-}
-
-type PageCvText_PageCvTextSections {
-  componentUid: ID!
-  summary: String
-  skills: String
-  experiences: String
-  projects: String
-  educations: String
-}
-
-type PageCvText_PageCvTextRole {
-  componentUid: ID!
-  teamSize: String
-  projects: String
-  techStack: String
-}
-
-type PageCvText_PageCvTextProject {
-  componentUid: ID!
-  teamSize: String
-  techStack: String
-  liveLink: String
-  repositoryLink: String
-  liveLinkName: String
-  repositoryLinkName: String
-  unnamedProject: String
 }
 
 type Profile {

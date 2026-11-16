@@ -176,11 +176,11 @@ describe('KyselyContentRepository on page-cv-a (Postgres 17 via Testcontainers)'
       expect(type.root.plan.name).toBe('page_cv_a');
       expect(registry.slugs()).toEqual([
         'common-text',
+        'cv-common-text',
         'header',
         'module-auth',
         'module-status',
         SLUG,
-        'page-cv-text',
         'profile',
       ]);
     });

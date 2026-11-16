@@ -276,6 +276,14 @@ over is written here.
 - The stacks reseed from the web mocks; production content is entered again
   in cms-admin.
 
+### `0016_content.sql` (`page-cv-text` renamed to `cv-common-text`, Q-PS7)
+
+- A rename is a drop and a create (written with `content:generate
+--allow-destructive`, accepted by the user, 2026-11-16): `page-cv-text` and
+  its component tables are dropped with their rows; `cv-common-text` is created
+  empty. No data is carried over; enter the texts again in cms-admin. The SDL
+  has `cvCommonText`, no `pageCvText`.
+
 ## Migrations
 
 Content tables are never created at runtime. Changes go through two
