@@ -10,12 +10,12 @@ Part of the [project spec](../../../SPEC.md). Flow `backups`: [SPEC.md](SPEC.md)
 ## Actors
 
 - **Owner**: the only actor; no role grant opens this flow.
-- **Nightly job** (CronJob in the deploy repo, running the cms-api image, BK-6): dumps as `abyss_backup`, encrypts with `age`, uploads to R2.
+- **Nightly job** (CronJob in the deploy repo, running the cms-api image, BK-6): dumps as `abyss_backup`, encrypts with `age`, uploads to R2 in production only (BK-6).
 - **Cloudflare R2**: holds the dumps; cms-api holds a read-only token.
 
 ## Steps
 
-1. The job streams `pg_dump -Fc`, encrypts it and uploads it under `daily/` or `monthly/`; bucket lifecycle rules keep 14 and 92 days.
+1. The job streams `pg_dump -Fc`, encrypts it and, in production, uploads it under `daily/` or `monthly/` (elsewhere it only measures the dump, BK-6); bucket lifecycle rules keep 14 and 92 days.
 2. The owner opens the backups page; `GET /backups` lists dumps with `isStale`.
 3. The owner asks for a link with password and code; `POST /backups/download-links` re-authenticates (failure writes `auth.reauth_failed`) and returns a presigned GET URL valid 60 s, writing `backup.download_link_created`.
 4. The browser downloads straight from the R2 S3 API host.
