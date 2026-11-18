@@ -12,7 +12,12 @@ import { Modal, ModalActions } from '@components/Modal';
 import { useScreenText } from '@configs/locales';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
 
-import { paletteItemLabel, paletteItems, variantOf } from './FieldTypes.registry';
+import {
+  paletteItemLabel,
+  paletteItems,
+  variantOf,
+  type FieldGroupKey,
+} from './FieldTypes.registry';
 import type { LocatedError } from './SchemaJson.rules';
 import {
   typeChangeRefusal,
@@ -22,6 +27,13 @@ import {
   type SchemaTree,
   type TypeChangeRefusal,
 } from './SchemaTree.reducer';
+
+/** The copy key of the variant select's label, per group. */
+const VARIANT_SELECT_LABELS = {
+  textInput: 'textType',
+  number: 'numberType',
+  datetimePicker: 'dateType',
+} as const satisfies Record<FieldGroupKey, string>;
 
 const WIDTH_VALUES = ['1/3', '1/2', 'full'] as const;
 
@@ -260,7 +272,7 @@ export function FieldPropertiesDialog({
         </Field>
         {grouped === undefined ? null : (
           <Field
-            label={grouped.group.key === 'number' ? text.numberType : text.dateType}
+            label={text[VARIANT_SELECT_LABELS[grouped.group.key]]}
             error={errorsOf('unsigned')}
           >
             {(control) => (

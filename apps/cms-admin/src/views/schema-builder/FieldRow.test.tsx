@@ -48,10 +48,19 @@ describe('FieldRow', () => {
     show();
     const row = screen.getByRole('button', { name: copy.row.select('title') });
     expect(row).toHaveTextContent('title');
-    expect(row).toHaveTextContent(copy.fieldTypes.string);
+    expect(row).toHaveTextContent(
+      copy.row.groupedType(copy.fieldGroups.textInput, copy.fieldVariants.multiLine),
+    );
     expect(row).toHaveTextContent(copy.row.markers.required);
     expect(row).toHaveTextContent(copy.row.markers.width('1/2'));
     expect(row).not.toHaveTextContent(copy.row.markers.sensitive);
+  });
+
+  it('shows the text editor by its own label', () => {
+    show({ field: { ...field, type: 'richtext' } });
+    expect(screen.getByRole('button', { name: copy.row.select('title') })).toHaveTextContent(
+      'Text editor',
+    );
   });
 
   it('shows a grouped type as its group and variant', () => {

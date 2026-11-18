@@ -209,7 +209,7 @@ describe('SchemaBuilderPage', () => {
       const { api } = await open(TEST_USER);
       await startNew();
       expect(screen.queryByRole('dialog')).toBeNull();
-      await addType(copy.fieldTypes.string);
+      await addType(copy.fieldGroups.textInput);
       expect(await screen.findByRole('dialog', { name: 'field1' })).toBeVisible();
       const name = screen.getByLabelText(copy.property.name);
       expect(name).toHaveValue('field1');
@@ -223,7 +223,7 @@ describe('SchemaBuilderPage', () => {
       expect(row).toHaveFocus();
       await vi.waitFor(() =>
         expect(lastRequest(api).definition).toMatchObject({
-          fields: [{ name: 'title', type: 'string', required: true }],
+          fields: [{ name: 'title', type: 'text', required: true }],
         }),
       );
     });
@@ -231,7 +231,7 @@ describe('SchemaBuilderPage', () => {
     it('opens the popup from the row name and from its Edit control, not from the other controls', async () => {
       await open(TEST_USER);
       await startNew();
-      await pickType(copy.fieldTypes.string);
+      await pickType(copy.fieldGroups.textInput);
       await userEvent.click(screen.getByRole('button', { name: copy.row.moveDown('field1') }));
       expect(screen.queryByRole('dialog')).toBeNull();
       await userEvent.click(screen.getByRole('button', { name: copy.row.select('field1') }));
@@ -278,7 +278,9 @@ describe('SchemaBuilderPage', () => {
       }
       expect(screen.getAllByRole('button', { name: adderName })).toHaveLength(3);
       await userEvent.click(screen.getAllByRole('button', { name: adderName })[0]!);
-      expect(await screen.findByRole('menuitem', { name: copy.fieldTypes.string })).toBeVisible();
+      expect(
+        await screen.findByRole('menuitem', { name: copy.fieldGroups.textInput }),
+      ).toBeVisible();
       expect(screen.queryByRole('menuitem', { name: copy.fieldTypes.component })).toBeNull();
     });
 
@@ -286,7 +288,7 @@ describe('SchemaBuilderPage', () => {
       await open(TEST_USER);
       await startNew();
       await pickType(copy.fieldTypes.component);
-      await pickType(copy.fieldTypes.string);
+      await pickType(copy.fieldGroups.textInput);
       await userEvent.click(screen.getByRole('button', { name: copy.row.moveTo('field2') }));
       await userEvent.click(
         await screen.findByRole('menuitem', { name: copy.row.moveToComponent('field1') }),
@@ -315,8 +317,8 @@ describe('SchemaBuilderPage', () => {
         } satisfies DefinitionValidation,
       }));
       await startNew();
-      await pickType(copy.fieldTypes.string);
-      await pickType(copy.fieldTypes.string);
+      await pickType(copy.fieldGroups.textInput);
+      await pickType(copy.fieldGroups.textInput);
       const second = screen.getByRole('button', { name: copy.row.select('field2') });
       const marked = await screen.findByRole('button', { name: copy.row.select('field1') });
       await vi.waitFor(() => expect(marked).toHaveTextContent(copy.row.hasErrors));

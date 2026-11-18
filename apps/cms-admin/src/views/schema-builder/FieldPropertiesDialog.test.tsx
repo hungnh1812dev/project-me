@@ -86,17 +86,18 @@ describe('FieldPropertiesDialog', () => {
     const { onChangeType } = show('f2');
     const select = screen.getByLabelText(text.type);
     expect(screen.getByText(text.typeRefusal.holdsFields)).toBeVisible();
-    expect(screen.getByRole('option', { name: copy.fieldTypes.string })).toBeDisabled();
-    await userEvent.selectOptions(select, copy.fieldTypes.string);
+    expect(screen.getByRole('option', { name: copy.fieldGroups.textInput })).toBeDisabled();
+    await userEvent.selectOptions(select, copy.fieldGroups.textInput);
     expect(onChangeType).not.toHaveBeenCalled();
   });
 
   it('changes the type of a plain field', async () => {
-    const { onChangeType } = show('f1');
-    await userEvent.selectOptions(screen.getByLabelText(text.type), copy.fieldTypes.boolean);
-    expect(onChangeType).toHaveBeenCalledWith('f1', 'boolean');
+    const { onChangeType } = show('f3');
+    await userEvent.selectOptions(screen.getByLabelText(text.type), copy.fieldTypes.json);
+    expect(onChangeType).toHaveBeenCalledWith('f3', 'json');
     expect(screen.queryByLabelText(text.numberType)).toBeNull();
     expect(screen.queryByLabelText(text.dateType)).toBeNull();
+    expect(screen.queryByLabelText(text.textType)).toBeNull();
   });
 
   it('lists a group once in the type select and picks its variant in its own select', async () => {
@@ -107,6 +108,15 @@ describe('FieldPropertiesDialog', () => {
     expect(select).toHaveDisplayValue(copy.fieldVariants.integer);
     await userEvent.selectOptions(select, copy.fieldVariants.unsignedInteger);
     expect(onChangeVariant).toHaveBeenCalledWith('f4', 'unsignedInteger');
+  });
+
+  it('picks the text type of a text input field', async () => {
+    const { onChangeVariant } = show('f1');
+    expect(screen.getByLabelText(text.type)).toHaveDisplayValue(copy.fieldGroups.textInput);
+    const select = screen.getByLabelText(text.textType);
+    expect(select).toHaveDisplayValue(copy.fieldVariants.multiLine);
+    await userEvent.selectOptions(select, copy.fieldVariants.singleLine);
+    expect(onChangeVariant).toHaveBeenCalledWith('f1', 'singleLine');
   });
 
   it('picks the date type of a datetime picker field', async () => {

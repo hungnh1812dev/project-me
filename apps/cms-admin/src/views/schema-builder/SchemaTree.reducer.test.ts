@@ -61,8 +61,7 @@ describe('field type registry', () => {
 
   it('gives the palette one item per group in place of its members', () => {
     expect(paletteItems().map((item) => item.group ?? item.defaultType)).toEqual([
-      'text',
-      'string',
+      'textInput',
       'richtext',
       'number',
       'boolean',
@@ -83,7 +82,9 @@ describe('field type registry', () => {
     expect(keyOf({ type: 'integer', unsigned: false })).toBe('integer');
     expect(keyOf({ type: 'biginteger', unsigned: true })).toBe('biginteger');
     expect(keyOf({ type: 'time' })).toBe('time');
-    expect(variantOf({ type: 'text' })).toBeUndefined();
+    expect(keyOf({ type: 'text' })).toBe('singleLine');
+    expect(keyOf({ type: 'string' })).toBe('multiLine');
+    expect(variantOf({ type: 'richtext' })).toBeUndefined();
   });
 });
 
@@ -462,6 +463,18 @@ describe('number, datetime and enumeration fields', () => {
     expect(fieldOf(plain).unsigned).toBeUndefined();
     const date = run(plain, { type: 'changeFieldVariant', fieldId: id, variant: 'time' });
     expect(fieldOf(date).type).toBe('time');
+  });
+
+  it('changes between single and multi-line text and keeps the other keys', () => {
+    const { tree, id } = withField('text');
+    const required = run(
+      tree,
+      { type: 'setFieldKey', fieldId: id, key: 'required', value: true },
+      { type: 'changeFieldVariant', fieldId: id, variant: 'multiLine' },
+    );
+    expect(fieldOf(required)).toMatchObject({ type: 'string', required: true });
+    const back = run(required, { type: 'changeFieldVariant', fieldId: id, variant: 'singleLine' });
+    expect(fieldOf(back)).toMatchObject({ type: 'text', required: true, heldKeys: ['required'] });
   });
 
   it('ignores an unknown variant', () => {

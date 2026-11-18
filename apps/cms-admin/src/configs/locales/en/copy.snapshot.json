@@ -1130,6 +1130,7 @@
       "type": "Type",
       "numberType": "Number type",
       "dateType": "Date type",
+      "textType": "Text type",
       "required": "Required",
       "sensitive": "Sensitive",
       "sensitiveHint": "Hidden from public and reviewer roles unless they are granted the field.",
@@ -1149,10 +1150,13 @@
       }
     },
     "fieldGroups": {
+      "textInput": "Text input",
       "number": "Number",
       "datetimePicker": "Datetime picker"
     },
     "fieldVariants": {
+      "singleLine": "Single line",
+      "multiLine": "Multi-line",
       "unsignedInteger": "Unsigned integer",
       "integer": "Integer",
       "biginteger": "Big integer",
@@ -1164,9 +1168,9 @@
       "time": "Time"
     },
     "fieldTypes": {
-      "text": "Short text",
-      "string": "Long text",
-      "richtext": "Rich text",
+      "text": "Single line",
+      "string": "Multi-line",
+      "richtext": "Text editor",
       "integer": "Whole number",
       "biginteger": "Big integer",
       "float": "Float",

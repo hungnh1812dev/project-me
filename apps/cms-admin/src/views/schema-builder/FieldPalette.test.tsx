@@ -14,8 +14,7 @@ describe('FieldPalette', () => {
     renderInApp(createTestServices().services, <FieldPalette canAddComponent onPick={onPick} />);
     expect(screen.getAllByRole('button')).toHaveLength(paletteItems().length * 2);
     expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      copy.fieldTypes.text,
-      copy.fieldTypes.string,
+      copy.fieldGroups.textInput,
       copy.fieldTypes.richtext,
       copy.fieldGroups.number,
       copy.fieldTypes.boolean,
@@ -32,6 +31,8 @@ describe('FieldPalette', () => {
   it('creates the default type of a group item', async () => {
     const onPick = vi.fn<(fieldType: FieldTypeName) => void>();
     renderInApp(createTestServices().services, <FieldPalette canAddComponent onPick={onPick} />);
+    await userEvent.click(screen.getByRole('button', { name: copy.fieldGroups.textInput }));
+    expect(onPick).toHaveBeenLastCalledWith('text');
     await userEvent.click(screen.getByRole('button', { name: copy.fieldGroups.number }));
     expect(onPick).toHaveBeenLastCalledWith('integer');
     await userEvent.click(screen.getByRole('button', { name: copy.fieldGroups.datetimePicker }));

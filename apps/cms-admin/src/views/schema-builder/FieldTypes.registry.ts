@@ -68,8 +68,17 @@ interface FieldGroupEntry {
   variants: readonly FieldVariantEntry[];
 }
 
-/** A new kind of number or date is one variant entry here plus one label in `fieldVariants`. */
+/** A new kind of text, number or date is one variant entry here plus one label in `fieldVariants`. */
 export const FIELD_TYPE_GROUPS = [
+  {
+    key: 'textInput',
+    icon: TextCursorInput,
+    defaultVariant: 'singleLine',
+    variants: [
+      { key: 'singleLine', type: 'text' },
+      { key: 'multiLine', type: 'string' },
+    ],
+  },
   {
     key: 'number',
     icon: Hash,
@@ -129,8 +138,7 @@ export function findVariant(key: string): FieldVariant | undefined {
 
 /** Palette order: a field type, or a group standing in for its member types. */
 const PALETTE_ORDER: readonly (FieldTypeName | FieldGroupKey)[] = [
-  'text',
-  'string',
+  'textInput',
   'richtext',
   'number',
   'boolean',
