@@ -1077,6 +1077,7 @@
     },
     "row": {
       "select": "Edit SAMPLE",
+      "edit": "Properties of SAMPLE",
       "moveUp": "Move SAMPLE up",
       "moveDown": "Move SAMPLE down",
       "moveTo": "Move SAMPLE to another list",
@@ -1113,7 +1114,17 @@
     },
     "property": {
       "heading": "Field properties",
-      "empty": "Select a field to edit its properties.",
+      "description": "Changes apply as you type.",
+      "done": "Done",
+      "options": {
+        "label": "Options",
+        "empty": "No options yet. Add at least one.",
+        "option": "Option SAMPLE",
+        "add": "Add option",
+        "moveUp": "Move option SAMPLE up",
+        "moveDown": "Move option SAMPLE down",
+        "remove": "Remove option SAMPLE"
+      },
       "name": "Name",
       "displayName": "Display name",
       "type": "Type",

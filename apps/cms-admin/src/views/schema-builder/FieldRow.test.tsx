@@ -86,6 +86,8 @@ describe('FieldRow', () => {
     await userEvent.click(screen.getByRole('button', { name: copy.row.moveTo('title') }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Inside hero' }));
     expect(handlers.onSelect).toHaveBeenCalledOnce();
+    await userEvent.click(screen.getByRole('button', { name: copy.row.edit('title') }));
+    expect(handlers.onSelect).toHaveBeenCalledTimes(2);
     expect(handlers.onMoveUp).toHaveBeenCalledOnce();
     expect(handlers.onMoveDown).toHaveBeenCalledOnce();
     expect(handlers.onDuplicate).toHaveBeenCalledOnce();

@@ -7,7 +7,7 @@ import {
   IconButton,
 } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
-import { ArrowDown, ArrowUp, CircleAlert, Copy, FolderInput, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, CircleAlert, Copy, FolderInput, Pencil, Trash2 } from 'lucide-react';
 
 import { findFieldType, variantOf } from './FieldTypes.registry';
 import type { ListOwnerId, SchemaField } from './SchemaTree.reducer';
@@ -27,6 +27,7 @@ interface FieldRowProps {
   moveTargets: readonly MoveTarget[];
   /** The drag handle of this row, built by the canvas (SB-5). */
   dragHandle?: ReactNode;
+  /** Opens the field's properties. */
   onSelect: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -108,6 +109,14 @@ export function FieldRow({
         ) : null}
       </button>
       <div className="flex items-center">
+        <IconButton
+          type="button"
+          variant="ghost"
+          label={copy.row.edit(field.name)}
+          onClick={onSelect}
+        >
+          <Pencil aria-hidden="true" />
+        </IconButton>
         <IconButton
           type="button"
           variant="ghost"

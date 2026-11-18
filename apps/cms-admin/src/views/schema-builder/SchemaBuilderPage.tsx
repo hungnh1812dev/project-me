@@ -1,4 +1,4 @@
-import { useMemo, useReducer, useState } from 'react';
+import { useMemo, useReducer, useRef, useState } from 'react';
 import {
   Button,
   Card,
@@ -19,9 +19,9 @@ import { useDefinitionValidation, type DefinitionValidationMode } from '@feature
 
 import { ExportPanel } from './ExportPanel';
 import { FieldPalette } from './FieldPalette';
+import { FieldPropertiesDialog } from './FieldPropertiesDialog';
 import type { FieldTypeName } from './FieldTypes.registry';
 import { ImportSchemaDialog } from './ImportSchemaDialog';
-import { PropertyPanel } from './PropertyPanel';
 import { SchemaCanvas } from './SchemaCanvas';
 import { SchemaDragContext } from './SchemaDragContext';
 import { fieldIdOfErrorPath, serializeSchemaTree, type LocatedError } from './SchemaJson.rules';
@@ -53,6 +53,8 @@ export function SchemaBuilderPage() {
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [seenAddedId, setSeenAddedId] = useState<string | null>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus();
+
+  const closedFieldId = useRef<string | null>(null);
 
   const hasUnsavedWork = isStarted && tree.changedSinceSnapshot;
   useLeaveGuard(hasUnsavedWork);
@@ -112,6 +114,11 @@ export function SchemaBuilderPage() {
   );
   const selectedField =
     selectedFieldId === null ? null : (findField(tree.fields, selectedFieldId) ?? null);
+  // The row that opened the popup (or was added by it) gets focus back; the opener may be a drag or a menu item.
+  const focusClosedRow = (event: Event) => {
+    event.preventDefault();
+    document.querySelector<HTMLElement>(`[data-field-select="${closedFieldId.current}"]`)?.focus();
+  };
   const addToList = (
     parentId: ListOwnerId,
     fieldType: FieldTypeName,
@@ -282,17 +289,6 @@ export function SchemaBuilderPage() {
               </Card>
             </div>
             <div className="grid gap-6">
-              <PropertyPanel
-                tree={tree}
-                field={selectedField}
-                errors={currentErrors}
-                onSetKey={(fieldId, key, value) =>
-                  dispatch({ type: 'setFieldKey', fieldId, key, value })
-                }
-                onChangeType={(fieldId, fieldType) =>
-                  dispatch({ type: 'changeFieldType', fieldId, fieldType })
-                }
-              />
               <Card>
                 <FieldPalette
                   canAddComponent={canPlaceComponentIn(tree, null)}
@@ -329,6 +325,25 @@ export function SchemaBuilderPage() {
         onCancel={() => setPendingStart(null)}
         onCloseFocus={() => restoreFocus(new Event('focus'))}
       />
+      {selectedField === null ? null : (
+        <FieldPropertiesDialog
+          tree={tree}
+          field={selectedField}
+          errors={currentErrors}
+          onSetKey={(fieldId, key, value) => dispatch({ type: 'setFieldKey', fieldId, key, value })}
+          onChangeType={(fieldId, fieldType) =>
+            dispatch({ type: 'changeFieldType', fieldId, fieldType })
+          }
+          onChangeVariant={(fieldId, variant) =>
+            dispatch({ type: 'changeFieldVariant', fieldId, variant })
+          }
+          onClose={() => {
+            closedFieldId.current = selectedField.id;
+            setSelectedFieldId(null);
+          }}
+          onCloseAutoFocus={focusClosedRow}
+        />
+      )}
       {isImportOpen ? (
         <ImportSchemaDialog
           onLoad={loadImport}

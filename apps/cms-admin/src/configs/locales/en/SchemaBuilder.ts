@@ -40,6 +40,7 @@ export const SCHEMA_BUILDER_COPY = {
   },
   row: {
     select: (name: string) => `Edit ${name}`,
+    edit: (name: string) => `Properties of ${name}`,
     moveUp: (name: string) => `Move ${name} up`,
     moveDown: (name: string) => `Move ${name} down`,
     moveTo: (name: string) => `Move ${name} to another list`,
@@ -82,7 +83,17 @@ export const SCHEMA_BUILDER_COPY = {
   },
   property: {
     heading: 'Field properties',
-    empty: 'Select a field to edit its properties.',
+    description: 'Changes apply as you type.',
+    done: 'Done',
+    options: {
+      label: 'Options',
+      empty: 'No options yet. Add at least one.',
+      option: (position: number) => `Option ${position}`,
+      add: 'Add option',
+      moveUp: (position: number) => `Move option ${position} up`,
+      moveDown: (position: number) => `Move option ${position} down`,
+      remove: (position: number) => `Remove option ${position}`,
+    },
     name: 'Name',
     displayName: 'Display name',
     type: 'Type',

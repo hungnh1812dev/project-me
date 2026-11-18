@@ -1,7 +1,7 @@
 ---
 module: apps/cms-admin/src/views/schema-builder
 app: cms-admin
-summary: Owner page to design a content type: start or import, type keys, field canvas with palette and property panel, live cms-api check, export as JSON; editor tree model and field type registry.
+summary: Owner page to design a content type: start or import, type keys, field canvas with palette, the field properties popup, live cms-api check, export as JSON; editor tree model and field type registry.
 ---
 
 # Schema builder (cms-admin)
@@ -14,7 +14,7 @@ Flows: [`schema-builder`](../../flows/schema-builder/FLOW.md).
 
 ## Purpose
 
-The owner builds a content type definition as a field tree and exports it as JSON (flow schema-builder). The page (`/schema-builder`, owner only) starts or imports a definition, edits the type keys, shows the cms-api check live and exports the JSON. The canvas lists the fields (component boxes hold their own lists); every add, move, duplicate and delete has a plain control, the selected field opens in the property panel, and rows with validator errors carry a marker.
+The owner builds a content type definition as a field tree and exports it as JSON (flow schema-builder). The page (`/schema-builder`, owner only) starts or imports a definition, edits the type keys, shows the cms-api check live and exports the JSON. The canvas lists the fields (component boxes hold their own lists); every add, move, duplicate and delete has a plain control, choosing a field opens its properties in a popup, and rows with validator errors carry a marker.
 
 ## Techniques
 
@@ -26,11 +26,11 @@ lucide-react (palette icons); the check runs through `useDefinitionValidation` o
 
 ## Entry points
 
-`SchemaBuilderPage` (route `SCHEMA_BUILDER`), `SchemaCanvas`, `SchemaDragContext`, `PropertyPanel`, `FieldPalette`, `useSchemaBuilderNavItems`, `schemaTreeReducer`, `addField`, `moveTargetsOf`, `FIELD_TYPES`.
+`SchemaBuilderPage` (route `SCHEMA_BUILDER`), `SchemaCanvas`, `SchemaDragContext`, `FieldPropertiesDialog`, `FieldPalette`, `useSchemaBuilderNavItems`, `schemaTreeReducer`, `addField`, `moveTargetsOf`, `FIELD_TYPES`.
 
 ## Where to change what
 
-A new field type: one entry in `FIELD_TYPES` plus one copy label (`fieldTypes`). A new kind of number or date: one variant entry in `FIELD_TYPE_GROUPS` (`FieldTypes.registry.ts`) plus one label under `fieldVariants`; a new palette item or group: `PALETTE_ORDER` there, with a label under `fieldGroups`. A new key that only some types hold (like `unsigned`, `options`): one entry in `KEY_TYPE_RULES` of `SchemaTree.reducer.ts` plus the key in the order and shape lists of `SchemaJson.rules.ts`. A new tree action: one case in `SchemaTree.reducer.ts`. A new row control: `FieldRow.tsx` plus the handler in `SchemaCanvas.tsx`. Drag rules (offered lists, drop place, announcements): `SchemaDragContext.tsx` with its copy under `dnd`. A new field key control: `PropertyPanel.tsx`. Export rules (when it is enabled, what it shows): `ExportPanel.tsx`. A new import refusal: `SchemaJson.rules.ts` plus its copy line under `import.refusal`. The task file list named `views-schema-builder.md`; this existing doc of the same folder was filled instead.
+A new field type: one entry in `FIELD_TYPES` plus one copy label (`fieldTypes`). A new kind of number or date: one variant entry in `FIELD_TYPE_GROUPS` (`FieldTypes.registry.ts`) plus one label under `fieldVariants`; a new palette item or group: `PALETTE_ORDER` there, with a label under `fieldGroups`. A new key that only some types hold (like `unsigned`, `options`): one entry in `KEY_TYPE_RULES` of `SchemaTree.reducer.ts` plus the key in the order and shape lists of `SchemaJson.rules.ts`. A new tree action: one case in `SchemaTree.reducer.ts`. A new row control: `FieldRow.tsx` plus the handler in `SchemaCanvas.tsx`. Drag rules (offered lists, drop place, announcements): `SchemaDragContext.tsx` with its copy under `dnd`. A new field key control: `FieldPropertiesDialog.tsx` (a new list-valued control sits beside `EnumOptionsEditor` there). Export rules (when it is enabled, what it shows): `ExportPanel.tsx`. A new import refusal: `SchemaJson.rules.ts` plus its copy line under `import.refusal`. The task file list named `views-schema-builder.md`; this existing doc of the same folder was filled instead.
 
 ## Files
 
@@ -47,10 +47,10 @@ Tests: 11 files (not listed).
 |---|---|
 | `ExportPanel.tsx` | Copy JSON and Download (`<slug>.json`) enabled only for a current, error-free check; the reason when off; next steps after an export (exports `ExportPanel`) |
 | `FieldPalette.tsx` | Field type palette (one button per palette item, a group standing in for its member types; adds the item's default type at the end of the top level, plus a drag handle per item) and the same list as the per-list "Add field" menu; Component left out past the depth limit (exports `FieldPalette`, `AddFieldMenu`) |
-| `FieldRow.tsx` | One canvas row: name, type, markers, error marker, and the move up, move down, move to, duplicate and delete controls and the drag handle it is given (exports `MoveTarget`, `FieldRow`) |
+| `FieldPropertiesDialog.tsx` | The selected field's properties in a popup (Done, Esc and overlay close it; each change applies at once): name, display name, type, Number or Date type select, enum options editor, required, sensitive, width or component and repeatable, with the errors of each key and the reason a type change is refused (exports `FieldPropertiesDialog`) |
+| `FieldRow.tsx` | One canvas row: name, type, markers, error marker, and the Edit (properties), move up, move down, move to, duplicate and delete controls and the drag handle it is given (exports `MoveTarget`, `FieldRow`) |
 | `FieldTypes.registry.ts` | Field types, the Number and Datetime picker groups with their variants, and the palette order (exports `FIELD_TYPES`, `FIELD_TYPE_GROUPS`, `paletteItems`, `variantOf`, `findVariant`, `FieldTypeName`, `COMPONENT_FIELD_TYPE`, `findFieldType`) |
-| `ImportSchemaDialog.tsx` | Pick a `.json` file or paste text, refuse with one message or hand the parsed tree to the page (exports `ImportSchemaDialog`) |
-| `PropertyPanel.tsx` | Selected field's name, display name, type, required, sensitive, width or component and repeatable, with the errors of each key and the reason a type change is refused (exports `PropertyPanel`) |
+| `ImportSchemaDialog.tsx` | Pick a `.json` file or paste text (in a `CodeTextarea`), refuse with one message or hand the parsed tree to the page (exports `ImportSchemaDialog`) |
 | `SchemaBuilderPage.tsx` | `/schema-builder` page: owner gate, start and import, type key controls with their errors, restart confirm, leave guard, live check (exports `SchemaBuilderPage`) |
 | `SchemaCanvas.tsx` | The field tree as rows and component boxes with per-list Add field, move, duplicate, delete with confirm, focus kept on a moved row, and each list as a sortable drop zone (exports `SchemaCanvas`) |
 | `SchemaDragContext.tsx` | The one `@dnd-kit` context around canvas and palette: pointer and keyboard sensors, the lists a dragged item may enter (`moveTargetsOf`, depth rule), drop to add or move then select, screen-reader announcements (exports `SchemaDragContext`, `allowedOwnersOf`, `placeOf`, `listDropId`, `useIsListOffered`) |

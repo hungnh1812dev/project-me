@@ -47,7 +47,7 @@ Tests: 8 files (not listed).
 | File | Description |
 |---|---|
 | `ConfirmDialog.tsx` | `ConfirmDialog`: two-button confirmation (Cancel focused first, confirm button names the action); used by `DocumentActions` and the leave guard |
-| `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order |
+| `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order; an outside click closes it only with `isDismissedOutside` |
 | `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton` (neutral rows in a flush `Card`), `LoadError`, `EmptyState` (title, optional hint and icon in a `Card`): page title and loading, error and empty states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |
 | `ScreenTextBoundary.tsx` | `ScreenTextBoundary`: holds a route back until its `textScreens` text is loaded (title skeleton), a loading screen throws its promise (no `use`, so no conditional-use warning); an already loaded screen renders at once; shows `LoadError` when the load fails, and its retry clears the failed loads (`retryFailedScreenText`) and loads again; optional `fallback` replaces the skeleton |
