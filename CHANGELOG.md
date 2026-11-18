@@ -89,6 +89,8 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
 - root: a phase checkpoint's tier 3 runs only the e2e specs the feature can affect, and the feature checks run no tier 3 and no final run: passed phase rows are carried as `pass` and a tier 3 only feature row is `n/a` with a note, which `break-check --close` accepts (ADR 0022 and its amendment).
 - root: one full stack per tier 3 run: only qc starts it for a checklist run (kept mode without e2e; the full suite only when the user asks), a running stack on the same `HEAD` is reused and stays up across a session break (`Stack:` line in `handoff.md`), builders never start it, and a re-test round runs only the failed specs plus the scope of the fix commits.
+- root: the manager triages a question about the code, spec or project through `request-validator` instead of answering it or saying it does not know; the validator returns `route: answer` with file:line evidence, and the manager shows it to the user verbatim.
+- root: builders, qc and security-qc ask the user (report `blocked`) before adding, changing or deleting anything that affects a database: schema, migrations, seeds, DB config, or data reset and bulk changes, local included (`local-env` "Database changes").
 
 ## 0.1.0 (2026-11-05)
 
