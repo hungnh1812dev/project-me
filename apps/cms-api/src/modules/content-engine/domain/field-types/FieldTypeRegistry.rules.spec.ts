@@ -93,6 +93,18 @@ describe('field type registry', () => {
       expect(coerce(type, '1.5')).toBeUndefined();
     });
 
+    it('float refuses a value past the Postgres real range, double accepts it', () => {
+      expect(coerce('float', 3.4028234663852886e38)).toBe(3.4028234663852886e38);
+      expect(coerce('float', -3.4028234663852886e38)).toBe(-3.4028234663852886e38);
+      expect(coerce('float', 1e39)).toBeUndefined();
+      expect(coerce('float', -1e39)).toBeUndefined();
+      expect(coerce('double', 1e39)).toBe(1e39);
+      expect(coerce('float', 1e-50)).toBeUndefined();
+      expect(coerce('float', -1e-50)).toBeUndefined();
+      expect(coerce('float', 0)).toBe(0);
+      expect(coerce('float', 1.401298464324817e-45)).toBe(1.401298464324817e-45);
+    });
+
     it.each([
       ['09:30', '09:30:00'],
       ['23:59:59', '23:59:59'],

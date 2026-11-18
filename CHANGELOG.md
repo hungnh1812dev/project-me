@@ -27,6 +27,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Bug fixes
 
+- cms-api: a `float` value (or schema default) outside the Postgres `real` range (above about 3.4e38, or non-zero below about 1.4e-45) is refused with 400 instead of failing at the database with 500.
 - web: `/cv` never answers 404 or 500 for its content: with no published main `page-cv-a`, or a failed read with no mock (production), it shows the no-CV-live state (`cv-common-text` `noCvText`, or the last-resort text); an unpublished `cv-common-text` shows the CV without labels; in development and staging a failed read or a single type that answers null gets its mock, a collection that answers empty never does; `/cv` runs three queries (`PageCvA`, `Profile`, `CvCommonText`) (public-site PS-2, Q-PS2c, Q-PS2e, WEB-5).
 - cms-api: the content type `page-cv-text` is renamed `cv-common-text` with a new field list including `noCvText` (destructive migration, no data carried over; public-site PS-3, Q-PS7).
 - cms-api: accepts `NODE_ENV=staging` (the staging cluster's cms-api crashed at boot on it); the production guards still need `NODE_ENV=production`.
