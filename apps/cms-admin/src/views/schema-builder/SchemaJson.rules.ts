@@ -244,6 +244,8 @@ export interface ErrorPathTarget {
   fieldId: string | null;
   /** The key the path ends on (`name`, `slug`, `fields`); `undefined` when it ends on a field. */
   key: string | undefined;
+  /** The list position the path ends on, such as the option of `options[1]`. */
+  itemIndex?: number;
 }
 
 /** A validator error placed on the tree: the field and key it points at, with its message. */
@@ -267,7 +269,9 @@ export function fieldIdOfErrorPath(
     position += 2;
   }
   const key = path[position];
-  return { fieldId, key: key === undefined ? undefined : String(key) };
+  const target: ErrorPathTarget = { fieldId, key: key === undefined ? undefined : String(key) };
+  const item = path[position + 1];
+  return typeof item === 'number' ? { ...target, itemIndex: item } : target;
 }
 
 /** Renders `['fields', 5, 'fields', 2, 'name']` as `fields[5].fields[2].name`. */

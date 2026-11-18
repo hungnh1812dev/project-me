@@ -190,6 +190,14 @@ describe('error paths', () => {
     expect(fieldIdOfErrorPath(tree, [])).toEqual({ fieldId: null, key: undefined });
   });
 
+  it('keeps the list position an error path ends on', () => {
+    expect(fieldIdOfErrorPath(tree, ['fields', 0, 'options', 1])).toEqual({
+      fieldId: first.id,
+      key: 'options',
+      itemIndex: 1,
+    });
+  });
+
   it('maps a field and a nested field with their key', () => {
     expect(fieldIdOfErrorPath(tree, ['fields', 0, 'name'])).toEqual({
       fieldId: first.id,

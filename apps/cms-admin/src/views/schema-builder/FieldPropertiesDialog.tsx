@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   Button,
   Checkbox,
@@ -39,12 +40,15 @@ interface FieldPropertiesDialogProps {
 interface EnumOptionsEditorProps {
   options: readonly string[];
   error: string | undefined;
+  /** Messages by option position, for errors that point at one entry. */
+  entryErrors: ReadonlyMap<number, string>;
   onChange: (options: readonly string[]) => void;
 }
 
 /** One text input per option with remove, move up, move down and Add option; each change is the new list. */
-function EnumOptionsEditor({ options, error, onChange }: EnumOptionsEditorProps) {
+function EnumOptionsEditor({ options, error, entryErrors, onChange }: EnumOptionsEditorProps) {
   const text = useScreenText('schemaBuilder').schemaBuilder.property.options;
+  const container = useRef<HTMLFieldSetElement>(null);
   const replaceAt = (index: number, value: string) =>
     onChange(options.map((option, position) => (position === index ? value : option)));
   const swap = (index: number, other: number) => {
@@ -52,8 +56,12 @@ function EnumOptionsEditor({ options, error, onChange }: EnumOptionsEditorProps)
     [next[index], next[other]] = [next[other]!, next[index]!];
     onChange(next);
   };
+  const focusOptionAt = (index: number) =>
+    requestAnimationFrame(() =>
+      container.current?.querySelector<HTMLElement>(`[data-option-index="${index}"]`)?.focus(),
+    );
   return (
-    <fieldset className="m-0 grid gap-2 border-0 p-0">
+    <fieldset ref={container} className="m-0 grid gap-2 border-0 p-0">
       <legend className="p-0 text-sm font-medium">{text.label}</legend>
       {options.length === 0 ? (
         <p className="m-0 text-sm text-muted-foreground">{text.empty}</p>
@@ -61,45 +69,60 @@ function EnumOptionsEditor({ options, error, onChange }: EnumOptionsEditorProps)
         <ul className="m-0 grid list-none gap-2 p-0">
           {options.map((option, index) => (
             // Options are plain text with no id; the position is the identity.
-            <li key={index} className="flex items-center gap-1">
-              <Input
-                aria-label={text.option(index + 1)}
-                value={option}
-                autoComplete="off"
-                onChange={(event) => replaceAt(index, event.target.value)}
-              />
-              <IconButton
-                type="button"
-                variant="ghost"
-                label={text.moveUp(index + 1)}
-                disabled={index === 0}
-                onClick={() => swap(index, index - 1)}
-              >
-                <ArrowUp aria-hidden="true" />
-              </IconButton>
-              <IconButton
-                type="button"
-                variant="ghost"
-                label={text.moveDown(index + 1)}
-                disabled={index === options.length - 1}
-                onClick={() => swap(index, index + 1)}
-              >
-                <ArrowDown aria-hidden="true" />
-              </IconButton>
-              <IconButton
-                type="button"
-                variant="ghost"
-                label={text.remove(index + 1)}
-                onClick={() => onChange(options.filter((_, position) => position !== index))}
-              >
-                <Trash2 aria-hidden="true" />
-              </IconButton>
+            <li key={index} className="grid gap-1">
+              <div className="flex items-center gap-1">
+                <Input
+                  aria-label={text.option(index + 1)}
+                  aria-invalid={entryErrors.has(index) || undefined}
+                  data-option-index={index}
+                  value={option}
+                  autoComplete="off"
+                  onChange={(event) => replaceAt(index, event.target.value)}
+                />
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  label={text.moveUp(index + 1)}
+                  disabled={index === 0}
+                  onClick={() => swap(index, index - 1)}
+                >
+                  <ArrowUp aria-hidden="true" />
+                </IconButton>
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  label={text.moveDown(index + 1)}
+                  disabled={index === options.length - 1}
+                  onClick={() => swap(index, index + 1)}
+                >
+                  <ArrowDown aria-hidden="true" />
+                </IconButton>
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  label={text.remove(index + 1)}
+                  onClick={() => onChange(options.filter((_, position) => position !== index))}
+                >
+                  <Trash2 aria-hidden="true" />
+                </IconButton>
+              </div>
+              {entryErrors.has(index) ? (
+                <p role="alert" className="m-0 text-sm text-destructive-strong">
+                  {entryErrors.get(index)}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
       )}
       <div>
-        <Button type="button" onClick={() => onChange([...options, ''])}>
+        <Button
+          type="button"
+          onClick={() => {
+            onChange([...options, '']);
+            focusOptionAt(options.length);
+          }}
+        >
           {text.add}
         </Button>
       </div>
@@ -125,9 +148,19 @@ export function FieldPropertiesDialog({
 }: FieldPropertiesDialogProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   const text = copy.property;
+  const optionErrors = new Map(
+    errors
+      .filter(
+        (error) =>
+          error.fieldId === field.id && error.key === 'options' && error.itemIndex !== undefined,
+      )
+      .map((error) => [error.itemIndex as number, error.message] as const),
+  );
   const errorsOf = (key: string) =>
     errors
-      .filter((error) => error.fieldId === field.id && error.key === key)
+      .filter(
+        (error) => error.fieldId === field.id && error.key === key && error.itemIndex === undefined,
+      )
       .map((error) => error.message)
       .join(' ') || undefined;
 
@@ -249,6 +282,7 @@ export function FieldPropertiesDialog({
           <EnumOptionsEditor
             options={field.options ?? []}
             error={errorsOf('options')}
+            entryErrors={optionErrors}
             onChange={(options) => onSetKey(field.id, 'options', options)}
           />
         ) : null}

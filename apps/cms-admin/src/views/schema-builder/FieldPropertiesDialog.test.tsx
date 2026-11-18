@@ -160,4 +160,29 @@ describe('FieldPropertiesDialog', () => {
     );
     expect(screen.queryByText('Not mine')).toBeNull();
   });
+
+  it('shows an option error at its entry and marks only that entry invalid', () => {
+    const withOptions = schemaTreeReducer(withFields, {
+      type: 'setFieldKey',
+      fieldId: 'f6',
+      key: 'options',
+      value: ['a', 'a'],
+    });
+    renderInApp(
+      createTestServices().services,
+      <FieldPropertiesDialog
+        tree={withOptions}
+        field={findField(withOptions.fields, 'f6')!}
+        errors={[{ fieldId: 'f6', key: 'options', itemIndex: 1, message: 'Duplicate option' }]}
+        onSetKey={vi.fn<Parameters<typeof FieldPropertiesDialog>[0]['onSetKey']>()}
+        onChangeType={vi.fn<(fieldId: string, fieldType: string) => void>()}
+        onChangeVariant={vi.fn<(fieldId: string, variant: string) => void>()}
+        onClose={vi.fn<() => void>()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+      />,
+    );
+    expect(screen.getByLabelText(text.options.option(1))).not.toHaveAttribute('aria-invalid');
+    expect(screen.getByLabelText(text.options.option(2))).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText('Duplicate option')).toBeVisible();
+  });
 });
