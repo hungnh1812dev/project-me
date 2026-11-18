@@ -6,6 +6,22 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.2.0 (2026-11-18)
+
+Repo 0.2.0, cms-api, cms-admin and web 0.2.0, e2e 0.0.3: schema builder field types and defaults, the premium admin look with toasts, the CV page on the web BFF path with new content types, remember-me sign-in and the fixes since 0.1.0.
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.2.0   | yes                     |
+| `@abyss/cms-api`      | 0.2.0   | yes                     |
+| `@abyss/cms-admin`    | 0.2.0   | yes                     |
+| `@abyss/web`          | 0.2.0   | yes                     |
+| `@abyss/base-config`  | 0.1.0   | yes (version kept)      |
+| `@abyss/form-commons` | 0.1.0   | yes (version kept)      |
+| e2e                   | 0.0.3   | yes                     |
+
 ### New features
 
 - cms-api: new field types `biginteger`, `float`, `double`, `time`, `enumeration`, keys `unsigned` and `options`, GraphQL scalars `BigInt` and `Time`; document writes check `unsigned` and `options`, and the content type view lists `options`.
@@ -24,21 +40,6 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - web: content API layers (server RESTful, server GraphQL with `APP_API_TOKEN`, client RESTful); page text and CV data come from cms-api in three queries with a 180 s per-call cache, and a mock fallback through `MockView.ts` that is on only where `APP_ENV` is not `production` (WEB-1..WEB-9).
 - cms-admin: premium SaaS look (indigo primary, rounded cards, sticky sidebar and header, soft focus halo) and toasts for the outcomes of content, media, access and security actions (ADM-1..ADM-10).
 - form-commons: theme tokens for the premium look, a `Card` component and a `Toast` provider; web is unchanged.
-
-### Bug fixes
-
-- web: `/cv` never answers 404 or 500 for its content: with no published main `page-cv-a`, or a failed read with no mock (production), it shows the no-CV-live state (`cv-common-text` `noCvText`, or the last-resort text); an unpublished `cv-common-text` shows the CV without labels; in development and staging a failed read or a single type that answers null gets its mock, a collection that answers empty never does; `/cv` runs three queries (`PageCvA`, `Profile`, `CvCommonText`) (public-site PS-2, Q-PS2c, Q-PS2e, WEB-5).
-- cms-api: the content type `page-cv-text` is renamed `cv-common-text` with a new field list including `noCvText` (destructive migration, no data carried over; public-site PS-3, Q-PS7).
-- cms-api: accepts `NODE_ENV=staging` (the staging cluster's cms-api crashed at boot on it); the production guards still need `NODE_ENV=production`.
-- e2e: the type check passes again (`jsx` and the `@apis/*` path in `tsconfig.json`; explicit presence checks in three specs).
-
-### DevOps patches
-
-- cms-api 0.2.0: backup CronJob runs the cms-api image; time set by Secret `postgres-backup-schedule`; `NODE_ENV=production` in `postgres-backup` ([patch](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
-- root: `SMOKE_WEB_PRODUCTION=1 pnpm smoke` builds and runs web with `APP_ENV=production` and its default data cache window (`SMOKE_WEB_APP_ENV`, `SMOKE_WEB_REVALIDATE_SECONDS` in `docker-compose.smoke.yml`); the default stays staging with no cache.
-- scripts: the smoke and dev stacks seed the new content types (`header`, `module-auth`, `module-status`, `page-cv-text`, `profile`, `page-cv-a`) from the web mocks; `pnpm dev:stack demo` runs `SeedContent.mjs` instead of `scripts/demo/content/`, and the start check reads `pageCvAList` and `experiences.company`. No deploy-repo change (WPQ-10).
-- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
-- web 0.2.0, local k3s cluster: remove the cms-api route on the web host (Ingress `cms-api-staging`, IngressRoute `cms-api-staging-upload`) so the web BFF answers `/api/v1/*`, and rebuild the web image from a clean commit; the old image logs the server env, so rotate those values if reused ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 
 ### Changes
 
@@ -96,6 +97,22 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: the manager triages a question about the code, spec or project through `request-validator` instead of answering it or saying it does not know; the validator returns `route: answer` with file:line evidence, and the manager shows it to the user verbatim.
 - root: builders, qc and security-qc ask the user (report `blocked`) before adding, changing or deleting anything that affects a database: schema, migrations, seeds, DB config, or data reset and bulk changes, local included (`local-env` "Database changes").
 - root: `docs/global/reference/env-vars.md` lists every app's environment variables with purpose, required at start, default and scope.
+
+### Bug fixes
+
+- cms-api: a `float` value (or schema default) outside the Postgres `real` range (above about 3.4e38, or non-zero below about 1.4e-45) is refused with 400 instead of failing at the database with 500.
+- web: `/cv` never answers 404 or 500 for its content: with no published main `page-cv-a`, or a failed read with no mock (production), it shows the no-CV-live state (`cv-common-text` `noCvText`, or the last-resort text); an unpublished `cv-common-text` shows the CV without labels; in development and staging a failed read or a single type that answers null gets its mock, a collection that answers empty never does; `/cv` runs three queries (`PageCvA`, `Profile`, `CvCommonText`) (public-site PS-2, Q-PS2c, Q-PS2e, WEB-5).
+- cms-api: the content type `page-cv-text` is renamed `cv-common-text` with a new field list including `noCvText` (destructive migration, no data carried over; public-site PS-3, Q-PS7).
+- cms-api: accepts `NODE_ENV=staging` (the staging cluster's cms-api crashed at boot on it); the production guards still need `NODE_ENV=production`.
+- e2e: the type check passes again (`jsx` and the `@apis/*` path in `tsconfig.json`; explicit presence checks in three specs).
+
+### DevOps patches
+
+- cms-api 0.2.0: backup CronJob runs the cms-api image; time set by Secret `postgres-backup-schedule`; `NODE_ENV=production` in `postgres-backup` ([patch](docs/apps/cms-api/patch-cms-api-0.2.0.md)).
+- root: `SMOKE_WEB_PRODUCTION=1 pnpm smoke` builds and runs web with `APP_ENV=production` and its default data cache window (`SMOKE_WEB_APP_ENV`, `SMOKE_WEB_REVALIDATE_SECONDS` in `docker-compose.smoke.yml`); the default stays staging with no cache.
+- scripts: the smoke and dev stacks seed the new content types (`header`, `module-auth`, `module-status`, `page-cv-text`, `profile`, `page-cv-a`) from the web mocks; `pnpm dev:stack demo` runs `SeedContent.mjs` instead of `scripts/demo/content/`, and the start check reads `pageCvAList` and `experiences.company`. No deploy-repo change (WPQ-10).
+- web 0.2.0: `API_INTERNAL_URL` is renamed `APP_API_URL`, `APP_API_TOKEN` is added to `web-secrets`, `WEB_REVALIDATE_SECONDS` is dropped, `APP_ENV` is added to `web-secrets` and as the GitHub variable `APP_ENV` for the image build, which must be `production` (the `production` Environment refuses any other value; the two must match); create the token as a `guest`-role account (not owner or admin) and run the post-deploy `_maskedFields` check; release web only after the cms-api release that serves the page text types ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
+- web 0.2.0, local k3s cluster: remove the cms-api route on the web host (Ingress `cms-api-staging`, IngressRoute `cms-api-staging-upload`) so the web BFF answers `/api/v1/*`, and rebuild the web image from a clean commit; the old image logs the server env, so rotate those values if reused ([patch-web-0.2.0.md](docs/apps/web/patch-web-0.2.0.md)).
 
 ## 0.1.0 (2026-11-05)
 

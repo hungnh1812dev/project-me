@@ -2,6 +2,8 @@ import { type SCALAR_FIELD_TYPES } from '../ContentEngine.constants';
 import { type FieldTypeSpec } from './FieldType.entity';
 import { sanitizeRichtext } from './RichtextSanitizer.rules';
 import {
+  FLOAT4_MAX,
+  FLOAT4_MIN_NONZERO,
   INT4_MAX,
   parseBigInteger,
   parseDate,
@@ -12,6 +14,11 @@ import {
 } from './ValueParsers.rules';
 
 type ScalarFieldType = (typeof SCALAR_FIELD_TYPES)[number];
+
+function isWithinFloat4Range(value: number): boolean {
+  const magnitude = Math.abs(value);
+  return magnitude <= FLOAT4_MAX && (magnitude === 0 || magnitude >= FLOAT4_MIN_NONZERO);
+}
 
 const coerceText = (value: unknown) => (typeof value === 'string' ? value : undefined);
 
@@ -78,7 +85,8 @@ export const FIELD_TYPE_SPECS = {
     ...NUMBER_LIKE,
     graphqlOutput: 'Float',
     columnType: 'real',
-    coerceValue: coerceFiniteNumber,
+    coerceValue: (value) =>
+      typeof value === 'number' && isWithinFloat4Range(value) ? value : undefined,
   },
   double: {
     ...NUMBER_LIKE,

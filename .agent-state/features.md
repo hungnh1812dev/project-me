@@ -32,6 +32,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 30 | backup-image | done (2026-11-16) | features/backup-image/ | apps/cms-api (backup/ runtime folder, Dockerfile, README), .github (cms-api.yml, _publish.yml, backup-tools.sh, pins-check.sh), docs/deployments, docs/apps/cms-api, docs/flows/backups (BK-6), docs/adr/0025, CHANGELOG.md | 7fcb6d0aad4a1ba9de2db182ccde21898d14d7fe | features/backup-image/SUMMARY.md |
 | 31 | backup-production-only | done 2026-11-17 | features/backup-production-only/ | apps/cms-api (backup script, test, README), docs/deployments, docs/flows/backups (BK-6), docs/adr/0025, CHANGELOG.md | 23ccc14c57653f3f0c9a59e42e11f06b85773ffa | features/backup-production-only/SUMMARY.md |
 | 32 | picomatch-audit | done 2026-11-18 | features/picomatch-audit/ | pnpm-workspace.yaml, CHANGELOG.md | 65cb897895b8d61cf29d20181d2a15e2f2576097 | features/picomatch-audit/SUMMARY.md |
+| 33 | schema-builder-fields | done | features/schema-builder-fields/ | apps/cms-api (content-engine, content-types, graphql, schema.graphql), packages/form-commons, apps/cms-admin (features/content-types, views/schema-builder, configs/locales/en), apps/e2e | 89224a91efda19b84702c56b3263699cb710a2f7 | features/schema-builder-fields/SUMMARY.md |
 | 10 | launch-gate | todo (stopped by user 2026-11-16; not resumed until the user asks; resume: ask for TOTP secret CLG-15/16, CLG-56 stage 2 data, Q2/Q3) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
 
@@ -57,6 +58,10 @@ Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (
 - admin-ui-premium-saas: document editor autocomplete and label-for DevTools issues (low, qc) -> ui-builder, unscheduled.
 - cv-page-schema: public-site SPEC Q5 (`docs/flows/public-site/SPEC.md` line 38) still has no answer; the user chose cv-page `references.phone` and `experiences.company` as sensitive (2026-11-05) -> planner SPEC to record it -> unscheduled.
 - cv-page-schema: a stray test log `s.txt` in the repo's parent folder (outside the repo) -> user to remove.
+- schema-builder-fields: enumeration empty choice is always shown -> unscheduled.
+- schema-builder-fields: the Edit control label is `Properties of <name>`; the popup also opens after Duplicate; the root zone announces "position 3 of 2" -> unscheduled.
+- schema-builder-fields: a11y (qc, low): the Default value error for text, number and date in the properties popup is a bare alert, not linked to its input (no aria-invalid or aria-describedby): apps/cms-admin/src/views/schema-builder/FieldPropertiesDialog.tsx ~245-262 -> unscheduled.
+- schema-builder-fields: Password.integration.spec.ts:251 timing flake (ratio 0.448 vs 0.5) under load; passed on rerun -> unscheduled.
 - cv-page-schema: security-qc's login tokens in the scratchpad folder `/private/tmp/claude-501/-Users-hungnguyenhuy-workspace-projects-project-me-code/d2f595c3-3552-44e0-8f54-030ccfde4505/scratchpad` (valid 15 min, local stack only) -> user may delete.
 - locale-loader: planner SPEC to add the text rule (cms-admin screen text through configs/locales) to docs/apps/cms-admin/RULES.md -> unscheduled.
 - locale-loader: conventions-frontend.md line 12 still states the old copy rule; update it -> unscheduled.

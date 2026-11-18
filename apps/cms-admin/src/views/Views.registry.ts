@@ -136,7 +136,7 @@ export const VIEWS: readonly View[] = [
   {
     path: APP_ROUTES.SCHEMA_BUILDER,
     Component: SchemaBuilderPage,
-    textScreens: ['schemaBuilder'],
+    textScreens: ['schemaBuilder', 'content'],
     useNavItems: useSchemaBuilderNavItems,
   },
   {
