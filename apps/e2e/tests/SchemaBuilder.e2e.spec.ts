@@ -301,7 +301,7 @@ test.describe(
 
 const BUILDER_SLUG = 'kbd-type';
 const COMPONENT_TYPE = ADMIN_COPY.schemaBuilder.fieldTypes.component;
-const SHORT_TYPE = ADMIN_COPY.schemaBuilder.fieldTypes.string;
+const STRING_TYPE = ADMIN_COPY.schemaBuilder.fieldTypes.string;
 const TOP_LEVEL_DEPTH = 3;
 const ANNOUNCE_SETTLE_MS = 200;
 
@@ -313,10 +313,23 @@ const startNewType = async (page: Page) => {
 const editButton = (page: Page, name: string) =>
   page.getByRole('button', { name: copy.row.select(name), exact: true });
 const nameInput = (page: Page) => page.getByLabel(copy.property.name, { exact: true });
+const propertiesDialog = (page: Page) =>
+  page.getByRole('dialog').filter({
+    has: page.getByRole('button', { name: copy.property.done, exact: true }),
+  });
+/** Done closes the properties popup; the rest of the page is inert while it is open. */
+const closeProperties = async (page: Page) => {
+  await propertiesDialog(page)
+    .getByRole('button', { name: copy.property.done, exact: true })
+    .click();
+  await expect(propertiesDialog(page)).toHaveCount(0);
+};
 const announcement = (page: Page) => page.locator('[aria-live="assertive"]').last();
 
 /** Opens an "Add field" style menu with the keyboard and picks a type with the keyboard. */
 const addFieldByKeyboard = async (page: Page, opener: string, typeLabel: string) => {
+  // A field just added opens its popup; the next add starts from the closed page.
+  if ((await propertiesDialog(page).count()) > 0) await closeProperties(page);
   // Nested boxes may share a name; a box's own Add field comes before its parent's.
   const button = page.getByRole('button', { name: opener, exact: true }).first();
   await button.focus();
@@ -337,6 +350,9 @@ const dragByKeyboard = async (page: Page, handleName: string, arrow: string, pla
     await page.waitForTimeout(ANNOUNCE_SETTLE_MS);
     if (place.test((await announcement(page).textContent()) ?? '')) break;
   }
+  // Drop only once the live region still names the place after the target settled.
+  await page.waitForTimeout(ANNOUNCE_SETTLE_MS);
+  await expect(announcement(page)).toHaveText(place);
   await page.keyboard.press('Space');
 };
 
@@ -379,6 +395,7 @@ test.describe(
       await expect(nameInput(page)).toHaveValue('field1');
       await addFieldByKeyboard(page, copy.fields.addFieldTo('field1'), COMPONENT_TYPE);
       await addFieldByKeyboard(page, copy.fields.addFieldTo('field1'), COMPONENT_TYPE);
+      await closeProperties(page);
       await expect(editButton(page, 'field1')).toHaveCount(3);
       expect(TOP_LEVEL_DEPTH).toBe(3);
 
@@ -388,7 +405,7 @@ test.describe(
         .first()
         .focus();
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('menuitem', { name: SHORT_TYPE, exact: true })).toBeVisible();
+      await expect(page.getByRole('menuitem', { name: STRING_TYPE, exact: true })).toBeVisible();
       await expect(
         page
           .getByRole('menuitem', { name: COMPONENT_TYPE, exact: true })
@@ -396,9 +413,10 @@ test.describe(
       ).toHaveCount(0);
       await page.keyboard.press('Escape');
 
-      await addFieldByKeyboard(page, copy.fields.addFieldTo('field1'), SHORT_TYPE);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addFieldTo('field1'), STRING_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
       await expect(nameInput(page)).toHaveValue('field2');
+      await closeProperties(page);
 
       // Move to: the plain field at the top level goes into the innermost component.
       await page
@@ -447,11 +465,12 @@ test.describe(
     }) => {
       await startNewType(page);
       await addFieldByKeyboard(page, copy.fields.addField, COMPONENT_TYPE);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
       await expect(nameInput(page)).toHaveValue('field2');
+      await closeProperties(page);
 
       // Palette item into the component box (the box list is the first target up from the end).
-      const paletteHandle = copy.dnd.paletteHandle(SHORT_TYPE);
+      const paletteHandle = copy.dnd.paletteHandle(STRING_TYPE);
       const handle = page.getByRole('button', { name: paletteHandle, exact: true });
       await handle.focus();
       await page.keyboard.press('Space');
@@ -461,14 +480,15 @@ test.describe(
         /is over position 1 of 1 in Fields of field1\./,
       );
       await page.keyboard.press('Escape');
-      await expect(announcement(page)).toHaveText(copy.dnd.cancelled(SHORT_TYPE));
+      await expect(announcement(page)).toHaveText(copy.dnd.cancelled(STRING_TYPE));
       await expect(page.getByRole('button', { name: /^Edit / })).toHaveCount(2);
 
       // Palette item to the top level.
       await dragByKeyboard(page, paletteHandle, 'ArrowUp', /in Fields\./);
-      await expect(announcement(page)).toContainText(`${SHORT_TYPE} dropped at`);
+      await expect(announcement(page)).toContainText(`${STRING_TYPE} dropped at`);
+      await expect(nameInput(page)).toHaveValue('field3');
+      await closeProperties(page);
       await expect(page.getByRole('button', { name: /^Edit / })).toHaveCount(3);
-      await expect(editButton(page, 'field3')).toHaveAttribute('aria-pressed', 'true');
 
       // A top-level field into the component box.
       await dragByKeyboard(
@@ -484,12 +504,12 @@ test.describe(
           .getByRole('button', { name: /^Edit / }),
       ).toHaveCount(1);
 
-      // Reorder at the top level: field3 above field1.
+      // Reorder at the top level: the palette drop put field3 above field1, so move it below.
       await dragByKeyboard(
         page,
         copy.dnd.fieldHandle('field3'),
-        'ArrowUp',
-        /position 1 of \d+ in Fields\./,
+        'ArrowDown',
+        /position 2 of \d+ in Fields\./,
       );
       await expect(announcement(page)).toContainText('field3 dropped at');
       await expect(
@@ -497,18 +517,19 @@ test.describe(
           .getByRole('list', { name: copy.fields.rootListLabel, exact: true })
           .getByRole('button', { name: /^Edit / })
           .first(),
-      ).toHaveAttribute('aria-label', copy.row.select('field3'));
+      ).toHaveAttribute('aria-label', copy.row.select('field1'));
     });
 
     test('error marker follows its field after a reorder; choosing the error selects the field', async ({
       page,
     }) => {
       await startNewType(page);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
       await nameInput(page).fill('Bad Name');
       await expect(page.getByText(copy.validation.errorCount(1))).toBeVisible();
       const marker = (name: string) => editButton(page, name).getByText(copy.row.hasErrors);
+      await closeProperties(page);
       await expect(marker('Bad Name')).toBeVisible();
 
       await page.getByRole('button', { name: copy.row.moveUp('Bad Name') }).click();
@@ -518,27 +539,30 @@ test.describe(
 
       await editButton(page, 'field1').click();
       await expect(nameInput(page)).toHaveValue('field1');
+      await closeProperties(page);
       await page.getByRole('button', { name: /^Go to the field of / }).click();
       await expect(nameInput(page)).toHaveValue('Bad Name');
     });
 
-    test('selection follows moves; delete clears the panel; duplicate picks a free name', async ({
+    test('moves leave the popup closed; edit and duplicate open it; delete leaves it closed', async ({
       page,
     }) => {
       await startNewType(page);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
-      await editButton(page, 'field1').click();
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
+      await closeProperties(page);
       await page.getByRole('button', { name: copy.row.moveDown('field1') }).click();
+      await expect(propertiesDialog(page)).toHaveCount(0);
+      await editButton(page, 'field1').click();
       await expect(nameInput(page)).toHaveValue('field1');
-      await expect(editButton(page, 'field1')).toHaveAttribute('aria-pressed', 'true');
+      await closeProperties(page);
       await page.getByRole('button', { name: copy.row.duplicate('field1') }).click();
       await expect(nameInput(page)).not.toHaveValue('field1');
+      const copyName = await nameInput(page).inputValue();
+      await closeProperties(page);
       await expect(page.getByRole('button', { name: /^Edit / })).toHaveCount(3);
-      await page
-        .getByRole('button', { name: copy.row.remove(await nameInput(page).inputValue()) })
-        .click();
-      await expect(page.getByText(copy.property.empty)).toBeVisible();
+      await page.getByRole('button', { name: copy.row.remove(copyName) }).click();
+      await expect(propertiesDialog(page)).toHaveCount(0);
       await expect(page.getByRole('button', { name: /^Edit / })).toHaveCount(2);
     });
 
@@ -546,7 +570,8 @@ test.describe(
       page,
     }) => {
       await startNewType(page);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
+      await closeProperties(page);
       await chooseUserMenuItem(page, ADMIN_COPY.session.signOut);
       const dialog = page.getByRole('dialog', { name: leave.title });
       await expect(dialog).toBeVisible();
@@ -560,6 +585,7 @@ test.describe(
       await page.setViewportSize({ width: DESKTOP.width, height: TALL_HEIGHT });
       await startNewType(page);
       await addFieldByKeyboard(page, copy.fields.addField, COMPONENT_TYPE);
+      await closeProperties(page);
       const palette = (type: string) =>
         page.getByRole('button', { name: copy.dnd.paletteHandle(type), exact: true });
       const edits = page.getByRole('button', { name: /^Edit / });
@@ -568,21 +594,24 @@ test.describe(
         .getByRole('button', { name: /^Edit / });
 
       // Palette item into the component box.
-      await dragWithPointer(page, palette(SHORT_TYPE), page.getByText(copy.fields.emptyComponent));
+      await dragWithPointer(page, palette(STRING_TYPE), page.getByText(copy.fields.emptyComponent));
+      await expect(nameInput(page)).toBeVisible();
+      await closeProperties(page);
       await expect(edits).toHaveCount(2);
       await expect(
         page
           .getByRole('list', { name: copy.fields.listLabel('field1') })
           .getByRole('button', { name: /^Edit / }),
       ).toHaveCount(1);
-      await expect(nameInput(page)).toBeVisible();
 
       // Palette item to the top level (below the box).
       await dragWithPointer(
         page,
-        palette(SHORT_TYPE),
+        palette(STRING_TYPE),
         page.getByRole('button', { name: copy.fields.addField, exact: true }),
       );
+      await expect(nameInput(page)).toBeVisible();
+      await closeProperties(page);
       await expect(edits).toHaveCount(3);
       await expect(innerRows).toHaveCount(1);
 
@@ -623,7 +652,7 @@ test.describe(
         ],
         [
           'palette',
-          (target) => target.getByRole('button', { name: SHORT_TYPE, exact: true }).click(),
+          (target) => target.getByRole('button', { name: STRING_TYPE, exact: true }).click(),
         ],
       ];
       const menu = page.getByRole('navigation', { name: nav.label });
@@ -632,6 +661,7 @@ test.describe(
         await importText(page, readSchema(PAGE_CV_A_FILE));
         await expect(validCheck(page), kind).toBeVisible();
         await edit(page);
+        if ((await propertiesDialog(page).count()) > 0) await closeProperties(page);
         await menu.getByRole('link', { name: nav.accounts }).click();
         const dialog = page.getByRole('dialog', { name: leave.title });
         await expect(dialog, kind).toBeVisible();
@@ -687,13 +717,15 @@ test.describe(
       await openBuilder(page);
       await startNewType(page);
       await addFieldByKeyboard(page, copy.fields.addField, COMPONENT_TYPE);
+      await closeProperties(page);
       await dragWithPointer(
         page,
-        page.getByRole('button', { name: copy.dnd.paletteHandle(SHORT_TYPE), exact: true }),
+        page.getByRole('button', { name: copy.dnd.paletteHandle(STRING_TYPE), exact: true }),
         page.getByText(copy.fields.emptyComponent),
       );
       await expect(announcement(page)).toContainText('dropped at');
-      await dragByKeyboard(page, copy.dnd.paletteHandle(SHORT_TYPE), 'ArrowDown', /in Fields\./);
+      await closeProperties(page);
+      await dragByKeyboard(page, copy.dnd.paletteHandle(STRING_TYPE), 'ArrowDown', /in Fields\./);
       await expect(announcement(page)).toContainText('dropped at');
       await expectNoViolation(readViolations, '/schema-builder during drags');
       expect(consoleErrors).toEqual([]);
@@ -704,13 +736,15 @@ test.describe(
     }) => {
       await startNewType(page);
       await addFieldByKeyboard(page, copy.fields.addField, COMPONENT_TYPE);
-      await addFieldByKeyboard(page, copy.fields.addField, SHORT_TYPE);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
+      await closeProperties(page);
       await dragByKeyboard(
         page,
-        copy.dnd.paletteHandle(SHORT_TYPE),
+        copy.dnd.paletteHandle(STRING_TYPE),
         'ArrowUp',
         /in Fields of field1\./,
       );
+      await closeProperties(page);
       await expect(
         page
           .getByRole('list', { name: copy.fields.listLabel('field1') })
@@ -737,6 +771,145 @@ test.describe(
         expect(overflow).toBeLessThanOrEqual(0);
       });
     }
+  },
+);
+
+const PALETTE_ORDER = [
+  copy.fieldTypes.text,
+  copy.fieldTypes.string,
+  copy.fieldTypes.richtext,
+  copy.fieldGroups.number,
+  copy.fieldTypes.boolean,
+  copy.fieldGroups.datetimePicker,
+  copy.fieldTypes.enumeration,
+  copy.fieldTypes.json,
+  copy.fieldTypes.media,
+  copy.fieldTypes.component,
+];
+const EVERY_KIND_FIELDS = [
+  { name: 'unsignedCount', type: 'integer', unsigned: true },
+  { name: 'wholeCount', type: 'integer' },
+  { name: 'bigCount', type: 'biginteger' },
+  { name: 'floatValue', type: 'float' },
+  { name: 'doubleValue', type: 'double' },
+  { name: 'decimalValue', type: 'decimal' },
+  { name: 'dayValue', type: 'date' },
+  { name: 'stampValue', type: 'datetime' },
+  { name: 'clockValue', type: 'time' },
+  { name: 'level', type: 'enumeration', options: ['low', 'high'] },
+];
+const EVERY_KIND_ROWS: [string, string][] = [
+  ['unsignedCount', 'Number · Unsigned integer'],
+  ['wholeCount', 'Number · Integer'],
+  ['bigCount', 'Number · Big integer'],
+  ['floatValue', 'Number · Float'],
+  ['doubleValue', 'Number · Double'],
+  ['decimalValue', 'Number · Decimal'],
+  ['dayValue', 'Datetime picker · Date'],
+  ['stampValue', 'Datetime picker · Date and time'],
+  ['clockValue', 'Datetime picker · Time'],
+];
+
+test.describe(
+  'schema builder number, datetime picker and enum fields (owner only)',
+  { tag: ['@cms-admin', '@cms-api', '@schema-builder'] },
+  () => {
+    test.beforeEach(async ({ page }) => {
+      await page.setViewportSize({ width: DESKTOP.width, height: TALL_HEIGHT });
+      await signInAsOwner(page);
+      await openBuilder(page);
+    });
+
+    test('palette shows the new labels in order', async ({ page }) => {
+      await startNewType(page);
+      const handles = await page
+        .getByRole('button', { name: /^Drag .+ into the fields$/ })
+        .evaluateAll((buttons) => buttons.map((button) => button.getAttribute('aria-label')));
+      expect(handles).toEqual(PALETTE_ORDER.map((label) => copy.dnd.paletteHandle(label)));
+    });
+
+    test('every Number kind, Date kind and an Enum check clean and export with the new keys in order', async ({
+      page,
+    }) => {
+      await importText(
+        page,
+        JSON.stringify({
+          slug: 'every-kind',
+          displayName: 'Every kind',
+          kind: 'collection',
+          draftAndPublish: false,
+          fields: EVERY_KIND_FIELDS,
+        }),
+      );
+      await expect(validCheck(page)).toBeVisible();
+      for (const [name, label] of EVERY_KIND_ROWS) {
+        await expect(editButton(page, name).getByText(label, { exact: true })).toBeVisible();
+      }
+      const download = page.getByRole('button', { name: copy.export.download });
+      await expect(download).toBeEnabled();
+      const [saved] = await Promise.all([page.waitForEvent('download'), download.click()]);
+      const exported = JSON.parse(readFileSync(await saved.path(), 'utf8')) as {
+        fields: Record<string, unknown>[];
+      };
+      expect(exported.fields).toEqual(EVERY_KIND_FIELDS);
+      expect(Object.keys(exported.fields[0] ?? {})).toEqual(['name', 'type', 'unsigned']);
+      expect(Object.keys(exported.fields.at(-1) ?? {})).toEqual(['name', 'type', 'options']);
+    });
+
+    test('Number and Datetime picker items drop as integer and datetime and switch kind in the popup', async ({
+      page,
+    }) => {
+      await startNewType(page);
+      await page.getByRole('button', { name: copy.fieldGroups.number, exact: true }).click();
+      await expect(nameInput(page)).toHaveValue('field1');
+      await propertiesDialog(page)
+        .getByLabel(copy.property.numberType)
+        .selectOption({ label: copy.fieldVariants.biginteger });
+      await closeProperties(page);
+      await expect(
+        editButton(page, 'field1').getByText('Number · Big integer', { exact: true }),
+      ).toBeVisible();
+
+      await page
+        .getByRole('button', { name: copy.fieldGroups.datetimePicker, exact: true })
+        .click();
+      await expect(propertiesDialog(page).getByLabel(copy.property.dateType)).toHaveValue(
+        'datetime',
+      );
+      await closeProperties(page);
+      await expect(
+        editButton(page, 'field2').getByText('Datetime picker · Date and time', { exact: true }),
+      ).toBeVisible();
+    });
+
+    test('an Enum without options shows its error in the popup and blocks export', async ({
+      page,
+    }) => {
+      await startNewType(page);
+      await addFieldByKeyboard(page, copy.fields.addField, copy.fieldTypes.enumeration);
+      await expect(propertiesDialog(page).getByRole('alert').first()).toBeVisible();
+      await closeProperties(page);
+      await expect(validCheck(page)).toHaveCount(0);
+      await expect(page.getByRole('button', { name: copy.export.download })).toBeDisabled();
+
+      await editButton(page, 'field1').click();
+      await propertiesDialog(page).getByRole('button', { name: copy.property.options.add }).click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.options.option(1), { exact: true })
+        .fill('low');
+      await closeProperties(page);
+      await expect(validCheck(page)).toBeVisible();
+      await expect(page.getByRole('button', { name: copy.export.download })).toBeEnabled();
+    });
+
+    test('Escape closes the popup and focus returns to the row', async ({ page }) => {
+      await startNewType(page);
+      await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
+      await expect(propertiesDialog(page)).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(propertiesDialog(page)).toHaveCount(0);
+      await expect(editButton(page, 'field1')).toBeFocused();
+    });
   },
 );
 
@@ -799,22 +972,25 @@ test.describe(
       const skillsList = page.getByRole('list', { name: copy.fields.listLabel('skills') });
       await dragWithPointer(
         page,
-        handle(SHORT_TYPE),
+        handle(STRING_TYPE),
         skillsList.getByRole('button', { name: copy.row.select('level'), exact: true }),
         0.3,
       );
       await expect(nameInput(page)).toHaveValue('field1');
+      await closeProperties(page);
       await expect(
         skillsList.getByRole('button', { name: copy.row.select('field1'), exact: true }),
       ).toBeVisible();
       // Keyboard: a second palette item onto the top level, then into a component with Move to.
       const edits = page.getByRole('button', { name: /^Edit / });
       const before = await edits.count();
-      await dragByKeyboard(page, copy.dnd.paletteHandle(SHORT_TYPE), 'ArrowDown', /in Fields\./);
-      await expect(announcement(page)).toContainText(`${SHORT_TYPE} dropped at`);
-      await expect(edits).toHaveCount(before + 1);
+      await dragByKeyboard(page, copy.dnd.paletteHandle(STRING_TYPE), 'ArrowDown', /in Fields\./);
+      await expect(announcement(page)).toContainText(`${STRING_TYPE} dropped at`);
+      await expect(nameInput(page)).toBeVisible();
       const added = 'extra';
       await nameInput(page).fill(added);
+      await closeProperties(page);
+      await expect(edits).toHaveCount(before + 1);
       await page.getByRole('button', { name: copy.row.moveTo(added), exact: true }).focus();
       await page.keyboard.press('Enter');
       await page
@@ -830,9 +1006,12 @@ test.describe(
       await editButton(page, 'field1').click();
       await nameInput(page).fill('Bad Name');
       await expect(page.getByText(copy.validation.errorCount(1))).toBeVisible();
+      await closeProperties(page);
       await expect(editButton(page, 'Bad Name').getByText(copy.row.hasErrors)).toBeVisible();
       await expect(page.getByRole('button', { name: copy.export.download })).toBeDisabled();
+      await editButton(page, 'Bad Name').click();
       await nameInput(page).fill('badge');
+      await closeProperties(page);
       await expect(validCheck(page)).toBeVisible();
 
       const download = page.getByRole('button', { name: copy.export.download });

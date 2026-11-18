@@ -127,10 +127,46 @@ const ARROW_DIRECTIONS: Record<string, { x: number; y: number }> = {
   [KeyboardCode.Right]: { x: 1, y: 0 },
 };
 
+const isPointInRect = (
+  point: { x: number; y: number },
+  rect: { left: number; right: number; top: number; bottom: number },
+) => rect.left <= point.x && point.x <= rect.right && rect.top <= point.y && point.y <= rect.bottom;
+
+/**
+ * Nothing lies further in the arrow's direction from inside a nested list: step out to the smallest
+ * zone that encloses the dragged item and is larger than the one it is over (an empty component box
+ * to the list that holds it), whose centre may sit behind the item.
+ */
+function enclosingListCentre(
+  {
+    active,
+    droppableRects,
+    droppableContainers,
+    over,
+  }: Parameters<KeyboardCoordinateGetter>[1]['context'],
+  from: { x: number; y: number },
+): { x: number; y: number } | null {
+  const overRect = over === null ? undefined : droppableRects.get(over.id);
+  if (overRect === undefined) return null;
+  let enclosing: { x: number; y: number; area: number } | null = null;
+  for (const container of droppableContainers.getEnabled()) {
+    const rect = droppableRects.get(container.id);
+    if (rect === undefined || container.id === over?.id || container.id === active?.id) continue;
+    const area = rect.width * rect.height;
+    if (!isPointInRect(from, rect) || area <= overRect.width * overRect.height) continue;
+    if (enclosing === null || area < enclosing.area) {
+      enclosing = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, area };
+    }
+  }
+  return enclosing;
+}
+
 /**
  * Arrow keys step the dragged item (palette item or field) to the nearest enabled place in that direction
  * (rows, lists and empty component boxes alike); the sortable getter skipped empty component boxes in the
- * production build.
+ * production build. An item still away from the place it is announced over (a palette item, matched by
+ * closest centre at pick-up) first moves onto that place, so the next arrow steps from where the user
+ * was told it is, not from the palette.
  */
 export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args) => {
   const { active, collisionRect, droppableRects, droppableContainers, over } = args.context;
@@ -141,6 +177,13 @@ export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args
     x: collisionRect.left + collisionRect.width / 2,
     y: collisionRect.top + collisionRect.height / 2,
   };
+  const overRect = over === null ? undefined : droppableRects.get(over.id);
+  if (overRect !== undefined && !isPointInRect(from, overRect)) {
+    return {
+      x: overRect.left + overRect.width / 2 - collisionRect.width / 2,
+      y: overRect.top + overRect.height / 2 - collisionRect.height / 2,
+    };
+  }
   let nearest: { x: number; y: number; distance: number } | null = null;
   for (const container of droppableContainers.getEnabled()) {
     const rect = droppableRects.get(container.id);
@@ -151,11 +194,14 @@ export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args
     const distance = Math.hypot(centre.x - from.x, centre.y - from.y);
     if (nearest === null || distance < nearest.distance) nearest = { ...centre, distance };
   }
-  return nearest === null
+  // Only an empty list zone steps out; the first or last row of a list stays where it is.
+  const isOverListZone = String(over?.id).startsWith(LIST_ID_PREFIX);
+  const target = nearest ?? (isOverListZone ? enclosingListCentre(args.context, from) : null);
+  return target === null
     ? undefined
     : {
-        x: nearest.x - collisionRect.width / 2,
-        y: nearest.y - collisionRect.height / 2,
+        x: target.x - collisionRect.width / 2,
+        y: target.y - collisionRect.height / 2,
       };
 };
 
@@ -171,7 +217,6 @@ interface SchemaDragContextProps {
   tree: SchemaTree;
   onAdd: (parentId: ListOwnerId, fieldType: FieldTypeName, index?: number) => void;
   onMove: (fieldId: string, parentId: ListOwnerId, index: number) => void;
-  onSelect: (fieldId: string) => void;
   children: ReactNode;
 }
 
@@ -179,13 +224,7 @@ interface SchemaDragContextProps {
  * The one drag and drop context of the builder (SB-5, SB-7): wraps the canvas and the palette,
  * offers only the lists that take the dragged item, and announces each step to screen readers.
  */
-export function SchemaDragContext({
-  tree,
-  onAdd,
-  onMove,
-  onSelect,
-  children,
-}: SchemaDragContextProps) {
+export function SchemaDragContext({ tree, onAdd, onMove, children }: SchemaDragContextProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const focusHandleOf = useRef<string | null>(null);
@@ -234,8 +273,9 @@ export function SchemaDragContext({
       place.parentId === null
         ? copy.fields.rootListLabel
         : copy.fields.listLabel(findField(tree.fields, place.parentId)?.name ?? '');
+    const lastIndex = isSameList ? list.length - 1 : list.length;
     return copy.dnd.place(
-      Math.min(place.index, list.length) + 1,
+      Math.min(place.index, lastIndex) + 1,
       list.length + (isSameList ? 0 : 1),
       listLabel,
     );
@@ -274,7 +314,6 @@ export function SchemaDragContext({
     const fieldId = String(event.active.id);
     focusHandleOf.current = fieldId;
     onMove(fieldId, place.parentId, place.index);
-    onSelect(fieldId);
   };
 
   return (

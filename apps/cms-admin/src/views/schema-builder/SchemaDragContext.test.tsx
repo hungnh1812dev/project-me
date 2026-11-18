@@ -7,7 +7,12 @@ import userEvent from '@testing-library/user-event';
 import { FieldPalette } from './FieldPalette';
 import type { FieldTypeName } from './FieldTypes.registry';
 import { SchemaCanvas } from './SchemaCanvas';
-import { allowedOwnersOf, placeOf, SchemaDragContext } from './SchemaDragContext';
+import {
+  allowedOwnersOf,
+  builderKeyboardCoordinates,
+  placeOf,
+  SchemaDragContext,
+} from './SchemaDragContext';
 import {
   canPlaceComponentIn,
   createNewSchemaTree,
@@ -46,7 +51,6 @@ function Harness({ steps }: { steps: [ListOwnerId, string][] }) {
       onMove={(fieldId, parentId, index) =>
         dispatch({ type: 'moveField', fieldId, parentId, index })
       }
-      onSelect={setSelected}
     >
       <p data-testid="selected">{selected ?? 'none'}</p>
       <SchemaCanvas
@@ -120,7 +124,7 @@ describe('SchemaDragContext by keyboard', () => {
     );
     const root = screen.getByRole('list', { name: copy.fields.rootListLabel });
     expect(names(root)).toEqual([copy.row.select('f2'), copy.row.select('f1')]);
-    expect(screen.getByTestId('selected')).toHaveTextContent('f1');
+    expect(screen.getByTestId('selected')).toHaveTextContent('none');
   });
 
   it('cancels with Escape and leaves the order unchanged', async () => {
@@ -154,10 +158,14 @@ describe('SchemaDragContext by keyboard', () => {
     );
     screen.getByRole('button', { name: copy.dnd.fieldHandle('f2') }).focus();
     await userEvent.keyboard(' ');
-    await userEvent.keyboard('{ArrowUp}');
+    // The stub layout draws the dragged item away from its row, so the first arrow moves it onto its row.
+    const listLabel = copy.fields.listLabel('f1');
+    for (let step = 0; step < 6 && !announcement()?.includes(listLabel); step += 1) {
+      await userEvent.keyboard('{ArrowUp}');
+    }
     await userEvent.keyboard(' ');
     expect(announcement()).toContain('dropped at');
-    expect(screen.getByRole('list', { name: copy.fields.listLabel('f1') })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: listLabel })).toBeInTheDocument();
   });
 
   it('drops a palette item into the fields', async () => {
@@ -255,5 +263,79 @@ describe('drop places', () => {
     expect(placeOf(threeLevels, 'f4', 'f1', true)).toEqual({ parentId: null, index: 0 });
     expect(placeOf(threeLevels, 'f4', 'list:f2', false)).toEqual({ parentId: 'f2', index: 1 });
     expect(placeOf(threeLevels, 'f4', 'list:root', false)).toEqual({ parentId: null, index: 2 });
+  });
+});
+
+describe('builderKeyboardCoordinates', () => {
+  const rect = (top: number, height: number) => ({
+    top,
+    bottom: top + height,
+    left: 0,
+    right: 200,
+    width: 200,
+    height,
+  });
+
+  it('steps from an empty component box out to the list that holds it when nothing lies above', () => {
+    const rects = new Map([
+      ['list:box', rect(40, 20)],
+      ['root', rect(0, 200)],
+      ['row', rect(150, 20)],
+    ]);
+    const containers = { getEnabled: () => [...rects.keys()].map((id) => ({ id })) };
+    const context = {
+      active: { id: 'palette' },
+      over: { id: 'list:box' },
+      collisionRect: { left: 0, top: 40, width: 200, height: 20 },
+      droppableRects: rects,
+      droppableContainers: containers,
+    };
+    const event = { code: 'ArrowUp', preventDefault: () => undefined } as KeyboardEvent;
+    const next = builderKeyboardCoordinates(event, { context } as never);
+    expect(next).toEqual({ x: 0, y: 100 - 10 });
+  });
+
+  it('keeps the top row of a list where it is when nothing lies above', () => {
+    const rects = new Map([
+      ['row', rect(0, 20)],
+      ['list:root', rect(0, 200)],
+      ['other', rect(100, 20)],
+    ]);
+    const containers = { getEnabled: () => [...rects.keys()].map((id) => ({ id })) };
+    const context = {
+      active: { id: 'row' },
+      over: { id: 'row' },
+      collisionRect: { left: 0, top: 0, width: 200, height: 20 },
+      droppableRects: rects,
+      droppableContainers: containers,
+    };
+    const event = { code: 'ArrowUp', preventDefault: () => undefined } as KeyboardEvent;
+    expect(builderKeyboardCoordinates(event, { context } as never)).toBeUndefined();
+  });
+
+  it('moves a palette item still in the palette onto the box it is over, then up out of the box to the component row', () => {
+    // A component row holding its empty box, with the palette item far to the right and above both.
+    const rects = new Map([
+      ['root', rect(100, 200)],
+      ['row', rect(100, 140)],
+      ['box', rect(160, 40)],
+    ]);
+    const containers = { getEnabled: () => [...rects.keys()].map((id) => ({ id })) };
+    const contextAt = (left: number, top: number) => ({
+      active: { id: 'palette' },
+      over: { id: 'box' },
+      collisionRect: { left, top, width: 200, height: 20 },
+      droppableRects: rects,
+      droppableContainers: containers,
+    });
+    const event = { code: 'ArrowUp', preventDefault: () => undefined } as KeyboardEvent;
+
+    const ontoBox = builderKeyboardCoordinates(event, { context: contextAt(800, 0) } as never);
+    expect(ontoBox).toEqual({ x: 0, y: 180 - 10 });
+
+    const outOfBox = builderKeyboardCoordinates(event, {
+      context: contextAt(ontoBox?.x ?? 0, ontoBox?.y ?? 0),
+    } as never);
+    expect(outOfBox).toEqual({ x: 0, y: 170 - 10 });
   });
 });
