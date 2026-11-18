@@ -7,18 +7,16 @@ export type FormValues = Record<string, unknown>;
 
 const isComponent = (node: FieldNode) => node.children.length > 0;
 
-/** A blank component item: no uid yet, every field empty. */
+/** A new component item: no uid yet, each field at its default or empty. */
 export function emptyItem(node: FieldNode): FormValues {
   const item: FormValues = { [ITEM_UID_KEY]: '' };
-  for (const child of node.children) {
-    item[child.name] = isComponent(child) ? [] : adapterFor(child.type).toForm(null);
-  }
+  fillLevel(item, node.children, {}, {}, true);
   return item;
 }
 
 function itemToForm(node: FieldNode, source: ComponentItem): FormValues {
   const item: FormValues = { [ITEM_UID_KEY]: source.componentUid ?? '' };
-  fillLevel(item, node.children, source.values ?? {}, source.components ?? {});
+  fillLevel(item, node.children, source.values ?? {}, source.components ?? {}, false);
   return item;
 }
 
@@ -27,23 +25,25 @@ function fillLevel(
   nodes: readonly FieldNode[],
   values: FieldValueMap,
   components: Record<string, ComponentItem[] | null | undefined>,
+  fillDefaults: boolean,
 ): void {
   for (const node of nodes) {
     if (isComponent(node)) {
       into[node.name] = (components[node.name] ?? []).map((item) => itemToForm(node, item));
     } else {
-      into[node.name] = adapterFor(node.type).toForm(values[node.name]);
+      const start = fillDefaults ? node.defaultValue : undefined;
+      into[node.name] = adapterFor(node.type).toForm(values[node.name] ?? start);
     }
   }
 }
 
-/** Form defaults from a loaded draft (or blank for a new document). */
+/** Form values from a loaded document; a new document starts at the fields' defaults (CE-5). */
 export function toFormValues(
   nodes: readonly FieldNode[],
   record: Pick<DocumentRecord, 'values' | 'components'> | null,
 ): FormValues {
   const form: FormValues = {};
-  fillLevel(form, nodes, record?.values ?? {}, record?.components ?? {});
+  fillLevel(form, nodes, record?.values ?? {}, record?.components ?? {}, record === null);
   return form;
 }
 

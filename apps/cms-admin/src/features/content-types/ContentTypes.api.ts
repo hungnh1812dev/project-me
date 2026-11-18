@@ -16,6 +16,8 @@ export interface ContentTypeField {
   width?: FieldWidth;
   /** Allowed values of an `enumeration` field; absent on every other type. */
   options?: string[];
+  /** Starting value of a new field input, in API value form; absent when none. */
+  default?: unknown;
   repeatable: boolean;
   rootScalar: boolean;
   conditionKind: string | null;
