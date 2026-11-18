@@ -27,6 +27,7 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 - cms-admin: an owner-only feature has no permission subject: its `useNavItems` returns the item only when `useCallerAccess().isOwner` and gates the query with `enabled` (see `features/backups/Backups.queries.ts`); the server stays the authority.
 - cms-admin: a feature API is registered with `apiServices: [defineApiService(createXApi, XApiProvider)]` in its `<Name>.feature.ts` (`apis/client/ApiService.setup.tsx`, R3-10); `createAppServices` returns `apiProviders`, no named `xApi` fields.
 - apps/web: `configs/**` may import pure `utils` helpers but not `apis/client/Api.client` or features (ESLint, R3-15); error codes sit in the feature's constants file, `TURNSTILE` in `Security.constants`; the reviewer API, query key and `useReviewerEnabled` live in `features/reviewer/Reviewer.queries.ts`.
+- cms-admin keyboard drag: use `ImmediateKeyboardSensor` (`SchemaDragContext.tsx`), not dnd-kit's `KeyboardSensor`; the stock one starts listening in a setTimeout and loses keys pressed right after pick-up on a busy page.
 
 ## User decisions in force
 - apps/web: features import each other only through `index.ts`; `session` is below `auth` and `reviewer`, which never import each other; `**/*.fixture.*` only in `*.test.*` (eslint + `src/FeatureTiers.architecture.test.ts`).

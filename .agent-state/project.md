@@ -3,7 +3,7 @@ Tasks: `tasks/todo.md` (open tasks only) - grep `**<ID>:` and read that entry (A
 Phases: `tasks/plan.md` (features in build order, their open phases and checkpoint tables)
 Spec: root `SPEC.md` (index and Docs table); flows `docs/flows/<flow>/`, apps `docs/apps/<app>/`, global `docs/global/`. Layout and where a change goes: root `CLAUDE.md` "Spec layout" (already in your context).
 Scopes:
-- core-builder: `apps/cms-api`, `packages/base-config`, `.github/`, `turbo.json`, `docker-compose.smoke.yml`, `scripts/`, `docs/deployments/`, `.claude/skills/release-tag/`, `docs/apps/*/patch-*.md`, `CHANGELOG.md` (the template at `.github_template/` is reference only; do not edit it)
+- core-builder: `apps/cms-api`, `packages/base-config`, `.github/`, `turbo.json`, `docker-compose.smoke.yml`, `scripts/`, `docs/deployments/`, `.claude/skills/release-tag/`, `docs/apps/*/patch-*.md`, `pnpm-workspace.yaml`, `CHANGELOG.md` (the template at `.github_template/` is reference only; do not edit it)
 - ui-builder: `apps/cms-admin`, `apps/web`, `packages/form-commons`
 - qc: `apps/e2e`
 High-risk paths: `apps/cms-api/src/modules/identity`, `apps/cms-api/src/modules/access`, `apps/cms-api/src/modules/reviewer`, `apps/cms-api/src/modules/media`, `apps/cms-admin/src/features/auth`, `apps/cms-admin/src/features/security`, `apps/web/src/features/auth`
