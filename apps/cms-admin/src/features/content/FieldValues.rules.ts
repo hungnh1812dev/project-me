@@ -18,8 +18,8 @@ export function numberToForm(value: unknown): string {
   return typeof value === 'number' || typeof value === 'string' ? String(value) : '';
 }
 
-/** Integers go to the API as numbers (cms-api limits them to int4). */
-export function integerToApi(value: unknown): number | null {
+/** Integer, float and double go to the API as JS numbers (biginteger stays a digit string). */
+export function numberToApi(value: unknown): number | null {
   const text = textToApi(value);
   return text === null ? null : Number(text);
 }

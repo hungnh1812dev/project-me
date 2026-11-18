@@ -930,6 +930,10 @@
     "richtextLoading": "Loading the text editor…",
     "invalidInteger": "Enter a whole number, for example 12.",
     "invalidDecimal": "Enter a number, for example 12.5.",
+    "enumeration": {
+      "emptyChoice": "Choose a value",
+      "notAllowed": "SAMPLE (not allowed)"
+    },
     "invalidJson": "Enter valid JSON, for example [\"React\", \"Node\"].",
     "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
     "list": {
@@ -1131,8 +1135,8 @@
       }
     },
     "fieldTypes": {
-      "text": "Long text",
-      "string": "Short text",
+      "text": "Short text",
+      "string": "Long text",
       "richtext": "Rich text",
       "integer": "Whole number",
       "decimal": "Decimal number",

@@ -4,12 +4,15 @@ import {
   DateTimePicker,
   JsonInput,
   NumberInput,
+  SelectInput,
   SwitchInput,
   TextAreaInput,
   TextInput,
+  TimePicker,
 } from '@abyss/form-commons';
 import type { ScreenText } from '@configs/locales';
 import { formatDateTime } from '@utils/DateFormat.rules';
+import { get, useFormContext, useWatch } from 'react-hook-form';
 
 import { MediaField, mediaToApi, mediaToForm } from '../media';
 import { FIELD_TYPE, MASKED_VALUE } from './Content.constants';
@@ -17,9 +20,9 @@ import {
   booleanToForm,
   datetimeToApi,
   datetimeToForm,
-  integerToApi,
   jsonToApi,
   jsonToForm,
+  numberToApi,
   numberToForm,
   textToApi,
   textToForm,
@@ -32,6 +35,8 @@ export interface FieldRenderProps {
   /** Form path including item indexes (`experience.0.company`). */
   name: string;
   label: string;
+  /** Allowed values of an `enumeration` field. */
+  options?: readonly string[] | undefined;
   copy: ContentCopy;
 }
 
@@ -66,6 +71,17 @@ const longText: FieldAdapter = {
   render: ({ name, label }) => <TextAreaInput name={name} label={label} rows={4} />,
 };
 
+const floatingPoint: FieldAdapter = {
+  editable: true,
+  isSortable: true,
+  listAlignment: 'right',
+  toForm: numberToForm,
+  toApi: numberToApi,
+  render: ({ name, label, copy }) => (
+    <NumberInput name={name} label={label} mode="decimal" invalidMessage={copy.invalidDecimal} />
+  ),
+};
+
 /** Types without an editor yet: shown read-only and never sent. */
 const notEditable: FieldAdapter = {
   editable: false,
@@ -84,6 +100,30 @@ function plainForList(value: unknown): string | null {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : null;
 }
 
+/**
+ * Choices are the field's options. A stored value no longer listed stays as an
+ * extra "not allowed" choice until another value is picked (CE-2).
+ */
+function EnumerationField({ name, label, options = [], copy }: FieldRenderProps) {
+  const { formState } = useFormContext();
+  const stored: unknown = get(formState.defaultValues, name);
+  const current: unknown = useWatch({ name });
+  const isStaleValue =
+    typeof stored === 'string' && stored !== '' && !options.includes(stored) && current === stored;
+  const choices = options.map((option) => ({ value: option, label: option }));
+  if (isStaleValue) {
+    choices.push({ value: stored, label: copy.enumeration.notAllowed(stored) });
+  }
+  return (
+    <SelectInput
+      name={name}
+      label={label}
+      options={choices}
+      placeholder={copy.enumeration.emptyChoice}
+    />
+  );
+}
+
 /** The single map from field type to its input (SPEC: registry, not a switch). */
 export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
   [FIELD_TYPE.TEXT]: text,
@@ -93,7 +133,7 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     isSortable: true,
     listAlignment: 'right',
     toForm: numberToForm,
-    toApi: integerToApi,
+    toApi: numberToApi,
     render: ({ name, label, copy }) => (
       <NumberInput name={name} label={label} mode="integer" invalidMessage={copy.invalidInteger} />
     ),
@@ -107,6 +147,32 @@ export const FIELD_REGISTRY: Readonly<Record<string, FieldAdapter>> = {
     render: ({ name, label, copy }) => (
       <NumberInput name={name} label={label} mode="decimal" invalidMessage={copy.invalidDecimal} />
     ),
+  },
+  [FIELD_TYPE.BIGINTEGER]: {
+    editable: true,
+    isSortable: true,
+    listAlignment: 'right',
+    toForm: numberToForm,
+    toApi: textToApi,
+    render: ({ name, label, copy }) => (
+      <NumberInput name={name} label={label} mode="integer" invalidMessage={copy.invalidInteger} />
+    ),
+  },
+  [FIELD_TYPE.FLOAT]: floatingPoint,
+  [FIELD_TYPE.DOUBLE]: floatingPoint,
+  [FIELD_TYPE.TIME]: {
+    editable: true,
+    isSortable: true,
+    toForm: textToForm,
+    toApi: textToApi,
+    render: ({ name, label }) => <TimePicker name={name} label={label} />,
+  },
+  [FIELD_TYPE.ENUMERATION]: {
+    editable: true,
+    isSortable: true,
+    toForm: textToForm,
+    toApi: textToApi,
+    render: (props) => <EnumerationField {...props} />,
   },
   [FIELD_TYPE.BOOLEAN]: {
     editable: true,

@@ -14,6 +14,8 @@ export interface ContentTypeField {
   displayName?: string;
   /** Form row share; absent on components. */
   width?: FieldWidth;
+  /** Allowed values of an `enumeration` field; absent on every other type. */
+  options?: string[];
   repeatable: boolean;
   rootScalar: boolean;
   conditionKind: string | null;

@@ -100,8 +100,8 @@ export const SCHEMA_BUILDER_COPY = {
     },
   },
   fieldTypes: {
-    text: 'Long text',
-    string: 'Short text',
+    text: 'Short text',
+    string: 'Long text',
     richtext: 'Rich text',
     integer: 'Whole number',
     decimal: 'Decimal number',

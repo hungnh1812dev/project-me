@@ -9,6 +9,8 @@ export interface FieldNode {
   type: string;
   label: string;
   width: FieldWidth;
+  /** Allowed values of an `enumeration` field. */
+  options?: readonly string[];
   repeatable: boolean;
   children: FieldNode[];
 }
@@ -43,6 +45,7 @@ export function buildFieldTree(fields: readonly ContentTypeField[]): FieldNode[]
       type: field.type,
       label: field.displayName ?? labelOf(name),
       width: field.width ?? DEFAULT_FIELD_WIDTH,
+      ...(field.options === undefined ? {} : { options: field.options }),
       repeatable: field.repeatable,
       children: [],
     };
