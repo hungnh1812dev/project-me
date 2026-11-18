@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Builds the app images and pushes them to the local k3d registry (docs/deployments/local-registry.md).
-# Usage: bash scripts/local-registry-push.sh [cms-api|cms-admin|web ...]    (no argument: all three, in that order)
+# Usage: bash scripts/local-registry-push.sh [--no-cache] [cms-api|cms-admin|web ...]    (no app: all three, in that order)
+#   --no-cache        passed to every docker build of the run; accepted before or after the app names
 #   LOCAL_REGISTRY    registry host:port; default k3d-registry.localhost:5001
-#   LOCAL_IMAGE_TAG   image tag; default the short head hash, plus -dirty when the working tree has changes
+#   LOCAL_IMAGE_TAG   image tag; default a UTC timestamp (YYYYmmdd-HHMMSS), so every build gets a new tag
 #   Build args come from .github/scripts/build-args.sh run with ENVIRONMENT=local, so it reads TURBO_VERSION,
-#   VITE_API_BASE_URL, NEXT_PUBLIC_ADMIN_URL and NEXT_PUBLIC_TURNSTILE_SITE_KEY from the environment.
+#   VITE_API_BASE_URL, NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY and APP_ENV (web) from the environment.
 # Prints each pushed image ref, one per line. Reads no .env file and never prints a build-arg value.
 set -euo pipefail
 
@@ -19,15 +20,15 @@ build_args_environment=local
 build_args_start='build_args<<ARGS_EOF'
 build_args_end='ARGS_EOF'
 all_apps=(cms-api cms-admin web)
-usage="usage: local-registry-push.sh [${all_apps[*]}]"
+no_cache_option=--no-cache
+usage="usage: local-registry-push.sh [${no_cache_option}] [${all_apps[*]}]"
+
+default_tag_format='%Y%m%d-%H%M%S'
 
 registry="${LOCAL_REGISTRY:-${default_registry}}"
 
 default_tag() {
-  local tag
-  tag="$(git rev-parse --short HEAD)"
-  if [ -n "$(git status --porcelain)" ]; then tag="${tag}-dirty"; fi
-  echo "${tag}"
+  date -u +"${default_tag_format}"
 }
 
 die() {
@@ -64,6 +65,9 @@ check_app() { # app
   if [ "${1}" = web ] && [[ " ${build_args[*]-} " != *" NEXT_PUBLIC_TURNSTILE_SITE_KEY="* ]]; then
     die "NEXT_PUBLIC_TURNSTILE_SITE_KEY is not set for web"
   fi
+  if [ "${1}" = web ] && [[ " ${build_args[*]-} " != *" APP_ENV="* ]]; then
+    die "APP_ENV is not set for web"
+  fi
 }
 
 check_registry() {
@@ -71,7 +75,15 @@ check_registry() {
     die "registry ${registry} is not reachable; see ${registry_doc}"
 }
 
-apps=("$@")
+apps=()
+build_options=()
+for argument in "$@"; do
+  case "${argument}" in
+    "${no_cache_option}") build_options+=("${no_cache_option}") ;;
+    -*) die "unknown option '${argument}'; ${usage}" ;;
+    *) apps+=("${argument}") ;;
+  esac
+done
 if [ "${#apps[@]}" -eq 0 ]; then apps=("${all_apps[@]}"); fi
 
 for app in "${apps[@]}"; do check_app "${app}"; done
@@ -82,7 +94,7 @@ pushed_refs=()
 for app in "${apps[@]}"; do
   ref="${registry}/${app}:${tag}"
   load_build_args "${app}"
-  docker build -f "apps/${app}/Dockerfile" -t "${ref}" ${build_args[@]+"${build_args[@]}"} "${repo_root}"
+  docker build ${build_options[@]+"${build_options[@]}"} -f "apps/${app}/Dockerfile" -t "${ref}" ${build_args[@]+"${build_args[@]}"} "${repo_root}"
   docker push "${ref}"
   pushed_refs+=("${ref}")
 done

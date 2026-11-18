@@ -1,10 +1,10 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
-import { CV_PAGE_SLUG, HTTP } from '../src/E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { bearer, ownerApiToken } from '../src/Session.fixture';
 
-const DOCUMENTS_PATH = API_PATHS.documents(CV_PAGE_SLUG);
+const DOCUMENTS_PATH = API_PATHS.documents(PAGE_CV_A_SLUG);
 const GRAPHQL_PATH = API_PATHS.GRAPHQL;
 const INVALID_REQUEST_CODE = 'ACCESS_INVALID_REQUEST';
 const SECRET = 'SECRET-LIST-VALUE';
@@ -36,7 +36,7 @@ const REST_CASES: [string, string][] = [
   ['a malformed filter path', `filter[${SECRET}!]=x`],
 ];
 
-test.describe('API: list query limits (R2-06)', () => {
+test.describe('API: list query limits (R2-06)', { tag: ['@cms-api', '@content-editing'] }, () => {
   let headers: Record<string, string>;
 
   test.beforeAll(async ({ playwright }) => {
@@ -76,8 +76,8 @@ test.describe('API: list query limits (R2-06)', () => {
     expect(await response.text()).not.toContain(`noSuchField${SECRET.length}`);
   });
 
-  const GRAPHQL_LIST = `query List($page: Int, $pageSize: Int, $sort: [CvPageSort!], $filter: CvPageFilter) {
-    cvPageList(page: $page, pageSize: $pageSize, sort: $sort, filter: $filter, status: DRAFT) {
+  const GRAPHQL_LIST = `query List($page: Int, $pageSize: Int, $sort: [PageCvASort!], $filter: PageCvAFilter) {
+    pageCvAList(page: $page, pageSize: $pageSize, sort: $sort, filter: $filter, status: DRAFT) {
       meta { page pageSize total } } }`;
 
   const GRAPHQL_CASES: [string, Record<string, unknown>][] = [

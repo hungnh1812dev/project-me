@@ -62,7 +62,8 @@ Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
 must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN`, `JWT_ACCESS_KID`
 and `TOTP_ENC_KID` are required. `TOTP_ENC_PREVIOUS_KEY` (when set) must be
-at least 32 bytes too.
+at least 32 bytes too. `development` and `staging` run without these guards;
+the tests run as `development` (`test` is not accepted).
 
 ## HTTP pipeline
 
@@ -784,7 +785,7 @@ Rules, the default role matrix, the DSL and the revocation flow: [docs/modules/a
 
 ## Content types
 
-Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
+Content types are JSON files in `content/schemas/` (e.g. `page-cv-a.json`).
 `src/modules/content-engine/domain/DefinitionValidator.rules.ts` checks them (shape,
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
 `domain/Naming.rules.ts` is the single source of generated SQL names. Tables are created
@@ -918,6 +919,10 @@ Multi-stage: `turbo prune` keeps cms-api only, the build stage compiles it,
 and `pnpm deploy --prod` copies production dependencies into a runtime image
 that runs as the numeric `node` user (`USER 1000:1000`) on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
+
+The image also carries `postgresql17-client`, `age` and `rclone` and the nightly
+backup job script `/app/backup/nightly-backup.sh` (source `backup/nightly-backup.sh`,
+the `postgres-backup` CronJob runs it with the cms-api tag; it uploads only when `NODE_ENV=production`; ADR 0025).
 
 ### Two containers: init + main
 

@@ -3,7 +3,7 @@ name: security-qc
 description: Security review from an attacker's point of view - of a high-risk unit before its commit, and of each phase checkpoint and feature through its checklist (drafts its rows, then checks them one test tier at a time): API authz, input validation, injection, forms, UI data exposure, headers, CSP, cookies, CORS, redirects, secrets, dependencies. Writes checklist rows and results, and a findings file when something fails (deleted once the re-check passes); never edits anything else. Started fresh by the manager.
 model: sonnet
 color: red
-tools: Read, Write, Edit, Glob, Grep, Bash, Skill
+tools: Read, Write, Edit, Glob, Grep, Bash, Skill, ToolSearch, mcp__chrome-devtools__new_page, mcp__chrome-devtools__list_pages, mcp__chrome-devtools__select_page, mcp__chrome-devtools__close_page, mcp__chrome-devtools__navigate_page, mcp__chrome-devtools__take_snapshot, mcp__chrome-devtools__evaluate_script, mcp__chrome-devtools__list_network_requests, mcp__chrome-devtools__get_network_request, mcp__chrome-devtools__list_console_messages, mcp__chrome-devtools__get_console_message, mcp__chrome-devtools__fill, mcp__chrome-devtools__click, mcp__chrome-devtools__wait_for
 skills:
   - lean-reading
   - test-tiers
@@ -46,7 +46,7 @@ On `RECHECK`: read the `Fix log` in `<F>/current.md` and your findings file; re-
 ## Checklists
 
 **CHECKLIST** (qc already created the file):
-1. From the checkpoint in the phases file and `git diff --stat <base>..HEAD`, draft one row per security control added or changed, per step 3 item that applies, and per high-risk path touched, each at the lowest tier that shows it. For `feature`, the phase rows are already merged (passed ones stay `pass`): draft only rows for controls that span phases and for phase rows qc reset to `todo`.
+1. From the checkpoint in the phases file and `git diff --stat <base>..HEAD`, draft one row per security control added or changed, per step 3 item that applies, and per high-risk path touched, each at the lowest tier that shows it. For `feature`, the phase rows are already merged (passed ones stay `pass`): draft only rows for controls that span phases, at tier 1 or 2 (a tier 3 one is `n/a`: `test-tiers` "Carried results").
 2. Always add: phase checkpoint `Phase diff <base>..HEAD reviewed` (`T1 static`); feature `Feature diff <base>..HEAD reviewed, no control from one phase bypassed by a later one` (`T1 static`).
 3. Add rows no existing row covers (`Source` and `Checker` `security-qc`, next free ID). A `qc` row that also needs a security check becomes `both`. Change nothing else in others' rows.
 

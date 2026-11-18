@@ -1,0 +1,82 @@
+{
+  "slug": "cv-common-text",
+  "displayName": "CV Common Text",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "summary",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "experiences",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "achievements",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "skills",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "educations",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "languages",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "reference",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "technologies",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "teamSize",
+      "displayName": "Team Size",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "projects",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "projectLink",
+      "displayName": "Project Link",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "webLink",
+      "displayName": "Web Link",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "adminLink",
+      "displayName": "Admin Link",
+      "type": "string",
+      "width": "1/2"
+    },
+    {
+      "name": "noCvText",
+      "displayName": "No CV Text",
+      "type": "richtext"
+    }
+  ]
+}

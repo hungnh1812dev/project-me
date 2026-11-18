@@ -340,7 +340,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 
 ## apps/web usage
 
-- Query documents live next to the feature (`features/cv/cv.query.ts`): a
+- Query documents live next to the feature (the feature's query file under `features/`): a
   plain string + hand-written result types, no client library (Q-G6).
 - Server: `lib/graphql/graphql-fetch.server.ts` (`server-only`) POSTs to
   `${APP_API_URL}/graphql` with the `APP_API_TOKEN` Bearer (public profile) and no forwarded
@@ -366,7 +366,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 - **Q-G6 web client**: no GraphQL client library; `graphql` as a web
   devDependency for the contract test.
 - **Q-G7 which CV**: the web shows the published cv-page with `isMain = true`
-  (newest `updatedAt` if several; none = empty state).
+  (newest `updatedAt` if several; none = the no-CV-live state on `/cv` (public-site PS-2)).
 
 ## Implementation notes
 

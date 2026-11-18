@@ -2,14 +2,14 @@
 
 import { Button } from '@abyss/form-commons';
 
-import { LAST_RESORT_TEXT, useSiteText } from '@/features/site-shell';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 
 /**
  * Shown when a page fails to load. It never reads the thrown error, so no
  * server detail and no data of another visitor can reach the screen.
  */
 export default function ErrorPage({ retry }: { retry: () => void }) {
-  const text = useSiteText() ?? LAST_RESORT_TEXT;
+  const text = LAST_RESORT_TEXT;
   return (
     <div role="alert">
       <h1 className="text-2xl font-semibold tracking-tight">{text.errorTitle}</h1>

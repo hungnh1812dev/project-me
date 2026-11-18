@@ -40,7 +40,7 @@ const record = {
           roles: [
             {
               componentUid: '00000000-0000-4000-8000-0000000000d1',
-              values: { position: 'Dev', teamSize: 5, techStack: ['ts'] },
+              values: { position: 'Dev', teamSize: 5, techStacks: ['ts'] },
               components: {},
             },
           ],
@@ -69,7 +69,7 @@ describe('toFormValues', () => {
     });
     const role = ((form.experiences as FormValues[])[0]!.roles as FormValues[])[0]!;
     expect(role.teamSize).toBe('5');
-    expect(role.techStack).toBe('[\n  "ts"\n]');
+    expect(role.techStacks).toBe('[\n  "ts"\n]');
   });
 
   it('builds a blank item with an empty uid', () => {
@@ -145,7 +145,7 @@ describe('toDocumentTree on update', () => {
     expect(experience?.componentUid).toBe(UID_ROLE);
     expect(experience?.components?.roles?.[0]).toMatchObject({
       componentUid: '00000000-0000-4000-8000-0000000000d1',
-      values: { position: 'Lead', teamSize: 5, techStack: ['ts'] },
+      values: { position: 'Lead', teamSize: 5, techStacks: ['ts'] },
     });
   });
 

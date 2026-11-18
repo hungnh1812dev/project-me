@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
+import { SITE_HEADER_MOCK } from '@/apis/server/graphql/mocks/SiteHeader.mock';
+
 import { WebSessionProvider } from '../../features/session';
 import type { AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, SHELL_TEXT, TEST_USER } from '../../features/session/Session.fixture';
-import { SiteTextProvider } from '../../features/site-shell';
+import { fakeApi, TEST_USER } from '../../features/session/Session.fixture';
 import { SiteNav } from './SiteNav';
 
 const NAV = [
@@ -25,22 +26,18 @@ const NAV = [
 function renderNav(user: typeof TEST_USER | null, nav = NAV) {
   const api = fakeApi({ readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(user) });
   const Providers = ({ children }: { children: ReactNode }) => (
-    <SiteTextProvider
-      header={{ ...SHELL_TEXT.header, nav }}
-      siteText={SHELL_TEXT.siteText}
-      signInText={SHELL_TEXT.signInText}
-    >
-      <WebSessionProvider api={api}>{children}</WebSessionProvider>
-    </SiteTextProvider>
+    <WebSessionProvider api={api}>{children}</WebSessionProvider>
   );
-  return render(<SiteNav />, { wrapper: Providers });
+  return render(<SiteNav nav={nav} cvLinkText={SITE_HEADER_MOCK.header.navCvLink} />, {
+    wrapper: Providers,
+  });
 }
 
 describe('SiteNav', () => {
   it('shows only the CV link when header.nav is empty', async () => {
     renderNav(null, []);
     expect(await screen.findAllByRole('link')).toHaveLength(1);
-    expect(screen.getByRole('link', { name: SHELL_TEXT.siteText.navCvLink })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: SITE_HEADER_MOCK.header.navCvLink })).toHaveAttribute(
       'href',
       '/cv',
     );
@@ -50,7 +47,7 @@ describe('SiteNav', () => {
     renderNav(null);
     await screen.findByRole('link', { name: 'Blog' });
     const names = screen.getAllByRole('link').map((link) => link.textContent);
-    expect(names).toEqual([SHELL_TEXT.siteText.navCvLink, 'Blog']);
+    expect(names).toEqual([SITE_HEADER_MOCK.header.navCvLink, 'Blog']);
   });
 
   it('shows an item to a signed-in viewer with its role, and only the sub items they may see', async () => {

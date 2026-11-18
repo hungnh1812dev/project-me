@@ -1,6 +1,3 @@
-import { loadStatusPage } from '../features/status/StatusPage.server';
-import { StatusView } from '../views/status/StatusView';
+import PageHome from '../views/home/PageHome';
 
-export default async function HomePage() {
-  return <StatusView text={await loadStatusPage()} />;
-}
+export default PageHome;

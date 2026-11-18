@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { assertAppEnvMatchesBuild, parseAppEnv, type AppEnv } from './AppEnv.rules';
 import { BFF_RATE_LIMITS } from './Http.constants';
 import { optionalText, requireEnv } from './RequireEnv.rules';
 import { TURNSTILE } from './Security.constants';
@@ -11,7 +12,7 @@ export const SESSION_SECRET_MIN_BYTES = 32;
 /** Proxies in front of the web server when TRUST_PROXY_HOPS is unset (D7). */
 export const DEFAULT_TRUST_PROXY_HOPS = 1;
 
-/** The only value of ALLOW_TURNSTILE_TEST_SECRET, ALLOW_BFF_RATE_LIMIT_OVERRIDE and ALLOW_MOCK_FALLBACK: the smoke stack's production build may use a test-only setting. */
+/** The only value of ALLOW_TURNSTILE_TEST_SECRET and ALLOW_BFF_RATE_LIMIT_OVERRIDE: the smoke stack's production build may use a test-only setting. */
 export const SMOKE_STACK_OPT_IN = 'smoke';
 
 /** Env key that raises a BFF bucket's limit per visitor IP; test stacks only (ADR 0018 section 2.7). */
@@ -31,7 +32,9 @@ export interface ServerEnv {
   appApiToken: string | undefined;
   /** When set, replaces every server call's data cache lifetime; 0 disables caching. */
   revalidateOverrideSeconds: number | undefined;
-  /** Whether a failed content read may fall back to the mock data (WEB-5). */
+  /** The stack this server runs on, equal to the value it was built with (WEB-9). */
+  appEnv: AppEnv;
+  /** Whether a failed content read may fall back to the mock data: only where APP_ENV is not production (WEB-5). */
   isMockFallbackOn: boolean;
   /** Exact origin of this site; the only `Origin` a state-changing BFF route accepts. */
   webOrigin: string;
@@ -176,17 +179,14 @@ function parseRevalidateOverride(raw: string | undefined): number | undefined {
   return seconds;
 }
 
-/** Unset or `smoke` only; outside production the fallback is always on (WEB-5). */
-function parseIsMockFallbackOn(source: EnvSource): boolean {
-  const optIn = optionalText(source.ALLOW_MOCK_FALLBACK);
-  if (optIn !== undefined && optIn !== SMOKE_STACK_OPT_IN) {
-    throw new Error(`ALLOW_MOCK_FALLBACK must be unset or ${SMOKE_STACK_OPT_IN}.`);
-  }
-  return source.NODE_ENV !== 'production' || optIn === SMOKE_STACK_OPT_IN;
-}
-
-/** Pure and testable; throws on any invalid value. */
-export function parseServerEnv(source: EnvSource): ServerEnv {
+/**
+ * Pure and testable; throws on any invalid value. `buildAppEnv` is the value
+ * `next.config.ts` inlined at build; it is a parameter because only the literal
+ * `process.env.APP_ENV_BUILD` is replaced at build, never a lookup on `source`.
+ */
+export function parseServerEnv(source: EnvSource, buildAppEnv: string | undefined): ServerEnv {
+  const appEnv = parseAppEnv(source.APP_ENV);
+  assertAppEnvMatchesBuild(appEnv, buildAppEnv);
   const turnstileSecretKey = requireEnv('TURNSTILE_SECRET_KEY', source.TURNSTILE_SECRET_KEY);
   const turnstileExpectedHostname = parseExpectedHostname(source.TURNSTILE_EXPECTED_HOSTNAME);
   assertTurnstileSafeForEnvironment(turnstileSecretKey, turnstileExpectedHostname, source);
@@ -195,7 +195,8 @@ export function parseServerEnv(source: EnvSource): ServerEnv {
     appApiUrl: parseAppApiUrl(source.APP_API_URL),
     appApiToken: parseAppApiToken(source.APP_API_TOKEN, source),
     revalidateOverrideSeconds: parseRevalidateOverride(source.WEB_REVALIDATE_SECONDS),
-    isMockFallbackOn: parseIsMockFallbackOn(source),
+    appEnv,
+    isMockFallbackOn: appEnv !== 'production',
     webOrigin: parseWebOrigin(source.WEB_ORIGIN),
     sessionSecret: parseSessionSecret(source.WEB_SESSION_SECRET, source),
     turnstileSecretKey,
@@ -210,6 +211,6 @@ let cached: Readonly<ServerEnv> | undefined;
 
 /** Read at runtime on the server; validated once (fails start via instrumentation). */
 export function getServerEnv(): Readonly<ServerEnv> {
-  cached ??= Object.freeze(parseServerEnv(process.env));
+  cached ??= Object.freeze(parseServerEnv(process.env, process.env.APP_ENV_BUILD));
   return cached;
 }

@@ -2,14 +2,11 @@ import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
+import { SITE_HEADER_MOCK } from '@/apis/server/graphql/mocks/SiteHeader.mock';
+
 import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
-import {
-  fakeApi,
-  httpError,
-  SHELL_TEXT,
-  TEST_USER,
-  Wrapper,
-} from '../../features/session/Session.fixture';
+import { bffError, fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { formatText } from '../../utils/TextTemplate.rules';
 import { AccountMenu } from './AccountMenu';
 
@@ -41,16 +38,16 @@ beforeEach(() => {
   humanCheck.siteKey = 'site-key';
 });
 
-const login = SHELL_TEXT.signInText;
-const { siteText } = SHELL_TEXT;
-const { author } = SHELL_TEXT.header;
-const signedInAs = (name: string) => formatText(siteText.signedInAs, { name });
+const login = SIGN_IN_MOCK.signInText;
+const { author } = SITE_HEADER_MOCK.header;
+const MENU_PROPS = { author, signInText: login };
+const signedInAs = (name: string) => formatText(login.signedInAs, { name });
 
 async function openDialog(api = fakeApi()) {
   const user = userEvent.setup();
   render(
     <Wrapper api={api}>
-      <AccountMenu />
+      <AccountMenu {...MENU_PROPS} />
     </Wrapper>,
   );
   await user.click(await screen.findByRole('button', { name: author.btnLoginText }));
@@ -93,7 +90,7 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -106,7 +103,7 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(429, {}, { 'retry-after': '120' })),
+        .mockRejectedValue(bffError(429, {}, { 'retry-after': '120' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -122,7 +119,7 @@ describe('sign-in dialog', () => {
     ['BFF_UPSTREAM_FAILED', 502, login.errors.unexpected],
   ])('maps %s to its message', async (errorCode, status, message) => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockRejectedValue(httpError(status, { errorCode })),
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(bffError(status, { errorCode })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -161,7 +158,7 @@ describe('sign-in dialog', () => {
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -178,7 +175,7 @@ describe('sign-in dialog', () => {
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -281,7 +278,7 @@ describe('human check', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValueOnce(httpError(403, { errorCode: 'BFF_HUMAN_CHECK_FAILED' }))
+        .mockRejectedValueOnce(bffError(403, { errorCode: 'BFF_HUMAN_CHECK_FAILED' }))
         .mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
     });
     const { user } = await openDialog(api);
@@ -304,7 +301,7 @@ describe('human check', () => {
   it('shows no reviewer entry', async () => {
     render(
       <Wrapper api={fakeApi()}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     await screen.findByRole('button', { name: author.btnLoginText });
@@ -350,11 +347,11 @@ describe('account menu', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     await user.click(await screen.findByRole('button', { name: author.btnLogoutText }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(siteText.signOutFailed);
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.signOutFailed);
     expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 
@@ -365,7 +362,7 @@ describe('account menu', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
@@ -380,10 +377,39 @@ describe('account menu', () => {
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
     await screen.findByText(signedInAs(TEST_USER.displayName));
-    expect(screen.queryByRole('link', { name: siteText.openCms })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: login.openCms })).not.toBeInTheDocument();
+  });
+});
+
+describe('account menu without the sign-in text (Q-PS1b)', () => {
+  it('renders no sign-in button and no dialog for an anonymous visitor', async () => {
+    const api = fakeApi();
+    render(
+      <Wrapper api={api}>
+        <AccountMenu {...MENU_PROPS} signInText={null} />
+      </Wrapper>,
+    );
+    await waitFor(() => expect(api.readSession).toHaveBeenCalled());
+    await waitFor(() => expect(document.querySelector('[aria-hidden="true"]')).toBeNull());
+    expect(screen.queryByRole('button', { name: author.btnLoginText })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps the sign-out button for a signed-in visitor', async () => {
+    const api = fakeApi({
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
+    });
+    render(
+      <Wrapper api={api}>
+        <AccountMenu {...MENU_PROPS} signInText={null} />
+      </Wrapper>,
+    );
+    expect(await screen.findByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
+    expect(screen.queryByText(signedInAs(TEST_USER.displayName))).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: login.openCms ?? '' })).not.toBeInTheDocument();
   });
 });

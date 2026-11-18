@@ -48,7 +48,7 @@ Tests: 7 files (not listed).
 | `Conflict.rules.ts` | `conflictDetailsOf` and the 409 conflict types (server and submitted records, diff entries) |
 | `ConflictMergeModal.tsx` | `ConflictMergeModal`: field-by-field merge dialog, resends the resolved tree |
 | `DiffViewerBlock.tsx` | `DiffViewerBlock`: one changed field shown server vs mine with a side choice |
-| `DocumentActions.tsx` | `DocumentActions`: row: Discard apart at the left end, then Unpublish, Save and Publish with the two confirm dialogs (SPEC §16.4) |
+| `DocumentActions.tsx` | `DocumentActions`: row: Discard apart at the left end, then Unpublish, Save and Publish with the two confirm dialogs (shared `components/ConfirmDialog`, SPEC §16.4) |
 | `DocumentEditPage.tsx` | `DocumentEditPage`: loads the document and type, renders the form, save/publish, conflict and error states |
 | `Merge.reducer.ts` | `mergeReducer` and helpers: chosen side per entry path, masked paths, visible entries |
 | `MergeDescribe.rules.ts` | `entryTitle`, `changeLabel`, `formatValue`, `sideContent`: text shown for each merge entry |

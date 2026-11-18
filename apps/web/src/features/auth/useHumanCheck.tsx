@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 
 import type { TurnstileAction } from '@/configs/Security.constants';
-import { useRequiredSignInText } from '@/features/site-shell';
 
+import type { SignInText } from './SignIn.graphql';
 import { TurnstileWidget } from './TurnstileWidget';
 
 /**
@@ -10,8 +10,11 @@ import { TurnstileWidget } from './TurnstileWidget';
  * widget plus its error line. A token works once, so taking it mounts a fresh
  * challenge: every request carries a token of its own.
  */
-export function useHumanCheck(siteKey: string, action: TurnstileAction) {
-  const copy = useRequiredSignInText().humanCheck;
+export function useHumanCheck(
+  siteKey: string,
+  action: TurnstileAction,
+  copy: SignInText['humanCheck'],
+) {
   const [token, setToken] = useState<string | null>(null);
   const tokenRef = useRef<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -46,6 +49,7 @@ export function useHumanCheck(siteKey: string, action: TurnstileAction) {
       <TurnstileWidget
         siteKey={siteKey}
         action={action}
+        text={copy}
         key={challengeKey}
         hasScriptFailed={hasScriptFailed}
         onFailed={() => setHasScriptFailed(true)}

@@ -6,14 +6,25 @@ import {
   DISPLAY_NAME_MAX_LENGTH,
   MAX_IDENTIFIER_BYTES,
 } from './ContentEngine.constants';
+import type { ContentTypeDefinition } from './DefinitionSchema.rules';
 import {
   formatDefinitionPath,
+  validateCandidateDefinition,
   validateDefinition,
   validateDefinitions,
   type DefinitionValidationError,
 } from './DefinitionValidator.rules';
 
-const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
+const PAGE_CV_A_PATH = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'content',
+  'schemas',
+  'page-cv-a.json',
+);
 
 type Field = Record<string, unknown>;
 
@@ -54,24 +65,21 @@ function rulesOf(input: unknown): string[] {
 }
 
 describe('validateDefinition', () => {
-  describe('cv-page.json', () => {
-    const cvPage: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
+  describe('page-cv-a.json', () => {
+    const pageCvA: unknown = JSON.parse(readFileSync(PAGE_CV_A_PATH, 'utf8'));
 
     it('is accepted', () => {
-      expect(validateDefinition(cvPage)).toMatchObject({
+      expect(validateDefinition(pageCvA)).toMatchObject({
         ok: true,
-        definition: { slug: 'cv-page' },
-        tables: { length: 8 },
+        definition: { slug: 'page-cv-a' },
+        tables: { length: 6 },
       });
     });
 
-    it('flags only experiences.company and references.phone as sensitive', () => {
-      expect(JSON.stringify(cvPage).match(/"sensitive":true/g)).toHaveLength(2);
-      expect(JSON.stringify(cvPage)).toContain(
+    it('flags only experiences.company as sensitive', () => {
+      expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(1);
+      expect(JSON.stringify(pageCvA)).toContain(
         '"name":"company","type":"text","width":"1/2","sensitive":true',
-      );
-      expect(JSON.stringify(cvPage)).toContain(
-        '"name":"phone","type":"text","width":"1/2","sensitive":true',
       );
     });
   });
@@ -507,6 +515,20 @@ describe('validateDefinition', () => {
   });
 });
 
+describe('validateDefinition with extreme nesting', () => {
+  it('answers a depth error instead of overflowing the stack', () => {
+    let fields: unknown[] = [];
+    for (let level = 0; level < 5000; level += 1) {
+      fields = [{ name: 'c', component: 'c', fields }];
+    }
+    const result = validateDefinition({ slug: 'deep', displayName: 'Deep', fields });
+    expect(result.ok).toBe(false);
+    expect(result.ok ? [] : result.errors.map(({ rule }) => rule)).toEqual([
+      DEFINITION_RULES.COMPONENT_DEPTH_EXCEEDED,
+    ]);
+  });
+});
+
 describe('validateDefinitions', () => {
   const simple = (slug: string) => definition([{ name: 'title', type: 'string' }], slug);
 
@@ -555,6 +577,73 @@ describe('validateDefinitions', () => {
         }),
       ],
     });
+  });
+});
+
+describe('validateCandidateDefinition', () => {
+  const simple = (slug: string): Record<string, unknown> =>
+    definition([{ name: 'title', type: 'string' }], slug);
+  const registeredPost = simple('post') as unknown as ContentTypeDefinition;
+
+  it('accepts a valid candidate when nothing is registered', () => {
+    expect(validateCandidateDefinition(simple('post'), [])).toEqual([]);
+  });
+
+  it('reports a slug equal to a registered slug on the candidate, naming only the slug', () => {
+    const errors = validateCandidateDefinition(simple('post'), [registeredPost]);
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['slug'],
+        rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
+        message: containing('the content type "post"'),
+      }),
+    );
+    for (const { message } of errors) expect(message).not.toMatch(/^\[|already used by \[/);
+  });
+
+  it('reports a component table that clashes with another type on the candidate field', () => {
+    const registered = definition([component('x', [{ name: 'a', type: 'text' }])]);
+    const candidate = definition([component('x', [{ name: 'b', type: 'text' }])]);
+    const errors = validateCandidateDefinition(candidate, [
+      registered as unknown as ContentTypeDefinition,
+    ]);
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['fields', 0, 'component'],
+        rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
+        message: containing('the content type "post"'),
+      }),
+    );
+  });
+
+  it('returns only the candidate schema errors, without the list index', () => {
+    const errors = validateCandidateDefinition({ slug: 'x' }, [registeredPost]);
+    expect(errors.length).toBeGreaterThan(0);
+    for (const error of errors) expect(error.rule).toBe(DEFINITION_RULES.SCHEMA_INVALID);
+  });
+
+  it('never reports an error inside a registered definition', () => {
+    const broken = simple('Bad') as unknown as ContentTypeDefinition;
+    expect(validateCandidateDefinition(simple('other'), [broken])).toEqual([]);
+  });
+
+  it('keeps a self clash on the candidate path text', () => {
+    const second = { ...component('second', [{ name: 'y', type: 'text' }]), component: 'first' };
+    const errors = validateCandidateDefinition(
+      definition([component('first', [{ name: 'x', type: 'text' }]), second]),
+      [registeredPost],
+    );
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['fields', 1, 'component'],
+        message: containing('already used by fields[0].component'),
+      }),
+    );
+  });
+
+  it('keeps the CLI message of validateDefinitions', () => {
+    const result = validateDefinitions([simple('post'), simple('post')]);
+    expect(result.ok ? [] : result.errors[0]?.message).toEqual(containing('already used by [0].'));
   });
 });
 

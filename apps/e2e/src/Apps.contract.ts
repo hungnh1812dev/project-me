@@ -1,4 +1,6 @@
-import { MOCK_VIEW } from '../../web/src/apis/server/restful/mocks/MockView';
+import { MODULE_STATUS_MOCK as STATUS_MOCK } from '../../web/src/apis/server/graphql/mocks/ModuleStatus.mock';
+import { SIGN_IN_MOCK } from '../../web/src/apis/server/graphql/mocks/SignIn.mock';
+import { SITE_HEADER_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteHeader.mock';
 
 /**
  * The only file in the e2e suite that imports from an app's `src`. Specs import
@@ -26,13 +28,7 @@ export {
   MEDIA_MAX_BYTES_BY_KIND,
 } from '../../cms-admin/src/features/media/Media.constants';
 
-const SHELL_MOCK =
-  MOCK_VIEW.SiteShell as typeof import('../../web/src/apis/server/restful/mocks/SiteShell.mock').SITE_SHELL_MOCK;
-const STATUS_MOCK =
-  MOCK_VIEW.StatusPage as typeof import('../../web/src/apis/server/restful/mocks/StatusPage.mock').STATUS_PAGE_MOCK;
-const CV_MOCK =
-  MOCK_VIEW.CvPage as typeof import('../../web/src/apis/server/restful/mocks/CvPage.mock').CV_PAGE_MOCK;
-const { twoFactor } = SHELL_MOCK.signInText;
+const { twoFactor } = SIGN_IN_MOCK.signInText;
 
 /**
  * The web text on the stacks: the web mocks are the text (WEB-5). Plural and `{name}` placeholders
@@ -40,24 +36,20 @@ const { twoFactor } = SHELL_MOCK.signInText;
  */
 export const WEB_COPY = {
   session: {
-    signIn: SHELL_MOCK.header.author.btnLoginText,
-    signOut: SHELL_MOCK.header.author.btnLogoutText,
-    openCms: SHELL_MOCK.siteText.openCms,
-    signOutFailed: SHELL_MOCK.siteText.signOutFailed,
+    signIn: SITE_HEADER_MOCK.header.author.btnLoginText,
+    signOut: SITE_HEADER_MOCK.header.author.btnLogoutText,
+    openCms: SIGN_IN_MOCK.signInText.openCms,
+    signOutFailed: SIGN_IN_MOCK.signInText.signOutFailed,
   },
   login: {
-    ...SHELL_MOCK.signInText,
+    ...SIGN_IN_MOCK.signInText,
     twoFactor: {
       ...twoFactor,
       errors: { invalidCode: twoFactor.invalidCode },
     },
   },
-  cv: {
-    maskedValue: CV_MOCK.cvPageText.maskedValue,
-    refetchFailed: CV_MOCK.cvPageText.refetchFailed,
-  },
   status: {
-    checkAgain: STATUS_MOCK.statusPageText.checkAgain,
-    state: { ok: STATUS_MOCK.statusPageText.stateOk },
+    checkAgain: STATUS_MOCK.statusText.checkAgain,
+    state: { ok: STATUS_MOCK.statusText.stateOk },
   },
 } as const;

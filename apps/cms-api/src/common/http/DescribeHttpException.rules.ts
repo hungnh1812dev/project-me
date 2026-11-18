@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, PayloadTooLargeException } from '@nestjs/common';
 
 import { ERROR_CODES, INTERNAL_ERROR_MESSAGE, type ErrorCode } from '../constants/Error.constants';
 import { RETRY_AFTER_MAX_SECONDS, RETRY_AFTER_MIN_SECONDS } from '../constants/Limits.constants';
@@ -160,13 +160,25 @@ export function isDescribableError(error: unknown): error is HttpException | Dom
   return error instanceof HttpException || error instanceof DomainError;
 }
 
+/** `type` the body parser gives to a JSON body over the global limit (100 KB). */
+const BODY_PARSER_TOO_LARGE_TYPE = 'entity.too.large';
+
+function isBodyTooLargeError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { type?: unknown }).type === BODY_PARSER_TOO_LARGE_TYPE
+  );
+}
+
 /**
  * The one reader of a thrown value for REST, GraphQL and bulk results: a Nest
- * exception, a `DomainError`, or anything else as a generic 500 (its detail
+ * exception, a `DomainError`, the body parser's too-large error, or anything else as a generic 500 (its detail
  * goes to the log by the caller, never to the client).
  */
 export function describeError(error: unknown): HttpExceptionDescription {
   if (error instanceof HttpException) return describeHttpException(error);
   if (error instanceof DomainError) return describeDomainError(error);
+  if (isBodyTooLargeError(error)) return describeHttpException(new PayloadTooLargeException());
   return { ...UNKNOWN_ERROR_DESCRIPTION };
 }

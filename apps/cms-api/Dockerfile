@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 # Build from the repo root: docker build -f apps/cms-api/Dockerfile .
 ARG NODE_IMAGE=node:24.18-alpine
+# Major of the PostgreSQL client tools in the runtime stage; keep equal to the server image (checked by pins-check.sh).
+ARG POSTGRES_MAJOR=17
 
 FROM ${NODE_IMAGE} AS base
 ENV PNPM_HOME=/pnpm
@@ -31,8 +33,13 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 #    snapshot, read by `content:migrate`; schemas, read by `graphql:print-schema`
 #    and `content:generate` checks), files owned by root, run as the numeric
 #    `node` user (1000:1000; Kubernetes runAsNonRoot can only verify a UID).
+#    The same image runs the nightly backup job (ADR 0025): it adds the
+#    PostgreSQL client tools, age and rclone plus backup/nightly-backup.sh,
+#    root-owned and read-only for the runtime user. The default CMD is unchanged.
 FROM ${NODE_IMAGE} AS runtime
+ARG POSTGRES_MAJOR
 ENV NODE_ENV=production
+RUN apk add --no-cache postgresql${POSTGRES_MAJOR}-client age rclone
 WORKDIR /app
 COPY --from=build /prod/cms-api/package.json ./package.json
 COPY --from=build /prod/cms-api/node_modules ./node_modules
@@ -40,6 +47,7 @@ COPY --from=build /prod/cms-api/dist ./dist
 COPY --from=build /repo/apps/cms-api/prisma ./prisma
 COPY --from=build /repo/apps/cms-api/prisma.config.ts ./prisma.config.ts
 COPY --from=build /repo/apps/cms-api/content ./content
+COPY --from=build --chown=0:0 --chmod=0555 /repo/apps/cms-api/backup/nightly-backup.sh ./backup/nightly-backup.sh
 USER 1000:1000
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

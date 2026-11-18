@@ -16,7 +16,7 @@ export const BACKUPS_QUERY_KEYS = {
 const BACKUPS_NAV_ITEM: NavItem = {
   label: COMMON_TEXT.nav.backups,
   path: APP_ROUTES.BACKUPS,
-  section: 'systemSettings',
+  section: 'utilities',
   subject: 'backups',
   action: 'read',
 };

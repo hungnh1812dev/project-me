@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { answerCvRead } from '../../../../features/cv/CvPage.server';
+import { answerCvRead } from '@/views/cv/PageCv.data';
 
 const defineBffRoute = vi.hoisted(() =>
   vi.fn<() => Record<string, unknown>>(() => ({ GET: vi.fn<() => void>() })),

@@ -5,9 +5,11 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2023", "DOM"],
     "noEmit": true,
+    "jsx": "react-jsx",
     "declaration": false,
     "types": ["node"],
     "paths": {
+      "@apis/*": ["../cms-admin/src/apis/*"],
       "@configs/*": ["../cms-admin/src/configs/*"]
     }
   },

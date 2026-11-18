@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { logOutVisitor } from '../../../../../features/session/SignIn.server';
+import { logOutVisitor } from '@/features/session/SignIn.server';
 
 const defineBffRoute = vi.hoisted(() =>
   vi.fn<() => Record<string, unknown>>(() => ({ POST: vi.fn<() => void>() })),

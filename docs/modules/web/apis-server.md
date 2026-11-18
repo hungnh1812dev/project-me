@@ -19,13 +19,14 @@ Everything the Next server does on behalf of the browser. `bff/` runs every `/ap
 ## Techniques
 
 - One pipeline, in order: method (405) · Origin and Sec-Fetch-Site on POST (403) · JSON content type (415) · body cap by Content-Length and capped stream read (413) · per-IP fixed-window limit per bucket (429) · strict Zod schema (400) · human check · `handle` · `Cache-Control: no-store`. An unexpected throw is `502 BFF_UPSTREAM_FAILED` with no detail.
-- Refusals are `{ statusCode, errorCode, message }` with fixed messages from `Bff.errors.ts`; logs hold the route and error code only.
+- Refusals are `{ statusCode, errorCode, message }` with fixed messages from `Bff.errors.ts`; every failure is logged once through `logApiError` (source, code, status, `METHOD path`; no body, token or cookie).
 - The human-check step reads `humanCheckToken` from the parsed body, calls `verifyHumanCheck` and strips the token before `handle`. Fails closed: bad or missing token, action or hostname is `400 BFF_HUMAN_CHECK_FAILED`; siteverify unreachable or not JSON is `503 BFF_HUMAN_CHECK_UNAVAILABLE`. Only the action comparison is skipped, and only with Cloudflare's always-pass test secret (`TURNSTILE.ALWAYS_PASS_TEST_SECRET`). `configs/Server.env.ts` guards production at start (ADR 0018 section 2.6): the test secret needs `ALLOW_TURNSTILE_TEST_SECRET=smoke` (smoke stack only), any other secret needs `TURNSTILE_EXPECTED_HOSTNAME`. Likewise `BFF_AUTH_RATE_LIMIT_IP` needs `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` in production.
-- `cmsApiClient` sends every call through `serverApi` (`cache: 'no-store'`, so no redirect is followed) to `APP_API_URL` + `API_ENDPOINTS` paths, with a timeout and exactly one `X-Forwarded-For` (plus `CLIENT_IP_HEADER`). It first builds the headers with `Headers`, because axios strips CR/LF from a header value and would send a malformed token altered; a bad token is a fixed upstream failure and never reaches cms-api. It reads the refresh token from `Set-Cookie` by name, parses every answer with Zod and returns allowlisted fields. Failures are `BffError`s with fixed codes (`ServerApiError` `TIMEOUT` is 504, the other codes, a 5xx and a 3xx are 502, 429 keeps `Retry-After`); a refused refresh token or access token returns `null` instead of throwing.
+- `cmsApiClient` sends every call through `serverApi` (`serverApi.request` with an identity `resolveData` and `next: { revalidate: 0 }`; no redirect is followed) to `APP_API_URL` + `API_ENDPOINTS` paths, with a timeout and exactly one `X-Forwarded-For` (plus `CLIENT_IP_HEADER`). It first builds the headers with `Headers`, because axios strips CR/LF from a header value and would send a malformed token altered; a bad token is a fixed upstream failure and never reaches cms-api. It reads the refresh token from `Set-Cookie` by name, parses every answer with Zod and returns allowlisted fields. Upstream failures are `WebApiError`s of source `cms-api-rest` (a 429 carries `retryAfterSeconds`, a 4xx or 5xx carries `statusCode` and cms-api's `upstreamErrorCode`); `bffErrorOf` turns them into the fixed BFF answer (a `TIMEOUT` is 504, the other codes, a 5xx and a 3xx are 502, 429 keeps `Retry-After`). Refusals that mean something to the sign-in (401 credentials, 2FA codes) are `BffError`s; a refused refresh token or access token returns `null` instead of throwing.
 - Visitor IP (D7): `CLIENT_IP_HEADER` when it carries an address, else the `TRUST_PROXY_HOPS`-th address from the right of `X-Forwarded-For`. The rate limiters live in the process (one per bucket, at most 10 000 keys).
-- `serverApi` (`restful/ServerApi.client.ts`) is the one transport for server calls: axios with `adapter: 'fetch'` and `maxRedirects: 0` (so `redirect: 'manual'`), `validateStatus` always true (any status is an answer, never a throw), the body read as text and parsed here. `cache` becomes `fetchOptions` (`{ next: { revalidate } }` or `{ cache: 'no-store' }`), default `DEFAULT_REVALIDATE_SECONDS`. Failures are `ServerApiError` with a code only (`NETWORK`, `TIMEOUT`, `REDIRECT`, `INVALID_BODY`); the upstream message, headers and request body never reach the error. `INVALID_BODY` is thrown only when the caller passes `needsBody: true`; otherwise an unreadable body is `undefined`. Repeated `Set-Cookie` lines are kept (`headers.getSetCookie()`).
+- `serverApi` (`restful/ServerApi.client.ts`) is the one transport for server calls: `serverApi.request<T>(method, path, options?)` and `get`, `post`, `put`, `patch`, `delete`, `options`, each `<T>(path, options?) => Promise<T>`. Axios with `adapter: 'fetch'` and `maxRedirects: 0` (so `redirect: 'manual'`), `validateStatus` always true, the body read as text and parsed here (`undefined` when none or not JSON). `options.next` `{ revalidate, tags }` becomes `fetchOptions` (`{ next: { revalidate, tags } }`, or `{ cache: 'no-store' }` for `0`), default `DEFAULT_REVALIDATE_SECONDS`; `WEB_REVALIDATE_SECONDS` replaces any value except `0`. Answer rule: without `options.resolveData` a 2xx gives its body and any other non-redirect status throws `HTTP_ERROR`; with it, `resolveData({ status, headers, body })` judges every non-redirect status and its result (or throw, unlogged) is the answer. Failures are `WebApiError` (`source: 'cms-api-rest'`, a code of `API_ERROR_CODES.SERVER_API`: `NETWORK`, `TIMEOUT` (`retryable`), `REDIRECT`, `HTTP`), logged once through `logApiError` where `serverApi` raises them; the upstream message, headers and request body never reach the error. Repeated `Set-Cookie` lines are kept (`headers.getSetCookie()`).
 - Spike (axios fetch adapter against the Next data cache), 2026-11-08, Next 16.4.2, axios 1.20.0, `next build` + `next start` with a Node stub upstream that counted requests per path: a POST with an `Authorization: Bearer` header and `{ next: { revalidate: 60 } }` sent four times over four page requests gave one upstream hit; a native `fetch` control gave the same; `cache: 'no-store'` gave one hit per page request; a 302 gave `REDIRECT` and was not followed; a 300 ms timeout against a 3 s upstream gave `TIMEOUT`. Result: axios stays on the server path, no native-`fetch` fallback needed. The axios adapter passes `fetchOptions` as the `init` of `fetch(Request, init)`, which is how Next sees `next` and `cache`. Within one render Next also de-duplicates identical GET calls (request memoization).
-- Mock fallback (`restful/MockFallback.server.ts`): `fillFromMocks({ operationName, rootFields, data, reason })` is the one place that reads `mocks/MockView.ts` (guarded by `FeatureTiers.architecture.test.ts`). It fills only when `getServerEnv().isMockFallbackOn`; callers must not use it on a call made with a visitor's token.
+- Mock fallback (`graphql/MockFallback.server.ts`, WEB-5): `readMock` is the one place that loads `graphql/mocks/MockView.ts`, by `await import()` after two guards: the inlined `process.env.APP_ENV_BUILD` is not `production` (a production build drops the mock files from the bundle) and `getServerEnv().isMockFallbackOn`. It is asked by `executeGraphql` once a read failed (transport, non-2xx, a non-GraphQL body, any `errors` entry even at HTTP 200, no `data`, or a throwing `resolveData`, `requireRootField` included) for a call that has a `mock` key and no `accessToken`; the whole query is mocked, never a root field, and the mock (the query's GraphQL `data`) goes through the call's `resolveData`. `MOCK_VIEW` is keyed by mock key (`site-header`, `sign-in`, `not-found-page`, `module-status`, `page-cv-a`, `profile`, `cv-common-text`), imported by type only elsewhere. A collection that answers empty is an answer, never mocked. A used mock logs `[mock] <operation> <mock key> <WebApiError code>` and calls `connection()` so the render is not cached. Guarded by `FeatureTiers.architecture.test.ts`; a visitor call and the RESTful layer never reach it.
+- `WebApiError` (`apps/web/src/apis/WebApi.errors.ts`, outside this module's folder, importable by server and browser) is the one API failure type (WEB-10) with its closed `API_ERROR_CODES` and `logApiError`; `serverApi` and `graphql/` (via `GraphqlResponse.rules.ts`, which maps an API error code outside the list to `UNKNOWN_ERROR` with `upstreamErrorCode`) raise it; the BFF moves onto it in WEE-3.
 - Server-only files import `server-only`; this module imports no feature.
 
 ## Technologies
@@ -34,15 +35,15 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 
 ## Entry points
 
-`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorResponse` (`bff/`); `serverApi`, `ServerApiError`, `SERVER_API_FAILURE_CODES` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `defineContentQuery`, `runContentQuery` (API token, cached, per-root-field mock fill, single-field retry when the mocks are on) and `runVisitorQuery` (visitor token, no-store, never mocked) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
+`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorOf`, `bffErrorResponse` (`bff/`); `serverApi` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `executeGraphql` (API token or the visitor's `accessToken`, `next` cache options, optional `mock` key and `resolveData`; an `accessToken` call is never cached or mocked) and `requireRootField` (a `resolveData` that fails with `NO_DATA` on a null root field) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
 
 ## Where to change what
 
 - New refusal: one row in ADR 0018 section 3, one entry in `BFF_ERROR_CODES`.
 - New bucket or limit: `BFF_RATE_LIMITS` in `configs/Http.constants.ts` (and its override key in `BFF_RATE_LIMIT_OVERRIDE_ENV_KEYS`, `configs/Server.env.ts`). Each bucket's limiter is built on its first request with `getServerEnv().bffRateLimitOverrides[bucket]` or the default limit; the override is for test stacks only (ADR 0018 section 2.7).
-- New mock: a plain-data file in `restful/mocks/` (no imports), added to `MOCK_VIEW` under its operation name and root field.
-- New server call method, header or failure code: `restful/ServerApi.client.ts` only.
-- New env key: `configs/Server.env.ts` and `apps/web/.env.example`.
+- New mock: a plain-data file in `graphql/mocks/` (no imports), spread into `MOCK_VIEW` under a unique key (the mock key, Q-WFL6), each value the GraphQL `data` of its query; the query passes `mock: '<key>'` to `executeGraphql`.
+- New server call: `serverApi.<verb>(API_ENDPOINTS.X, { headers, body, resolveData, next })` from the caller's own file; a new method, header or cache option: `restful/ServerApi.client.ts`; a new failure code: `apis/WebApi.errors.ts`.
+- New env key: `configs/Server.env.ts` and `apps/web/.env.example`. `APP_ENV` (value list in `configs/AppEnv.rules.ts`, checked at build by `next.config.ts` and at start against the inlined `APP_ENV_BUILD`) is the only switch of `getServerEnv().isMockFallbackOn`; no other key turns the mocks on.
 
 ## Files
 
@@ -52,28 +53,31 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 ```
 server/ (0 files)
   bff/ (4 files)
-  graphql/ (1 file)
-  restful/ (4 files)
-    mocks/ (4 files)
+  graphql/ (3 files)
+    mocks/ (6 files)
+  restful/ (3 files)
 ```
 
 Tests: 10 files (not listed).
 
 | File | Description |
 |---|---|
-| `bff/Bff.errors.ts` | The 15 BFF error codes with status and fixed message, `BffError` (may carry `Set-Cookie` lines) and the refusal response |
+| `bff/Bff.errors.ts` | The 15 BFF error codes with status and fixed message, `BffError` (a `WebApiError` of source `bff`; may carry headers and `Set-Cookie` lines), `bffErrorOf` and the refusal response |
 | `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, human-check hook, handle, no-store |
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
-| `graphql/Graphql.server.ts` | Server GraphQL: `defineContentQuery` builds the document from the root fields; `runContentQuery` reads them per root field with the API token and fills the failed ones from the mocks; `runVisitorQuery` runs as one visitor, uncached |
-| `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding and fixed error codes, sent through `serverApi` |
-| `restful/MockFallback.server.ts` | TODO (exports `MOCK_FALLBACK_REASONS`, `MockFallbackReason`, `FillFromMocksInput`, `FillFromMocksResult` +1) |
-| `restful/ServerApi.client.ts` | `serverApi`: GET, POST, PUT, PATCH and DELETE over axios with the fetch adapter, data cache options, timeout, no redirect, `ServerApiError` codes |
-| `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed |
-| `restful/mocks/CvPage.mock.ts` | Mock answer of the `CvPage` operation: sample main CV, contact card and page text, with masked paths (exports `CV_PAGE_MOCK`) |
-| `restful/mocks/MockView.ts` | Mock answers by operation name and root field (exports `MockView`, `MOCK_VIEW`) |
-| `restful/mocks/SiteShell.mock.ts` | Mock text of the `SiteShell` operation: header, shared and sign-in texts (exports `SITE_SHELL_MOCK`) |
-| `restful/mocks/StatusPage.mock.ts` | Mock text of the `StatusPage` operation: page and card texts (exports `STATUS_PAGE_MOCK`) |
+| `graphql/ContentQuery.fixture.ts` | Test helper: `describeContentQueryContract` runs the spec every query string has (valid against the cms-api SDL, its `MOCK_VIEW` entry and selection match both ways, D18 limits); the spec passes `MOCK_VIEW` in (exports `ContentQueryContractInput`, `describeContentQueryContract`) |
+| `graphql/Graphql.server.ts` | Server GraphQL: `executeGraphql` posts one query string, resolves its `data`, logs a failed read once and asks `readMock` for a query with a `mock` key; `requireRootField` (exports `ExecuteGraphqlOptions`, `executeGraphql`, `requireRootField`) |
+| `graphql/MockFallback.server.ts` | `readMock`: the mock of a failed query by mock key, loading the mock module by dynamic import behind the build constant and `isMockFallbackOn`; a used mock logs one warn line and opts the render out of caching |
+| `graphql/mocks/MockView.ts` | Map of mock key to the GraphQL `data` of its query, and the `MockKey` type (exports `MOCK_VIEW`, `MockKey`) |
+| `graphql/mocks/ModuleStatus.mock.ts` | Mock data of the module status text (`statusText`) (exports `MODULE_STATUS_MOCK`) |
+| `graphql/mocks/NotFoundPage.mock.ts` | Mock data of the not-found page text (`notFoundText`) (exports `NOT_FOUND_PAGE_MOCK`) |
+| `graphql/mocks/PageCv.mock.ts` | Mock data of the `PageCv` operation: a sample main CV, the profile and the page text (exports `PAGE_CV_MOCK`) |
+| `graphql/mocks/SignIn.mock.ts` | Mock data of the sign-in dialog and two-factor text (`signInText`) (exports `SIGN_IN_MOCK`) |
+| `graphql/mocks/SiteHeader.mock.ts` | Mock data of the header (`header`) and its text (`headerText`) (exports `SITE_HEADER_MOCK`) |
+| `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding, raising `WebApiError`, sent through `serverApi` |
+| `restful/ServerApi.client.ts` | `serverApi`: `request` and the six verbs over axios with the fetch adapter, `resolveData`, Next `revalidate` / `tags`, timeout, no redirect, `WebApiError` failures |
+| `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed (`WebApiError` of source `turnstile`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react';
 
+import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
 import { TURNSTILE } from '@/configs/Security.constants';
 
-import { ShellTextProvider } from '../session/Session.fixture';
 import type { TurnstileApi } from './Turnstile.client';
 import { TurnstileWidget } from './TurnstileWidget';
 
@@ -26,16 +26,15 @@ describe('TurnstileWidget', () => {
   it('renders the challenge for the action of its step and removes it on unmount', () => {
     const api = stubTurnstile();
     const { unmount } = render(
-      <ShellTextProvider>
-        <TurnstileWidget
-          siteKey="site-key"
-          action={TURNSTILE.ACTIONS.TWO_FACTOR}
-          hasScriptFailed={false}
-          onFailed={vi.fn<() => void>()}
-          onToken={vi.fn<() => void>()}
-          onExpired={vi.fn<() => void>()}
-        />
-      </ShellTextProvider>,
+      <TurnstileWidget
+        siteKey="site-key"
+        action={TURNSTILE.ACTIONS.TWO_FACTOR}
+        text={SIGN_IN_MOCK.signInText.humanCheck}
+        hasScriptFailed={false}
+        onFailed={vi.fn<() => void>()}
+        onToken={vi.fn<() => void>()}
+        onExpired={vi.fn<() => void>()}
+      />,
     );
     expect(api.render).toHaveBeenCalledWith(
       expect.any(HTMLElement),
@@ -50,16 +49,15 @@ describe('TurnstileWidget', () => {
     const onToken = vi.fn<(token: string) => void>();
     const onFailed = vi.fn<() => void>();
     render(
-      <ShellTextProvider>
-        <TurnstileWidget
-          siteKey="site-key"
-          action={TURNSTILE.ACTIONS.LOGIN}
-          hasScriptFailed={false}
-          onFailed={onFailed}
-          onToken={onToken}
-          onExpired={vi.fn<() => void>()}
-        />
-      </ShellTextProvider>,
+      <TurnstileWidget
+        siteKey="site-key"
+        action={TURNSTILE.ACTIONS.LOGIN}
+        text={SIGN_IN_MOCK.signInText.humanCheck}
+        hasScriptFailed={false}
+        onFailed={onFailed}
+        onToken={onToken}
+        onExpired={vi.fn<() => void>()}
+      />,
     );
     const options = api.render.mock.calls[0]?.[1];
     options?.callback('abc');

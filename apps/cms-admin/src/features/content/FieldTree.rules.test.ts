@@ -14,20 +14,19 @@ describe('labelOf', () => {
   });
 });
 
-describe('buildFieldTree (cv-page)', () => {
+describe('buildFieldTree (page-cv-a)', () => {
   const tree = buildFieldTree(CV_PAGE_TYPE.fields);
 
   it('keeps root fields in definition order', () => {
     expect(tree.map((node) => node.name)).toEqual([
+      'name',
       'position',
       'isMain',
-      'name',
       'summary',
       'skills',
       'experiences',
+      'projects',
       'educations',
-      'languages',
-      'references',
     ]);
   });
 
@@ -36,9 +35,7 @@ describe('buildFieldTree (cv-page)', () => {
     expect(experience?.repeatable).toBe(true);
     const role = experience?.children.find((node) => node.name === 'roles');
     expect(role?.path).toBe('experiences.roles');
-    const project = role?.children.find((node) => node.name === 'projects');
-    expect(project?.path).toBe('experiences.roles.projects');
-    expect(role?.children.map((node) => node.name)).toContain('techStack');
+    expect(role?.children.map((node) => node.name)).toContain('techStacks');
     expect(role?.children.find((node) => node.name === 'teamSize')?.type).toBe('integer');
   });
 

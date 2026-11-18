@@ -95,11 +95,10 @@ describe('createAuthApi', () => {
     },
   );
 
-  it('lets any other failure through unchanged', async () => {
-    const failure = httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' });
-    const { api } = clientAnswering(() => failure);
-    await expect(api.login({ email: 'a@b.co', password: 'pw', rememberMe: false })).rejects.toBe(
-      failure,
-    );
+  it('lets any other failure through as its WebApiError', async () => {
+    const { api } = clientAnswering(() => httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' }));
+    await expect(
+      api.login({ email: 'a@b.co', password: 'pw', rememberMe: false }),
+    ).rejects.toMatchObject({ errorCode: 'BFF_INVALID_CREDENTIALS', statusCode: 401 });
   });
 });

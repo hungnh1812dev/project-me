@@ -5,6 +5,7 @@ import { CONTENT_COPY } from './Content';
 import { LOGIN_COPY } from './Login';
 import { MEDIA_COPY } from './Media';
 import { REVIEWER_COPY } from './Reviewer';
+import { SCHEMA_BUILDER_COPY } from './SchemaBuilder';
 import { SECURITY_COPY } from './Security';
 import { SETUP_COPY } from './Setup';
 import { PAGE_COPY, STATUS_COPY } from './Status';
@@ -25,4 +26,5 @@ export const EN_TEXT = {
   media: MEDIA_COPY,
   content: CONTENT_COPY,
   backups: BACKUPS_COPY,
+  schemaBuilder: SCHEMA_BUILDER_COPY,
 } as const;

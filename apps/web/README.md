@@ -6,18 +6,18 @@ container behind Traefik at `<domain>`; the API lives on the same origin under
 
 Routes:
 
-- `/` is the CV page. `app/page.tsx` (Server Component) loads the `CvPage`
-  GraphQL document through `features/cv` (`loadCvPage`, public role) and hands
-  it to the client `CvView`. Anonymous visitors see the server data; a signed-in
-  account or a reviewer session refetches the same document from the browser
-  with its own Bearer token (`useCvContent`, keyed by actor), and sign-out
-  returns to the server data. No main resume gives an empty state. `CvView`
-  renders `ContactCard` (cv-contact) and `ResumeSections` (summary, skills,
-  experience, education, languages, referees; an empty section is not drawn).
-  A field named in `_maskedFields` shows `MaskedPlaceholder` ("Sign in to
-  view"), never the value. Richtext is sanitized where data enters the page:
-  `loadCvPage` (server, `SafeRichtext.server`) and `useCvContent` (browser
-  refetch, `SafeRichtext.rules`) both call `sanitizeCvRichtext`, so the
+- `/cv` is the CV page. `app/cv/page.tsx` renders only `views/cv/PageCv`
+  (Server Component), which loads the `PageCv` GraphQL document through
+  `PageCv.data.ts` (`loadPageCv`, public role: the main `page-cv-a`, the
+  `profile` and `cvCommonText`) and hands it to the client `PageCvClient`. No
+  main CV answers 404. Anonymous visitors see the server data; a signed-in
+  account refetches the `PageCvVisitor` selections through `GET /api/v1/cv`
+  (BFF, keyed by actor), and sign-out returns to the server data. `PageCvClient`
+  renders `ContactCard` (the profile) and the sections `CvSection` (summary,
+  skills), `ExperiencesSection`, `ProjectsSection` and `EducationsSection`; an
+  empty section is not drawn. A field named in `_maskedFields` shows
+  `MaskedPlaceholder` ("Sign in to view"), never the value. Richtext is
+  sanitized on the server (`sanitizeCvRichtext` in `PageCv.data.ts`), so the
   components only see clean HTML.
 - `app/error.tsx` is the error state for any page (client component, "Try
   again" calls Next's `retry`). It never reads the thrown error, so no server
@@ -25,9 +25,14 @@ Routes:
   streams cannot change the HTTP status: the response is already `200 OK` and
   the error UI arrives inside the stream (Next 16 streaming guide, "Status
   codes"); a failure before the first byte is a `500`.
-- `/status` is the API status card (`GET /api/v1/health/live` from the browser,
-  built with `@abyss/form-commons`). It is not linked from the header. It answers 404 unless
-  `WEB_STATUS_PAGE_ENABLED=true` (read per request, ADR 0014).
+- `/` and `/status` both render the module status (`ModuleStatus` of
+  `features/status`: the text from the `ModuleStatus` query and the API status
+  card, `GET /api/v1/health` from the browser). `PageHome` and `PageStatus` load
+  no CV data; a failed text query leaves the card with its last-resort words.
+  `/status` is not linked from the header.
+- `/robots.txt` and `/sitemap.xml` are built per request by
+  `features/crawler-files` (PS-4): only `APP_ENV=production` allows crawling,
+  the sitemap lists the public pages, and `proxy.ts` skips both (no CSP nonce).
 
 ## Run
 
@@ -54,6 +59,7 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 - The Next server never sends, receives or stores a user token. No Server
   Actions, Route Handlers or `cookies()` for auth: the browser calls the API
   with a Bearer token held in memory.
+- `public/favicon.ico` is the "A" letter-mark (16, 32 and 48 px layers), served as-is at `/favicon.ico`; no `<link rel="icon">` (ADR 0024).
 
 ## Config
 
@@ -61,18 +67,24 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   the browser bundle at build time (so they are public, never secrets) and a
   missing `NEXT_PUBLIC_TURNSTILE_SITE_KEY` fails the build. No cms-api URL is
   ever baked into the bundle.
-- `src/configs/Server.env.ts` (`server-only`) reads `APP_API_URL`,
+- `src/configs/AppEnv.rules.ts` holds the `APP_ENV` value list (`development`,
+  `staging`, `production`). `next.config.ts` fails `next build` / `next dev` when
+  `APP_ENV` is missing or not in the list and inlines it as the build constant
+  `APP_ENV_BUILD`; the runtime key `APP_ENV` (web Secret) stays live and must
+  equal it, else start fails.
+- `src/configs/Server.env.ts` (`server-only`) reads `APP_ENV` (it alone turns the mock
+  fallback on, where not `production`), `APP_API_URL`,
   `APP_API_TOKEN` (required in production, `ak_live_...`, never logged or sent to the
   browser), `WEB_REVALIDATE_SECONDS` (optional override of every call's cache lifetime),
-  `WEB_STATUS_PAGE_ENABLED`, the test-stack-only `ALLOW_MOCK_FALLBACK` and the BFF keys (`WEB_ORIGIN`,
+  `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
   `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
   `CLIENT_IP_HEADER`, and the test-stack-only `BFF_AUTH_RATE_LIMIT_IP` and
   `ALLOW_BFF_RATE_LIMIT_OVERRIDE`) at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
-- User-facing text comes from the cms-api text types (`siteText`, `signInText`,
-  `statusPageText`, `cvPageText`) through the content features, never from literals.
+- User-facing text comes from the cms-api content types (`moduleAuth`, `moduleStatus`,
+  `author`, `cvCommonText`) through the content features, never from literals.
 - `configs/**` may use pure helpers (`StripTrailingSlashes`,
   `SafeLinkTarget`) but never `apis/client/Api.client` or a feature (ESLint). Error
   codes live with their feature constants (`Auth.constants`,
@@ -87,8 +99,8 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   `${APP_API_URL}/graphql` with JSON headers only (no `Authorization`, no
   cookie, no client IP), so the page holds what the `public` role may read.
   Caching uses the fetch data cache, `next: { revalidate }` (the default, or the `WEB_REVALIDATE_SECONDS` override)
-  (Next 16 without Cache Components; 0 turns it off). Any failure throws one
-  `GraphqlRequestError` (`GraphqlResponse.rules.ts`) with the first error code,
+  (Next 16 without Cache Components; 0 turns it off). Any failure of a visitor-token read throws one
+  `WebApiError` (`GraphqlResponse.rules.ts`, source `cms-api-graphql`, `operation` the operation name),
   never the server message or the variables.
 - `src/apis/client/Graphql.client.ts`: `requestGraphql(document, variables, accessToken)`
   for the browser, over the Axios instance, with the Bearer token from
@@ -164,10 +176,10 @@ docker run -e APP_API_URL=http://cms-api:3000/api/v1 -e APP_API_TOKEN=<token> -p
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
-Runtime env: `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
+the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and without a valid `APP_ENV` build arg; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
+Runtime env: `APP_ENV` (must equal the build value), `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
 `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
-(smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `ALLOW_MOCK_FALLBACK`)
+(smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts

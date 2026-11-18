@@ -80,7 +80,7 @@ function collectConsoleErrors(page: Page): string[] {
   return errors;
 }
 
-test.describe('backups page', () => {
+test.describe('backups page', { tag: ['@cms-admin', '@cms-api', '@backups'] }, () => {
   test('feature off: page shows the not-configured state after Check backups', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await signInAsOwner(page);
@@ -162,7 +162,7 @@ test.describe('backups page', () => {
   });
 });
 
-test.describe('backup download dialog', () => {
+test.describe('backup download dialog', { tag: ['@cms-admin', '@cms-api', '@backups'] }, () => {
   const openDialog = async (page: Page) => {
     await page.goto(APP_ROUTES.BACKUPS);
     await checkBackups(page);

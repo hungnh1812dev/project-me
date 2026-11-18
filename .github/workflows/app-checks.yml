@@ -42,8 +42,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Typecheck and lint
+        env:
+          APP_ENV: development # web's next.config.ts requires a valid APP_ENV; other apps ignore it
         run: pnpm turbo run typecheck lint --filter=@abyss/${{ inputs.app }}
       - name: Unit tests
+        env:
+          APP_ENV: development
         run: pnpm --filter @abyss/${{ inputs.app }} test
 
   build:
@@ -60,4 +64,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build
+        env:
+          APP_ENV: development # check build only; the published image build takes vars.APP_ENV in _publish.yml
         run: pnpm turbo run build --filter=@abyss/${{ inputs.app }}

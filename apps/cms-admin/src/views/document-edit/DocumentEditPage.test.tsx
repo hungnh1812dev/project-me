@@ -72,17 +72,19 @@ describe('DocumentEditPage: new cv-page', () => {
     });
 
     await screen.findByLabelText('Position');
-    expect(screen.getByRole('heading', { name: copy.newTitle('CV Page') })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: copy.newTitle('Page CV (Type A)') }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(new RegExp(SLUG))).not.toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: 'Is Main' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Main Page' })).toBeInTheDocument();
     // The richtext editor is lazy-loaded.
     expect(await screen.findByText('Summary')).toBeInTheDocument();
-    for (const label of ['Skills', 'Experiences', 'Educations', 'Languages', 'References']) {
+    for (const label of ['Skills', 'Experiences', 'Projects', 'Educations']) {
       expect(screen.getByRole('heading', { level: 2, name: label })).toBeInTheDocument();
     }
 
     await userEvent.type(screen.getByLabelText('Position'), 'Engineer');
-    await userEvent.click(screen.getByRole('switch', { name: 'Is Main' }));
+    await userEvent.click(screen.getByRole('switch', { name: 'Main Page' }));
     await userEvent.click(screen.getByRole('button', { name: 'Click to add skills' }));
     await userEvent.type(screen.getByLabelText('Skill', { selector: 'input' }), 'React');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
@@ -93,7 +95,7 @@ describe('DocumentEditPage: new cv-page', () => {
       components: { skills: [{ values: { skill: 'React' } }] },
     });
     expect(
-      await screen.findByRole('heading', { name: copy.editTitle('CV Page') }),
+      await screen.findByRole('heading', { name: copy.editTitle('Page CV (Type A)') }),
     ).toBeInTheDocument();
   });
 
@@ -103,7 +105,7 @@ describe('DocumentEditPage: new cv-page', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Click to add experiences' }));
     await userEvent.click(screen.getByRole('button', { name: 'Click to add roles' }));
     await userEvent.type(screen.getByLabelText('Team Size'), '4.5');
-    await userEvent.type(screen.getByLabelText('Tech Stack'), 'not json');
+    await userEvent.type(screen.getByLabelText('Technical Stacks'), 'not json');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));
 
     expect(await screen.findByText(copy.invalidInteger)).toBeInTheDocument();
@@ -230,8 +232,8 @@ describe('DocumentEditPage: edit draft', () => {
             name: '***',
             summary: null,
           },
-          components: { references: null, skills: [] },
-          _maskedFields: ['name', 'references'],
+          components: { projects: null, skills: [] },
+          _maskedFields: ['name', 'projects'],
         }),
       ),
       [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
@@ -242,10 +244,8 @@ describe('DocumentEditPage: edit draft', () => {
     const nameInput = await screen.findByLabelText('Name');
     expect(nameInput).toHaveAttribute('readonly');
     expect(nameInput).toHaveValue(copy.protectedValue);
-    expect(screen.getByLabelText('References')).toHaveValue(copy.protectedValue);
-    expect(
-      screen.queryByRole('button', { name: 'Click to add references' }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Projects')).toHaveValue(copy.protectedValue);
+    expect(screen.queryByRole('button', { name: 'Click to add projects' })).not.toBeInTheDocument();
 
     await userEvent.type(screen.getByLabelText('Position'), '!');
     await userEvent.click(screen.getByRole('button', { name: copy.save }));

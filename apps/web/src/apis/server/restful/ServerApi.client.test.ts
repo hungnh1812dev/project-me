@@ -1,4 +1,6 @@
-import { SERVER_API_FAILURE_CODES, serverApi, ServerApiError } from './ServerApi.client';
+import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+
+import { serverApi } from './ServerApi.client';
 
 const env = vi.hoisted(() => ({
   appApiUrl: 'http://api.internal/api/v1',
@@ -6,6 +8,10 @@ const env = vi.hoisted(() => ({
 }));
 
 vi.mock('@/configs/Server.env', () => ({ getServerEnv: () => env }));
+vi.mock('@/configs/Http.constants', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/configs/Http.constants')>()),
+  API_TIMEOUT_MS: 20,
+}));
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -20,13 +26,13 @@ function sentRequest(): { request: Request; init: Record<string, unknown> | unde
   return { request, init };
 }
 
-async function failureOf(call: Promise<unknown>): Promise<ServerApiError> {
+async function failureOf(call: Promise<unknown>): Promise<WebApiError> {
   const error = await call.then(
     () => undefined,
     (thrown: unknown) => thrown,
   );
-  expect(error).toBeInstanceOf(ServerApiError);
-  return error as ServerApiError;
+  expect(error).toBeInstanceOf(WebApiError);
+  return error as WebApiError;
 }
 
 beforeEach(() => {
@@ -43,6 +49,7 @@ describe('serverApi', () => {
     ['put', 'PUT'],
     ['patch', 'PATCH'],
     ['delete', 'DELETE'],
+    ['options', 'OPTIONS'],
   ] as const)('%s sends the %s verb to the base URL plus the path', async (method, verb) => {
     answer(200, '{}');
 
@@ -53,12 +60,21 @@ describe('serverApi', () => {
     expect(request.url).toBe('http://api.internal/api/v1/things');
   });
 
+  it('request takes the method as its first argument', async () => {
+    answer(200, '{}');
+
+    await serverApi.request('PATCH', '/things');
+
+    expect(sentRequest().request.method).toBe('PATCH');
+  });
+
   it('sends the headers and the body as JSON, and returns the parsed answer', async () => {
     answer(200, '{"ok":true}', { 'x-reply': 'yes' });
 
     const result = await serverApi.post('/things', {
       headers: { Authorization: 'Bearer token' },
       body: { a: 1 },
+      resolveData: (raw) => raw,
     });
 
     const { request } = sentRequest();
@@ -76,7 +92,7 @@ describe('serverApi', () => {
       ['set-cookie', 'b=2; Path=/'],
     ]);
 
-    const result = await serverApi.post('/things');
+    const result = await serverApi.post('/things', { resolveData: (raw) => raw });
 
     expect(result.headers.getSetCookie()).toEqual(['a=1; Path=/', 'b=2; Path=/']);
   });
@@ -92,33 +108,33 @@ describe('serverApi', () => {
   it('passes the revalidate seconds of the caller to fetch', async () => {
     answer(200, '{}');
 
-    await serverApi.get('/things', { cache: { revalidateSeconds: 30 } });
+    await serverApi.get('/things', { next: { revalidate: 30, tags: ['a'] } });
 
-    expect(sentRequest().init).toMatchObject({ next: { revalidate: 30 } });
+    expect(sentRequest().init).toMatchObject({ next: { revalidate: 30, tags: ['a'] } });
   });
 
-  it('replaces every revalidate value with the WEB_REVALIDATE_SECONDS override, 0 included', async () => {
-    env.revalidateOverrideSeconds = 0;
-    answer(200, '{}');
-
-    await serverApi.get('/things', { cache: { revalidateSeconds: 30 } });
-
-    expect(sentRequest().init).toMatchObject({ next: { revalidate: 0 } });
-  });
-
-  it('keeps no-store when an override is set', async () => {
+  it('replaces a revalidate value with the WEB_REVALIDATE_SECONDS override', async () => {
     env.revalidateOverrideSeconds = 5;
     answer(200, '{}');
 
-    await serverApi.get('/things', { cache: 'no-store' });
+    await serverApi.get('/things', { next: { revalidate: 30 } });
+
+    expect(sentRequest().init).toMatchObject({ next: { revalidate: 5 } });
+  });
+
+  it('keeps revalidate 0 as no-store when an override is set', async () => {
+    env.revalidateOverrideSeconds = 5;
+    answer(200, '{}');
+
+    await serverApi.get('/things', { next: { revalidate: 0 } });
 
     expect(sentRequest().init).toMatchObject({ cache: 'no-store' });
   });
 
-  it('passes no-store to fetch', async () => {
+  it('passes revalidate 0 to fetch as no-store', async () => {
     answer(200, '{}');
 
-    await serverApi.get('/things', { cache: 'no-store' });
+    await serverApi.get('/things', { next: { revalidate: 0 } });
 
     const { init } = sentRequest();
     expect(init).toMatchObject({ cache: 'no-store' });
@@ -130,17 +146,72 @@ describe('serverApi', () => {
 
     const error = await failureOf(serverApi.get('/things'));
 
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.REDIRECT);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.REDIRECT);
+    expect(error.statusCode).toBe(302);
     expect(sentRequest().request.redirect).toBe('manual');
   });
 
-  it.each([400, 401, 404, 429, 500, 503])('answers %i instead of throwing', async (status) => {
-    answer(status, '{"errorCode":"X"}');
+  it('returns the parsed body of a 2xx without resolveData', async () => {
+    answer(200, '{"ok":true}');
 
-    const result = await serverApi.get('/things');
+    expect(await serverApi.get('/things')).toEqual({ ok: true });
+  });
 
-    expect(result.status).toBe(status);
-    expect(result.body).toEqual({ errorCode: 'X' });
+  it('returns undefined for a 2xx without a JSON body', async () => {
+    answer(204);
+    expect(await serverApi.delete('/things')).toBeUndefined();
+
+    answer(200, '<html>not json</html>');
+    expect(await serverApi.get('/things')).toBeUndefined();
+  });
+
+  it.each([400, 401, 404, 429, 500, 503])(
+    'throws HTTP_ERROR for %i without resolveData, logged once',
+    async (status) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      answer(status, '{"errorCode":"X"}');
+
+      const error = await failureOf(serverApi.get('/things'));
+
+      expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.HTTP);
+      expect(error.source).toBe(API_ERROR_SOURCES.CMS_API_REST);
+      expect(error.statusCode).toBe(status);
+      expect(warn).toHaveBeenCalledTimes(1);
+      warn.mockRestore();
+    },
+  );
+
+  it.each([200, 404, 500])(
+    'gives resolveData the status, headers and body of a %i',
+    async (status) => {
+      answer(status, '{"errorCode":"X"}', { 'x-reply': 'yes' });
+
+      const seen = await serverApi.get('/things', {
+        resolveData: (raw) => ({
+          status: raw.status,
+          reply: raw.headers.get('x-reply'),
+          body: raw.body,
+        }),
+      });
+
+      expect(seen).toEqual({ status, reply: 'yes', body: { errorCode: 'X' } });
+    },
+  );
+
+  it('passes a throw of resolveData on unchanged, without a log', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const mine = new Error('mine');
+    answer(200, '{}');
+
+    await expect(
+      serverApi.get('/things', {
+        resolveData: () => {
+          throw mine;
+        },
+      }),
+    ).rejects.toBe(mine);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('gives NETWORK without the upstream message or the request data', async () => {
@@ -150,11 +221,12 @@ describe('serverApi', () => {
       serverApi.post('/things', { headers: { Authorization: 'Bearer token' }, body: { pw: 'x' } }),
     );
 
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.NETWORK);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.NETWORK);
+    expect(error.retryable).toBe(false);
     expect(JSON.stringify([error.message, error.stack])).not.toMatch(/secret-host|Bearer|"pw"/);
   });
 
-  it('gives TIMEOUT when the upstream is slower than timeoutMs', async () => {
+  it('gives TIMEOUT when the upstream is slower than API_TIMEOUT_MS', async () => {
     fetchMock.mockImplementation((input) => {
       const { signal } = input as Request;
       return new Promise<Response>((_resolve, reject) => {
@@ -162,26 +234,21 @@ describe('serverApi', () => {
       });
     });
 
-    const error = await failureOf(serverApi.get('/things', { timeoutMs: 20 }));
+    const error = await failureOf(serverApi.get('/things'));
 
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.TIMEOUT);
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.TIMEOUT);
+    expect(error.source).toBe(API_ERROR_SOURCES.CMS_API_REST);
+    expect(error.retryable).toBe(true);
   });
 
-  it('leaves the body undefined when the answer has none or is not JSON', async () => {
-    answer(204);
-    expect((await serverApi.delete('/things')).body).toBeUndefined();
+  it('logs each failure once, with codes only', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    fetchMock.mockRejectedValue(new TypeError('fetch failed: secret-host'));
 
-    answer(502, '<html>bad gateway</html>');
-    expect((await serverApi.get('/things')).body).toBeUndefined();
-  });
+    await failureOf(serverApi.get('/things'));
 
-  it('gives INVALID_BODY for an unreadable body only when the caller needs one', async () => {
-    answer(200, '<html>not json</html>');
-    const error = await failureOf(serverApi.get('/things', { needsBody: true }));
-    expect(error.code).toBe(SERVER_API_FAILURE_CODES.INVALID_BODY);
-
-    answer(200);
-    const empty = await failureOf(serverApi.get('/things', { needsBody: true }));
-    expect(empty.code).toBe(SERVER_API_FAILURE_CODES.INVALID_BODY);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('[api-error] cms-api-rest NETWORK - -');
+    warn.mockRestore();
   });
 });
