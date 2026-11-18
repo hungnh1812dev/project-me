@@ -33,13 +33,14 @@ Module docs (`docs/modules/`) and the generated index `docs/modules/MODULES.md` 
 | `handoff.md` | builders; manager adds user answers | builders, planner, in full | ~3 KB | a task's lines when it is committed; file at close |
 | `current.md` | the unit's builder (format in `worker-flow`) | checkers, manager | one unit | manager resets after the unit's last commit; at close |
 | `qc-issues-handoff.md` | qc, security-qc (own section) | manager, checkers | - | at close (no `open` entry left) |
-| `qc-progress.md` | qc, security-qc (own line, format in `test-tiers`) | manager while a checker runs | one line per running checker | each checker removes its line at report; file at close |
-| `checklists/<checkpoint>.md` | qc, security-qc (format in `test-tiers`) | manager (`Status`), checkers | - | at close |
+| `qc-progress.md` | qc, security-qc (own line, format in `checklist-runs`) | manager while a checker runs | one line per running checker | each checker removes its line at report; file at close |
+| `checklists/<checkpoint>.md` | qc, security-qc (format in `checklist-runs`) | manager (`Status`), checkers | - | at close |
 | `CHECKLIST.md` | qc, security-qc; manager copies it for a one-phase feature | anyone | - | never |
 | `findings/<unit, checkpoint, feature or audit>-<qc or security>.md` | the failing checker (format in its agent file) | builder in a fix round | - | by its checker when the re-check passes |
 | `resolved/<finding id>.md` | builder fixing a critical/high finding (format in `worker-flow`) | manager at close | ~6 lines | at close, after `SUMMARY.md` takes its row |
 | `SUMMARY.md` | manager at close | anyone | as short as possible | never |
 | `archive/*.md` | manager | grep on demand | - | never |
+| `.breaks/<time>/` (git-ignored) | `break-check` hook at each session end: the feature folder, `meta.txt` (old transcript path, head, git status) | manager, only when a `break-check:` line names it | last 5 | oldest pruned |
 
 Trim when over the limit: closed items out of `handoff.md`; module-only or stale facts from the conventions files into the archive.
 
@@ -125,6 +126,7 @@ No log: lasting events go into commit messages, `handoff.md` (while open), `reso
 Updated: <YYYY-MM-DD> after <task ID>
 
 ## In progress / next
+Next: <first line of the next dispatch: agent, name, model, message> (or: ask the user <what>)
 - <ID> <title> - <state, exact next step>
 - <ID> user answers: <one line each>
 

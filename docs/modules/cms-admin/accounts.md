@@ -46,8 +46,8 @@ Tests: 1 file (not listed).
 | File | Description |
 |---|---|
 | `Account.columns.tsx` | Table columns, with the actions column only for allowed actors (exports `accountColumns`) |
-| `AccountRowActions.tsx` | Enable and Resend invite of one row (exports `RowNotice`, `AccountRowActions`) |
-| `AccountsPage.tsx` | The page: list, paging, dialogs, notices (exports `AccountsPage`) |
+| `AccountRowActions.tsx` | Enable and Resend invite of one row, outcomes as toasts (exports `AccountRowActions`) |
+| `AccountsPage.tsx` | The page: list, paging, dialogs, outcome toasts (exports `AccountsPage`) |
 | `DisableAccountDialog.tsx` | Confirmation for disabling an account (exports `DisableOutcome`, `DisableAccountDialog`) |
 | `InviteDialog.tsx` | Invite form and the roles the caller may assign (exports `assignableRoles`, `InviteDialog`) |
 

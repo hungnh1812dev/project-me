@@ -32,9 +32,9 @@ export function rootTableName(slug: string): string {
   return slug.replace(SLUG_SEPARATOR, '_');
 }
 
-/** Parent table + component field -> child table. `cv_page` + `experience` -> `cv_page__experience`. */
-export function componentTableName(parentTable: string, fieldName: string): string {
-  return `${parentTable}${TABLE_PATH_SEPARATOR}${toSqlIdentifier(fieldName)}`;
+/** Parent table + `component` value -> child table. `cv_page` + `experience` -> `cv_page__experience`. */
+export function componentTableName(parentTable: string, component: string): string {
+  return `${parentTable}${TABLE_PATH_SEPARATOR}${toSqlIdentifier(component)}`;
 }
 
 export const relationNames = {
@@ -74,7 +74,9 @@ export interface TablePlan {
   parentTable: string | null;
   /** JSON path of the component field (empty for the root). */
   path: (string | number)[];
-  /** JSON path of the name the table is composed from (`slug` or `...name`). */
+  /** Dotted API field names from the root (`experiences.roles`); `''` for the root. */
+  apiPath: string;
+  /** JSON path of the name the table is composed from (`slug` or `...component`). */
   namePath: (string | number)[];
   systemColumns: readonly string[];
   columns: ColumnPlan[];
@@ -126,6 +128,7 @@ export function planTables(definition: ContentTypeDefinition): TablePlan[] {
     depth: number,
     parentTable: string | null,
     path: (string | number)[],
+    apiPath: string,
     fields: FieldDefinition[],
   ): void => {
     const columns: ColumnPlan[] = [];
@@ -147,13 +150,14 @@ export function planTables(definition: ContentTypeDefinition): TablePlan[] {
       }
     });
 
-    const namePath = path.length === 0 ? ['slug'] : [...path, 'name'];
+    const namePath = path.length === 0 ? ['slug'] : [...path, 'component'];
     tables.push({
       name,
       kind,
       depth,
       parentTable,
       path,
+      apiPath,
       namePath,
       systemColumns: kind === 'root' ? ROOT_SYSTEM_COLUMNS : COMPONENT_SYSTEM_COLUMNS,
       columns,
@@ -162,16 +166,17 @@ export function planTables(definition: ContentTypeDefinition): TablePlan[] {
 
     for (const child of children) {
       visit(
-        componentTableName(name, child.field.name),
+        componentTableName(name, child.field.component),
         'component',
         depth + 1,
         name,
         child.path,
+        apiPath === '' ? child.field.name : `${apiPath}.${child.field.name}`,
         child.field.fields,
       );
     }
   };
 
-  visit(rootTableName(definition.slug), 'root', 0, null, [], definition.fields);
+  visit(rootTableName(definition.slug), 'root', 0, null, [], '', definition.fields);
   return tables;
 }

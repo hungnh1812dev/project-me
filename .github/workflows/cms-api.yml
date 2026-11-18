@@ -41,6 +41,8 @@ jobs:
         run: pnpm turbo run typecheck lint --filter=@abyss/cms-api
       - name: Unit tests
         run: pnpm --filter @abyss/cms-api test:unit
+      - name: Nightly backup script
+        run: bash apps/cms-api/backup/nightly-backup.test.sh
       # Fail when the committed migrations or GraphQL SDL are behind the content types
       - name: Content migrations are committed
         run: pnpm --filter @abyss/cms-api content:generate -- --check
@@ -78,6 +80,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # jest runs outside turbo, so its db:generate dependency must run here
+      - name: Generate Prisma client
+        run: pnpm --filter @abyss/cms-api db:generate
       # Testcontainers starts PostgreSQL on the runner's Docker
       - name: Integration tests
         run: pnpm --filter @abyss/cms-api test:integration

@@ -185,9 +185,12 @@ export const ACCESS_TOKEN_TTL_SECONDS = 15 * SECONDS_PER_MINUTE;
 /** SPEC §6: a reviewer session lasts 24 h; its access token expires then too. */
 export const REVIEWER_SESSION_TTL_SECONDS = 24 * SECONDS_PER_HOUR;
 
-/** SPEC §6: refresh token lifetime (7 days), restarted on every rotation. */
-export const REFRESH_TOKEN_TTL_SECONDS = 7 * SECONDS_PER_DAY;
+/** D22: remembered refresh token lifetime (30 days), restarted on every rotation. */
+export const REFRESH_TOKEN_TTL_SECONDS = 30 * SECONDS_PER_DAY;
 export const REFRESH_TOKEN_TTL_MS = REFRESH_TOKEN_TTL_SECONDS * MS_PER_SECOND;
+
+/** D22: unremembered refresh token lifetime (12 hours after last use), restarted on every rotation. */
+export const SESSION_REFRESH_TOKEN_TTL_MS = 12 * SECONDS_PER_HOUR * MS_PER_SECOND;
 
 /**
  * An already-rotated refresh token that comes back this soon after its

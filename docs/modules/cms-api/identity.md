@@ -46,7 +46,7 @@ identity/ (2 files)
   http/ (9 files)
 ```
 
-Tests: 24 files (not listed).
+Tests: 25 files (not listed).
 
 | File | Description |
 |---|---|
@@ -57,22 +57,22 @@ Tests: 24 files (not listed).
 | `adapters/PrismaRefreshToken.repository.ts` | `PrismaRefreshTokenRepository`: refresh token rows, rotation under a row lock |
 | `adapters/PrismaSessionRevocation.repository.ts` | `PrismaSessionRevocationRepository`: ends every session of an account |
 | `application/AccessSession.service.ts` | `AccessSessionService`: access token claims to the authenticated actor (reviewer role is read-only) |
-| `application/AccessToken.service.ts` | `AccessTokenService`: signs and verifies access and two-factor temp tokens |
-| `application/Auth.service.ts` | `AuthService`: login, refresh, logout, current account profile |
+| `application/AccessToken.service.ts` | `AccessTokenService`: signs and verifies access and two-factor temp tokens (the temp token carries the remember-me choice as claim `rm`) |
+| `application/Auth.service.ts` | `AuthService`: login, refresh, logout, current account profile; `startSession` is the only session start and takes the remember-me choice |
 | `application/Identity.port.ts` | Ports, tokens and record types of the identity use cases |
 | `application/Otp.service.ts` | `OtpService`: issues, mails and checks one-time codes (HMAC-stored) |
 | `application/OwnerBootstrap.service.ts` | `OwnerBootstrapService`: creates the owner from the CLI |
 | `application/OwnerSetup.service.ts` | `OwnerSetupService`: one-time `/setup` owner creation with the setup token |
 | `application/Password.service.ts` | `PasswordService`, `hashPassword`, `verifyPassword`: reset, set and change |
 | `application/Reauthentication.service.ts` | `ReauthenticationService`: password (and code) check before a sensitive action |
-| `application/RefreshToken.service.ts` | `RefreshTokenService`: rotation, reuse detection, grace window |
+| `application/RefreshToken.service.ts` | `RefreshTokenService`: rotation, reuse detection, grace window; the remember_me mode and its TTL per family |
 | `application/SecretBox.service.ts` | `SecretBox`: AES-256-GCM sealing of stored secrets (TOTP) |
 | `application/SeedAccount.service.ts` | `SeedAccountService`: seeds test accounts where allowed |
 | `application/SessionRevocation.service.ts` | `SessionRevocationService`: revokes all sessions of an account |
 | `application/Totp.service.ts` | `TotpService`: TOTP secrets, URIs and code checks |
 | `application/TwoFactorChallenge.store.ts` | `TwoFactorChallengeStore`: in-process login challenges and attempt counts |
 | `application/TwoFactorEmailCode.service.ts` | `TwoFactorEmailCodeService`: sends the email two-factor code |
-| `application/TwoFactorLogin.service.ts` | `TwoFactorLoginService`: the two-factor step of login |
+| `application/TwoFactorLogin.service.ts` | `TwoFactorLoginService`: the two-factor step of login; starts the session with the temp token's `rm` claim |
 | `application/TwoFactorManagement.service.ts` | `TwoFactorManagementService`: TOTP setup, enable and disable |
 | `application/TwoFactorReset.service.ts` | `TwoFactorResetService`: break-glass two-factor reset (CLI) |
 | `cli/IdentityCli.setup.ts` | `openIdentityCli`: builds the identity use cases without Nest for the CLIs |
@@ -81,12 +81,12 @@ Tests: 24 files (not listed).
 | `cli/PasswordInput.client.ts` | `promptHidden`, `readPasswordFromStream`: hidden password input for CLIs |
 | `cli/Seed.command.ts` | `db:seed`: idempotent system roles seed, then default permissions of roles that have none |
 | `cli/SeedAccount.command.ts` | Seed account CLI |
-| `domain/Authentication.rules.ts` | Login failure reasons, password acceptance, refresh grace rule |
-| `domain/Identity.constants.ts` | Password, OTP, TOTP, two-factor, setup token and cipher settings; error lists |
+| `domain/Authentication.rules.ts` | Login failure reasons, password acceptance, refresh grace rule, refresh TTL per remember_me mode |
+| `domain/Identity.constants.ts` | Password, OTP, TOTP, two-factor, setup token, refresh TTLs (30 days remembered, 12 hours not) and cipher settings; error lists |
 | `domain/Identity.errors.ts` | Identity domain errors (invalid credentials, weak password, invalid OTP, ...) |
 | `domain/SetupToken.rules.ts` | `isSetupTokenValid`: constant-time setup token check |
 | `http/AllowedOrigin.guard.ts` | `AllowedOriginGuard`: refuses cookie requests from other origins |
-| `http/Auth.controller.ts` | `AuthController`: login, refresh, logout, me; sets the refresh cookie |
+| `http/Auth.controller.ts` | `AuthController`: login, refresh, logout, me; sets the refresh cookie (persistent 30-day `Max-Age` when remembered, browser-session cookie otherwise) |
 | `http/IdentityHttp.constants.ts` | Routes, refresh cookie name and flags, rate-limit policies |
 | `http/Jwt.strategy.ts` | `JwtStrategy`, `JwtAuthGuard`: bearer access token authentication |
 | `http/OwnerSetup.controller.ts` | `OwnerSetupController`: setup status and owner creation |

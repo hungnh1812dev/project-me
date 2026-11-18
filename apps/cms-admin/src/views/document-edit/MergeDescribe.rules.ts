@@ -1,11 +1,9 @@
-import { COPY } from '@configs/Copy.constants';
+import type { ScreenText } from '@configs/locales';
 import { FIELD_TYPE } from '@features/content/Content.constants';
 import { type FieldNode } from '@features/content/FieldTree.rules';
 
 import type { ConflictDetails, ConflictItem, DiffEntry } from './Conflict.rules';
 import { fieldPathOf, isMaskedPath, parseEntryPath } from './Merge.reducer';
-
-const copy = COPY.content.conflict;
 
 const NEW_ITEM = /^new#(\d+)$/;
 
@@ -25,7 +23,9 @@ export function entryTitle(
   entry: DiffEntry,
   fields: readonly FieldNode[],
   details: ConflictDetails,
+  text: ScreenText<'content'>,
 ): string {
+  const copy = text.content.conflict;
   const parsed = parseEntryPath(entry.path);
   if (parsed === null) return entry.path;
   const parts: string[] = [];
@@ -58,8 +58,8 @@ export function entryTitle(
   return parts.join(copy.titleSeparator);
 }
 
-export function changeLabel(entry: DiffEntry): string {
-  return copy.change[entry.change];
+export function changeLabel(entry: DiffEntry, text: ScreenText<'content'>): string {
+  return text.content.conflict.change[entry.change];
 }
 
 function stripTags(html: string): string {
@@ -68,12 +68,17 @@ function stripTags(html: string): string {
 }
 
 /** A scalar for display, as plain text. Null means "no value". */
-export function formatValue(value: unknown, type?: string): string | null {
+export function formatValue(
+  value: unknown,
+  type: string | undefined,
+  text: ScreenText<'content'>,
+): string | null {
+  const copy = text.content.conflict;
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'boolean') return value ? copy.yes : copy.no;
   if (typeof value === 'string') {
-    const text = type === FIELD_TYPE.RICHTEXT ? stripTags(value) : value;
-    return text === '' ? null : text;
+    const plain = type === FIELD_TYPE.RICHTEXT ? stripTags(value) : value;
+    return plain === '' ? null : plain;
   }
   if (typeof value === 'number') return String(value);
   return JSON.stringify(value);
@@ -85,7 +90,9 @@ function summarizeItem(
   nodes: readonly FieldNode[],
   prefix: string,
   masked: ReadonlySet<string>,
+  text: ScreenText<'content'>,
 ): string {
+  const copy = text.content.conflict;
   const lines: string[] = [];
   for (const node of nodes) {
     const path = prefix === '' ? node.name : `${prefix}.${node.name}`;
@@ -97,8 +104,8 @@ function summarizeItem(
       }
       continue;
     }
-    const text = formatValue(item.values[node.name], node.type);
-    if (text !== null) lines.push(`${node.label}: ${text}`);
+    const shown = formatValue(item.values[node.name], node.type, text);
+    if (shown !== null) lines.push(`${node.label}: ${shown}`);
   }
   return lines.join('\n');
 }
@@ -109,16 +116,24 @@ export function sideContent(
   side: 'server' | 'submitted',
   fields: readonly FieldNode[],
   masked: ReadonlySet<string>,
+  text: ScreenText<'content'>,
 ): string | null {
+  const copy = text.content.conflict;
   const parsed = parseEntryPath(entry.path);
   const raw = entry[side];
   if (parsed === null || raw === undefined || raw === null) return null;
   const node = nodeAt(fields, fieldPathOf(parsed).split('.'));
-  if (parsed.kind === 'value') return formatValue(raw, node?.type);
+  if (parsed.kind === 'value') return formatValue(raw, node?.type, text);
   if (parsed.kind === 'item') {
     if (node === undefined) return null;
-    const text = summarizeItem(raw as ConflictItem, node.children, fieldPathOf(parsed), masked);
-    return text === '' ? copy.itemWithoutFields : text;
+    const summary = summarizeItem(
+      raw as ConflictItem,
+      node.children,
+      fieldPathOf(parsed),
+      masked,
+      text,
+    );
+    return summary === '' ? copy.itemWithoutFields : summary;
   }
   // moved: both sides list the kept uids; show each side's order by the
   // item's place in the saved version.

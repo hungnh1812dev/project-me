@@ -1,10 +1,17 @@
 import { useRef, useState } from 'react';
-import { Button, FormAlert, SortableSheet, type FormAlertTone } from '@abyss/form-commons';
+import {
+  Button,
+  Card,
+  FormAlert,
+  SortableSheet,
+  useToast,
+  type ToastTone,
+} from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
 import { useRestoreFocus } from '@components/useRestoreFocus';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { ApiToken } from '@features/access/Access.api';
 import { isForbidden } from '@features/access/Access.errors';
 import { useApiTokensQuery } from '@features/access/Access.queries';
@@ -19,22 +26,19 @@ import {
   type TokenDialogTarget,
 } from './TokenFormDialog';
 
-const copy = COPY.access.apiTokens;
-
-interface Notice {
-  tone: FormAlertTone;
-  message: string;
-}
+const TOKEN_TOAST_KEY = 'api-token-outcome';
 
 /** `/api-tokens`: who may call the API with a key, and what each key may do. */
 export function ApiTokensPage() {
+  const text = useScreenText('access');
+  const copy = text.access.apiTokens;
   const [page, setPage] = useState(1);
   const tokens = useApiTokensQuery(page);
   const caller = useCallerAccess();
   const me = useCurrentUser();
   const [dialog, setDialog] = useState<TokenDialogTarget | null>(null);
   const [revoking, setRevoking] = useState<ApiToken | null>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
+  const { showToast } = useToast();
   const headingRef = useRef<HTMLDivElement>(null);
   const { rememberOpener, restoreFocus } = useRestoreFocus(headingRef);
 
@@ -46,27 +50,29 @@ export function ApiTokensPage() {
 
   const open = (opener: HTMLElement, next: () => void) => {
     rememberOpener(opener);
-    setNotice(null);
     next();
   };
+
+  const notify = (tone: ToastTone, title: string) =>
+    showToast({ tone, title, key: TOKEN_TOAST_KEY });
 
   const onFormDone = (outcome: TokenDialogOutcome) => {
     setDialog(null);
     switch (outcome.kind) {
       case 'created':
-        setNotice({ tone: 'success', message: copy.created(outcome.name) });
+        notify('success', copy.created(outcome.name));
         break;
       case 'updated':
-        setNotice({ tone: 'success', message: copy.updated(outcome.name) });
+        notify('success', copy.updated(outcome.name));
         break;
       case 'revoked-meanwhile':
-        setNotice({ tone: 'info', message: copy.alreadyRevoked });
+        notify('info', copy.alreadyRevoked);
         break;
       case 'expired-meanwhile':
-        setNotice({ tone: 'info', message: copy.alreadyExpired });
+        notify('info', copy.alreadyExpired);
         break;
       case 'gone':
-        setNotice({ tone: 'info', message: copy.gone });
+        notify('info', copy.gone);
         break;
     }
   };
@@ -74,14 +80,16 @@ export function ApiTokensPage() {
   const onRevoked = (token: ApiToken, outcome: RevokeOutcome) => {
     setRevoking(null);
     if (outcome === 'gone') rememberOpener(null);
-    setNotice(
-      outcome === 'revoked'
-        ? { tone: 'success', message: copy.revoked(token.name) }
-        : {
-            tone: 'info',
-            message: outcome === 'gone' ? copy.gone : copy.alreadyRevoked,
-          },
-    );
+    showToast({
+      tone: outcome === 'revoked' ? 'success' : 'info',
+      title:
+        outcome === 'revoked'
+          ? copy.revoked(token.name)
+          : outcome === 'gone'
+            ? copy.gone
+            : copy.alreadyRevoked,
+      key: TOKEN_TOAST_KEY,
+    });
   };
 
   const rows = tokens.data?.data ?? [];
@@ -90,6 +98,7 @@ export function ApiTokensPage() {
     currentUserId: me?.id,
     showCreator,
     canChange,
+    text,
     onEdit: (token, opener) => open(opener, () => setDialog({ mode: 'edit', token })),
     onRevoke: (token, opener) => open(opener, () => setRevoking(token)),
   });
@@ -111,7 +120,6 @@ export function ApiTokensPage() {
           ) : null
         }
       />
-      {notice === null ? null : <FormAlert tone={notice.tone}>{notice.message}</FormAlert>}
       {tokens.isPending ? (
         <TableSkeleton label={copy.loading} />
       ) : tokens.isError ? (
@@ -134,7 +142,7 @@ export function ApiTokensPage() {
           </p>
         </div>
       ) : (
-        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+        <Card padding="flush" className="relative overflow-x-auto">
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}
@@ -151,7 +159,7 @@ export function ApiTokensPage() {
               copy={copy.pagination}
             />
           )}
-        </div>
+        </Card>
       )}
       <TokenFormDialog
         target={dialog}

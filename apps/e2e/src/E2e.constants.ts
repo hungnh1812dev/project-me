@@ -39,6 +39,12 @@ export const MS_PER_SECOND = 1_000;
  */
 export const TWO_FACTOR_TEST_TIMEOUT_MS = 180_000;
 
+/** Wait for a UI state that follows retried or slow API calls on a loaded host. */
+export const SLOW_STATE_TIMEOUT_MS = 20_000;
+
+/** Test timeout for a spec that waits on such states. */
+export const SLOW_STATE_TEST_TIMEOUT_MS = 60_000;
+
 /** HTTP statuses the specs assert on. */
 export const HTTP = {
   OK: 200,
@@ -52,28 +58,30 @@ export const HTTP = {
   CONFLICT: 409,
   UNSUPPORTED_MEDIA_TYPE: 415,
   SERVER_ERROR: 500,
+  BAD_GATEWAY: 502,
 } as const;
 
 /** Distinguishes this run's data from earlier runs against the same stack. */
 export const RUN_ID = Date.now().toString(36);
 
-/** Content type of the smoke stack with lists, rich text and relations. */
-export const CV_PAGE_SLUG = 'cv-page';
+/** Collection of the smoke and dev stacks with lists, rich text and components; the admin specs use it. */
+export const PAGE_CV_A_SLUG = 'page-cv-a';
 
-/** Display name of cv-page; screens show it, never the slug. */
-export const CV_PAGE_NAME = 'CV Page';
+/** Display name of page-cv-a; screens show it, never the slug. */
+export const PAGE_CV_A_NAME = 'Page CV (Type A)';
 
-/** Display names of the six content types of the smoke and dev stacks, by slug. */
+/** Display names of the content types of the smoke and dev stacks (the repo schemas), by slug. */
 export const CONTENT_TYPE_NAMES = {
   'common-text': 'Common Text',
-  'cv-contact': 'CV Contact',
-  'cv-page': CV_PAGE_NAME,
+  'cv-common-text': 'CV Common Text',
   header: 'Header',
+  'module-auth': 'Module Auth',
+  'module-status': 'Module Status',
+  [PAGE_CV_A_SLUG]: PAGE_CV_A_NAME,
   profile: 'Profile',
-  resume: 'Resume',
 } as const;
 
-/** Content type of the smoke stack with a media field and a list view. */
+/** Single type of the smoke stack with a media field (avatar). */
 export const PROFILE_SLUG = 'profile';
 
 const UUID_SEGMENT = '[0-9a-f-]{36}';
@@ -81,3 +89,9 @@ const UUID_SEGMENT = '[0-9a-f-]{36}';
 /** URL of an admin edit page for a document of `slug`. */
 export const editUrlPattern = (slug: string): RegExp =>
   new RegExp(`/content/${slug}/${UUID_SEGMENT}$`);
+
+/** Sealed sign-in cookie of the web BFF (__Host- prefix: Secure, Path=/, no Domain). */
+export const WEB_SESSION_COOKIE_NAME = '__Host-abyss_web_session';
+
+/** Sealed code-step cookie of the web BFF (Max-Age 300). */
+export const WEB_TWO_FACTOR_COOKIE_NAME = '__Host-abyss_web_2fa';

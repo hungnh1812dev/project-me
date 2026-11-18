@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react';
 import { createApiClient } from '@apis/client/Api.client';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { QueryClient } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import { App } from '../src/app/App';
@@ -46,4 +47,30 @@ export function renderApp(services: ReturnType<typeof createAppServices>, route 
       </MemoryRouter>
     </AppProviders>,
   );
+}
+
+/** One component inside the app providers and a router, with no routes of the app around it. */
+export function renderInApp(services: ReturnType<typeof createAppServices>, ui: ReactNode) {
+  return render(
+    <AppProviders services={services}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </AppProviders>,
+  );
+}
+
+/** The toast with this text, found by its status role. */
+export async function findToast(text: string) {
+  return waitFor(() => {
+    const toast = screen.getAllByRole('status').find((node) => node.textContent?.includes(text));
+    if (toast === undefined) throw new Error(`No toast with the text "${text}"`);
+    return toast;
+  });
+}
+
+/** The tone of the toast card showing this text. */
+export function toastToneOf(text: string) {
+  const card = Array.from(document.querySelectorAll('[data-slot="toast"]')).find((node) =>
+    node.textContent?.includes(text),
+  );
+  return card?.getAttribute('data-tone');
 }

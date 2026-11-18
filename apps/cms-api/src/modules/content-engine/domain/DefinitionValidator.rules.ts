@@ -4,6 +4,7 @@ import {
   ENGINE_RESERVED_NAMES,
   MAX_COMPONENT_DEPTH,
   MAX_IDENTIFIER_BYTES,
+  PARSE_SAFE_NESTING_LIMIT,
   SLUG_PATTERN,
   SQL_IDENTIFIER_PATTERN,
   SQL_RESERVED_WORDS,
@@ -87,11 +88,15 @@ function checkSlug(slug: string, errors: DefinitionValidationError[]): void {
 
 const CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
 
-function checkDisplayName(displayName: string, errors: DefinitionValidationError[]): void {
+function checkDisplayName(
+  displayName: string,
+  path: DefinitionPath,
+  errors: DefinitionValidationError[],
+): void {
   const problem = displayNameProblem(displayName);
   if (problem === undefined) return;
   errors.push({
-    path: ['displayName'],
+    path,
     rule: DEFINITION_RULES.DISPLAY_NAME_INVALID,
     message: `displayName ${problem}. It must be 1 to ${DISPLAY_NAME_MAX_LENGTH} characters, trimmed, on one line.`,
   });
@@ -108,6 +113,40 @@ function displayNameProblem(displayName: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Field names and `component` values both become table or column segments.
+ * A component field's name is only an API key (it has no column and its table
+ * segment comes from `component`), so it may be an SQL reserved word.
+ */
+function checkIdentifier(
+  value: string,
+  label: string,
+  path: DefinitionPath,
+  errors: DefinitionValidationError[],
+  { allowSqlReserved = false }: { allowSqlReserved?: boolean } = {},
+): void {
+  const identifier = toSqlIdentifier(value);
+  if (!isWellFormedSqlIdentifier(identifier)) {
+    errors.push({
+      path,
+      rule: DEFINITION_RULES.IDENTIFIER_INVALID,
+      message: `${label} "${value}" maps to "${identifier}", which must match ${SQL_IDENTIFIER_PATTERN.source} without "__" or a trailing "_". Start with a lowercase letter and use only letters, digits and single underscores.`,
+    });
+  } else if (ENGINE_RESERVED.has(identifier)) {
+    errors.push({
+      path,
+      rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
+      message: `${label} "${value}" maps to "${identifier}", a column the content engine owns. Rename it.`,
+    });
+  } else if (!allowSqlReserved && SQL_RESERVED.has(identifier)) {
+    errors.push({
+      path,
+      rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
+      message: `${label} "${value}" maps to "${identifier}", a reserved SQL word. Rename it.`,
+    });
+  }
+}
+
 function checkFields(
   fields: FieldDefinition[],
   depth: number,
@@ -121,24 +160,14 @@ function checkFields(
     const namePath = [...fieldPath, 'name'];
     const identifier = toSqlIdentifier(field.name);
 
-    if (!isWellFormedSqlIdentifier(identifier)) {
-      errors.push({
-        path: namePath,
-        rule: DEFINITION_RULES.IDENTIFIER_INVALID,
-        message: `Field name "${field.name}" maps to "${identifier}", which must match ${SQL_IDENTIFIER_PATTERN.source} without "__" or a trailing "_". Start with a lowercase letter and use only letters, digits and single underscores.`,
-      });
-    } else if (ENGINE_RESERVED.has(identifier)) {
-      errors.push({
-        path: namePath,
-        rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
-        message: `Field name "${field.name}" maps to "${identifier}", a column the content engine owns. Rename the field.`,
-      });
-    } else if (SQL_RESERVED.has(identifier)) {
-      errors.push({
-        path: namePath,
-        rule: DEFINITION_RULES.IDENTIFIER_RESERVED,
-        message: `Field name "${field.name}" maps to "${identifier}", a reserved SQL word. Rename the field.`,
-      });
+    checkIdentifier(field.name, 'Field name', namePath, errors, {
+      allowSqlReserved: isComponentField(field),
+    });
+    if (field.displayName !== undefined) {
+      checkDisplayName(field.displayName, [...fieldPath, 'displayName'], errors);
+    }
+    if (isComponentField(field)) {
+      checkIdentifier(field.component, 'Component', [...fieldPath, 'component'], errors);
     }
 
     const clash = seen.get(identifier);
@@ -211,7 +240,14 @@ function schemaNames(tables: TablePlan[]): OwnedName[] {
   ]);
 }
 
-function checkSchemaCollisions(names: OwnedName[], errors: DefinitionValidationError[]): void {
+/** Says where the earlier owner of a clashing name lives; the CLI names its path. */
+type DescribeNameOwner = (ownerPath: DefinitionPath) => string;
+
+function checkSchemaCollisions(
+  names: OwnedName[],
+  errors: DefinitionValidationError[],
+  describeOwner: DescribeNameOwner = formatDefinitionPath,
+): void {
   const owners = new Map<string, OwnedName>();
   for (const entry of names) {
     const owner = owners.get(entry.name);
@@ -222,9 +258,43 @@ function checkSchemaCollisions(names: OwnedName[], errors: DefinitionValidationE
     errors.push({
       path: entry.path,
       rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
-      message: `Generated name "${entry.name}" is already used by ${formatDefinitionPath(owner.path)} in the "content" schema. Rename the slug or field.`,
+      message: `Generated name "${entry.name}" is already used by ${describeOwner(owner.path)} in the "content" schema. Rename the slug or field.`,
     });
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Finds the first component nested past the parse-safe limit in the raw input,
+ * walking iteratively. The zod schema recurses through `fields`, so a deeper
+ * input has to be refused before it is parsed.
+ */
+function findTooDeepComponent(input: unknown): DefinitionValidationError | undefined {
+  if (!isRecord(input)) return undefined;
+  const pending: { fields: unknown; depth: number; path: DefinitionPath }[] = [
+    { fields: input.fields, depth: 0, path: [] },
+  ];
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    if (!Array.isArray(next.fields)) continue;
+    for (const [index, field] of next.fields.entries()) {
+      if (!isRecord(field) || !Array.isArray(field.fields)) continue;
+      const fieldPath = [...next.path, 'fields', index];
+      const childDepth = next.depth + 1;
+      if (childDepth > PARSE_SAFE_NESTING_LIMIT) {
+        const name = typeof field.name === 'string' ? field.name : formatDefinitionPath(fieldPath);
+        return {
+          path: fieldPath,
+          rule: DEFINITION_RULES.COMPONENT_DEPTH_EXCEEDED,
+          message: `Component "${name}" is at depth ${childDepth}; components may nest at most ${MAX_COMPONENT_DEPTH} levels below the root.`,
+        };
+      }
+      pending.push({ fields: field.fields, depth: childDepth, path: fieldPath });
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -232,6 +302,9 @@ function checkSchemaCollisions(names: OwnedName[], errors: DefinitionValidationE
  * rules. Collects every error instead of stopping at the first.
  */
 export function validateDefinition(input: unknown): DefinitionValidationResult {
+  const tooDeep = findTooDeepComponent(input);
+  if (tooDeep !== undefined) return { ok: false, errors: [tooDeep] };
+
   const parsed = contentTypeDefinitionSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -249,7 +322,7 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
   const definition = parsed.data;
   const errors: DefinitionValidationError[] = [];
   checkSlug(definition.slug, errors);
-  checkDisplayName(definition.displayName, errors);
+  checkDisplayName(definition.displayName, ['displayName'], errors);
   checkFields(definition.fields, 0, [], errors);
 
   // Composition only makes sense on well-formed, depth-limited names.
@@ -267,7 +340,10 @@ export function validateDefinition(input: unknown): DefinitionValidationResult {
  * them (they share the `content` schema). Error paths start with the
  * definition's index in `inputs`.
  */
-export function validateDefinitions(inputs: readonly unknown[]): DefinitionSetValidationResult {
+export function validateDefinitions(
+  inputs: readonly unknown[],
+  describeOwner?: DescribeNameOwner,
+): DefinitionSetValidationResult {
   const errors: DefinitionValidationError[] = [];
   const valid: { definition: ContentTypeDefinition; tables: TablePlan[] }[] = [];
   const names: OwnedName[] = [];
@@ -295,7 +371,30 @@ export function validateDefinitions(inputs: readonly unknown[]): DefinitionSetVa
     );
   });
 
-  checkSchemaCollisions(names, errors);
+  checkSchemaCollisions(names, errors, describeOwner);
 
   return errors.length > 0 ? { ok: false, errors } : { ok: true, definitions: valid };
+}
+
+/**
+ * Validates one candidate next to the registered definitions, as
+ * `content:generate` validates the whole schema folder, and returns only
+ * the candidate's errors with its list index removed. A clash with a
+ * registered type names that type by its slug alone, never its paths.
+ */
+export function validateCandidateDefinition(
+  candidate: unknown,
+  registered: readonly ContentTypeDefinition[],
+): DefinitionValidationError[] {
+  const candidateIndex = registered.length;
+  const result = validateDefinitions([...registered, candidate], ([ownerIndex, ...ownerPath]) => {
+    const owner = typeof ownerIndex === 'number' ? registered[ownerIndex] : undefined;
+    return owner === undefined
+      ? formatDefinitionPath(ownerPath)
+      : `the content type "${owner.slug}"`;
+  });
+  if (result.ok) return [];
+  return result.errors
+    .filter(({ path }) => path[0] === candidateIndex)
+    .map(({ path: [, ...path], ...error }) => ({ ...error, path }));
 }

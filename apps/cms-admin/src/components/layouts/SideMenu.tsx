@@ -1,7 +1,7 @@
 import { useId } from 'react';
-import { Button } from '@abyss/form-commons';
+import { Button, CONTROL_FOCUS_RING_ONLY_CLASSES } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import {
   collectLeafIds,
   DATA_BACKED_SECTION_ID,
@@ -14,15 +14,16 @@ import { useCallerAccess } from '@features/access/useCallerAccess';
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Link, NavLink } from 'react-router';
 
+import { useGuardedLinkClick } from './LeaveGuard';
 import { useNavGroupOpenState } from './useNavGroupOpenState';
 
 const SKELETON_ROW_COUNT = 3;
 
-const LINK_CLASS =
-  'block break-words rounded-md border-l-2 px-3 py-1.5 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50';
-const LINK_ACTIVE_CLASS = 'border-primary bg-primary/10 font-medium text-foreground';
-const LINK_IDLE_CLASS =
-  'border-transparent text-muted-foreground hover:bg-accent hover:text-foreground';
+const NAV_ITEM_CLASS = `rounded-item px-3 py-1.5 text-sm transition-colors duration-fast ${CONTROL_FOCUS_RING_ONLY_CLASSES}`;
+
+const LINK_CLASS = `relative block break-words ${NAV_ITEM_CLASS} text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=page]:bg-nav-active aria-[current=page]:font-medium aria-[current=page]:text-nav-active-foreground aria-[current=page]:before:absolute aria-[current=page]:before:inset-y-1.5 aria-[current=page]:before:left-0 aria-[current=page]:before:w-[3px] aria-[current=page]:before:rounded-full aria-[current=page]:before:bg-nav-indicator`;
+
+const GROUP_TOGGLE_CLASS = `flex w-full items-center gap-2 text-left hover:bg-muted hover:text-foreground ${NAV_ITEM_CLASS}`;
 
 interface MenuProps {
   /** Called after a link is chosen; the mobile sheet closes itself with it. */
@@ -31,6 +32,7 @@ interface MenuProps {
 
 interface MenuState {
   isReady: boolean;
+  isEmpty: boolean;
   items: readonly NavItem[];
   isCatalogLoading: boolean;
   catalogFailure: NavItemsState | undefined;
@@ -44,21 +46,27 @@ function useMenuState(nav: NavSource): MenuState {
   const items = [...nav.items, ...dataBacked.flatMap((state) => state.items)].filter((item) =>
     caller.can(item.subject, item.action),
   );
+  const isCatalogLoading = dataBacked.some((state) => state.isLoading);
+  const catalogFailure = dataBacked.find((state) => state.hasFailed);
   return {
     isReady: caller.isReady,
+    isEmpty:
+      caller.isReady && !isCatalogLoading && catalogFailure === undefined && items.length === 0,
     items: caller.isReady ? items : [],
-    isCatalogLoading: dataBacked.some((state) => state.isLoading),
-    catalogFailure: dataBacked.find((state) => state.hasFailed),
+    isCatalogLoading,
+    catalogFailure,
   };
 }
 
 export function AppNameLink() {
+  const handleClick = useGuardedLinkClick();
   return (
     <Link
       to={APP_ROUTES.HOME}
-      className="rounded-sm text-sm font-semibold outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      onClick={(event) => handleClick(event, APP_ROUTES.HOME)}
+      className={`rounded-item text-sm font-semibold ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
     >
-      {COPY.app.name}
+      {COMMON_TEXT.app.name}
     </Link>
   );
 }
@@ -66,7 +74,7 @@ export function AppNameLink() {
 function SkeletonRows() {
   return (
     <div aria-busy="true" className="grid gap-1 px-3">
-      <output className="sr-only">{COPY.access.nav.loading}</output>
+      <output className="sr-only">{COMMON_TEXT.nav.loading}</output>
       {Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
         <div key={index} className="h-6 animate-pulse rounded bg-muted" />
       ))}
@@ -74,7 +82,20 @@ function SkeletonRows() {
   );
 }
 
+function WelcomePanel() {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="grid gap-1 px-3">
+      <h2 id={headingId} className="text-sm font-semibold text-foreground">
+        {COMMON_TEXT.nav.welcomeTitle}
+      </h2>
+      <p className="text-sm text-muted-foreground">{COMMON_TEXT.nav.welcomeText}</p>
+    </section>
+  );
+}
+
 function ItemList({ items, onNavigate }: MenuProps & { items: readonly NavItem[] }) {
+  const handleClick = useGuardedLinkClick();
   return (
     <ul className="grid gap-0.5">
       {items.map((item) => (
@@ -82,10 +103,8 @@ function ItemList({ items, onNavigate }: MenuProps & { items: readonly NavItem[]
           <NavLink
             to={item.path}
             title={item.label}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `${LINK_CLASS} ${isActive ? LINK_ACTIVE_CLASS : LINK_IDLE_CLASS}`
-            }
+            onClick={(event) => handleClick(event, item.path, onNavigate)}
+            className={LINK_CLASS}
           >
             {item.label}
           </NavLink>
@@ -116,13 +135,13 @@ function SubGroup({ sub, items, openState, onNavigate }: SubGroupProps) {
           aria-expanded={isOpen}
           aria-controls={listId}
           onClick={() => openState.toggle(sub.id)}
-          className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left outline-none hover:bg-accent hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className={GROUP_TOGGLE_CLASS}
         >
           <Icon aria-hidden="true" className="size-4 shrink-0" />
           <span className="flex-1">{sub.label}</span>
           <ChevronDown
             aria-hidden="true"
-            className={`size-4 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
+            className={`duration-fast size-4 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
           />
         </button>
       </h3>
@@ -161,9 +180,9 @@ function MenuSection({
       {isLoading ? <SkeletonRows /> : null}
       {hasFailed ? (
         <div className="grid justify-items-start gap-1 px-3">
-          <p className="text-sm text-destructive-strong">{COPY.access.nav.catalogError}</p>
+          <p className="text-sm text-destructive-strong">{COMMON_TEXT.nav.catalogError}</p>
           <Button variant="ghost" size="sm" onClick={() => menu.catalogFailure?.retry()}>
-            {COPY.access.nav.retryCatalog}
+            {COMMON_TEXT.nav.retryCatalog}
           </Button>
         </div>
       ) : null}
@@ -195,21 +214,25 @@ export function SideMenu({ nav, onNavigate }: MenuProps & { nav: NavSource }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-3">
-        <nav aria-label={COPY.access.nav.label} className="grid gap-5">
-          {menu.isReady ? (
-            NAV_SECTIONS.map((section) => (
-              <MenuSection
-                key={section.id}
-                section={section}
-                menu={menu}
-                openState={openState}
-                onNavigate={onNavigate}
-              />
-            ))
-          ) : (
-            <SkeletonRows />
-          )}
-        </nav>
+        {menu.isEmpty ? (
+          <WelcomePanel />
+        ) : (
+          <nav aria-label={COMMON_TEXT.nav.label} className="grid gap-5">
+            {menu.isReady ? (
+              NAV_SECTIONS.map((section) => (
+                <MenuSection
+                  key={section.id}
+                  section={section}
+                  menu={menu}
+                  openState={openState}
+                  onNavigate={onNavigate}
+                />
+              ))
+            ) : (
+              <SkeletonRows />
+            )}
+          </nav>
+        )}
       </div>
     </div>
   );

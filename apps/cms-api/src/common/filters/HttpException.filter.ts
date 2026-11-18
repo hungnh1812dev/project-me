@@ -1,6 +1,7 @@
 import { Catch, Logger, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
+import { NO_STORE_HEADER } from '../constants/Http.constants';
 import { RETRY_AFTER_HEADER } from '../constants/Limits.constants';
 import { describeError, isServerErrorStatus } from '../http/DescribeHttpException.rules';
 import { discardBodyAfterAnswer } from '../middleware/ByteLimit.rules';
@@ -49,6 +50,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       requestId: req.requestId,
     };
     if (described.details !== undefined) body.details = described.details;
+    // Guards and throttles reject before a handler's @Header applies, so every error answer sets it here.
+    res.setHeader(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE);
     if (described.retryAfterSeconds !== undefined) {
       res.setHeader(RETRY_AFTER_HEADER, String(described.retryAfterSeconds));
     }

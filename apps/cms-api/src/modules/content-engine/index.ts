@@ -10,6 +10,7 @@ export {
   COMPONENT_FIELD_TYPE,
   CONTENT_DB_SCHEMA,
   CONTENT_STATUSES,
+  DEFAULT_FIELD_WIDTH,
   MEDIA_FIELD_TYPE,
   RICHTEXT_FIELD_TYPE,
   RICHTEXT_ALLOWED_URL_SCHEMES,
@@ -22,10 +23,12 @@ export { ContentEngineModule } from './ContentEngine.module';
 export { ContentRegistry } from './application/ContentRegistry.service';
 export {
   isComponentField,
+  normalizedDefaultOf,
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type ContentTypeKind,
   type FieldDefinition,
+  type FieldWidth,
   type ScalarFieldType,
 } from './domain/DefinitionSchema.rules';
 export {
@@ -36,12 +39,15 @@ export {
   mediaFieldNamesByTable,
   richtextColumnsOf,
   richtextFieldNamesByTable,
+  parseBigInteger,
   parseDate,
   parseDatetime,
+  parseTime,
   parseUuid,
   UUID_PATTERN,
   VALUE_PATTERNS,
   type CoerceContext,
+  type CoerceFieldKeys,
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,
@@ -60,6 +66,11 @@ export {
   type RegisteredContentType,
   type TableNode,
 } from './domain/ContentTypeRegistry.entity';
+export {
+  formatDefinitionPath,
+  validateCandidateDefinition,
+  type DefinitionValidationError,
+} from './domain/DefinitionValidator.rules';
 export { quoteIdentifier } from './domain/SqlGenerator.rules';
 export {
   assertTreeInput,

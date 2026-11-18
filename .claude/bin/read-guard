@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Hook (PreToolUse Read|Bash): refuse reads that put a large file or diff into the context at once.
+
+Denied, with the lean way to read it instead (`lean-reading`):
+- Read of a text file over MAX_BYTES with no `limit`, or with a `limit` over MAX_LINES;
+- Bash `sed -n 'A,Bp'` printing more than MAX_LINES lines;
+- Bash `cat <file>` of a file over MAX_BYTES whose output is not piped or redirected;
+- Bash `git diff` (not --stat / --name-only / ...) that changes more than MAX_DIFF_LINES lines and is not piped.
+A Bash command containing `# full-output` passes. Any error lets the call through.
+"""
+import json, os, re, shlex, subprocess, sys
+
+MAX_BYTES = 12_000
+MAX_LINES = 150
+MAX_DIFF_LINES = 400
+BINARY = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".ipynb", ".ico")
+SUMMARY_FLAGS = ("--stat", "--name-only", "--name-status", "--numstat", "--shortstat", "--quiet", "--check")
+LEAN = ("read one part: `.claude/bin/section <file> <heading | --id ID | --toc>`, "
+        "`graphify explain \"<file or symbol>\"` then a line range, `grep -n` with capped output, "
+        "or Read with offset/limit")
+
+
+def deny(reason):
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
+                                             "permissionDecisionReason": f"read-guard: {reason}; {LEAN}."}}))
+    return 0
+
+
+def big(path):
+    return os.path.isfile(path) and os.path.getsize(path) > MAX_BYTES
+
+
+def check_read(tool_input):
+    path = tool_input.get("file_path", "")
+    if path.lower().endswith(BINARY) or not big(path):
+        return 0
+    limit = tool_input.get("limit")
+    if not limit:
+        return deny(f"{os.path.basename(path)} is {os.path.getsize(path) // 1000} KB; no whole-file reads over {MAX_BYTES // 1000} KB")
+    if limit > MAX_LINES:
+        return deny(f"limit {limit} is over {MAX_LINES} lines")
+    return 0
+
+
+def segments(command):
+    # each pipeline stage with whether its output goes on to another command or a file
+    for part in re.split(r"&&|\|\||;|\n", command):
+        stages = part.split("|")
+        for i, stage in enumerate(stages):
+            yield stage.strip(), i < len(stages) - 1 or ">" in stage
+
+
+def diff_lines(words):
+    out = subprocess.run(words + ["--numstat"], capture_output=True, text=True, timeout=10).stdout
+    return sum(int(a) + int(d) for a, d, *_ in (l.split("\t") for l in out.splitlines()) if a.isdigit() and d.isdigit())
+
+
+def check_bash(command):
+    if "# full-output" in command or "<<" in command:
+        return 0
+    for stage, onward in segments(command):
+        if onward:
+            continue
+        m = re.match(r"sed -n\s+['\"]?(\d+),(\d+)p", stage)
+        if m and int(m.group(2)) - int(m.group(1)) + 1 > MAX_LINES:
+            return deny(f"sed prints {int(m.group(2)) - int(m.group(1)) + 1} lines (max {MAX_LINES})")
+        try:
+            words = shlex.split(stage)
+        except ValueError:
+            continue
+        if words[:1] == ["cat"]:
+            for path in words[1:]:
+                if big(path):
+                    return deny(f"cat of {os.path.basename(path)} ({os.path.getsize(path) // 1000} KB)")
+        if words[:2] == ["git", "diff"] and not any(w.startswith(SUMMARY_FLAGS) for w in words):
+            n = diff_lines(words)
+            if n > MAX_DIFF_LINES:
+                return deny(f"git diff changes {n} lines; run `git diff --stat` first, then diff one file at a time")
+    return 0
+
+
+def main():
+    try:
+        event = json.load(sys.stdin)
+        os.chdir(event.get("cwd") or ".")
+        tool_input = event.get("tool_input") or {}
+        if event.get("tool_name") == "Read":
+            return check_read(tool_input)
+        if event.get("tool_name") == "Bash":
+            return check_bash(tool_input.get("command", ""))
+    except Exception:
+        pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -27,38 +27,38 @@ import { loadRegistryFromDatabase } from '../fixtures/ContentRegistry.fixture';
 import { inContentUnit } from '../fixtures/ContentUnit.fixture';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 
-const SLUG = 'cv-page';
+const SLUG = 'page-cv-a';
 /** Reads run inside a transaction (the repository takes a unit); only data queries are counted. */
 const TRANSACTION_CONTROL = /^(begin|commit|rollback)$/i;
-/** cv-page: 1 root + 7 component tables (role is the only depth-2 table). */
-const CV_PAGE_TABLE_COUNT = 8;
+/** page-cv-a: 1 root + 5 component tables (role is depth 2). */
+const PAGE_CV_A_TABLE_COUNT = 6;
 
 class RollbackSignal extends Error {}
 
-function cvPage(documentId: string, label: string): InsertTreeInput {
+function pageCvA(documentId: string, label: string): InsertTreeInput {
   return {
     documentId,
     publishedAt: null,
     values: {
       position: `Engineer ${label}`,
       isMain: true,
-      company: `Company ${label}`,
+      name: `Company ${label}`,
     },
     components: {
-      skill: [
+      skills: [
         { values: { skill: 'TypeScript', level: 'expert' } },
         { values: { skill: 'SQL', level: 'advanced' } },
       ],
-      experience: [
+      experiences: [
         {
           values: { company: `Acme ${label}`, location: 'Hanoi' },
           components: {
-            role: [
+            roles: [
               {
                 values: {
                   position: 'Lead',
                   teamSize: 6,
-                  techStack: ['NestJS', 'Postgres'],
+                  techStacks: ['NestJS', 'Postgres'],
                 },
               },
               { values: { position: 'Senior', period: '2020-2022' } },
@@ -67,10 +67,10 @@ function cvPage(documentId: string, label: string): InsertTreeInput {
         },
         {
           values: { company: `Globex ${label}` },
-          components: { role: [{ values: { position: 'Junior' } }] },
+          components: { roles: [{ values: { position: 'Junior' } }] },
         },
       ],
-      language: [{ values: { language: 'English', level: 'C1' } }],
+      projects: [{ values: { name: `Project ${label}`, teamSize: 4 } }],
     },
   };
 }
@@ -96,7 +96,7 @@ function component(
   return node;
 }
 
-describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', () => {
+describe('KyselyContentRepository on page-cv-a (Postgres 17 via Testcontainers)', () => {
   let postgres: TestPostgres;
   let db: Kysely<ContentDatabase>;
   let repository: KyselyContentRepository;
@@ -170,22 +170,23 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
   }
 
   describe('registry', () => {
-    it('resolves cv-page to its table plans', () => {
+    it('resolves page-cv-a to its table plans', () => {
       const type = registry.resolve(SLUG);
-      expect(type.tables).toHaveLength(CV_PAGE_TABLE_COUNT);
-      expect(type.root.plan.name).toBe('cv_page');
+      expect(type.tables).toHaveLength(PAGE_CV_A_TABLE_COUNT);
+      expect(type.root.plan.name).toBe('page_cv_a');
       expect(registry.slugs()).toEqual([
         'common-text',
-        'cv-contact',
-        SLUG,
+        'cv-common-text',
         'header',
+        'module-auth',
+        'module-status',
+        SLUG,
         'profile',
-        'resume',
       ]);
     });
 
     it('rejects an unknown slug with a typed error before any SQL', async () => {
-      expect(() => registry.resolve('cv_page')).toThrow(UnknownContentTypeError);
+      expect(() => registry.resolve('page_cv_a')).toThrow(UnknownContentTypeError);
       await expect(loadTrees('nope; DROP TABLE x', { status: 'draft' })).rejects.toMatchObject({
         code: CONTENT_ERROR_CODES.CONTENT_TYPE_UNKNOWN,
       });
@@ -193,9 +194,9 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
     });
   });
 
-  it('round-trips a 3-level tree with API names, order and raw values', async () => {
+  it('round-trips a 2-level tree with API names, order and raw values', async () => {
     const documentId = randomUUID();
-    const id = await insert(cvPage(documentId, 'A'));
+    const id = await insert(pageCvA(documentId, 'A'));
 
     const document = await loadOne(documentId);
     expect(document).toMatchObject({
@@ -206,30 +207,29 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       values: {
         position: 'Engineer A',
         isMain: true,
-        company: 'Company A',
+        name: 'Company A',
         summary: null,
       },
     });
-    expect(document?.components.skill?.map((node) => node.values)).toEqual([
+    expect(document?.components.skills?.map((node) => node.values)).toEqual([
       { skill: 'TypeScript', level: 'expert' },
       { skill: 'SQL', level: 'advanced' },
     ]);
-    expect(document?.components.project).toEqual([]);
-    const acme = component(document, 'experience', 0);
-    expect(acme.values).toEqual({ company: 'Acme A', location: 'Hanoi' });
-    expect(acme.components.role?.map((node) => node.values)).toEqual([
+    const acme = component(document, 'experiences', 0);
+    expect(acme.values).toEqual({ company: 'Acme A', location: 'Hanoi', period: null });
+    expect(acme.components.roles?.map((node) => node.values)).toEqual([
       {
         position: 'Lead',
         period: null,
-        teamSize: 6,
         projects: null,
-        techStack: ['NestJS', 'Postgres'],
+        teamSize: 6,
+        techStacks: ['NestJS', 'Postgres'],
         responsibilities: null,
       },
       expect.objectContaining({ position: 'Senior', period: '2020-2022' }),
     ]);
-    expect(acme.components.role?.map((node) => node.orderIndex)).toEqual([0, 1]);
-    expect(component(document, 'experience', 1).components.role?.[0]?.values).toMatchObject({
+    expect(acme.components.roles?.map((node) => node.orderIndex)).toEqual([0, 1]);
+    expect(component(document, 'experiences', 1).components.roles?.[0]?.values).toMatchObject({
       position: 'Junior',
     });
   });
@@ -237,7 +237,7 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
   it('loads N roots with one query per level table, never per row', async () => {
     const full = [randomUUID(), randomUUID(), randomUUID()];
     for (const [index, documentId] of full.entries()) {
-      await insert(cvPage(documentId, String(index)));
+      await insert(pageCvA(documentId, String(index)));
     }
     const bare = randomUUID();
     await insert({ documentId: bare, publishedAt: null, values: {} });
@@ -248,11 +248,11 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       documentIds: full,
     });
     expect(documents).toHaveLength(full.length);
-    expect(documents.flatMap((document) => document.components.experience ?? [])).toHaveLength(
+    expect(documents.flatMap((document) => document.components.experiences ?? [])).toHaveLength(
       full.length * 2,
     );
-    // 1 root query + 7 component tables, whatever N is.
-    expect(queries).toHaveLength(CV_PAGE_TABLE_COUNT);
+    // 1 root query + 5 component tables, whatever N is.
+    expect(queries).toHaveLength(PAGE_CV_A_TABLE_COUNT);
     expect(queries.slice(1).every((text) => /= any\(\$1::int\[\]\)/.test(text))).toBe(true);
 
     queries = [];
@@ -261,7 +261,7 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       documentIds: [bare],
     });
     // No experience rows, so the role table is not queried.
-    expect(queries).toHaveLength(CV_PAGE_TABLE_COUNT - 1);
+    expect(queries).toHaveLength(PAGE_CV_A_TABLE_COUNT - 1);
 
     queries = [];
     expect(
@@ -275,12 +275,12 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
 
   it('replaceTree keeps, updates, adds and removes components by uid', async () => {
     const documentId = randomUUID();
-    await insert(cvPage(documentId, 'R'));
+    await insert(pageCvA(documentId, 'R'));
     const before = await loadOne(documentId);
-    const acme = component(before, 'experience', 0);
-    const globex = component(before, 'experience', 1);
-    const lead = component(acme, 'role', 0);
-    const typescript = component(before, 'skill', 0);
+    const acme = component(before, 'experiences', 0);
+    const globex = component(before, 'experiences', 1);
+    const lead = component(acme, 'roles', 0);
+    const typescript = component(before, 'skills', 0);
 
     await inContentUnit(db, (unit) =>
       repository.replaceTree(
@@ -291,17 +291,17 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
           values: { summary: 'Updated summary' },
           components: {
             // Reordered + updated, SQL dropped, one new.
-            skill: [
+            skills: [
               { values: { skill: 'Go' } },
               { ...echo(typescript), values: { level: 'master' } },
             ],
             // Globex removed (its role cascades); Acme kept with roles edited.
-            experience: [
+            experiences: [
               {
                 ...echo(acme),
                 values: { location: 'Remote' },
                 components: {
-                  role: [
+                  roles: [
                     { values: { position: 'Staff' } },
                     { ...echo(lead), values: { teamSize: 9 } },
                   ],
@@ -318,51 +318,51 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
       position: 'Engineer R',
       summary: 'Updated summary',
     });
-    expect(after?.components.skill?.map((node) => node.values)).toEqual([
+    expect(after?.components.skills?.map((node) => node.values)).toEqual([
       { skill: 'Go', level: null },
       { skill: 'TypeScript', level: 'master' },
     ]);
-    const keptSkill = component(after, 'skill', 1);
+    const keptSkill = component(after, 'skills', 1);
     expect(keptSkill).toMatchObject({
       id: typescript.id,
       componentUid: typescript.componentUid,
       orderIndex: 1,
     });
-    expect(component(after, 'skill', 0).componentUid).not.toBe(typescript.componentUid);
+    expect(component(after, 'skills', 0).componentUid).not.toBe(typescript.componentUid);
 
-    expect(after?.components.experience).toHaveLength(1);
-    const acmeAfter = component(after, 'experience', 0);
+    expect(after?.components.experiences).toHaveLength(1);
+    const acmeAfter = component(after, 'experiences', 0);
     expect(acmeAfter).toMatchObject({
       id: acme.id,
       componentUid: acme.componentUid,
       values: { company: 'Acme R', location: 'Remote' },
     });
-    expect(acmeAfter.components.role?.map((node) => node.values)).toEqual([
+    expect(acmeAfter.components.roles?.map((node) => node.values)).toEqual([
       expect.objectContaining({ position: 'Staff' }),
       expect.objectContaining({
         position: 'Lead',
         teamSize: 9,
-        techStack: ['NestJS', 'Postgres'],
+        techStacks: ['NestJS', 'Postgres'],
       }),
     ]);
-    expect(acmeAfter.components.role?.[1]).toMatchObject({
+    expect(acmeAfter.components.roles?.[1]).toMatchObject({
       id: lead.id,
       componentUid: lead.componentUid,
     });
     // Senior was not sent back; Globex's subtree cascaded away.
-    expect(await countRows('cv_page__experience__role', acme.id)).toBe(2);
-    expect(await countRows('cv_page__experience__role', globex.id)).toBe(0);
+    expect(await countRows('page_cv_a__experience__role', acme.id)).toBe(2);
+    expect(await countRows('page_cv_a__experience__role', globex.id)).toBe(0);
     // Component fields absent from the input are left untouched.
-    expect(after?.components.language).toEqual(before?.components.language);
+    expect(after?.components.projects).toEqual(before?.components.projects);
   });
 
   it('never touches rows of another root, even when sent their uids', async () => {
     const mine = randomUUID();
     const other = randomUUID();
-    await insert(cvPage(mine, 'M'));
-    await insert(cvPage(other, 'O'));
+    await insert(pageCvA(mine, 'M'));
+    await insert(pageCvA(other, 'O'));
     const otherBefore = await loadOne(other);
-    const otherAcme = component(otherBefore, 'experience', 0);
+    const otherAcme = component(otherBefore, 'experiences', 0);
 
     await expect(
       inContentUnit(db, (unit) =>
@@ -370,12 +370,12 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
           unit,
           SLUG,
           { documentId: mine, status: 'draft' },
-          { components: { experience: [echo(otherAcme)] } },
+          { components: { experiences: [echo(otherAcme)] } },
         ),
       ),
     ).rejects.toMatchObject({
       code: CONTENT_ERROR_CODES.TREE_UNKNOWN_UID,
-      path: ['components', 'experience', 0, 'componentUid'],
+      path: ['components', 'experiences', 0, 'componentUid'],
     });
 
     await inContentUnit(db, (unit) =>
@@ -383,20 +383,20 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
         unit,
         SLUG,
         { documentId: mine, status: 'draft' },
-        { components: { experience: [], skill: [] } },
+        { components: { experiences: [], skills: [] } },
       ),
     );
     const mineAfter = await loadOne(mine);
-    expect(mineAfter?.components.experience).toEqual([]);
-    expect(mineAfter?.components.skill).toEqual([]);
+    expect(mineAfter?.components.experiences).toEqual([]);
+    expect(mineAfter?.components.skills).toEqual([]);
     expect(await loadOne(other)).toEqual(otherBefore);
   });
 
   it('targets the draft row only, leaving the published row of the document', async () => {
     const documentId = randomUUID();
-    await insert(cvPage(documentId, 'D'));
+    await insert(pageCvA(documentId, 'D'));
     await insert({
-      ...cvPage(documentId, 'P'),
+      ...pageCvA(documentId, 'P'),
       publishedAt: new Date('2026-01-01T00:00:00Z'),
     });
     const published = await loadOne(documentId, 'published');
@@ -406,18 +406,18 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
         unit,
         SLUG,
         { documentId, status: 'draft' },
-        { values: { company: 'Draft only' }, components: { experience: [] } },
+        { values: { name: 'Draft only' }, components: { experiences: [] } },
       ),
     );
-    expect((await loadOne(documentId))?.values.company).toBe('Draft only');
+    expect((await loadOne(documentId))?.values.name).toBe('Draft only');
     expect(await loadOne(documentId, 'published')).toEqual(published);
   });
 
   it('rolls back every write when the caller transaction fails', async () => {
     const documentId = randomUUID();
-    await insert(cvPage(documentId, 'T'));
+    await insert(pageCvA(documentId, 'T'));
     const before = await loadOne(documentId);
-    const acme = component(before, 'experience', 0);
+    const acme = component(before, 'experiences', 0);
 
     await expect(
       inContentUnit(db, async (unit) => {
@@ -426,8 +426,8 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
           SLUG,
           { documentId, status: 'draft' },
           {
-            values: { company: 'Changed' },
-            components: { experience: [], skill: [] },
+            values: { name: 'Changed' },
+            components: { experiences: [], skills: [] },
           },
         );
         throw new RollbackSignal('caller failed after replaceTree');
@@ -444,11 +444,11 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
           { documentId, status: 'draft' },
           {
             components: {
-              skill: [],
-              experience: [
+              skills: [],
+              experiences: [
                 {
                   ...echo(acme),
-                  components: { role: [{ componentUid: randomUUID() }] },
+                  components: { roles: [{ componentUid: randomUUID() }] },
                 },
               ],
             },
@@ -461,7 +461,7 @@ describe('KyselyContentRepository on cv-page (Postgres 17 via Testcontainers)', 
     const lost = randomUUID();
     await expect(
       inContentUnit(db, async (unit) => {
-        await repository.insertTree(unit, SLUG, cvPage(lost, 'L'));
+        await repository.insertTree(unit, SLUG, pageCvA(lost, 'L'));
         throw new RollbackSignal('caller failed after insertTree');
       }),
     ).rejects.toBeInstanceOf(RollbackSignal);

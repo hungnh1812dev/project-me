@@ -11,7 +11,21 @@
     "allowJs": false,
     "incremental": true,
     "plugins": [{ "name": "next" }],
-    "types": ["node", "vitest/globals", "@testing-library/jest-dom"]
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
+    "paths": {
+      "@/configs/*": ["./src/configs/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/apis/*": ["./src/apis/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/libs/*": ["./src/libs/*"],
+      "@/assets/*": ["./src/assets/*"],
+      "@/styles/*": ["./src/assets/styles/*"],
+      "@/images/*": ["./src/assets/images/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/views/*": ["./src/views/*"],
+      "@/test/*": ["./test/*"],
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "next-env.d.ts",

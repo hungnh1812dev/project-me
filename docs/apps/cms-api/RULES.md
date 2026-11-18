@@ -5,11 +5,9 @@ summary: Rules every cms-api module must keep
 
 # cms-api: rules
 
-Part of the [project spec](../../../SPEC.md). App `cms-api`: [SPEC.md](SPEC.md) (app-wide requirements and decisions) · [FLOW.md](FLOW.md) (processes every flow of the app goes through) · [RULES.md](RULES.md) (rules every flow of the app must keep). In these files `Applies to: all flows.` means every flow that touches this app.
+Part of the [project spec](../../../SPEC.md). App `cms-api`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md). In these files a section without an `Applies to:` line covers every flow that touches this app.
 
 ## Module directions and layers
-
-Applies to: all flows.
 
 Amended 2026-10-23 (audit G6): the map follows the code and is the one authority for which module may import which.
 
@@ -33,8 +31,6 @@ Amended 2026-10-23 (audit G6): the map follows the code and is the one authority
   - `Layers.architecture.spec.ts` checks every module: no file outside its layer folders and wiring files. `KNOWN_LAYER_VIOLATIONS` is empty and must stay empty.
 
 ## Code style
-
-Applies to: all flows.
 
 ```ts
 // apps/cms-api/src/modules/documents/documents.controller.ts
@@ -102,7 +98,5 @@ Applies to flows: `content-modeling`, `backups`.
 3. Grants come only from `scripts/db/database-roles.sql` (D19).
 
 ## API headers (D17)
-
-Applies to: all flows.
 
 - CSP `default-src 'none'` on every route, `/graphql` included (D17).

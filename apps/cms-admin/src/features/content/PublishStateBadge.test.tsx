@@ -1,10 +1,10 @@
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { render, screen } from '@testing-library/react';
 
 import { PUBLISH_STATE } from './Content.constants';
 import { PublishStateBadge } from './PublishStateBadge';
 
-const copy = COPY.content.publishState;
+const copy = EN_TEXT.content.publishState;
 
 describe('PublishStateBadge', () => {
   it.each([

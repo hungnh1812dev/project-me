@@ -1,4 +1,4 @@
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 
 /** Shown while the silent refresh on app start settles. */
 export function SessionLoading() {
@@ -9,7 +9,7 @@ export function SessionLoading() {
           aria-hidden="true"
           className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
         />
-        {COPY.session.restoring}
+        {COMMON_TEXT.session.restoring}
       </output>
     </div>
   );

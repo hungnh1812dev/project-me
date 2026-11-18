@@ -18,9 +18,8 @@ run_script() {
   shift
   status=0
   : >"${work}/output"
-  log="$(env -i PATH="${PATH}" ENVIRONMENT=staging TURBO_VERSION=2.0.0 \
+  log="$(env -i PATH="${PATH}" ENVIRONMENT=staging TURBO_VERSION=2.0.0 APP_ENV=staging \
     VITE_API_BASE_URL=https://api.example.test \
-    NEXT_PUBLIC_API_BASE_URL=https://api.example.test \
     NEXT_PUBLIC_ADMIN_URL=https://admin.example.test \
     NEXT_PUBLIC_TURNSTILE_SITE_KEY=site-key \
     GITHUB_OUTPUT="${work}/output" "$@" bash "${script}" "${app}" 2>&1)" || status=$?
@@ -68,24 +67,23 @@ ARGS_EOF"
 
 expect_output "web" web "build_args<<ARGS_EOF
 TURBO_VERSION=2.0.0
-NEXT_PUBLIC_API_BASE_URL=https://api.example.test
+APP_ENV=staging
 NEXT_PUBLIC_ADMIN_URL=https://admin.example.test
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=site-key
 ARGS_EOF"
 
 expect_output "web with empty optional keys" web "build_args<<ARGS_EOF
 TURBO_VERSION=2.0.0
-NEXT_PUBLIC_API_BASE_URL=https://api.example.test
+APP_ENV=staging
 NEXT_PUBLIC_ADMIN_URL=
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 ARGS_EOF" NEXT_PUBLIC_ADMIN_URL= NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 
 expect_failure "unknown app" mobile "unknown app"
 expect_failure "cms-admin without VITE_API_BASE_URL" cms-admin "VITE_API_BASE_URL is not set" VITE_API_BASE_URL=
-expect_failure "web without NEXT_PUBLIC_API_BASE_URL" web "NEXT_PUBLIC_API_BASE_URL is not set" NEXT_PUBLIC_API_BASE_URL=
 expect_failure "newline in VITE_API_BASE_URL" cms-admin "VITE_API_BASE_URL" "VITE_API_BASE_URL=https://a.test
 ${secret_marker}"
-expect_failure "carriage return in NEXT_PUBLIC_API_BASE_URL" web "NEXT_PUBLIC_API_BASE_URL" "NEXT_PUBLIC_API_BASE_URL=https://a.test$(printf '\r')${secret_marker}"
+expect_failure "carriage return in NEXT_PUBLIC_ADMIN_URL" web "NEXT_PUBLIC_ADMIN_URL" "NEXT_PUBLIC_ADMIN_URL=https://a.test$(printf '\r')${secret_marker}"
 expect_failure "newline in NEXT_PUBLIC_ADMIN_URL" web "NEXT_PUBLIC_ADMIN_URL" "NEXT_PUBLIC_ADMIN_URL=https://a.test
 ${secret_marker}"
 expect_failure "newline in NEXT_PUBLIC_TURNSTILE_SITE_KEY" web "NEXT_PUBLIC_TURNSTILE_SITE_KEY" "NEXT_PUBLIC_TURNSTILE_SITE_KEY=k
@@ -100,6 +98,43 @@ log="${output}"
 if [ "${status}" -eq 0 ] && [ "${output}" = "build_args<<ARGS_EOF
 TURBO_VERSION=2.0.0
 ARGS_EOF" ]; then report "stdout when GITHUB_OUTPUT is unset" yes; else report "stdout when GITHUB_OUTPUT is unset" no; fi
+
+# The removed web API base must not be read or required any more
+expect_output "web ignores NEXT_PUBLIC_API_BASE_URL" web "build_args<<ARGS_EOF
+TURBO_VERSION=2.0.0
+APP_ENV=staging
+NEXT_PUBLIC_ADMIN_URL=https://admin.example.test
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=site-key
+ARGS_EOF" NEXT_PUBLIC_API_BASE_URL=https://old.example.test
+
+# The production Environment builds web only as production
+expect_output "production with APP_ENV=production" web "build_args<<ARGS_EOF
+TURBO_VERSION=2.0.0
+APP_ENV=production
+NEXT_PUBLIC_ADMIN_URL=https://admin.example.test
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=site-key
+ARGS_EOF" ENVIRONMENT=production APP_ENV=production
+
+expect_production_failure() { # name APP_ENV-value
+  run_script web ENVIRONMENT=production "APP_ENV=$2"
+  local ok=yes
+  [ "${status}" -eq 1 ] || ok=no
+  grep -qF -- "::error::APP_ENV" <<<"${log}" || ok=no
+  grep -qF -- "production" <<<"${log}" || ok=no
+  grep -qF -- "$2" <<<"${log}" && ok=no
+  [ -z "${output}" ] || ok=no
+  report "$1" "${ok}"
+}
+expect_production_failure "production with APP_ENV=staging" staging
+expect_production_failure "production with APP_ENV=development" development
+expect_production_failure "production with a distinctive wrong APP_ENV" zzz-sentinel
+
+expect_output "local accepts APP_ENV=staging" web "build_args<<ARGS_EOF
+TURBO_VERSION=2.0.0
+APP_ENV=staging
+NEXT_PUBLIC_ADMIN_URL=https://admin.example.test
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=site-key
+ARGS_EOF" ENVIRONMENT=local APP_ENV=staging
 
 echo "${passed} passed, ${failed} failed"
 [ "${failed}" -eq 0 ]

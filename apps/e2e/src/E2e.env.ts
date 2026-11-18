@@ -14,8 +14,8 @@ export const e2eEnv = Object.freeze({
   adminUrl: requireEnv('E2E_ADMIN_URL'),
   /** Base URL of cms-api as the admin calls it, e.g. `http://domain.localhost:8080/api/v1`. */
   apiBaseUrl: requireEnv('E2E_API_BASE_URL'),
-  /** Origin of apps/web: the web is served on the API's origin (same domain, `/api` prefix). */
-  webUrl: new URL(requireEnv('E2E_API_BASE_URL')).origin,
+  /** Origin of apps/web (smoke: the proxy's bare domain; dev: the Next dev server). */
+  webUrl: requireEnv('E2E_WEB_URL'),
   ownerEmail: requireEnv('E2E_OWNER_EMAIL'),
   ownerPassword: requireEnv('E2E_OWNER_PASSWORD'),
   /**

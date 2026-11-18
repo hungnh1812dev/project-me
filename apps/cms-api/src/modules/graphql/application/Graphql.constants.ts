@@ -8,6 +8,8 @@ export const QUERY_TYPE_NAME = 'Query';
 export const SCALAR_NAMES = {
   DATE: 'Date',
   DATE_TIME: 'DateTime',
+  TIME: 'Time',
+  BIG_INT: 'BigInt',
   DECIMAL: 'Decimal',
   JSON: 'JSON',
 } as const;
@@ -44,7 +46,7 @@ export const TYPE_SUFFIXES = {
   LIST_FIELD: 'List',
 } as const;
 
-/** Separator of a component type name: `CvPage_Experience_Role`. */
+/** Separator of a component type name built from `component` values: `CvPage_Experience_Role`. */
 export const COMPONENT_NAME_SEPARATOR = '_';
 
 /** Name of the component uid field (the engine's `component_uid`). */

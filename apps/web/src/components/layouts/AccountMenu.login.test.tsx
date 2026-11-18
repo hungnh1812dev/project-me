@@ -1,27 +1,56 @@
+import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { COPY } from '../../configs/Copy.constants';
-import type { AuthApi } from '../../features/session/Auth.api';
-import {
-  fakeApi,
-  httpError,
-  PRIVILEGED_USER,
-  TEST_USER,
-  Wrapper,
-} from '../../features/session/Session.fixture';
+import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
+import { SITE_HEADER_MOCK } from '@/apis/server/graphql/mocks/SiteHeader.mock';
+
+import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
+import { bffError, fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
+import { formatText } from '../../utils/TextTemplate.rules';
 import { AccountMenu } from './AccountMenu';
 
-const login = COPY.login;
+const humanCheck = vi.hoisted(() => ({ solves: true, tokensIssued: 0, siteKey: 'site-key' }));
+
+vi.mock('../../configs/Browser.env', () => ({
+  appEnv: {
+    get turnstileSiteKey() {
+      return humanCheck.siteKey || undefined;
+    },
+    adminUrl: undefined,
+  },
+}));
+// Stands in for Cloudflare: solves on every mount (a fresh challenge) with a new token.
+vi.mock('../../features/auth/TurnstileWidget', () => ({
+  TurnstileWidget: ({ action, onToken }: { action: string; onToken: (token: string) => void }) => {
+    useEffect(() => {
+      if (humanCheck.solves) onToken(`${action}-token-${++humanCheck.tokensIssued}`);
+      // Once per mount, like the real widget (it keeps its callbacks in a ref).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    return <div data-testid={`turnstile-${action}`} />;
+  },
+}));
+
+beforeEach(() => {
+  humanCheck.solves = true;
+  humanCheck.tokensIssued = 0;
+  humanCheck.siteKey = 'site-key';
+});
+
+const login = SIGN_IN_MOCK.signInText;
+const { author } = SITE_HEADER_MOCK.header;
+const MENU_PROPS = { author, signInText: login };
+const signedInAs = (name: string) => formatText(login.signedInAs, { name });
 
 async function openDialog(api = fakeApi()) {
   const user = userEvent.setup();
   render(
     <Wrapper api={api}>
-      <AccountMenu />
+      <AccountMenu {...MENU_PROPS} />
     </Wrapper>,
   );
-  await user.click(await screen.findByRole('button', { name: COPY.session.signIn }));
+  await user.click(await screen.findByRole('button', { name: author.btnLoginText }));
   return { user, api };
 }
 
@@ -42,26 +71,26 @@ describe('sign-in dialog', () => {
 
   it('signs in, closes and shows the account', async () => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'tok' }),
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
-    expect(
-      await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.login).toHaveBeenCalledWith({
       email: 'owner@example.com',
       password: 'correct horse',
+      rememberMe: false,
+      humanCheckToken: 'login-token-1',
     });
-    expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 
   it('shows one generic message for wrong credentials and clears the password', async () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_CREDENTIALS' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -74,21 +103,36 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi
         .fn<AuthApi['login']>()
-        .mockRejectedValue(httpError(429, {}, { 'retry-after': '120' })),
+        .mockRejectedValue(bffError(429, {}, { 'retry-after': '120' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
-    expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.rateLimitedMinutes(2));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Too many sign-in attempts. Try again in 2 minutes.',
+    );
+  });
+
+  it.each([
+    ['BFF_HUMAN_CHECK_FAILED', 403, login.errors.humanCheckFailed],
+    ['BFF_HUMAN_CHECK_UNAVAILABLE', 503, login.errors.humanCheckUnavailable],
+    ['BFF_PRIVILEGED_ACCOUNT', 403, login.errors.privileged],
+    ['BFF_UPSTREAM_FAILED', 502, login.errors.unexpected],
+  ])('maps %s to its message', async (errorCode, status, message) => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(bffError(status, { errorCode })),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
   });
 
   it('asks for the authenticator code, then signs in', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('tok'),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue(TEST_USER),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -98,12 +142,10 @@ describe('sign-in dialog', () => {
     expect(api.verifyTwoFactor).not.toHaveBeenCalled();
     await user.type(code, '123456');
     await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
-    expect(
-      await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
     expect(api.verifyTwoFactor).toHaveBeenCalledWith({
-      tempToken: 'tmp',
       code: '123456',
+      humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
     });
     expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
   });
@@ -112,30 +154,28 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_2FA_CODE' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_INVALID_TWO_FACTOR_CODE' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
     await user.type(await screen.findByLabelText(new RegExp(login.twoFactor.totpLabel)), '000000');
     await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(login.twoFactor.errors.invalidCode);
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.twoFactor.invalidCode);
   });
 
   it('returns to the password step when the temp token expired', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
       verifyTwoFactor: vi
         .fn<AuthApi['verifyTwoFactor']>()
-        .mockRejectedValue(httpError(401, { errorCode: 'AUTH_INVALID_TEMP_TOKEN' })),
+        .mockRejectedValue(bffError(401, { errorCode: 'BFF_TWO_FACTOR_EXPIRED' })),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -149,7 +189,6 @@ describe('sign-in dialog', () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['email'],
       }),
     });
@@ -157,22 +196,61 @@ describe('sign-in dialog', () => {
     await fillCredentials(user);
     expect(await screen.findByText(login.twoFactor.emailWarning)).toBeInTheDocument();
     await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
-    expect(api.sendLoginEmailCode).toHaveBeenCalledWith('tmp');
+    expect(api.sendLoginEmailCode).toHaveBeenCalledWith({
+      humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
+    });
+  });
+
+  it('sends a new token for the emailed code, the resend and the verify', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({
+        kind: 'two-factor-required',
+        methods: ['email'],
+      }),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue(TEST_USER),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
+    await user.click(await screen.findByRole('button', { name: login.twoFactor.resend }));
+    await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(2));
+    await user.type(screen.getByLabelText(new RegExp(login.twoFactor.emailLabel)), '123456');
+    await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
+    await waitFor(() => expect(api.verifyTwoFactor).toHaveBeenCalledTimes(1));
+    const tokens = [
+      ...vi.mocked(api.sendLoginEmailCode).mock.calls.map(([input]) => input?.humanCheckToken),
+      vi.mocked(api.verifyTwoFactor).mock.calls[0]?.[0].humanCheckToken,
+    ];
+    expect(tokens).toHaveLength(3);
+    expect(new Set(tokens).size).toBe(3);
+  });
+
+  it('holds the emailed code until the second check passes', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockImplementation(() => {
+        humanCheck.solves = false;
+        return Promise.resolve({ kind: 'two-factor-required', methods: ['email'] });
+      }),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    await screen.findByText(login.twoFactor.emailWarning);
+    expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: login.twoFactor.resend }));
+    expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
+    expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
   });
 
   it('rejects an account whose method this site does not support', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['sms'],
       }),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      login.twoFactor.errors.unsupportedMethod,
-    );
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.twoFactor.unsupportedMethod);
   });
 
   it('closes on Esc and starts clean when reopened', async () => {
@@ -180,34 +258,77 @@ describe('sign-in dialog', () => {
     await user.type(screen.getByLabelText(new RegExp(login.emailLabel)), 'x@y.co');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: COPY.session.signIn }));
+    expect(screen.getByRole('button', { name: author.btnLoginText })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: author.btnLoginText }));
     expect(screen.getByLabelText(new RegExp(login.emailLabel))).toHaveValue('');
+  });
+});
+
+describe('human check', () => {
+  it('renders a login widget and blocks the call until it passes', async () => {
+    humanCheck.solves = false;
+    const { user, api } = await openDialog();
+    expect(screen.getByTestId('turnstile-login')).toBeInTheDocument();
+    await fillCredentials(user);
+    expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
+    expect(api.login).not.toHaveBeenCalled();
+  });
+
+  it('asks for a fresh check after a failed sign-in', async () => {
+    const api = fakeApi({
+      login: vi
+        .fn<AuthApi['login']>()
+        .mockRejectedValueOnce(bffError(403, { errorCode: 'BFF_HUMAN_CHECK_FAILED' }))
+        .mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.humanCheckFailed);
+    await user.type(screen.getByLabelText(new RegExp(login.passwordLabel)), 'correct horse');
+    await user.click(screen.getByRole('button', { name: login.submit }));
+    await waitFor(() => expect(api.login).toHaveBeenCalledTimes(2));
+    const tokens = vi.mocked(api.login).mock.calls.map(([input]) => input.humanCheckToken);
+    expect(new Set(tokens).size).toBe(2);
+  });
+
+  it('says sign-in is unavailable when no site key is configured', async () => {
+    humanCheck.siteKey = '';
+    await openDialog();
+    expect(screen.getByText(login.humanCheck.unavailable)).toBeInTheDocument();
+    expect(screen.queryByLabelText(new RegExp(login.emailLabel))).not.toBeInTheDocument();
+  });
+
+  it('shows no reviewer entry', async () => {
+    render(
+      <Wrapper api={fakeApi()}>
+        <AccountMenu {...MENU_PROPS} />
+      </Wrapper>,
+    );
+    await screen.findByRole('button', { name: author.btnLoginText });
+    expect(screen.queryByRole('button', { name: /reviewer/i })).not.toBeInTheDocument();
   });
 });
 
 describe('privileged accounts', () => {
   it('tells an admin to use the admin console and stays signed out', async () => {
     const api = fakeApi({
-      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', accessToken: 'adm' }),
-      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+      login: vi.fn<AuthApi['login']>().mockRejectedValue(new PrivilegedAccessError()),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
     expect(await screen.findByRole('alert')).toHaveTextContent(login.errors.privileged);
-    expect(
-      screen.queryByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(signedInAs(TEST_USER.displayName))).not.toBeInTheDocument();
   });
 
   it('refuses a privileged account at the 2FA step too', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockResolvedValue({
         kind: 'two-factor-required',
-        tempToken: 'tmp',
         methods: ['totp'],
       }),
-      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue('adm'),
-      me: vi.fn<AuthApi['me']>().mockResolvedValue(PRIVILEGED_USER),
+      verifyTwoFactor: vi
+        .fn<AuthApi['verifyTwoFactor']>()
+        .mockRejectedValue(new PrivilegedAccessError()),
     });
     const { user } = await openDialog(api);
     await fillCredentials(user);
@@ -221,47 +342,74 @@ describe('account menu', () => {
   it('keeps the user signed in and says so when sign-out fails', async () => {
     const user = userEvent.setup();
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
       logout: vi.fn<AuthApi['logout']>().mockRejectedValue(new Error('offline')),
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
-    await user.click(await screen.findByRole('button', { name: COPY.session.signOut }));
-    expect(await screen.findByRole('alert')).toHaveTextContent(COPY.session.signOutFailed);
-    expect(screen.getByRole('button', { name: COPY.session.signOut })).toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: author.btnLogoutText }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(login.signOutFailed);
+    expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
 
   it('shows the signed-in actor after a silent refresh and signs out', async () => {
     const user = userEvent.setup();
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
-    expect(
-      await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName)),
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: COPY.session.signOut }));
-    expect(await screen.findByRole('button', { name: COPY.session.signIn })).toBeInTheDocument();
+    expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: author.btnLogoutText }));
+    expect(await screen.findByRole('button', { name: author.btnLoginText })).toBeInTheDocument();
     expect(api.logout).toHaveBeenCalledTimes(1);
   });
 
   it('hides Open CMS when no admin URL is configured', async () => {
     const api = fakeApi({
-      refresh: vi.fn<AuthApi['refresh']>().mockResolvedValue('tok'),
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
     });
     render(
       <Wrapper api={api}>
-        <AccountMenu />
+        <AccountMenu {...MENU_PROPS} />
       </Wrapper>,
     );
-    await screen.findByText(COPY.session.signedInAs(TEST_USER.displayName));
-    expect(screen.queryByRole('link', { name: COPY.session.openCms })).not.toBeInTheDocument();
+    await screen.findByText(signedInAs(TEST_USER.displayName));
+    expect(screen.queryByRole('link', { name: login.openCms })).not.toBeInTheDocument();
+  });
+});
+
+describe('account menu without the sign-in text (Q-PS1b)', () => {
+  it('renders no sign-in button and no dialog for an anonymous visitor', async () => {
+    const api = fakeApi();
+    render(
+      <Wrapper api={api}>
+        <AccountMenu {...MENU_PROPS} signInText={null} />
+      </Wrapper>,
+    );
+    await waitFor(() => expect(api.readSession).toHaveBeenCalled());
+    await waitFor(() => expect(document.querySelector('[aria-hidden="true"]')).toBeNull());
+    expect(screen.queryByRole('button', { name: author.btnLoginText })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps the sign-out button for a signed-in visitor', async () => {
+    const api = fakeApi({
+      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
+    });
+    render(
+      <Wrapper api={api}>
+        <AccountMenu {...MENU_PROPS} signInText={null} />
+      </Wrapper>,
+    );
+    expect(await screen.findByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
+    expect(screen.queryByText(signedInAs(TEST_USER.displayName))).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: login.openCms ?? '' })).not.toBeInTheDocument();
   });
 });

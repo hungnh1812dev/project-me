@@ -1,5 +1,7 @@
 import { cn } from 'cn';
 
+import { CONTROL_FOCUS_CLASSES } from '@/components/ui/Control.constants';
+
 import type { SheetColumn, SheetSort, SheetSortDirection } from './SortableSheet';
 
 const ARIA_SORT = {
@@ -58,7 +60,8 @@ function SheetHeaderCell<TRow>({ column, sort, onSortChange }: SheetHeaderCellPr
           type="button"
           onClick={() => onSortChange(nextSort(sort, column.key))}
           className={cn(
-            'hover:text-foreground focus-visible:ring-ring/50 inline-flex cursor-pointer items-center gap-1 rounded-sm font-medium outline-none focus-visible:ring-[3px]',
+            'hover:text-foreground rounded-item inline-flex cursor-pointer items-center gap-1 font-medium outline-none',
+            CONTROL_FOCUS_CLASSES,
             activeDirection !== null && 'text-foreground',
           )}
         >

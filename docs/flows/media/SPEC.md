@@ -6,7 +6,7 @@ summary: Media library: upload with progress, replace in place, alt text, delete
 
 # Media: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -103,8 +103,3 @@ S3 adapter for media ([out of scope](../../../SPEC.md)).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-03 Media upload fixes (old SPEC §15, MU-1..MU-5, Q-MU1..Q-MU6; timeouts amended the same day, Q-UT3 option 2, ADR 0014).
-- 2026-11-04 Flow folder created from the old SPEC.

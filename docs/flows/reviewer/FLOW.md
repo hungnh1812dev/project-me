@@ -1,11 +1,11 @@
 ---
 flow: reviewer
-modules: apps/cms-api/src/modules/reviewer, apps/cms-api/src/modules/access, apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/reviewer, apps/cms-admin/src/views/reviewer-sessions, apps/web/src/features/reviewer
+modules: apps/cms-api/src/modules/reviewer, apps/cms-api/src/modules/access, apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/reviewer, apps/cms-admin/src/views/reviewer-sessions
 ---
 
 # Reviewer: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `reviewer`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `reviewer`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Actors
 
@@ -56,7 +56,6 @@ sequenceDiagram
 | `apps/cms-api/src/modules/security-audit` | Audit row for the reviewer toggle (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
 | `apps/cms-admin/src/features/reviewer` | Reviewer switch and session log client | [reviewer.md](../../modules/cms-admin/reviewer.md) |
 | `apps/cms-admin/src/views/reviewer-sessions` | Reviewer switch and reviewer session log page (`/reviewer`) | [reviewer-sessions.md](../../modules/cms-admin/reviewer-sessions.md) |
-| `apps/web/src/features/reviewer` | Web reviewer access dialog; removed by D21 (web-bff-hardening) | [reviewer.md](../../modules/web/reviewer.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

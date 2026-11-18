@@ -1,4 +1,5 @@
-import { sanitizeRichtextOnServer } from '../libs/SafeRichtext.server';
+import { sanitizeRichtextOnServer } from '@/libs/SafeRichtext.server';
+
 import { sanitizeRichtext } from './SafeRichtext.rules';
 
 describe.each([

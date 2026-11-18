@@ -1,12 +1,9 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import type { ScreenText } from '@configs/locales';
 import type { ApiToken } from '@features/access/Access.api';
 import { formatDate } from '@utils/DateFormat.rules';
 
 import { scopeSummary } from './TokenScope.rules';
-
-const copy = COPY.access.apiTokens;
-const matrixCopy = COPY.access.matrix;
 
 const STATUS_CLASS: Record<ApiToken['status'], string> = {
   active: 'bg-success-soft text-success-strong',
@@ -14,7 +11,9 @@ const STATUS_CLASS: Record<ApiToken['status'], string> = {
   revoked: 'bg-muted text-muted-foreground',
 };
 
-function accessText(token: ApiToken): string {
+function accessText(token: ApiToken, text: ScreenText<'access'>): string {
+  const copy = text.access.apiTokens;
+  const matrixCopy = text.access.matrix;
   const { permissions, subjects } = scopeSummary(token.scope.permissions);
   if (permissions === 0) return copy.noAccess;
   const names = subjects.map((subject) => (subject === '*' ? matrixCopy.wildcard : subject));
@@ -25,6 +24,7 @@ interface ApiTokenColumnsOptions {
   currentUserId: string | undefined;
   showCreator: boolean;
   canChange: boolean;
+  text: ScreenText<'access'>;
   onEdit: (token: ApiToken, opener: HTMLElement) => void;
   onRevoke: (token: ApiToken, opener: HTMLElement) => void;
 }
@@ -39,9 +39,11 @@ export function apiTokenColumns({
   currentUserId,
   showCreator,
   canChange,
+  text,
   onEdit,
   onRevoke,
 }: ApiTokenColumnsOptions): SheetColumn<ApiToken>[] {
+  const copy = text.access.apiTokens;
   const creatorColumn: SheetColumn<ApiToken> = {
     key: 'createdBy',
     header: copy.columns.createdBy,
@@ -103,8 +105,8 @@ export function apiTokenColumns({
       key: 'access',
       header: copy.columns.access,
       renderCell: (token) => (
-        <span className="line-clamp-2 max-w-64" title={accessText(token)}>
-          {accessText(token)}
+        <span className="line-clamp-2 max-w-64" title={accessText(token, text)}>
+          {accessText(token, text)}
         </span>
       ),
     },

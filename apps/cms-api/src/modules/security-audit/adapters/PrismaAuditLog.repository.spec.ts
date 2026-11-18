@@ -26,7 +26,7 @@ async function writeInUnit(entry: AuditEntry) {
     {
       $transaction: (work: (tx: unknown) => Promise<unknown>) => work(transaction.writer),
     } as unknown as PrismaClient,
-    { warn: jest.fn(), error: jest.fn() },
+    { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
   );
   const repository = new PrismaAuditLogRepository(client.writer as unknown as PrismaClient);
   await runner.run((unit) => repository.write(unit, entry));

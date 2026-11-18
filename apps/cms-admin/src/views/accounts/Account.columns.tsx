@@ -1,11 +1,9 @@
 import { Button, type SheetColumn } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import type { ScreenText } from '@configs/locales';
 import type { Account } from '@features/access/Access.api';
 import { formatDate } from '@utils/DateFormat.rules';
 
-import { AccountRowActions, type RowNotice } from './AccountRowActions';
-
-const copy = COPY.access.accounts;
+import { AccountRowActions } from './AccountRowActions';
 
 const STATUS_CLASS: Record<Account['status'], string> = {
   invited: 'bg-info-soft text-info-strong',
@@ -18,7 +16,7 @@ interface AccountColumnsOptions {
   showActions: boolean;
   canEnable: boolean;
   canResend: boolean;
-  onNotice: (notice: RowNotice) => void;
+  text: ScreenText<'access'>;
   onDisable: (account: Account, opener: HTMLElement) => void;
 }
 
@@ -28,21 +26,17 @@ export function accountColumns({
   showActions,
   canEnable,
   canResend,
-  onNotice,
+  text,
   onDisable,
 }: AccountColumnsOptions): SheetColumn<Account>[] {
+  const copy = text.access.accounts;
   const actionsColumn: SheetColumn<Account> = {
     key: 'actions',
     header: <span className="sr-only">{copy.columns.actions}</span>,
     align: 'right',
     renderCell: (account) => (
       <>
-        <AccountRowActions
-          account={account}
-          canEnable={canEnable}
-          canResend={canResend}
-          onNotice={onNotice}
-        />
+        <AccountRowActions account={account} canEnable={canEnable} canResend={canResend} />
         {canEnable && account.manageable && account.status !== 'disabled' ? (
           <Button
             type="button"

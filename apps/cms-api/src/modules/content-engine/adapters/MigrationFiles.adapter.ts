@@ -5,7 +5,11 @@ import { join, resolve } from 'node:path';
 import { z } from 'zod';
 
 import { ContentEngineError } from '../domain/ContentDocument.entity';
-import { HASH_ALGORITHM, SNAPSHOT_FORMAT_VERSION } from '../domain/ContentEngine.constants';
+import {
+  COMPONENT_FIELD_TYPE,
+  HASH_ALGORITHM,
+  SNAPSHOT_FORMAT_VERSION,
+} from '../domain/ContentEngine.constants';
 import type { ContentTypeDefinition } from '../domain/DefinitionSchema.rules';
 import { formatDefinitionPath, validateDefinitions } from '../domain/DefinitionValidator.rules';
 import {
@@ -132,6 +136,38 @@ export function migrationFileName(sequence: number, label: string): string {
   return `${String(sequence).padStart(MIGRATION_SEQUENCE_DIGITS, '0')}_${label}.sql`;
 }
 
+interface LooseField {
+  type?: unknown;
+  name?: unknown;
+  component?: unknown;
+  fields?: unknown;
+}
+
+/**
+ * Snapshots written before `component` existed name each component table from
+ * the field `name`; giving the field `component = name` reproduces them
+ * (ADR 0019 decision 10). Source schemas never get this fallback.
+ */
+function withSnapshotComponents(definition: unknown): unknown {
+  if (typeof definition !== 'object' || definition === null) return definition;
+  const loose = definition as { fields?: unknown };
+  return { ...loose, fields: upgradeFields(loose.fields) };
+}
+
+function upgradeFields(fields: unknown): unknown {
+  if (!Array.isArray(fields)) return fields;
+  return fields.map((field: LooseField) => {
+    if (typeof field !== 'object' || field === null || field.type !== COMPONENT_FIELD_TYPE) {
+      return field;
+    }
+    return {
+      ...field,
+      component: field.component ?? field.name,
+      fields: upgradeFields(field.fields),
+    };
+  });
+}
+
 const snapshotSchema = z.strictObject({
   formatVersion: z.literal(SNAPSHOT_FORMAT_VERSION),
   contentTypes: z.record(z.string(), z.strictObject({ hash: z.string(), definition: z.unknown() })),
@@ -162,7 +198,7 @@ export async function readSnapshot(migrationsDir: string): Promise<DefinitionSna
   }
   const slugs = Object.keys(parsed.data.contentTypes);
   const validation = validateDefinitions(
-    slugs.map((slug) => parsed.data.contentTypes[slug]?.definition),
+    slugs.map((slug) => withSnapshotComponents(parsed.data.contentTypes[slug]?.definition)),
   );
   if (!validation.ok) {
     throw new ContentEngineError(`${MIGRATION_SNAPSHOT_FILE}: contains an invalid definition`);
@@ -172,12 +208,14 @@ export async function readSnapshot(migrationsDir: string): Promise<DefinitionSna
   validation.definitions.forEach(({ definition }, index) => {
     const key = slugs[index];
     const stored = key === undefined ? undefined : parsed.data.contentTypes[key];
-    if (key !== definition.slug || stored?.hash !== hashDefinition(definition)) {
+    // The stored hash covers the definition as written, before the `component` fallback.
+    const writtenHash = hashDefinition(stored?.definition as ContentTypeDefinition);
+    if (key !== definition.slug || stored?.hash !== writtenHash) {
       throw new ContentEngineError(
         `${MIGRATION_SNAPSHOT_FILE}: entry "${key}" does not match its definition`,
       );
     }
-    snapshot.contentTypes[key] = { hash: stored.hash, definition };
+    snapshot.contentTypes[key] = { hash: hashDefinition(definition), definition };
   });
   return snapshot;
 }

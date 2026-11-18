@@ -5,7 +5,7 @@ modules: apps/cms-api/src/modules/media, apps/cms-api/src/modules/security-audit
 
 # Media: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `media`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Actors
 

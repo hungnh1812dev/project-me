@@ -2,14 +2,21 @@ import { useState } from 'react';
 import {
   BulkActionBar,
   Button,
+  Card,
   FormAlert,
   SortableSheet,
   TablePagination,
 } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
+import {
+  EmptyState,
+  LoadError,
+  PageHeader,
+  TableSkeleton,
+  TitleSkeleton,
+} from '@components/PageStates';
 import { useRestoreFocus } from '@components/useRestoreFocus';
 import { contentNewPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import {
   CONTENT_WILDCARD_SUBJECT,
   isForbidden,
@@ -28,15 +35,15 @@ import { SingleTypeRedirect } from './SingleTypeRedirect';
 import { useBulkRun } from './useBulkRun';
 import { useCollectionList } from './useCollectionList';
 
-const copy = COPY.content;
-const list = copy.collection;
-const bulkCopy = copy.bulk;
-
 /**
  * `/content/:slug`: the draft list of a collection with sortable
  * columns, paging, bulk publish / unpublish / delete and JSON import.
  */
 export function CollectionListPage() {
+  const text = useScreenText('content');
+  const copy = text.content;
+  const list = copy.collection;
+  const bulkCopy = copy.bulk;
   const { slug = '' } = useParams();
   const caller = useCallerAccess();
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -90,8 +97,9 @@ export function CollectionListPage() {
     slug,
     valueFields,
     draftAndPublish && rows.some((row) => row.publishState !== undefined),
+    text,
   );
-  const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row);
+  const nameOf = (row: (typeof rows)[number]) => documentNameOf(valueFields, row, text);
 
   const heading = (
     <PageHeader
@@ -178,12 +186,7 @@ export function CollectionListPage() {
           />
         )
       ) : rows.length === 0 && page === 1 ? (
-        <div className="grid justify-items-start gap-1">
-          <p className="m-0 font-medium">{list.empty}</p>
-          <p className="m-0 text-sm text-muted-foreground">
-            {canCreate ? list.emptyHint : list.emptyHintReadOnly}
-          </p>
-        </div>
+        <EmptyState title={list.empty} hint={canCreate ? list.emptyHint : list.emptyHintReadOnly} />
       ) : (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
           {selectable ? (
@@ -199,7 +202,7 @@ export function CollectionListPage() {
               }}
             />
           ) : null}
-          <div className="min-w-0 rounded-md border border-border bg-card">
+          <Card padding="flush" className="min-w-0 overflow-hidden">
             <SortableSheet
               className="rounded-none border-0"
               caption={list.tableLabel(displayName)}
@@ -231,7 +234,7 @@ export function CollectionListPage() {
                 }}
               />
             )}
-          </div>
+          </Card>
         </div>
       )}
       <BulkDeleteDialog

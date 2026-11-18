@@ -62,7 +62,8 @@ Production guards (`NODE_ENV=production`): `MAIL_PROVIDER=console` is
 rejected, and `JWT_ACCESS_SECRET`, `OTP_PEPPER`, `TOTP_ENC_KEY` are required and
 must be at least 32 bytes; `ADMIN_ORIGIN`, `WEB_ORIGIN`, `JWT_ACCESS_KID`
 and `TOTP_ENC_KID` are required. `TOTP_ENC_PREVIOUS_KEY` (when set) must be
-at least 32 bytes too.
+at least 32 bytes too. `development` and `staging` run without these guards;
+the tests run as `development` (`test` is not accepted).
 
 ## HTTP pipeline
 
@@ -128,7 +129,7 @@ count).
   verification key is chosen by the `kid` header (`JWT_ACCESS_KID`).
   The JWT guard compares `tv`/`pv` with the database (see `docs/modules/access-control.md`).
 - Refresh cookie `__Secure-abyss_rt`: `HttpOnly; Secure; SameSite=Strict;
-Path=/api/v1/auth`, 7 days, host-only (no `Domain`). The raw token is never
+Path=/api/v1/auth`, 30 days, host-only (no `Domain`). The raw token is never
   stored, only its SHA-256. Every refresh rotates it within its family;
   presenting an already rotated token revokes the whole family and bumps
   `accounts.token_version`.
@@ -408,6 +409,24 @@ any other `*.constants.ts`:
 - Optional override: `SETUP_SUBMIT_RATE_LIMIT_IP` replaces the `setup-submit:ip`
   limit (5 per 15 minutes per IP). Same validation and production opt-in flag;
   the smoke script and the e2e suite submit more than 5 times from one IP.
+- Optional override: `TWO_FACTOR_EMAIL_RATE_LIMIT_IP` replaces the `2fa-email:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
+  e2e suite sends more than 5 email codes from one IP.
+- Optional override: `TWO_FACTOR_MANAGE_RATE_LIMIT_IP` replaces the `2fa-manage:ip`
+  limit (5 per 15 minutes per IP). Same validation and production opt-in flag; the
+  2FA e2e spec sets up, enables and disables more than 5 times from one IP.
+- Optional override: `ACCOUNT_INVITE_RATE_LIMIT_IP` / `ACCOUNT_INVITE_RATE_LIMIT_ACTOR`
+  replace the `account-invite:ip` (20) and `account-invite:actor` (10) limits per hour.
+  Same validation and production opt-in flag; the e2e suite invites more than 10
+  accounts per hour as one owner from one IP.
+- Optional override: `OTP_ISSUE_RATE_LIMIT_ACCOUNT` replaces the cap of 5 one-time
+  codes per account per hour (the `OtpService` count, not a throttle rule). Same
+  validation and production opt-in flag; the e2e suite signs one email-code account
+  in more than 5 times an hour.
+- Optional override: `PASSWORD_SUBMIT_RATE_LIMIT_IP` / `PASSWORD_CHANGE_RATE_LIMIT_IP`
+  replace the `password-submit:ip` (10, reset and set) and `password-change:ip` (5)
+  limits per 15 minutes. Same validation and production opt-in flag; the e2e suite
+  creates accounts and changes passwords more often from one IP.
 - Limit overrides: a rule opts in with `limitOverrideEnvKey`; the key must be in
   `RATE_LIMIT_OVERRIDE_ENV_KEYS` (`src/config/Config.constants.ts`), which also
   drives the env parsing and the production opt-in check. Identity's
@@ -766,7 +785,7 @@ Rules, the default role matrix, the DSL and the revocation flow: [docs/modules/a
 
 ## Content types
 
-Content types are JSON files in `content/schemas/` (e.g. `cv-page.json`).
+Content types are JSON files in `content/schemas/` (e.g. `page-cv-a.json`).
 `src/modules/content-engine/domain/DefinitionValidator.rules.ts` checks them (shape,
 naming, depth ≤ 3, 63-byte names, collisions) and returns structured errors;
 `domain/Naming.rules.ts` is the single source of generated SQL names. Tables are created
@@ -900,6 +919,10 @@ Multi-stage: `turbo prune` keeps cms-api only, the build stage compiles it,
 and `pnpm deploy --prod` copies production dependencies into a runtime image
 that runs as the numeric `node` user (`USER 1000:1000`) on port 3000. Pass config as env vars; `.env*`
 files are never copied into the build context (`.dockerignore`).
+
+The image also carries `postgresql17-client`, `age` and `rclone` and the nightly
+backup job script `/app/backup/nightly-backup.sh` (source `backup/nightly-backup.sh`,
+the `postgres-backup` CronJob runs it with the cms-api tag; it uploads only when `NODE_ENV=production`; ADR 0025).
 
 ### Two containers: init + main
 

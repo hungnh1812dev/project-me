@@ -2,14 +2,12 @@ import { useState } from 'react';
 import { Button, FormAlert } from '@abyss/form-commons';
 import { Modal, ModalActions } from '@components/Modal';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useCurrentUser, useEmailCode } from '@features/auth';
 import type { BackupFile } from '@features/backups/Backups.api';
 import { useBackupsApi } from '@features/backups/BackupsApi.context';
 import { ConfirmWithCodeForm, useSecurityApi } from '@features/security';
 import { Link } from 'react-router';
-
-const copy = COPY.backups.dialog;
 
 /**
  * Asks for the password and a 2FA code, then sends the browser to the
@@ -20,10 +18,13 @@ const copy = COPY.backups.dialog;
 export function DownloadBackupDialog({
   backup,
   onClose,
+  onCloseAutoFocus,
 }: {
   backup: BackupFile;
   onClose: () => void;
+  onCloseAutoFocus: (event: Event) => void;
 }) {
+  const copy = useScreenText('backups').backups.dialog;
   const api = useBackupsApi();
   const security = useSecurityApi();
   const user = useCurrentUser();
@@ -32,7 +33,12 @@ export function DownloadBackupDialog({
   const [isTwoFactorOff, setIsTwoFactorOff] = useState(false);
 
   return (
-    <Modal title={copy.title(backup.fileName)} description={copy.description} onClose={onClose}>
+    <Modal
+      title={copy.title(backup.fileName)}
+      description={copy.description}
+      onClose={onClose}
+      onCloseAutoFocus={onCloseAutoFocus}
+    >
       {method === null || isTwoFactorOff ? (
         <div className="grid gap-4">
           <FormAlert tone="info">{copy.twoFactorOff}</FormAlert>

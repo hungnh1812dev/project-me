@@ -12,6 +12,11 @@ if (typeof globalThis.ResizeObserver !== 'function') {
   };
 }
 
+// jsdom has no pointer capture; Radix Toast checks it on pointer events.
+if (typeof Element.prototype.hasPointerCapture !== 'function') {
+  Element.prototype.hasPointerCapture = () => false;
+}
+
 // jsdom has no layout APIs; ProseMirror (Tiptap) calls them on click and focus.
 if (typeof document.elementFromPoint !== 'function') {
   document.elementFromPoint = () => null;

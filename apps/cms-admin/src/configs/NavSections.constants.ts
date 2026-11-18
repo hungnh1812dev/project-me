@@ -1,6 +1,6 @@
 import { Files, FileText, Layers, Settings, Wrench, type LucideIcon } from 'lucide-react';
 
-import { COPY } from './Copy.constants';
+import { COMMON_TEXT } from './locales';
 import type { PermissionAction } from './PermissionAction.constants';
 
 /** A heading of the side menu; `subSections` nest under it, items attach to leaves. */
@@ -18,15 +18,15 @@ export const NAV_GROUP_OPEN_STORAGE_KEY = 'abyss.cms-admin.nav-groups-open';
 export const NAV_SECTIONS = [
   {
     id: 'content',
-    label: COPY.access.nav.content,
+    label: COMMON_TEXT.nav.content,
     icon: Files,
     subSections: [
-      { id: 'singleTypes', label: COPY.access.nav.singleTypes, icon: FileText },
-      { id: 'collectionTypes', label: COPY.access.nav.collectionTypes, icon: Layers },
+      { id: 'singleTypes', label: COMMON_TEXT.nav.singleTypes, icon: FileText },
+      { id: 'collectionTypes', label: COMMON_TEXT.nav.collectionTypes, icon: Layers },
     ],
   },
-  { id: 'utilities', label: COPY.access.nav.utilities, icon: Wrench },
-  { id: 'systemSettings', label: COPY.access.nav.systemSettings, icon: Settings },
+  { id: 'utilities', label: COMMON_TEXT.nav.utilities, icon: Wrench },
+  { id: 'systemSettings', label: COMMON_TEXT.nav.systemSettings, icon: Settings },
 ] as const satisfies readonly NavSectionDefinition[];
 
 type LeafIds<Section> = Section extends {

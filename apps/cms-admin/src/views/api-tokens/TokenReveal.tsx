@@ -9,9 +9,7 @@ import {
   Input,
   Label,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
-
-const copy = COPY.access.tokenReveal;
+import { useScreenText } from '@configs/locales';
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
@@ -29,6 +27,7 @@ export function TokenReveal({
   token: string;
   onDone: () => void;
 }) {
+  const copy = useScreenText('access').access.tokenReveal;
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
   const [copyState, setCopyState] = useState<CopyState>('idle');

@@ -6,7 +6,7 @@ summary: One-time creation of the single owner: setup page with the setup token,
 
 # Owner setup: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `owner-setup`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `owner-setup`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -45,9 +45,3 @@ Self-registration and promoting an existing account (D1).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-10-22 One-time owner setup route (D1, ADR 0005, Q-OS1..Q-OS4).
-- 2026-10-23 Smoke seed CLI (D1).
-- 2026-11-04 Flow folder created from the old SPEC.

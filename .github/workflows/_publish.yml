@@ -78,9 +78,9 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           TURBO_VERSION: ${{ inputs.turbo_version }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_ADMIN_URL: ${{ vars.NEXT_PUBLIC_ADMIN_URL }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          APP_ENV: ${{ vars.APP_ENV }}
         run: bash .github/scripts/build-args.sh "$APP"
       # Load the image locally first so the guards can inspect and run it before anything is pushed
       - name: Build and load
@@ -102,6 +102,11 @@ jobs:
         env:
           IMAGE: ${{ inputs.app }}:ci
         run: bash .github/scripts/image-user.sh "$IMAGE"
+      - name: Backup tools guard
+        if: inputs.app == 'cms-api'
+        env:
+          IMAGE: ${{ inputs.app }}:ci
+        run: bash .github/scripts/backup-tools.sh "$IMAGE"
       - name: Bundle smoke check
         if: inputs.app == 'cms-admin'
         env:

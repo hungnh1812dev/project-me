@@ -1,13 +1,11 @@
 import { useId } from 'react';
 import { Checkbox, Radio } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 
 import type { ContentTypeField } from '../content-types';
 import type { FieldList } from './Access.api';
 import { FIELD_PICKER_INDENT_REM } from './Access.constants';
 import { isCoveredBy, toggleField } from './PermissionMatrix.rules';
-
-const copy = COPY.access.fields;
 
 /**
  * Readable or writable field list of one permission row: every field
@@ -30,6 +28,7 @@ export function FieldPicker({
   disabled: boolean;
   emptyHint: string;
 }) {
+  const copy = useScreenText('access').access.fields;
   const name = useId();
   const selected = value ?? [];
   const order = new Map(fields.map((field, index) => [field.path, index]));

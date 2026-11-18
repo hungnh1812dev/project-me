@@ -29,7 +29,7 @@ function setup(
   const deleteObject = jest.fn(() => Promise.resolve());
   const storage = { provider: activeProvider, delete: deleteObject } as unknown as MediaStorage;
   const clock = { now: () => NOW_MS };
-  const logger = { warn: jest.fn(), error: jest.fn() };
+  const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const service = new PurgeDeletedMediaService(repository, references, storage, clock, logger);
   return { service, findPurgeBatch, deleteRow, deleteObject, logger };
 }

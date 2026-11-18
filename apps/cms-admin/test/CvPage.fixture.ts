@@ -1,18 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type { ContentType, ContentTypeField } from '../src/features/content-types';
+import type { ContentType, ContentTypeField, FieldWidth } from '../src/features/content-types';
 
 interface Definition {
   name: string;
   type: string;
   repeatable?: boolean;
+  displayName?: string;
+  width?: FieldWidth;
   fields?: Definition[];
 }
 
-/** The real cv-page definition of cms-api, so tests follow the schema. */
+/** The real page-cv-a definition of cms-api, so tests follow the schema. */
 const definition = JSON.parse(
-  readFileSync(resolve(import.meta.dirname, '../../cms-api/content/schemas/cv-page.json'), 'utf8'),
+  readFileSync(
+    resolve(import.meta.dirname, '../../cms-api/content/schemas/page-cv-a.json'),
+    'utf8',
+  ),
 ) as {
   slug: string;
   displayName: string;
@@ -31,6 +36,8 @@ function flatten(fields: Definition[], prefix: string): ContentTypeField[] {
       type: field.type,
       system: false,
       component: isComponent,
+      ...(field.displayName === undefined ? {} : { displayName: field.displayName }),
+      ...(isComponent ? {} : { width: field.width ?? 'full' }),
       repeatable: isComponent && field.repeatable === true,
       rootScalar: prefix === '' && !isComponent,
       conditionKind: null,

@@ -5,17 +5,17 @@ modules: apps/cms-api/src/modules/content-engine, apps/cms-api/src/modules/conte
 
 # Content modeling: flow
 
-Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Actors
 
-- **Developer**: writes the JSON schema and reviews the generated migration.
+- **Developer**: writes the JSON schema (or exports it from the schema builder) and reviews the generated migration.
 - **CI**: checks `generate --check` and `print-schema --check`.
 - **Init container**: runs `deploy:migrate` (`db:migrate` + `content:migrate`) as `abyss_migrator` (D19).
 
 ## Steps
 
-1. Write or change `content/schemas/<type>.json` (root + up to 3 component levels).
+1. Write or change `content/schemas/<type>.json` (root + up to 3 component levels), by hand or with the cms-admin schema builder ([schema-builder](../schema-builder/FLOW.md)).
 2. `content:generate` validates it, diffs against `snapshot.json` and writes `content/migrations/000N_*.sql`; `graphql:print-schema` writes the SDL.
 3. Review and commit; destructive changes need `--allow-destructive` and a data-migration note.
 4. CI checks both outputs; the cms-api image is built.
@@ -24,7 +24,7 @@ Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md]
 
 ```mermaid
 flowchart LR
-  s["content/schemas/*.json<br/>cv-page, profile"] --> g["content:generate<br/>validate, diff vs snapshot.json"]
+  s["content/schemas/*.json<br/>cv-page, resume, header ..."] --> g["content:generate<br/>validate, diff vs snapshot.json"]
   g --> m["content/migrations/000N_*.sql<br/>+ snapshot.json"]
   g --> sdl["graphql:print-schema<br/>content/schema.graphql"]
   m --> rev["review + commit"] --> ci["CI checks<br/>generate --check, print-schema --check"]

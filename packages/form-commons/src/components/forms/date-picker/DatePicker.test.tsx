@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
 import { TestForm } from '../../../../test/TestForm.fixture';
-import { DatePicker, DateTimePicker } from './DatePicker';
+import { DatePicker, DateTimePicker, TimePicker } from './DatePicker';
 
 describe('DatePicker', () => {
   it('renders a date input and submits YYYY-MM-DD', async () => {
@@ -41,5 +41,30 @@ describe('DateTimePicker', () => {
     const input = screen.getByLabelText('Publish at');
     expect(input).toHaveAttribute('type', 'datetime-local');
     expect(input).toHaveValue('2024-05-06T09:30');
+  });
+});
+
+describe('TimePicker', () => {
+  it('renders a time input and submits HH:MM', async () => {
+    const onValid = vi.fn<(values: { t: string }) => void>();
+    render(
+      <TestForm<{ t: string }> options={{ defaultValues: { t: '09:30' } }} onValid={onValid}>
+        <TimePicker name="t" label="Opens at" />
+      </TestForm>,
+    );
+    const input = screen.getByLabelText('Opens at');
+    expect(input).toHaveAttribute('type', 'time');
+    expect(input).toHaveValue('09:30');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onValid).toHaveBeenCalledWith({ t: '09:30' }, expect.anything());
+  });
+
+  it('keeps seconds when the value has them', () => {
+    render(
+      <TestForm<{ t: string }> options={{ defaultValues: { t: '09:30:15' } }}>
+        <TimePicker name="t" label="Opens at" />
+      </TestForm>,
+    );
+    expect(screen.getByLabelText('Opens at')).toHaveValue('09:30:15');
   });
 });

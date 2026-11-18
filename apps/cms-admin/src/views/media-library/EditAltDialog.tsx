@@ -11,7 +11,7 @@ import {
   FormAlert,
   TextAreaInput,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { MediaFile } from '@features/media/Media.api';
 import { MEDIA_ALT_MAX_LENGTH } from '@features/media/Media.constants';
 import { toMediaError } from '@features/media/Media.errors';
@@ -19,8 +19,6 @@ import { MEDIA_QUERY_KEY } from '@features/media/Media.queries';
 import { useMediaApi } from '@features/media/MediaApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
-
-const copy = COPY.media.altDialog;
 
 interface FormValues {
   alt: string;
@@ -39,6 +37,9 @@ export function EditAltDialog({
   onGone: () => void;
   onCloseAutoFocus: (event: Event) => void;
 }) {
+  const media = useScreenText('media');
+  const access = useScreenText('access');
+  const copy = media.media.altDialog;
   const api = useMediaApi();
   const queryClient = useQueryClient();
   const [alert, setAlert] = useState<string | null>(null);
@@ -52,7 +53,7 @@ export function EditAltDialog({
       onSaved(updated);
     },
     onError: (cause) => {
-      const error = toMediaError(cause);
+      const error = toMediaError(cause, { ...media, ...access });
       if (error.kind === 'gone') {
         void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
         onGone();

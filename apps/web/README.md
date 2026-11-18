@@ -6,18 +6,18 @@ container behind Traefik at `<domain>`; the API lives on the same origin under
 
 Routes:
 
-- `/` is the CV page. `app/page.tsx` (Server Component) loads the `CvPage`
-  GraphQL document through `features/cv` (`loadCvPage`, public role) and hands
-  it to the client `CvView`. Anonymous visitors see the server data; a signed-in
-  account or a reviewer session refetches the same document from the browser
-  with its own Bearer token (`useCvContent`, keyed by actor), and sign-out
-  returns to the server data. No main resume gives an empty state. `CvView`
-  renders `ContactCard` (cv-contact) and `ResumeSections` (summary, skills,
-  experience, education, languages, referees; an empty section is not drawn).
-  A field named in `_maskedFields` shows `MaskedPlaceholder` ("Sign in to
-  view"), never the value. Richtext is sanitized where data enters the page:
-  `loadCvPage` (server, `SafeRichtext.server`) and `useCvContent` (browser
-  refetch, `SafeRichtext.rules`) both call `sanitizeCvRichtext`, so the
+- `/cv` is the CV page. `app/cv/page.tsx` renders only `views/cv/PageCv`
+  (Server Component), which loads the `PageCv` GraphQL document through
+  `PageCv.data.ts` (`loadPageCv`, public role: the main `page-cv-a`, the
+  `profile` and `cvCommonText`) and hands it to the client `PageCvClient`. No
+  main CV answers 404. Anonymous visitors see the server data; a signed-in
+  account refetches the `PageCvVisitor` selections through `GET /api/v1/cv`
+  (BFF, keyed by actor), and sign-out returns to the server data. `PageCvClient`
+  renders `ContactCard` (the profile) and the sections `CvSection` (summary,
+  skills), `ExperiencesSection`, `ProjectsSection` and `EducationsSection`; an
+  empty section is not drawn. A field named in `_maskedFields` shows
+  `MaskedPlaceholder` ("Sign in to view"), never the value. Richtext is
+  sanitized on the server (`sanitizeCvRichtext` in `PageCv.data.ts`), so the
   components only see clean HTML.
 - `app/error.tsx` is the error state for any page (client component, "Try
   again" calls Next's `retry`). It never reads the thrown error, so no server
@@ -25,9 +25,14 @@ Routes:
   streams cannot change the HTTP status: the response is already `200 OK` and
   the error UI arrives inside the stream (Next 16 streaming guide, "Status
   codes"); a failure before the first byte is a `500`.
-- `/status` is the API status card (`GET /api/v1/health/live` from the browser,
-  built with `@abyss/form-commons`). It is not linked from the header. It answers 404 unless
-  `WEB_STATUS_PAGE_ENABLED=true` (read per request, ADR 0014).
+- `/` and `/status` both render the module status (`ModuleStatus` of
+  `features/status`: the text from the `ModuleStatus` query and the API status
+  card, `GET /api/v1/health` from the browser). `PageHome` and `PageStatus` load
+  no CV data; a failed text query leaves the card with its last-resort words.
+  `/status` is not linked from the header.
+- `/robots.txt` and `/sitemap.xml` are built per request by
+  `features/crawler-files` (PS-4): only `APP_ENV=production` allows crawling,
+  the sitemap lists the public pages, and `proxy.ts` skips both (no CSP nonce).
 
 ## Run
 
@@ -37,10 +42,9 @@ pnpm --filter @abyss/web dev       # http://localhost:5174
 ```
 
 The dev port is `DEV_SERVER_PORT` from the shell environment (default 5174; a
-`.env.local` value is loaded too late to set it). In dev, `next.config.ts`
-forwards `/api` to `DEV_API_PROXY_TARGET` (a local cms-api) unchanged, like
-Traefik does in production. That rewrite exists only for the dev server, never
-in a production build.
+`.env.local` value is loaded too late to set it). The browser never calls
+cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
+`/api` proxy. The Next server reaches cms-api through `APP_API_URL`.
 
 `@abyss/form-commons` is consumed from its `dist/`, so build it once first
 (`pnpm build` at the root does this through Turborepo's `^build`).
@@ -51,23 +55,36 @@ in a production build.
   effects, handlers, browser APIs, TanStack Query, react-hook-form or any
   `@abyss/form-commons` import (form-commons has no `'use client'` directive,
   so import it only from client components).
-- Code that reads server env or calls `API_INTERNAL_URL` imports `server-only`.
+- Code that reads server env or calls `APP_API_URL` imports `server-only`.
 - The Next server never sends, receives or stores a user token. No Server
   Actions, Route Handlers or `cookies()` for auth: the browser calls the API
   with a Bearer token held in memory.
+- `public/favicon.ico` is the "A" letter-mark (16, 32 and 48 px layers), served as-is at `/favicon.ico`; no `<link rel="icon">` (ADR 0024).
 
 ## Config
 
 - `src/configs/Browser.env.ts` reads `NEXT_PUBLIC_*` keys. They are inlined into
   the browser bundle at build time (so they are public, never secrets) and a
-  missing `NEXT_PUBLIC_API_BASE_URL` fails the build.
-- `src/configs/Server.env.ts` (`server-only`) reads `API_INTERNAL_URL`,
-  `WEB_REVALIDATE_SECONDS` and `WEB_STATUS_PAGE_ENABLED` at runtime. An invalid value stops the server at
+  missing `NEXT_PUBLIC_TURNSTILE_SITE_KEY` fails the build. No cms-api URL is
+  ever baked into the bundle.
+- `src/configs/AppEnv.rules.ts` holds the `APP_ENV` value list (`development`,
+  `staging`, `production`). `next.config.ts` fails `next build` / `next dev` when
+  `APP_ENV` is missing or not in the list and inlines it as the build constant
+  `APP_ENV_BUILD`; the runtime key `APP_ENV` (web Secret) stays live and must
+  equal it, else start fails.
+- `src/configs/Server.env.ts` (`server-only`) reads `APP_ENV` (it alone turns the mock
+  fallback on, where not `production`), `APP_API_URL`,
+  `APP_API_TOKEN` (required in production, `ak_live_...`, never logged or sent to the
+  browser), `WEB_REVALIDATE_SECONDS` (optional override of every call's cache lifetime),
+  `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
+  `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
+  `CLIENT_IP_HEADER`, and the test-stack-only `BFF_AUTH_RATE_LIMIT_IP` and
+  `ALLOW_BFF_RATE_LIMIT_OVERRIDE`) at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
 - Every key is documented in [`.env.example`](.env.example).
 - `src/configs/endpoints.ts` is the single map of API paths.
-- `src/configs/Copy.constants.ts` holds user-facing text until an i18n module
-  exists.
+- User-facing text comes from the cms-api content types (`moduleAuth`, `moduleStatus`,
+  `author`, `cvCommonText`) through the content features, never from literals.
 - `configs/**` may use pure helpers (`StripTrailingSlashes`,
   `SafeLinkTarget`) but never `apis/client/Api.client` or a feature (ESLint). Error
   codes live with their feature constants (`Auth.constants`,
@@ -79,11 +96,11 @@ in a production build.
   key only).
 - `src/apis/server/graphql/Graphql.server.ts` (`server-only`) is the one way a Server Component
   reads content: `fetchGraphql(document, variables)` posts to
-  `${API_INTERNAL_URL}/graphql` with JSON headers only (no `Authorization`, no
+  `${APP_API_URL}/graphql` with JSON headers only (no `Authorization`, no
   cookie, no client IP), so the page holds what the `public` role may read.
-  Caching uses the fetch data cache, `next: { revalidate: WEB_REVALIDATE_SECONDS }`
-  (Next 16 without Cache Components; 0 turns it off). Any failure throws one
-  `GraphqlRequestError` (`GraphqlResponse.rules.ts`) with the first error code,
+  Caching uses the fetch data cache, `next: { revalidate }` (the default, or the `WEB_REVALIDATE_SECONDS` override)
+  (Next 16 without Cache Components; 0 turns it off). Any failure of a visitor-token read throws one
+  `WebApiError` (`GraphqlResponse.rules.ts`, source `cms-api-graphql`, `operation` the operation name),
   never the server message or the variables.
 - `src/apis/client/Graphql.client.ts`: `requestGraphql(document, variables, accessToken)`
   for the browser, over the Axios instance, with the Bearer token from
@@ -92,9 +109,10 @@ in a production build.
   and tests). Its allowlist mirrors the cms-api storage sanitizer (D13): palette colour on `span`, alignment on `p`/`h1`-`h6`, and `img` only from `CLOUDINARY_IMAGE_ORIGIN` with a UUID `data-media-id`; the palette and alignments are pinned in `PublicConstants.contract.test.ts`. On the
   server use `SafeRichtext.server.ts` (`sanitizeRichtextOnServer`, DOMPurify over
   jsdom), a separate file so jsdom never reaches a client chunk.
-- `src/apis/client/Api.client.ts` is the browser Axios instance. It strips trailing
-  slashes from every request path (SPEC §6), so no proxy can answer with a
-  redirect.
+- `src/apis/client/Api.client.ts` exports `clientApi` (`get`, `post`, `put`, `patch`,
+  `delete`), the browser's only API: base fixed to the BFF path, paths from
+  `BFF_ENDPOINTS`, no token, no mock. It strips trailing slashes from every
+  request path (SPEC §6), so no proxy can answer with a redirect.
 
 Styling: Tailwind v4 through `@tailwindcss/postcss` with the form-commons theme
 (`src/assets/styles/global.css`, the only stylesheet `src/app/layout.tsx` imports; it pulls in `base.css` and `app.css`). Components use semantic
@@ -103,12 +121,9 @@ tokens only (`bg-card`, `text-muted-foreground`).
 ## Sign-in and session
 
 - The header "Sign in" opens `WebLoginDialog` (email + password, then the 2FA
-  code when the account has it). Calls go from the browser to
-  `NEXT_PUBLIC_API_BASE_URL` (`/auth/login`, `/auth/2fa/verify`,
-  `/auth/refresh`, `/auth/logout`, `/auth/me`); cms-api sets the host-only
-  `__Secure-abyss_rt` refresh cookie (Path `/api/v1/auth`). No Server Action,
-  Route Handler or `cookies()` call touches auth, and the Next server never
-  sees a token.
+  code when the account has it). Calls go from the browser to this origin's
+  BFF (`/api/v1/auth/*`); the BFF talks to cms-api and keeps the tokens in
+  sealed cookies.
 - `features/session` owns the session: `useWebSession` and `WebSessionProvider`
   (mounted in `src/components/layouts/AppProviders.tsx`), the auth API and the one
   `PrivilegedAccessError`. `features/auth` (sign-in dialog) and
@@ -155,14 +170,16 @@ tokens only (`bg-card`, `text-muted-foreground`).
 ## Docker
 
 ```bash
-docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_API_BASE_URL=/api/v1 -t abyss-web .
-docker run -e API_INTERNAL_URL=http://cms-api:3000/api/v1 -p 8080:8080 abyss-web
+docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_TURNSTILE_SITE_KEY=<site key> -t abyss-web .
+docker run -e APP_API_URL=http://cms-api:3000/api/v1 -e APP_API_TOKEN=<token> -p 8080:8080 abyss-web
 ```
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_API_BASE_URL`; `NEXT_PUBLIC_ADMIN_URL` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` are optional build args.
-Runtime env: `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS`, `WEB_STATUS_PAGE_ENABLED`
+the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and without a valid `APP_ENV` build arg; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
+Runtime env: `APP_ENV` (must equal the build value), `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
+`WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
+(smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts
@@ -185,16 +202,16 @@ The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a fil
   on its scripts) and on the response. The policy is built in
   `src/utils/ContentSecurityPolicy.rules.ts`: `script-src 'self' 'nonce-<n>'
 'strict-dynamic'` + the Turnstile origin, `style-src 'self' 'nonce-<n>'` with
-  `style-src-attr 'unsafe-inline'`, `connect-src 'self'` plus the origin
-  of `NEXT_PUBLIC_API_BASE_URL` when it is absolute, `img-src` with Cloudinary,
+  `style-src-attr 'unsafe-inline'`, `connect-src 'self'` (plus
+  `ws:` in dev), `img-src` with Cloudinary,
   `frame-src` Turnstile, `frame-ancestors 'none'`. Dev adds `'unsafe-eval'` and
   `ws:`. Origins and header values are constants in `src/configs/security*.ts`.
 - Radix dialogs inject a scroll-lock `<style>` through react-remove-scroll-bar;
   `components/layouts/CspNonce.tsx` passes it the request nonce (`get-nonce` `setNonce`) so
   `style-src` stays nonce-only.
-- `next.config.ts` adds HSTS, `nosniff` and `Referrer-Policy` to every route.
+- `next.config.ts` adds HSTS, `nosniff`, `Referrer-Policy`, `Cross-Origin-Opener-Policy: same-origin`, a deny-all `Permissions-Policy` and `X-Frame-Options: DENY` to every route.
 - The proxy matcher skips `/api/`, `/_next/static`, `/_next/image` and
   prefetches. The root layout awaits `connection()`, so every page renders per
-  request (the server data cache from `WEB_REVALIDATE_SECONDS` still applies).
+  request (the server data cache still applies).
 - `scripts/smoke.sh` asserts the headers, the nonce match and a fresh nonce
   per response.

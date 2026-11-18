@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import {
   Button,
+  Card,
   Dialog,
   DialogClose,
   DialogContent,
@@ -17,7 +18,7 @@ import {
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { Pagination } from '@components/Pagination';
 import { useClampedPage } from '@components/useClampedPage';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, toAccessError, useCallerAccess } from '@features/access';
 import type { ReviewerSession } from '@features/reviewer/Reviewer.api';
 import { REVIEWER_SETTINGS_SUBJECT } from '@features/reviewer/Reviewer.constants';
@@ -31,7 +32,7 @@ import { useReviewerApi } from '@features/reviewer/ReviewerApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDateTime } from '@utils/DateFormat.rules';
 
-const copy = COPY.reviewer;
+type ReviewerCopy = ScreenText<'reviewer'>['reviewer'];
 
 const STATUS_CLASS = {
   active: 'bg-success-soft text-success-strong',
@@ -40,6 +41,7 @@ const STATUS_CLASS = {
 
 /** `/reviewer` (owner): the on/off switch and who asked for access. */
 export function ReviewerSessionsPage() {
+  const copy = useScreenText('reviewer').reviewer;
   const [page, setPage] = useState(1);
   const sessions = useReviewerSessionsQuery(page);
   const enabled = useReviewerEnabledQuery();
@@ -82,11 +84,11 @@ export function ReviewerSessionsPage() {
           <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
         </div>
       ) : (
-        <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+        <Card padding="flush" className="relative overflow-x-auto">
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}
-            columns={SESSION_COLUMNS}
+            columns={sessionColumnsOf(copy)}
             rows={rows}
             getRowId={(session) => session.id}
             getRowLabel={(session) => session.visitorRole}
@@ -99,14 +101,14 @@ export function ReviewerSessionsPage() {
               copy={copy.pagination}
             />
           )}
-        </div>
+        </Card>
       )}
     </div>
   );
 }
 
 /** Notes and the browser string come from a visitor: shown as text, never HTML. */
-const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
+const sessionColumnsOf = (copy: ReviewerCopy): readonly SheetColumn<ReviewerSession>[] => [
   {
     key: 'visitor',
     header: copy.columns.visitor,
@@ -172,6 +174,8 @@ const SESSION_COLUMNS: readonly SheetColumn<ReviewerSession>[] = [
 
 /** The owner's toggle. Switching off asks first: it ends live sessions. */
 function AccessSwitch() {
+  const copy = useScreenText('reviewer').reviewer;
+  const access = useScreenText('access');
   const api = useReviewerApi();
   const queryClient = useQueryClient();
   const caller = useCallerAccess();
@@ -195,7 +199,7 @@ function AccessSwitch() {
     },
     onError: (cause) => {
       setConfirmOff(false);
-      setFailed(isForbidden(cause) ? copy.forbidden : toAccessError(cause).message);
+      setFailed(isForbidden(cause) ? copy.forbidden : toAccessError(cause, access).message);
     },
   });
 
@@ -214,56 +218,58 @@ function AccessSwitch() {
 
   const isOn = enabled.data;
   return (
-    <section className="grid gap-3 rounded-md border border-border bg-card p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="grid gap-1">
-          <Label id={labelId} htmlFor={`${labelId}-switch`}>
-            {copy.switch.label}
-          </Label>
-          <p className="m-0 text-sm text-muted-foreground">
-            {isOn ? copy.switch.onHint : copy.switch.offHint}
-          </p>
+    <Card asChild padding="compact" className="grid gap-3">
+      <section>
+        <div className="flex items-start justify-between gap-4">
+          <div className="grid gap-1">
+            <Label id={labelId} htmlFor={`${labelId}-switch`}>
+              {copy.switch.label}
+            </Label>
+            <p className="m-0 text-sm text-muted-foreground">
+              {isOn ? copy.switch.onHint : copy.switch.offHint}
+            </p>
+          </div>
+          <Switch
+            id={`${labelId}-switch`}
+            checked={isOn}
+            disabled={!canChange || change.isPending}
+            onCheckedChange={(next) => {
+              setFailed(null);
+              if (next) change.mutate(true);
+              else setConfirmOff(true);
+            }}
+          />
         </div>
-        <Switch
-          id={`${labelId}-switch`}
-          checked={isOn}
-          disabled={!canChange || change.isPending}
-          onCheckedChange={(next) => {
-            setFailed(null);
-            if (next) change.mutate(true);
-            else setConfirmOff(true);
+        {failed === null ? null : <FormAlert tone="error">{failed}</FormAlert>}
+        <Dialog
+          open={confirmOff}
+          onOpenChange={(next) => {
+            if (!next && !change.isPending) setConfirmOff(false);
           }}
-        />
-      </div>
-      {failed === null ? null : <FormAlert tone="error">{failed}</FormAlert>}
-      <Dialog
-        open={confirmOff}
-        onOpenChange={(next) => {
-          if (!next && !change.isPending) setConfirmOff(false);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{copy.confirmOff.title}</DialogTitle>
-            <DialogDescription>{copy.confirmOff.description}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" disabled={change.isPending}>
-                {copy.confirmOff.cancel}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{copy.confirmOff.title}</DialogTitle>
+              <DialogDescription>{copy.confirmOff.description}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" disabled={change.isPending}>
+                  {copy.confirmOff.cancel}
+                </Button>
+              </DialogClose>
+              <Button
+                type="button"
+                variant="destructive"
+                loading={change.isPending}
+                onClick={() => change.mutate(false)}
+              >
+                {copy.confirmOff.submit}
               </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              variant="destructive"
-              loading={change.isPending}
-              onClick={() => change.mutate(false)}
-            >
-              {copy.confirmOff.submit}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </section>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
+    </Card>
   );
 }

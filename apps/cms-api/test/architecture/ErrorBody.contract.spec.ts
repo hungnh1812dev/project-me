@@ -16,7 +16,7 @@ const error = new DomainError({
 });
 
 function restBody(): Record<string, unknown> {
-  const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  const res = { status: jest.fn().mockReturnThis(), json: jest.fn(), setHeader: jest.fn() };
   const host = {
     switchToHttp: () => ({
       getRequest: () => ({ requestId: 'r', method: 'GET', path: '/' }),

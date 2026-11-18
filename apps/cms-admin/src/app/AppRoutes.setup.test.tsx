@@ -1,6 +1,8 @@
 import { readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { isValidElement, type ReactElement } from 'react';
+import { ScreenTextBoundary } from '@components/ScreenTextBoundary';
 import { APP_ROUTES } from '@configs/App.routes';
 import { FEATURES } from '@features/Features.registry';
 import { PUBLIC_ROUTE_PATHS } from '@views/Views.registry';
@@ -43,6 +45,18 @@ describe('route table', () => {
   it('keeps the catch-all route last', () => {
     expect(appRoutes.at(-1)?.path).toBe('*');
     expect(appRoutes.filter((route) => route.path === '*')).toHaveLength(1);
+  });
+});
+
+describe('route elements', () => {
+  it('wraps every routed view in a screen text boundary', () => {
+    const shell = appRoutes.find((route) => route.children)?.children?.[0];
+    const routes = [...appRoutes.slice(0, 4), ...(shell?.children ?? [])];
+    expect(routes.length).toBeGreaterThan(4);
+    for (const route of routes) {
+      expect(isValidElement(route.element)).toBe(true);
+      expect((route.element as ReactElement).type).toBe(ScreenTextBoundary);
+    }
   });
 });
 

@@ -64,7 +64,7 @@ function stubs(createError?: Error, storage: FakeMediaStorage = new FakeMediaSto
       : Promise.reject(createError),
   );
   const repository = { create } as unknown as MediaRepository;
-  const logger = { warn: jest.fn(), error: jest.fn() };
+  const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const service = new UploadMediaService(processor, repository, new Clock(), storage, logger);
   return { service, storage, create, dispose };
 }

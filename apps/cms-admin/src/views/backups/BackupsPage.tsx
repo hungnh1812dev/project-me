@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Button, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
-import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
-import { COPY } from '@configs/Copy.constants';
+import { Button, Card, FormAlert, SortableSheet, type SheetColumn } from '@abyss/form-commons';
+import { EmptyState, LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
+import { useRestoreFocus } from '@components/useRestoreFocus';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { isForbidden, useCallerAccess } from '@features/access';
 import type { BackupFile, BackupsList } from '@features/backups/Backups.api';
 import {
@@ -13,7 +14,7 @@ import { formatDateTime } from '@utils/DateFormat.rules';
 
 import { DownloadBackupDialog } from './DownloadBackupDialog';
 
-const copy = COPY.backups;
+type BackupsCopy = ScreenText<'backups'>['backups'];
 
 const BYTES_PER_STEP = 1024;
 const BYTE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB'] as const;
@@ -34,12 +35,15 @@ function formatBytes(bytes: number): string {
 }
 
 /** "2026-10-27 03:00 UTC" from an ISO time, for the tooltip. */
-function utcTextOf(iso: string): string {
+function utcTextOf(iso: string, copy: BackupsCopy): string {
   const minutes = new Date(iso).toISOString().replace('T', ' ');
   return copy.utc(minutes.replace(/:\d{2}\.\d+Z$/, ''));
 }
 
-function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColumn<BackupFile>[] {
+function columnsOf(
+  onDownload: (backup: BackupFile) => void,
+  copy: BackupsCopy,
+): readonly SheetColumn<BackupFile>[] {
   return [
     {
       key: 'created',
@@ -48,7 +52,7 @@ function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColu
       renderCell: (backup) => (
         <time
           dateTime={backup.createdAt}
-          title={utcTextOf(backup.createdAt)}
+          title={utcTextOf(backup.createdAt, copy)}
           className="tabular-nums"
         >
           {formatDateTime(backup.createdAt)}
@@ -85,6 +89,7 @@ function columnsOf(onDownload: (backup: BackupFile) => void): readonly SheetColu
 }
 
 function SummaryLine({ meta }: { meta: BackupsList['meta'] }) {
+  const copy = useScreenText('backups').backups;
   const parts = [
     copy.summary.count(meta.count),
     copy.summary.total(formatBytes(meta.totalBytes)),
@@ -95,46 +100,50 @@ function SummaryLine({ meta }: { meta: BackupsList['meta'] }) {
 
 /** `/backups` (owner): the nightly dumps and a download behind password + code. */
 export function BackupsPage() {
+  const copy = useScreenText('backups').backups;
   const backups = useBackupsQuery();
   const caller = useCallerAccess();
   const [chosen, setChosen] = useState<BackupFile | null>(null);
+  const { rememberOpener, restoreFocus } = useRestoreFocus();
+  const openDownload = (backup: BackupFile) => {
+    rememberOpener(document.activeElement);
+    setChosen(backup);
+  };
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <PageHeader title={copy.title} description={copy.description} />
       {!caller.isOwner ? (
-        <FormAlert tone="info">{copy.forbidden}</FormAlert>
+        <Card>
+          <FormAlert tone="info">{copy.forbidden}</FormAlert>
+        </Card>
       ) : backups.isPending && backups.fetchStatus === 'idle' ? (
-        <div className="grid justify-items-start gap-3">
+        <Card className="grid justify-items-start gap-3">
           <p className="m-0 max-w-prose text-sm text-muted-foreground">{copy.check.hint}</p>
           <Button type="button" onClick={() => void backups.refetch()}>
             {copy.check.button}
           </Button>
-        </div>
+        </Card>
       ) : backups.isPending ? (
         <TableSkeleton label={copy.loading} />
       ) : backups.isError ? (
         isBackupsNotConfigured(backups.error) ? (
-          <div className="grid justify-items-start gap-1">
-            <p className="m-0 font-medium">{copy.notConfigured.title}</p>
-            <p className="m-0 max-w-prose text-sm text-muted-foreground">
-              {copy.notConfigured.hint}
-            </p>
-          </div>
+          <EmptyState title={copy.notConfigured.title} hint={copy.notConfigured.hint} />
         ) : isForbidden(backups.error) ? (
-          <FormAlert tone="info">{copy.forbidden}</FormAlert>
+          <Card>
+            <FormAlert tone="info">{copy.forbidden}</FormAlert>
+          </Card>
         ) : (
-          <LoadError
-            message={isBackupsRateLimited(backups.error) ? copy.rateLimited : copy.loadFailed}
-            isRetrying={backups.isFetching}
-            onRetry={() => void backups.refetch()}
-          />
+          <Card>
+            <LoadError
+              message={isBackupsRateLimited(backups.error) ? copy.rateLimited : copy.loadFailed}
+              isRetrying={backups.isFetching}
+              onRetry={() => void backups.refetch()}
+            />
+          </Card>
         )
       ) : backups.data.data.length === 0 ? (
-        <div className="grid justify-items-start gap-1">
-          <p className="m-0 font-medium">{copy.empty}</p>
-          <p className="m-0 text-sm text-muted-foreground">{copy.emptyHint}</p>
-        </div>
+        <EmptyState title={copy.empty} hint={copy.emptyHint} />
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -153,20 +162,24 @@ export function BackupsPage() {
           {backups.data.data.some((backup) => backup.fileName.endsWith(ENCRYPTED_EXTENSION)) ? (
             <FormAlert tone="info">{copy.encryptedNote}</FormAlert>
           ) : null}
-          <div className="relative overflow-x-auto rounded-md border border-border bg-card">
+          <Card padding="flush" className="relative overflow-x-auto">
             <SortableSheet
               className="rounded-none border-0"
               caption={copy.tableLabel}
-              columns={columnsOf(setChosen)}
+              columns={columnsOf(openDownload, copy)}
               rows={backups.data.data}
               getRowId={(backup) => backup.key}
               getRowLabel={(backup) => backup.fileName}
             />
-          </div>
+          </Card>
         </>
       )}
       {chosen === null ? null : (
-        <DownloadBackupDialog backup={chosen} onClose={() => setChosen(null)} />
+        <DownloadBackupDialog
+          backup={chosen}
+          onClose={() => setChosen(null)}
+          onCloseAutoFocus={restoreFocus}
+        />
       )}
     </div>
   );

@@ -34,20 +34,35 @@ check_routing() {
   expect_status "admin SPA /" 200
   request GET "$ADMIN_ORIGIN/accounts/settings"
   expect_status "admin SPA fallback for a client route" 200
+  request GET "$ADMIN_ORIGIN/api-tokens"
+  expect_status "admin SPA route /api-tokens is not taken by the /api router" 200
 }
 
 check_health() {
   echo "Health through the proxy"
-  request GET "$WEB_ORIGIN$API_PREFIX/health/ready"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/health/ready"
   expect_status "GET health/ready" 200
   if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "health/ready body is {status: ok}"; else fail "health/ready body: $(cat "$BODY")"; fi
 }
 
+# D21: cms-api is reachable on the admin host only; on the web host /api/v1/* is
+# the web BFF and the removed /bff/v1 path answers web's own 404.
+check_api_absent_on_web_host() {
+  request GET "$WEB_ORIGIN$API_PREFIX/health/live"
+  expect_status "cms-api is not served on the web origin ($API_PREFIX/health/live; the web BFF owns $API_PREFIX/*)" 404
+  request GET "$WEB_ORIGIN$WEB_BFF_HEALTH_PATH"
+  expect_status "web BFF answers $WEB_BFF_HEALTH_PATH" 200
+  if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "web BFF health body is {status: ok}"; else fail "web BFF health body: $(cat "$BODY")"; fi
+  if [[ "$(header Cache-Control)" == *"$BFF_CACHE_CONTROL"* ]]; then pass "web BFF health is $BFF_CACHE_CONTROL"; else fail "web BFF health Cache-Control: '$(header Cache-Control)'"; fi
+  request GET "$WEB_ORIGIN$WEB_REMOVED_BFF_HEALTH_PATH"
+  expect_status "removed $WEB_REMOVED_BFF_HEALTH_PATH is a 404, not a redirect" 404
+}
+
 check_trailing_slashes() {
   echo "Trailing slashes (SPEC §12-17: never 3xx)"
-  request GET "$WEB_ORIGIN$API_PREFIX/health/live/"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/health/live/"
   expect_status "GET health/live/ with trailing slash" 200
-  request POST "$WEB_ORIGIN$API_PREFIX/health/live/" -H 'Content-Type: application/json' --data '{}'
+  request POST "$ADMIN_ORIGIN$API_PREFIX/health/live/" -H 'Content-Type: application/json' --data '{}'
   if [[ "$STATUS" =~ ^3 || "$STATUS" == "000" ]]; then
     fail "POST with trailing slash returned $STATUS"
   else

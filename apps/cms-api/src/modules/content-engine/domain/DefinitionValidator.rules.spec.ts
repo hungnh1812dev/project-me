@@ -7,13 +7,28 @@ import {
   MAX_IDENTIFIER_BYTES,
 } from './ContentEngine.constants';
 import {
+  normalizedDefaultOf,
+  type ContentTypeDefinition,
+  type FieldDefinition,
+} from './DefinitionSchema.rules';
+import {
   formatDefinitionPath,
+  validateCandidateDefinition,
   validateDefinition,
   validateDefinitions,
   type DefinitionValidationError,
 } from './DefinitionValidator.rules';
 
-const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
+const PAGE_CV_A_PATH = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'content',
+  'schemas',
+  'page-cv-a.json',
+);
 
 type Field = Record<string, unknown>;
 
@@ -22,7 +37,7 @@ function definition(fields: Field[], slug = 'post'): Record<string, unknown> {
 }
 
 function component(name: string, fields: Field[]): Field {
-  return { name, type: 'component', repeatable: true, fields };
+  return { name, type: 'component', component: name, repeatable: true, fields };
 }
 
 /** Root -> c1 -> c2 -> ... -> c<depth>, the deepest holding one string field. */
@@ -45,24 +60,31 @@ function errorsOf(input: unknown): DefinitionValidationError[] {
   return result.errors;
 }
 
+function isValid(input: unknown): boolean {
+  return validateDefinition(input).ok;
+}
+
 function rulesOf(input: unknown): string[] {
   return errorsOf(input).map((error) => error.rule);
 }
 
 describe('validateDefinition', () => {
-  describe('cv-page.json', () => {
-    const cvPage: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
+  describe('page-cv-a.json', () => {
+    const pageCvA: unknown = JSON.parse(readFileSync(PAGE_CV_A_PATH, 'utf8'));
 
     it('is accepted', () => {
-      expect(validateDefinition(cvPage)).toMatchObject({
+      expect(validateDefinition(pageCvA)).toMatchObject({
         ok: true,
-        definition: { slug: 'cv-page' },
-        tables: { length: 8 },
+        definition: { slug: 'page-cv-a' },
+        tables: { length: 6 },
       });
     });
 
-    it('has no sensitive flag until Q5 is answered', () => {
-      expect(JSON.stringify(cvPage)).not.toContain('sensitive');
+    it('flags only experiences.company as sensitive', () => {
+      expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(1);
+      expect(JSON.stringify(pageCvA)).toContain(
+        '"name":"company","type":"text","width":"1/2","sensitive":true',
+      );
     });
   });
 
@@ -121,6 +143,7 @@ describe('validateDefinition', () => {
         {
           name: 'address',
           type: 'component',
+          component: 'address',
           fields: [{ name: 'city', type: 'string' }],
         },
       ],
@@ -143,7 +166,20 @@ describe('validateDefinition', () => {
       ['an unknown top-level key', { ...definition([{ name: 'a', type: 'string' }]), extra: 1 }],
       ['an empty field list', definition([])],
       ['an unknown field type', definition([{ name: 'a', type: 'uuid' }])],
-      ['an unknown field key', definition([{ name: 'a', type: 'string', width: 50 }])],
+      ['an unknown field key', definition([{ name: 'a', type: 'string', color: 'red' }])],
+      ['a numeric width', definition([{ name: 'a', type: 'string', width: 50 }])],
+      ['a percent width', definition([{ name: 'a', type: 'string', width: '50%' }])],
+      ['an empty width', definition([{ name: 'a', type: 'string', width: '' }])],
+      [
+        'a width on a component',
+        definition([{ ...component('a', [{ name: 'b', type: 'string' }]), width: 'full' }]),
+      ],
+      [
+        'a component field without component',
+        definition([{ name: 'a', type: 'component', fields: [{ name: 'b', type: 'string' }] }]),
+      ],
+      ['component on a scalar', definition([{ name: 'a', type: 'string', component: 'a' }])],
+      ['a non-string displayName', definition([{ name: 'a', type: 'string', displayName: 1 }])],
       ['a component without fields', definition([{ name: 'a', type: 'component' }])],
       ['a component with no children', definition([component('a', [])])],
       ['a scalar with children', definition([{ name: 'a', type: 'string', fields: [] }])],
@@ -158,6 +194,189 @@ describe('validateDefinition', () => {
     it('points at the offending key', () => {
       const [error] = errorsOf(definition([component('a', [{ name: 'b', type: 'uuid' }])]));
       expect(error?.path).toEqual(['fields', 0, 'fields', 0, 'type']);
+    });
+  });
+
+  describe('unsigned and options keys', () => {
+    const enumeration = (options: unknown): Field => ({ name: 'a', type: 'enumeration', options });
+
+    it('accepts unsigned on integer and options on enumeration', () => {
+      expect(isValid(definition([{ name: 'a', type: 'integer', unsigned: true }]))).toBe(true);
+      expect(isValid(definition([enumeration(['one', 'two'])]))).toBe(true);
+    });
+
+    it.each([
+      ['unsigned on a string', { name: 'a', type: 'string', unsigned: true }, 'unsigned'],
+      ['unsigned on a biginteger', { name: 'a', type: 'biginteger', unsigned: true }, 'unsigned'],
+      ['a non-boolean unsigned', { name: 'a', type: 'integer', unsigned: 'yes' }, 'unsigned'],
+      ['options on a string', { name: 'a', type: 'string', options: ['x'] }, 'options'],
+      ['an enumeration without options', { name: 'a', type: 'enumeration' }, 'options'],
+      ['empty options', enumeration([]), 'options'],
+      ['51 options', enumeration(Array.from({ length: 51 }, (_, i) => `v${i}`)), 'options'],
+      ['duplicate options', enumeration(['a', 'a']), 'options'],
+      ['a blank option', enumeration(['a', '']), 'options'],
+      ['an option with a leading space', enumeration([' a']), 'options'],
+      ['an option with a trailing space', enumeration(['a ']), 'options'],
+      ['an option over 100 characters', enumeration(['x'.repeat(101)]), 'options'],
+      ['a non-string option', enumeration([1]), 'options'],
+    ])('rejects %s on fields[0].%s', (_label, field, key) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path.slice(0, 3)).toEqual(['fields', 0, key]);
+    });
+
+    it('accepts 50 options of 100 characters', () => {
+      const options = Array.from({ length: 50 }, (_, i) => String(i).padEnd(100, 'x'));
+      expect(isValid(definition([enumeration(options)]))).toBe(true);
+    });
+
+    it('names the entry that fails', () => {
+      const [error] = errorsOf(definition([enumeration(['a', ' b'])]));
+      expect(error?.path).toEqual(['fields', 0, 'options', 1]);
+    });
+  });
+
+  describe('default key', () => {
+    it.each([
+      ['text', 'hello'],
+      ['string', 'a\nb'],
+      ['richtext', '<p>Hi</p>'],
+      ['integer', 5],
+      ['biginteger', '9007199254740993'],
+      ['biginteger', 12],
+      ['decimal', '1.50'],
+      ['float', 1.5],
+      ['double', 2.5],
+      ['boolean', false],
+      ['date', '2026-01-31'],
+      ['datetime', '2026-01-31T10:00:00Z'],
+      ['time', '08:30'],
+      ['json', { a: [1] }],
+      ['json', false],
+    ])('accepts a default on %s: %j', (type, value) => {
+      expect(isValid(definition([{ name: 'a', type, default: value }]))).toBe(true);
+    });
+
+    it('accepts an enumeration default from its options and a default on an unsigned integer', () => {
+      const enumeration = { name: 'a', type: 'enumeration', options: ['x', 'y'], default: 'y' };
+      expect(isValid(definition([enumeration]))).toBe(true);
+      expect(
+        isValid(definition([{ name: 'a', type: 'integer', unsigned: true, default: 0 }])),
+      ).toBe(true);
+    });
+
+    it.each([
+      ['media', { name: 'a', type: 'media', default: 'x' }],
+      ['a component', { ...component('a', [{ name: 'b', type: 'text' }]), default: 'x' }],
+      ['null on text', { name: 'a', type: 'text', default: null }],
+      ['null on json', { name: 'a', type: 'json', default: null }],
+      ['a number on text', { name: 'a', type: 'text', default: 1 }],
+      ['a fraction on integer', { name: 'a', type: 'integer', default: 1.5 }],
+      ['a negative on unsigned', { name: 'a', type: 'integer', unsigned: true, default: -1 }],
+      ['a text on boolean', { name: 'a', type: 'boolean', default: 'true' }],
+      ['a bad time', { name: 'a', type: 'time', default: '25:00' }],
+      ['a bad date', { name: 'a', type: 'date', default: 'tomorrow' }],
+      ['a non-digit biginteger', { name: 'a', type: 'biginteger', default: '1.5' }],
+      [
+        'a value outside the options',
+        { name: 'a', type: 'enumeration', options: ['x'], default: 'z' },
+      ],
+      [
+        'richtext with an image',
+        { name: 'a', type: 'richtext', default: '<img src="https://x.test/a.png">' },
+      ],
+      [
+        'richtext with a script',
+        { name: 'a', type: 'richtext', default: '<script>alert(1)</script>' },
+      ],
+    ])('rejects a default on %s at fields[0].default', (_label, field) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path).toEqual(['fields', 0, 'default']);
+    });
+
+    it('names the field type in the message', () => {
+      const [error] = errorsOf(definition([{ name: 'a', type: 'media', default: 'x' }]));
+      expect(error?.message).toContain('media');
+    });
+
+    it('reports a nested field with its full path', () => {
+      const errors = errorsOf(
+        definition([component('c', [{ name: 'a', type: 'boolean', default: 1 }])]),
+      );
+      expect(errors[0]?.path).toEqual(['fields', 0, 'fields', 0, 'default']);
+    });
+
+    describe('normalizedDefaultOf', () => {
+      const normalized = (field: Record<string, unknown>) =>
+        normalizedDefaultOf(field as unknown as FieldDefinition);
+
+      it('gives the API value form', () => {
+        expect(normalized({ name: 'a', type: 'time', default: '08:30' })).toBe('08:30:00');
+        expect(normalized({ name: 'a', type: 'biginteger', default: 12 })).toBe('12');
+        expect(normalized({ name: 'a', type: 'biginteger', default: '12' })).toBe('12');
+      });
+
+      it('gives undefined when unset, on a component and on an invalid value', () => {
+        expect(normalized({ name: 'a', type: 'text' })).toBeUndefined();
+        expect(normalized({ name: 'a', type: 'media', default: 'x' })).toBeUndefined();
+        expect(normalized({ ...component('a', []), default: 'x' })).toBeUndefined();
+        expect(normalized({ name: 'a', type: 'integer', default: 'x' })).toBeUndefined();
+      });
+    });
+  });
+
+  describe('field metadata', () => {
+    it.each(['1/3', '1/2', 'full'])('accepts width %s on a scalar', (width) => {
+      expect(isValid(definition([{ name: 'a', type: 'string', width }]))).toBe(true);
+    });
+
+    it('accepts a displayName on a scalar and on a component', () => {
+      const fields: Field[] = [
+        { name: 'a', type: 'text', displayName: 'Tech stack' },
+        { ...component('b', [{ name: 'c', type: 'text' }]), displayName: 'Bees' },
+      ];
+      expect(isValid(definition(fields))).toBe(true);
+    });
+
+    it.each(['', ' x', 'x ', 'a\nb', 'x'.repeat(61)])(
+      'rejects field displayName %j with its path',
+      (displayName) => {
+        expect(errorsOf(definition([{ name: 'a', type: 'text', displayName }]))).toEqual([
+          expect.objectContaining({
+            rule: DEFINITION_RULES.DISPLAY_NAME_INVALID,
+            path: ['fields', 0, 'displayName'],
+          }),
+        ]);
+      },
+    );
+  });
+
+  describe('component value', () => {
+    function withComponent(value: string): Record<string, unknown> {
+      return definition([{ ...component('a', [{ name: 'b', type: 'text' }]), component: value }]);
+    }
+
+    it('accepts a camelCase value that differs from name', () => {
+      expect(isValid(withComponent('subNavigation'))).toBe(true);
+    });
+
+    it.each([
+      ['Bad', DEFINITION_RULES.IDENTIFIER_INVALID],
+      ['', DEFINITION_RULES.IDENTIFIER_INVALID],
+      ['with__double', DEFINITION_RULES.IDENTIFIER_INVALID],
+      ['select', DEFINITION_RULES.IDENTIFIER_RESERVED],
+      ['status', DEFINITION_RULES.IDENTIFIER_RESERVED],
+    ])('rejects component %j', (value, rule) => {
+      expect(errorsOf(withComponent(value))).toEqual([
+        expect.objectContaining({ rule, path: ['fields', 0, 'component'] }),
+      ]);
+    });
+
+    it('rejects two siblings with the same component value', () => {
+      const first = component('first', [{ name: 'x', type: 'text' }]);
+      const second = { ...component('second', [{ name: 'y', type: 'text' }]), component: 'first' };
+      expect(rulesOf(definition([first, second]))).toContain(DEFINITION_RULES.IDENTIFIER_COLLISION);
     });
   });
 
@@ -244,11 +463,35 @@ describe('validateDefinition', () => {
         expect(rulesOf(definition([{ name, type: 'string' }]))).toEqual([
           DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
+        // A component field may be named by the word; the `component` value may not.
         expect(rulesOf(definition([component(name, [{ name: 'a', type: 'string' }])]))).toEqual([
           DEFINITION_RULES.IDENTIFIER_RESERVED,
         ]);
+        expect(
+          errorsOf(
+            definition([{ ...component(name, [{ name: 'a', type: 'string' }]), name: 'x' }]),
+          ),
+        ).toEqual([expect.objectContaining({ path: ['fields', 0, 'component'] })]);
       },
     );
+
+    it('allows an SQL keyword as a component field name but not an engine-owned one', () => {
+      const inner = [{ name: 'a', type: 'string' }] as const;
+      const named = (name: string, componentValue: string) => ({
+        ...component(componentValue, [...inner]),
+        name,
+      });
+      expect(validateDefinition(definition([named('references', 'reference')])).ok).toBe(true);
+      expect(validateDefinition(definition([named('order', 'order_item')])).ok).toBe(true);
+      expect(errorsOf(definition([named('order', 'order')]))).toEqual([
+        expect.objectContaining({ path: ['fields', 0, 'component'] }),
+      ]);
+      for (const name of ['status', 'id']) {
+        expect(rulesOf(definition([named(name, 'reference')]))).toEqual([
+          DEFINITION_RULES.IDENTIFIER_RESERVED,
+        ]);
+      }
+    });
 
     it('rejects a slug that maps to an SQL keyword', () => {
       expect(rulesOf(definition([{ name: 'a', type: 'string' }], 'user'))).toEqual([
@@ -303,7 +546,7 @@ describe('validateDefinition', () => {
       );
       expect(errorsOf(deep)).toEqual([
         expect.objectContaining({
-          path: ['fields', 0, 'fields', 0, 'name'],
+          path: ['fields', 0, 'fields', 0, 'component'],
           rule: DEFINITION_RULES.IDENTIFIER_TOO_LONG,
           message: containing(`Table name "cv_page__experience__${bytes(43)}"`),
         }),
@@ -405,6 +648,20 @@ describe('validateDefinition', () => {
   });
 });
 
+describe('validateDefinition with extreme nesting', () => {
+  it('answers a depth error instead of overflowing the stack', () => {
+    let fields: unknown[] = [];
+    for (let level = 0; level < 5000; level += 1) {
+      fields = [{ name: 'c', component: 'c', fields }];
+    }
+    const result = validateDefinition({ slug: 'deep', displayName: 'Deep', fields });
+    expect(result.ok).toBe(false);
+    expect(result.ok ? [] : result.errors.map(({ rule }) => rule)).toEqual([
+      DEFINITION_RULES.COMPONENT_DEPTH_EXCEEDED,
+    ]);
+  });
+});
+
 describe('validateDefinitions', () => {
   const simple = (slug: string) => definition([{ name: 'title', type: 'string' }], slug);
 
@@ -453,6 +710,73 @@ describe('validateDefinitions', () => {
         }),
       ],
     });
+  });
+});
+
+describe('validateCandidateDefinition', () => {
+  const simple = (slug: string): Record<string, unknown> =>
+    definition([{ name: 'title', type: 'string' }], slug);
+  const registeredPost = simple('post') as unknown as ContentTypeDefinition;
+
+  it('accepts a valid candidate when nothing is registered', () => {
+    expect(validateCandidateDefinition(simple('post'), [])).toEqual([]);
+  });
+
+  it('reports a slug equal to a registered slug on the candidate, naming only the slug', () => {
+    const errors = validateCandidateDefinition(simple('post'), [registeredPost]);
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['slug'],
+        rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
+        message: containing('the content type "post"'),
+      }),
+    );
+    for (const { message } of errors) expect(message).not.toMatch(/^\[|already used by \[/);
+  });
+
+  it('reports a component table that clashes with another type on the candidate field', () => {
+    const registered = definition([component('x', [{ name: 'a', type: 'text' }])]);
+    const candidate = definition([component('x', [{ name: 'b', type: 'text' }])]);
+    const errors = validateCandidateDefinition(candidate, [
+      registered as unknown as ContentTypeDefinition,
+    ]);
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['fields', 0, 'component'],
+        rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
+        message: containing('the content type "post"'),
+      }),
+    );
+  });
+
+  it('returns only the candidate schema errors, without the list index', () => {
+    const errors = validateCandidateDefinition({ slug: 'x' }, [registeredPost]);
+    expect(errors.length).toBeGreaterThan(0);
+    for (const error of errors) expect(error.rule).toBe(DEFINITION_RULES.SCHEMA_INVALID);
+  });
+
+  it('never reports an error inside a registered definition', () => {
+    const broken = simple('Bad') as unknown as ContentTypeDefinition;
+    expect(validateCandidateDefinition(simple('other'), [broken])).toEqual([]);
+  });
+
+  it('keeps a self clash on the candidate path text', () => {
+    const second = { ...component('second', [{ name: 'y', type: 'text' }]), component: 'first' };
+    const errors = validateCandidateDefinition(
+      definition([component('first', [{ name: 'x', type: 'text' }]), second]),
+      [registeredPost],
+    );
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['fields', 1, 'component'],
+        message: containing('already used by fields[0].component'),
+      }),
+    );
+  });
+
+  it('keeps the CLI message of validateDefinitions', () => {
+    const result = validateDefinitions([simple('post'), simple('post')]);
+    expect(result.ok ? [] : result.errors[0]?.message).toEqual(containing('already used by [0].'));
   });
 });
 

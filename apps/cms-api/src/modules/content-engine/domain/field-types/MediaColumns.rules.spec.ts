@@ -18,6 +18,7 @@ const GALLERY = {
     {
       name: 'block',
       type: 'component',
+      component: 'block',
       fields: [
         { name: 'heroImage', type: 'media' },
         { name: 'caption', type: 'richtext' },

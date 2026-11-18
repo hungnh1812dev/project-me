@@ -3,6 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios';
 import type { Mock } from 'vitest';
 
+import { clientErrorOf } from '@/apis/client/Api.client';
+import type { WebApiError } from '@/apis/WebApi.errors';
+
 import type { AuthApi, CurrentUser } from './Auth.api';
 import { WebSessionProvider } from './WebSession.context';
 
@@ -11,14 +14,6 @@ export const TEST_USER: CurrentUser = {
   email: 'owner@example.com',
   displayName: 'Mai Owner',
   role: 'viewer',
-  permissions: ['article:read', 'profile:read'],
-};
-
-/** An editor: holds write permissions, so the web refuses its session. */
-export const PRIVILEGED_USER: CurrentUser = {
-  ...TEST_USER,
-  role: 'editor',
-  permissions: ['article:read', 'article:update'],
 };
 
 /** Every AuthApi method as a mock, so tests can assert on calls. */
@@ -29,11 +24,8 @@ export function fakeApi(overrides: Partial<AuthApi> = {}): FakeApi {
     login: vi.fn<AuthApi['login']>(),
     verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>(),
     sendLoginEmailCode: vi.fn<AuthApi['sendLoginEmailCode']>().mockResolvedValue(undefined),
-    refresh: vi
-      .fn<AuthApi['refresh']>()
-      .mockRejectedValue(httpError(401, { errorCode: 'AUTH_REQUIRED' })),
+    readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(null),
     logout: vi.fn<AuthApi['logout']>().mockResolvedValue(undefined),
-    me: vi.fn<AuthApi['me']>().mockResolvedValue(TEST_USER),
     ...overrides,
   } as FakeApi;
 }
@@ -51,6 +43,15 @@ export function httpError(
     config: { headers: new AxiosHeaders() },
   } as AxiosResponse;
   return new AxiosError('failed', undefined, undefined, undefined, response);
+}
+
+/** What the browser client rejects with for that BFF answer. */
+export function bffError(
+  status: number,
+  data: unknown = {},
+  headers: Record<string, string> = {},
+): WebApiError {
+  return clientErrorOf(httpError(status, data, headers));
 }
 
 export function Wrapper({ api, children }: { api: AuthApi; children: ReactNode }) {

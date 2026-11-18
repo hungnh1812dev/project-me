@@ -12,7 +12,7 @@ import {
   FormAlert,
   JsonInput,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import type { DocumentTree } from '@features/content/Content.api';
 import { BULK_ACTION, BULK_MAX_ITEMS } from '@features/content/Content.constants';
 import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
@@ -21,8 +21,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 
 import { failedItems, itemReason, toBulkFailure } from './Bulk.rules';
-
-const copy = COPY.content.bulk.importDialog;
 
 interface FormValues {
   payload: string;
@@ -37,10 +35,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * Parses the pasted text into bulk create items. Returns the items, or the
  * message for the first problem (shown under the field).
  */
-export function parseImportText(text: string): { items: DocumentTree[] } | { error: string } {
+export function parseImportText(
+  source: string,
+  text: ScreenText<'content'>,
+): { items: DocumentTree[] } | { error: string } {
+  const copy = text.content.bulk.importDialog;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text);
+    parsed = JSON.parse(source);
   } catch {
     return { error: copy.invalidJson };
   }
@@ -74,6 +76,8 @@ export function BulkCreateDialog({
   onImported: (count: number) => void;
   onCloseAutoFocus: (event: Event) => void;
 }) {
+  const text = useScreenText('content');
+  const copy = text.content.bulk.importDialog;
   const api = useContentApi();
   const queryClient = useQueryClient();
   const form = useForm<FormValues>({
@@ -117,14 +121,14 @@ export function BulkCreateDialog({
       setProblems(
         failed.map((item) => ({
           position: item.index + 1,
-          reason: itemReason(item.errorCode, item.message, copy.invalidFallback),
+          reason: itemReason(item.errorCode, item.message, copy.invalidFallback, text),
         })),
       );
       setPartial(copy.partial(response.succeeded, failed.length));
       setAlert(null);
     },
     onError: (cause) => {
-      const failure = toBulkFailure(cause);
+      const failure = toBulkFailure(cause, text);
       setPartial(null);
       if (failure.index === undefined) {
         setProblems([]);
@@ -137,7 +141,7 @@ export function BulkCreateDialog({
   });
 
   const payload = useWatch({ control: form.control, name: 'payload' });
-  const parsed = payload.trim() === '' ? null : parseImportText(payload);
+  const parsed = payload.trim() === '' ? null : parseImportText(payload, text);
   const count = parsed !== null && 'items' in parsed ? parsed.items.length : 0;
 
   return (
@@ -156,7 +160,7 @@ export function BulkCreateDialog({
             className="grid gap-4"
             onSubmit={(event) =>
               void form.handleSubmit((values) => {
-                const parsedImport = parseImportText(values.payload);
+                const parsedImport = parseImportText(values.payload, text);
                 if ('items' in parsedImport) {
                   setAlert(null);
                   setProblems([]);
@@ -191,7 +195,7 @@ export function BulkCreateDialog({
               rules={{
                 required: copy.empty,
                 validate: (value) => {
-                  const parsedImport = parseImportText(String(value));
+                  const parsedImport = parseImportText(String(value), text);
                   return 'error' in parsedImport ? parsedImport.error : true;
                 },
               }}

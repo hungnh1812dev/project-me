@@ -82,10 +82,30 @@ describe('loadAppConfig', () => {
     expect(config.database.password).toBe(password);
   });
 
+  it('loads NODE_ENV=staging without the production guards', () => {
+    const config = loadAppConfig(
+      devEnv({ NODE_ENV: 'staging', MAIL_PROVIDER: 'console', JWT_ACCESS_SECRET: 'short' }),
+    );
+    expect(config.env).toBe('staging');
+    expect(config.isProduction).toBe(false);
+  });
+
+  it('keeps the production guards on NODE_ENV=production only', () => {
+    const error = configErrorOf(
+      devEnv({ NODE_ENV: 'production', MAIL_PROVIDER: 'console', JWT_ACCESS_SECRET: 'short' }),
+    );
+    expect(error.issues.some((issue) => issue.startsWith('MAIL_PROVIDER:'))).toBe(true);
+    expect(error.issues.some((issue) => issue.startsWith('JWT_ACCESS_SECRET:'))).toBe(true);
+  });
+
+  it('runs the tests as NODE_ENV=development (jest.config.cjs)', () => {
+    expect(process.env.NODE_ENV).toBe('development');
+  });
+
   it('no longer accepts DATABASE_URL as the connection', () => {
     expect(() =>
       loadAppConfig({
-        NODE_ENV: 'test',
+        NODE_ENV: 'development',
         DATABASE_URL: 'postgresql://u:p@h:5432/d',
       }),
     ).toThrow(/DB_HOST/);
@@ -267,7 +287,8 @@ describe('loadAppConfig', () => {
     ['out of range PORT', { PORT: '70000' }, 'PORT'],
     ['negative TRUST_PROXY_HOPS', { TRUST_PROXY_HOPS: '-1' }, 'TRUST_PROXY_HOPS'],
     ['unknown MAIL_PROVIDER', { MAIL_PROVIDER: 'pigeon' }, 'MAIL_PROVIDER'],
-    ['unknown NODE_ENV', { NODE_ENV: 'staging' }, 'NODE_ENV'],
+    ['unknown NODE_ENV', { NODE_ENV: 'prod' }, 'NODE_ENV'],
+    ['NODE_ENV=test (not a cms-api env, API-2)', { NODE_ENV: 'test' }, 'NODE_ENV'],
     ['wildcard ADMIN_ORIGIN', { ADMIN_ORIGIN: '*' }, 'ADMIN_ORIGIN'],
     [
       'ADMIN_ORIGIN with a trailing slash',
@@ -836,6 +857,10 @@ describe('loadDatabaseConfig (ADR 0012 §4)', () => {
       user: TEST_DB_USERNAME,
       password: TEST_DB_PASSWORD,
     });
+  });
+
+  it('accepts NODE_ENV=staging', () => {
+    expect(() => loadDatabaseConfig(dbOnlyEnv({ NODE_ENV: 'staging' }))).not.toThrow();
   });
 
   it('accepts NODE_ENV=production without any app secret or mail key', () => {

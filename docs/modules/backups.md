@@ -20,7 +20,7 @@ The feature is opt-in. It runs only when the `BACKUP_STORAGE_*` keys are set (al
 
 ## Endpoints
 
-Both need a signed-in owner (`JwtAuthGuard`, then `requireOwnerActor`). Every other caller gets `403`, including admins, roles with every grant, API tokens and reviewers: no permission subject exists for backups. Both answer `Cache-Control: no-store`.
+Both need a signed-in owner (`JwtAuthGuard`, then `requireOwnerActor`). Every other caller gets `403`, including admins, roles with every grant, API tokens and reviewers: no permission subject exists for backups. Every answer carries `Cache-Control: no-store`, errors included (the global `HttpExceptionFilter` sets it, so a guard 401 and a throttle 429 do too).
 
 ### `GET /api/v1/backups`
 

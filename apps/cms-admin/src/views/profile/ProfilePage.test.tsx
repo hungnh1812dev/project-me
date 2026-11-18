@@ -1,10 +1,10 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, within } from '@testing-library/react';
 
-const copy = COPY.security.profile;
+const copy = EN_TEXT.security.profile;
 
 describe('ProfilePage', () => {
   it('shows name, email and role read-only', async () => {

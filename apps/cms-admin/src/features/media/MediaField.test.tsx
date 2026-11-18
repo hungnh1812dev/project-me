@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentEditPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -11,7 +11,7 @@ import type { MediaFile } from './Media.api';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES, MEDIA } = API_ENDPOINTS;
-const copy = COPY.media;
+const copy = EN_TEXT.media;
 const SLUG = 'profile';
 const DOC_ID = 'doc_1';
 const PORTRAIT_NAME = 'portrait.jpg';
@@ -147,7 +147,7 @@ describe('media field in the document form', () => {
       }),
     );
     expect(await screen.findByText(PORTRAIT_NAME)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: COPY.content.save }));
+    await userEvent.click(screen.getByRole('button', { name: EN_TEXT.content.save }));
     await waitFor(() => expect(api.callsTo(put)).toHaveLength(1));
     expect(sent(api.callsTo(put)[0])).toMatchObject({
       values: { photo: 'f1' },
@@ -165,7 +165,7 @@ describe('media field in the document form', () => {
     await screen.findByText(PORTRAIT_NAME);
     await userEvent.click(screen.getByRole('button', { name: copy.input.remove }));
     expect(await screen.findByText(copy.input.empty)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: COPY.content.save }));
+    await userEvent.click(screen.getByRole('button', { name: EN_TEXT.content.save }));
     await waitFor(() => expect(api.callsTo(put)).toHaveLength(1));
     expect((sent(api.callsTo(put)[0]).values as Record<string, unknown>).photo).toBeNull();
   });
@@ -187,7 +187,7 @@ describe('media field in the document form', () => {
       await within(dialog).findByRole('button', { name: copy.uploadDialog.close }),
     );
     expect(await screen.findByText(PORTRAIT_NAME)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: COPY.content.save }));
+    await userEvent.click(screen.getByRole('button', { name: EN_TEXT.content.save }));
     await waitFor(() => expect(api.callsTo(put)).toHaveLength(1));
     expect(sent(api.callsTo(put)[0])).toMatchObject({ values: { photo: 'f1' } });
   });

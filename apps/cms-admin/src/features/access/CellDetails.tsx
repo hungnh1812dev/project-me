@@ -1,6 +1,6 @@
 import { useId } from 'react';
-import { Textarea } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { CONTROL_FOCUS_RING_ONLY_CLASSES, Textarea } from '@abyss/form-commons';
+import { useScreenText } from '@configs/locales';
 
 import type { ContentType } from '../content-types';
 import { FieldPicker } from './FieldPicker';
@@ -12,8 +12,6 @@ import {
   setConditionsText,
   setFieldList,
 } from './PermissionMatrix.rules';
-
-const copy = COPY.access;
 
 /**
  * Field access and conditions of one content subject's granted actions.
@@ -33,6 +31,7 @@ export function CellDetails({
   subjectLabel: string;
   contentType: ContentType | undefined;
 }) {
+  const copy = useScreenText('access').access;
   const granted = actionsFor(subject).filter((action) => state[subject]?.[action] !== undefined);
   const contentFields = (contentType?.fields ?? []).filter((field) => !field.system);
 
@@ -118,15 +117,18 @@ function ConditionsEditor({
   shouldForceOpen: boolean;
   onChange: (text: string) => void;
 }) {
+  const copy = useScreenText('access').access;
   const id = useId();
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
   return (
     <details
-      className="group rounded-md border border-border bg-card"
+      className="group rounded-item bg-muted"
       open={shouldForceOpen || text.trim() !== '' ? true : undefined}
     >
-      <summary className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+      <summary
+        className={`cursor-pointer rounded-item px-3 py-2 text-sm font-medium ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+      >
         {copy.conditions.summary(actionLabel)}
       </summary>
       <div className="grid gap-1.5 px-3 pb-3">

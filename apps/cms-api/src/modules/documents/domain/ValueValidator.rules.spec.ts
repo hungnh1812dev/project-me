@@ -18,6 +18,7 @@ const required = ContentTypeRegistry.fromDefinitions([
       {
         name: 'items',
         type: 'component',
+        component: 'items',
         repeatable: true,
         required: true,
         fields: [{ name: 'label', type: 'string', required: true }],

@@ -13,3 +13,4 @@ web apps/web/src/views/*
 form-commons packages/form-commons/src/components/*
 base-config packages/base-config/src
 e2e apps/e2e/src
+web apps/web/src/apis/server

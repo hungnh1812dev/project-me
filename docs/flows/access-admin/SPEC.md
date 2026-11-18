@@ -6,7 +6,7 @@ summary: Accounts and invitations, roles and the permission matrix, API tokens
 
 # Access administration: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `access-admin`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `access-admin`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -43,7 +43,3 @@ SSO and self-registration ([out of scope](../../../SPEC.md)).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-04 Flow folder created from the old SPEC (D5, D6, §9, Q2, Q7..Q9, Q11..Q13).

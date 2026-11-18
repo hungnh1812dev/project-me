@@ -20,6 +20,7 @@ const CONTACT: ContentTypeDefinition = {
     {
       name: 'referees',
       type: 'component',
+      component: 'referees',
       repeatable: true,
       fields: [
         { name: 'name', type: 'string' },
@@ -29,6 +30,7 @@ const CONTACT: ContentTypeDefinition = {
     {
       name: 'jobs',
       type: 'component',
+      component: 'jobs',
       repeatable: true,
       fields: [{ name: 'title', type: 'string' }],
     },

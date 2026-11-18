@@ -1,17 +1,23 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES, rolePermissionsPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { Account, PermissionRow, Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { ContentType } from '@features/content-types';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import {
+  createTestServices,
+  findToast,
+  renderApp,
+  TEST_USER,
+  toastToneOf,
+} from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { ACCOUNTS, ROLES, CONTENT_TYPES } = API_ENDPOINTS;
-const copy = COPY.access;
+const copy = EN_TEXT.access;
 
 function rows(...specs: [string, PermissionRow['action']][]): PermissionRow[] {
   return specs.map(([subject, action]) => ({
@@ -252,9 +258,7 @@ describe('AccountsPage', () => {
     await user.selectOptions(roleSelect, 'Editor');
     await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
 
-    expect(
-      await screen.findByText(copy.accounts.invited('linh@domain.localhost')),
-    ).toBeInTheDocument();
+    expect(await findToast(copy.accounts.invited)).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     const [call] = api.callsTo(`POST ${ACCOUNTS.LIST}`);
     expect(JSON.parse(call?.data as string)).toEqual({
@@ -309,9 +313,7 @@ describe('AccountsPage', () => {
       'Editor',
     );
     await user.click(within(dialog).getByRole('button', { name: copy.invite.submit }));
-    expect(
-      await screen.findByText(copy.accounts.invitedNoEmail('linh@domain.localhost')),
-    ).toBeInTheDocument();
+    expect(await findToast(copy.accounts.invitedNoEmail)).toBeInTheDocument();
   });
 
   it('keeps the dialog open and marks the email when it is already taken', async () => {
@@ -362,7 +364,7 @@ describe('AccountsPage', () => {
         name: copy.disable.submit('Linh Pham'),
       }),
     );
-    expect(await screen.findByText(copy.accounts.disabled('Linh Pham'))).toBeInTheDocument();
+    expect(await findToast(copy.accounts.disabled('Linh Pham'))).toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.DISABLE('acc_linh')}`)).toHaveLength(1);
   });
 
@@ -484,7 +486,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(await screen.findByText(copy.accounts.enabled('Linh Pham'))).toBeInTheDocument();
+    expect(await findToast(copy.accounts.enabled('Linh Pham'))).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.ENABLE('acc_linh')}`)).toHaveLength(1);
     await waitFor(() =>
@@ -502,7 +504,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(await screen.findByText(copy.accounts.alreadyEnabled)).toBeInTheDocument();
+    expect(await findToast(copy.accounts.alreadyEnabled)).toBeInTheDocument();
   });
 
   it('shows a rank error from the server when enabling', async () => {
@@ -515,7 +517,8 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: enableName }));
-    expect(await screen.findByText(copy.errors.rankForbidden)).toBeInTheDocument();
+    await findToast(copy.errors.rankForbidden);
+    expect(toastToneOf(copy.errors.rankForbidden)).toBe('error');
   });
 
   it('resends an invite and says it was sent', async () => {
@@ -528,9 +531,8 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(
-      await screen.findByText(copy.accounts.resent('mai@domain.localhost')),
-    ).toBeInTheDocument();
+    await findToast(copy.accounts.resent);
+    expect(toastToneOf(copy.accounts.resent)).toBe('success');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(api.callsTo(`POST ${ACCOUNTS.RESEND_INVITE('acc_mai')}`)).toHaveLength(1);
   });
@@ -545,9 +547,7 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(
-      await screen.findByText(copy.accounts.resentNoEmail('mai@domain.localhost')),
-    ).toBeInTheDocument();
+    expect(await findToast(copy.accounts.resentNoEmail)).toBeInTheDocument();
   });
 
   it('shows a wait message from Retry-After when resend is throttled', async () => {
@@ -560,7 +560,9 @@ describe('AccountsPage enable, resend and paging', () => {
     });
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: resendName }));
-    expect(await screen.findByText(COPY.password.errors.rateLimitedMinutes(2))).toBeInTheDocument();
+    expect(
+      await screen.findByText(EN_TEXT.password.errors.rateLimitedMinutes(2)),
+    ).toBeInTheDocument();
   });
 
   it('pages through accounts and shows the range', async () => {
@@ -699,7 +701,7 @@ describe('RolesPage and RolePermissionsPage', () => {
     await user.click(within(details).getByLabelText('title'));
 
     await user.click(screen.getByRole('button', { name: copy.role.save }));
-    expect(await screen.findByText(copy.role.saved)).toBeInTheDocument();
+    expect(await findToast(copy.role.saved)).toBeInTheDocument();
     expect(api.callsTo(`PUT ${ROLES.PERMISSIONS(editorRole.id)}`)).toHaveLength(1);
     expect(saved).toEqual([
       {

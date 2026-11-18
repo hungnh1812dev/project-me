@@ -32,6 +32,8 @@ export type AccessTokenClaims = z.infer<typeof accessTokenClaimsSchema>;
 const twoFactorTempTokenClaimsSchema = z.object({
   sub: z.uuid(),
   tv: z.int(),
+  /** Remember-me choice made at login; absent in older tokens = false. */
+  rm: z.boolean().default(false),
   jti: z.uuid(),
   kid: z.string(),
   typ: z.literal(TOKEN_TYPES.TWO_FACTOR),
@@ -44,6 +46,7 @@ export type TwoFactorTempTokenClaims = z.infer<typeof twoFactorTempTokenClaimsSc
 export interface TwoFactorTempTokenSubject {
   readonly sub: string;
   readonly tv: number;
+  readonly rememberMe: boolean;
 }
 
 export interface AccessTokenSubject {
@@ -95,6 +98,7 @@ export class AccessTokenService {
       {
         sub: subject.sub,
         tv: subject.tv,
+        rm: subject.rememberMe,
         typ: TOKEN_TYPES.TWO_FACTOR,
         iat: this.nowSeconds(),
       },

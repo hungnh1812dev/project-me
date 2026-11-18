@@ -10,14 +10,12 @@ import {
   DialogTitle,
   FormAlert,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import type { MediaFile } from '@features/media/Media.api';
 import { toMediaError } from '@features/media/Media.errors';
 import { MEDIA_QUERY_KEY } from '@features/media/Media.queries';
 import { useMediaApi } from '@features/media/MediaApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-const copy = COPY.media.deleteDialog;
 
 /** Confirm delete; a file still attached to a document keeps the dialog open with the reason. */
 export function DeleteMediaDialog({
@@ -31,6 +29,9 @@ export function DeleteMediaDialog({
   onDone: (file: MediaFile, outcome: 'deleted' | 'gone') => void;
   onCloseAutoFocus: (event: Event) => void;
 }) {
+  const media = useScreenText('media');
+  const access = useScreenText('access');
+  const copy = media.media.deleteDialog;
   const api = useMediaApi();
   const queryClient = useQueryClient();
   const [alert, setAlert] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function DeleteMediaDialog({
       onDone(target, 'deleted');
     },
     onError: (cause, target) => {
-      const error = toMediaError(cause);
+      const error = toMediaError(cause, { ...media, ...access });
       if (error.kind === 'gone') {
         void queryClient.invalidateQueries({ queryKey: MEDIA_QUERY_KEY });
         onDone(target, 'gone');

@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { cn } from 'cn';
 
+import { CONTROL_FOCUS_RING_ONLY_CLASSES } from '@/components/ui/Control.constants';
+
 import { Button, type ButtonProps } from './Button';
 import { Tooltip, TooltipContent, TooltipTrigger } from './Tooltip';
 
@@ -39,8 +41,12 @@ function IconButton({
     <Tooltip>
       <TooltipTrigger asChild>
         {disabled ? (
-          // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a disabled button cannot be focused, so this wrapper carries the tooltip
-          <span data-slot="icon-button-wrapper" tabIndex={0} className="inline-flex rounded-md">
+          <span
+            data-slot="icon-button-wrapper"
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- a disabled button cannot be focused, so this wrapper carries the tooltip
+            tabIndex={0}
+            className={cn('rounded-control inline-flex', CONTROL_FOCUS_RING_ONLY_CLASSES)}
+          >
             {button}
           </span>
         ) : (

@@ -11,6 +11,7 @@ const GALLERY = {
     {
       name: 'block',
       type: 'component',
+      component: 'block',
       repeatable: true,
       fields: [{ name: 'image', type: 'media' }],
     },

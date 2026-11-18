@@ -65,7 +65,7 @@ function stubs(
   const library = { rowConditionOf: jest.fn(() => Promise.resolve(null)) };
   const audit = { record: jest.fn(() => Promise.resolve()) };
   const storage = options.storage ?? new FakeMediaStorage();
-  const logger = { warn: jest.fn(), error: jest.fn() };
+  const logger = { info: jest.fn(), warn: jest.fn(), error: jest.fn() };
   const service = new ReplaceMediaFileService(
     processor,
     repository,

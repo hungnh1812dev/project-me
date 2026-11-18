@@ -2,6 +2,7 @@ import { DomainError } from '../../../common/errors/Domain.errors';
 import { joinFieldPath, type FieldSelection } from '../../access';
 import {
   fieldTypeOf,
+  isComponentField,
   type ComponentInput,
   type FieldValues,
   type TableNode,
@@ -52,6 +53,7 @@ function validateValues(
     // A type with no registry entry (a component) never reaches a value column.
     const coerced = fieldTypeOf(column.field.type)?.coerceValue(value, {
       richtextImageOrigins: options.richtextImageOrigins,
+      field: isComponentField(column.field) ? undefined : column.field,
     });
     if (coerced === undefined) {
       throw invalid(path, DOCUMENT_ERROR_MESSAGES.INVALID_TYPE);

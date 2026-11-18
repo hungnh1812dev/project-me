@@ -66,7 +66,7 @@ function setup(
   jest.spyOn(clock, 'now').mockReturnValue(NOW);
   const warn = jest.fn();
   const error = jest.fn();
-  const logger: AppLogger = { warn, error };
+  const logger: AppLogger = { info: jest.fn(), warn, error };
   return {
     service: new ApiTokenAuthentication(lookup, versions, clock, logger),
     findByHash,

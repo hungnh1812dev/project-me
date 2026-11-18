@@ -5,7 +5,11 @@ import type {
 } from '../../../infrastructure/database/TransactionRunner.port';
 import type { VersionCache } from '../../access';
 import type { SecurityAuditService } from '../../security-audit';
-import { REFRESH_TOKEN_REUSE_GRACE_MS, REFRESH_TOKEN_TTL_MS } from '../domain/Identity.constants';
+import {
+  REFRESH_TOKEN_REUSE_GRACE_MS,
+  REFRESH_TOKEN_TTL_MS,
+  SESSION_REFRESH_TOKEN_TTL_MS,
+} from '../domain/Identity.constants';
 import type {
   RefreshTokenAccountFacts,
   RefreshTokenRepository,
@@ -67,6 +71,7 @@ function setup() {
       replacedById: 2,
       revokedAt: new Date(ROTATED_AT),
       expiresAt: new Date(ROTATED_AT + REFRESH_TOKEN_TTL_MS),
+      rememberMe: true,
       account: ACCOUNT,
     }),
     findRotated: jest.fn().mockResolvedValue(rotatedToken),
@@ -127,17 +132,63 @@ describe('RefreshTokenService.rotate with a frozen clock', () => {
 });
 
 describe('RefreshTokenService.issue', () => {
-  it('expires the token one TTL after the clock time', async () => {
-    const { clock, service, tokens } = setup();
+  it.each([
+    ['remembered', true, REFRESH_TOKEN_TTL_MS],
+    ['unremembered', false, SESSION_REFRESH_TOKEN_TTL_MS],
+  ])(
+    'writes remember_me and expires a %s token one mode TTL after the clock time',
+    async (_mode, rememberMe, ttlMs) => {
+      const { clock, service, tokens } = setup();
 
-    await service.issue(ACCOUNT_ID, META);
+      await service.issue(ACCOUNT_ID, rememberMe, META);
 
-    expect(tokens.insert).toHaveBeenCalledWith(
-      expect.objectContaining({
+      expect(tokens.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accountId: ACCOUNT_ID,
+          rememberMe,
+          expiresAt: new Date(clock.time + ttlMs),
+        }),
+        undefined,
+      );
+    },
+  );
+});
+
+describe('RefreshTokenService.rotate remember_me', () => {
+  it.each([
+    ['remembered', true, REFRESH_TOKEN_TTL_MS],
+    ['unremembered', false, SESSION_REFRESH_TOKEN_TTL_MS],
+  ])(
+    'copies the mode to the successor of a %s token and slides its expiry',
+    async (_mode, rememberMe, ttlMs) => {
+      const { clock, service, tokens } = setup();
+      clock.time = ROTATED_AT;
+      tokens.findByHash.mockResolvedValue({
+        id: 1,
         accountId: ACCOUNT_ID,
-        expiresAt: new Date(clock.time + REFRESH_TOKEN_TTL_MS),
-      }),
-      undefined,
-    );
-  });
+        familyId: FAMILY_ID,
+        replacedById: null,
+        revokedAt: null,
+        expiresAt: new Date(ROTATED_AT + 1000),
+        rememberMe,
+        account: ACCOUNT,
+      });
+      Object.assign(tokens, {
+        claimRotation: jest.fn().mockResolvedValue(true),
+        deleteById: jest.fn(),
+      });
+
+      const result = await service.rotate('raw', META);
+
+      expect(result).toMatchObject({ kind: 'rotated', rememberMe });
+      expect(tokens.insert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          familyId: FAMILY_ID,
+          rememberMe,
+          expiresAt: new Date(ROTATED_AT + ttlMs),
+        }),
+        expect.anything(),
+      );
+    },
+  );
 });

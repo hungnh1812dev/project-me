@@ -1,8 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
+import {
+  Button,
+  CheckboxInput,
+  FormAlert,
+  TextInput,
+  type FormAlertTone,
+} from '@abyss/form-commons';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import type { TwoFactorChallenge } from '@features/auth/Auth.api';
 import { selectEndNotice, selectSessionStatus } from '@features/auth/Auth.slice';
 import { toLoginError, type LoginError } from '@features/auth/Login.errors';
@@ -20,16 +26,20 @@ import { z } from 'zod';
 
 import { TwoFactorModal } from './TwoFactorModal';
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .min(1, COPY.login.validation.emailRequired)
-    .pipe(z.email(COPY.login.validation.emailInvalid)),
-  password: z.string().min(1, COPY.login.validation.passwordRequired),
-});
+type LoginCopy = ScreenText<'login'>['login'];
 
-type LoginValues = z.input<typeof loginSchema>;
+const loginSchemaOf = (copy: LoginCopy) =>
+  z.object({
+    email: z
+      .string()
+      .trim()
+      .min(1, copy.validation.emailRequired)
+      .pipe(z.email(copy.validation.emailInvalid)),
+    password: z.string().min(1, copy.validation.passwordRequired),
+    rememberMe: z.boolean(),
+  });
+
+type LoginValues = z.input<ReturnType<typeof loginSchemaOf>>;
 
 const ALERT_TONE: Record<LoginError['kind'], string> = {
   'invalid-credentials': 'bg-destructive-soft text-destructive-strong',
@@ -38,13 +48,13 @@ const ALERT_TONE: Record<LoginError['kind'], string> = {
   unexpected: 'bg-destructive-soft text-destructive-strong',
 };
 
-const NOTICE_COPY: Record<LoginNotice, string> = {
-  'password-reset': COPY.login.notices.passwordReset,
-  'password-set': COPY.login.notices.passwordSet,
-  'password-changed': COPY.login.notices.passwordChanged,
-  'owner-created': COPY.login.notices.ownerCreated,
-  'setup-complete': COPY.login.notices.setupComplete,
-};
+const noticeCopyOf = (copy: LoginCopy): Record<LoginNotice, string> => ({
+  'password-reset': copy.notices.passwordReset,
+  'password-set': copy.notices.passwordSet,
+  'password-changed': copy.notices.passwordChanged,
+  'owner-created': copy.notices.ownerCreated,
+  'setup-complete': copy.notices.setupComplete,
+});
 
 const NOTICE_TONE: Record<LoginNotice, FormAlertTone> = {
   'password-reset': 'success',
@@ -63,6 +73,8 @@ function returnPathOf(state: unknown): string {
 }
 
 export function LoginPage() {
+  const text = useScreenText('login');
+  const copy = text.login;
   const status = useAuthSelector(selectSessionStatus);
   const endNotice = useAuthSelector(selectEndNotice);
   const location = useLocation();
@@ -74,8 +86,8 @@ export function LoginPage() {
   const [challengeExpired, setChallengeExpired] = useState(false);
 
   const form = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: loginEmailOf(location.state), password: '' },
+    resolver: zodResolver(loginSchemaOf(copy)),
+    defaultValues: { email: loginEmailOf(location.state), password: '', rememberMe: false },
     mode: 'onTouched',
   });
 
@@ -92,14 +104,16 @@ export function LoginPage() {
       }
     },
     onError: (cause) => {
-      setError(toLoginError(cause));
+      setError(toLoginError(cause, text));
       form.resetField('password');
+      form.resetField('rememberMe');
       form.setFocus('password');
     },
   });
 
   const closeChallenge = useCallback(() => {
     setChallenge(null);
+    form.resetField('rememberMe');
     form.setFocus('password');
   }, [form]);
   const expireChallenge = useCallback(() => {
@@ -120,35 +134,33 @@ export function LoginPage() {
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
     setChallengeExpired(false);
-    signIn.mutate({ email: values.email.trim(), password: values.password });
+    signIn.mutate({
+      email: values.email.trim(),
+      password: values.password,
+      rememberMe: values.rememberMe,
+    });
   });
 
   return (
     <AuthPageLayout>
-      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{COPY.login.title}</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{COPY.login.description}</p>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">{copy.title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{copy.description}</p>
       {isSetupOpen ? (
         <div className="mt-6 grid gap-3">
-          <FormAlert tone="info">{COPY.login.setupPrompt.message}</FormAlert>
+          <FormAlert tone="info">{copy.setupPrompt.message}</FormAlert>
           <div>
             <Button asChild variant="secondary">
-              <Link to={APP_ROUTES.SETUP}>{COPY.login.setupPrompt.action}</Link>
+              <Link to={APP_ROUTES.SETUP}>{copy.setupPrompt.action}</Link>
             </Button>
           </div>
         </div>
       ) : null}
       <FormProvider {...form}>
-        <form
-          noValidate
-          onSubmit={(event) => void onSubmit(event)}
-          className="mt-6 grid gap-4 rounded-md border border-border bg-card p-5"
-        >
+        <form noValidate onSubmit={(event) => void onSubmit(event)} className="mt-6 grid gap-4">
           {notice !== undefined ? (
-            <FormAlert tone={NOTICE_TONE[notice]}>{NOTICE_COPY[notice]}</FormAlert>
+            <FormAlert tone={NOTICE_TONE[notice]}>{noticeCopyOf(copy)[notice]}</FormAlert>
           ) : null}
-          {challengeExpired ? (
-            <FormAlert tone="info">{COPY.login.twoFactor.expired}</FormAlert>
-          ) : null}
+          {challengeExpired ? <FormAlert tone="info">{copy.twoFactor.expired}</FormAlert> : null}
           {error !== null ? (
             <p role="alert" className={`rounded-md px-3 py-2 text-sm ${ALERT_TONE[error.kind]}`}>
               {error.message}
@@ -156,7 +168,7 @@ export function LoginPage() {
           ) : null}
           <TextInput<LoginValues>
             name="email"
-            label={COPY.login.emailLabel}
+            label={copy.emailLabel}
             type="email"
             autoComplete="username"
             inputMode="email"
@@ -165,10 +177,15 @@ export function LoginPage() {
           />
           <TextInput<LoginValues>
             name="password"
-            label={COPY.login.passwordLabel}
+            label={copy.passwordLabel}
             type="password"
             autoComplete="current-password"
             required
+          />
+          <CheckboxInput<LoginValues>
+            name="rememberMe"
+            label={copy.rememberMe}
+            description={copy.rememberMeHint}
           />
           <Button
             type="submit"
@@ -176,13 +193,13 @@ export function LoginPage() {
             className="mt-2 w-full"
             loading={signIn.isPending}
           >
-            {COPY.login.submit}
+            {copy.submit}
           </Button>
         </form>
       </FormProvider>
       <p className="mt-4">
         <Button asChild variant="link" className="h-auto px-0">
-          <Link to={APP_ROUTES.RESET_PASSWORD}>{COPY.login.forgotPassword}</Link>
+          <Link to={APP_ROUTES.RESET_PASSWORD}>{copy.forgotPassword}</Link>
         </Button>
       </p>
       {challenge !== null ? (

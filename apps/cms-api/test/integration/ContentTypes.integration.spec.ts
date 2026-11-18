@@ -206,12 +206,18 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
       type: 'string',
       system: false,
       component: false,
+      width: 'full',
       repeatable: false,
       rootScalar: true,
       conditionKind: 'string',
       sensitive: false,
     });
-    expect(field(article, 'priority')?.conditionKind).toBe('integer');
+    expect(field(article, 'priority')).toMatchObject({
+      conditionKind: 'integer',
+      width: '1/2',
+      displayName: 'Priority level',
+    });
+    expect(field(article, 'reference')).not.toHaveProperty('width');
     // json is scalar but never comparable in a condition
     expect(field(article, 'meta')).toMatchObject({
       rootScalar: true,

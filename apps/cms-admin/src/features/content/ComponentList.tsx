@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { IconButton } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { Card, CONTROL_FOCUS_RING_ONLY_CLASSES, IconButton } from '@abyss/form-commons';
+import { useScreenText } from '@configs/locales';
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
@@ -8,8 +8,6 @@ import { MAX_COMPONENT_DEPTH, SINGLE_COMPONENT_MAX_ITEMS } from './Content.const
 import { emptyItem } from './Document.form';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import type { FieldNode } from './FieldTree.rules';
-
-const copy = COPY.content.list;
 
 type MoveDirection = 'up' | 'down';
 
@@ -22,12 +20,25 @@ export interface ComponentListProps {
   depth: number;
 }
 
+const ITEM_CLASSES = 'grid gap-4';
+
+/** A top-level item is a Card; an item inside another item is a muted section (no card in a card). */
+function Item({ isNested, children }: { isNested: boolean; children: ReactNode }) {
+  if (isNested) return <li className={`${ITEM_CLASSES} rounded-item bg-muted p-4`}>{children}</li>;
+  return (
+    <Card asChild padding="compact">
+      <li className={ITEM_CLASSES}>{children}</li>
+    </Card>
+  );
+}
+
 /**
  * Items of a component field with add, remove and reorder. Items keep their
  * `componentUid` in form state so a save updates the same rows. A
  * non-repeatable component holds one item at most.
  */
 export function ComponentList({ node, name, masked, depth }: ComponentListProps) {
+  const copy = useScreenText('content').content.list;
   const { control } = useFormContext();
   const { fields, append, remove, move } = useFieldArray({ control, name });
   const listRef = useRef<HTMLOListElement>(null);
@@ -71,7 +82,7 @@ export function ComponentList({ node, name, masked, depth }: ComponentListProps)
       {fields.length > 0 ? (
         <ol ref={listRef} className="m-0 grid list-none gap-3 p-0">
           {fields.map((item, index) => (
-            <li key={item.id} className="grid gap-4 rounded-md border border-border bg-card p-4">
+            <Item key={item.id} isNested={depth > 1}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <IconButton
@@ -117,7 +128,7 @@ export function ComponentList({ node, name, masked, depth }: ComponentListProps)
                 prefix={`${name}.${index}`}
                 depth={depth + 1}
               />
-            </li>
+            </Item>
           ))}
         </ol>
       ) : null}
@@ -125,7 +136,7 @@ export function ComponentList({ node, name, masked, depth }: ComponentListProps)
         <button
           type="button"
           onClick={() => append(emptyItem(node))}
-          className="flex min-h-20 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-input bg-transparent p-4 text-sm text-muted-foreground transition-colors hover:border-ring hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className={`flex min-h-20 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-item border border-dashed border-input bg-transparent p-4 text-sm text-muted-foreground transition-colors duration-(--duration-fast) hover:border-ring hover:bg-muted hover:text-foreground motion-reduce:transition-none ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
         >
           <Plus aria-hidden="true" className="size-5" />
           {copy.addSlot(node.label)}

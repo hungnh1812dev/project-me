@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
 import {
   Button,
+  Card,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,7 +12,7 @@ import {
   FormAlert,
   formatFileSize,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText, type ScreenText } from '@configs/locales';
 import { FileText, X } from 'lucide-react';
 
 import type { MediaFile } from './Media.api';
@@ -20,7 +21,8 @@ import { useMediaApi } from './MediaApi.context';
 import { hasDeterminateProgress, sentPercentOf, type UploadItem } from './UploadQueue.rules';
 import { useUploadQueue, type SendFile } from './useUploadQueue';
 
-const copy = COPY.media.uploadDialog;
+type UploadCopy = ScreenText<'media'>['media']['uploadDialog'];
+
 const IMAGE_PREFIX = 'image/';
 const PERCENT = 100;
 
@@ -38,6 +40,7 @@ function ProgressBar({ label, percent }: { label: string; percent?: number | und
 
 /** The object URL lives as long as the row, so removing the row or closing the dialog revokes it. */
 function Preview({ file }: { file: File }) {
+  const copy = useScreenText('media').media.uploadDialog;
   const imageRef = useRef<HTMLImageElement>(null);
   const isImage = file.type.startsWith(IMAGE_PREFIX);
   useEffect(() => {
@@ -58,7 +61,7 @@ function Preview({ file }: { file: File }) {
   );
 }
 
-function statusText(item: UploadItem): string {
+function statusText(item: UploadItem, copy: UploadCopy): string {
   switch (item.status) {
     case 'uploading':
       return hasDeterminateProgress(item)
@@ -101,6 +104,7 @@ function UploadRow({
   onRemove: () => void;
   onRetry: () => void;
 }) {
+  const copy = useScreenText('media').media.uploadDialog;
   const isSending = item.status === 'uploading' || item.status === 'processing';
   const isProblem = item.status === 'failed' || item.status === 'rejected';
   const canRemove = canEdit && !isSending && item.status !== 'done';
@@ -119,7 +123,7 @@ function UploadRow({
           className={`text-xs ${isProblem ? 'text-destructive' : 'text-muted-foreground'}`}
           role={isProblem ? 'alert' : undefined}
         >
-          {statusText(item)}
+          {statusText(item, copy)}
         </span>
       </div>
       {item.status === 'failed' ? (
@@ -147,18 +151,28 @@ function UploadRow({
   );
 }
 
+/** What the queue holds besides the uploaded files, for a parent that reports the batch. */
+export interface UploadOutcome {
+  failedCount: number;
+}
+
 /** Hands the parent the files that reached the library and were not reported before. */
 function reportNewlyUploaded(
   items: readonly UploadItem[],
   reportedIds: Set<string>,
-  onUploaded: (files: MediaFile[]) => void,
+  onUploaded: (files: MediaFile[], outcome: UploadOutcome) => void,
 ) {
   const fresh = items.filter(
     (item) => item.status === 'done' && item.media && !reportedIds.has(item.id),
   );
   if (fresh.length === 0) return;
   for (const item of fresh) reportedIds.add(item.id);
-  onUploaded(fresh.flatMap((item) => (item.media ? [item.media] : [])));
+  onUploaded(
+    fresh.flatMap((item) => (item.media ? [item.media] : [])),
+    {
+      failedCount: items.filter((item) => item.status === 'failed').length,
+    },
+  );
 }
 
 /**
@@ -180,11 +194,12 @@ export function UploadDialog({
   send?: SendFile;
   /** Files dropped outside the dialog; each new array is added once when the dialog is open. */
   initialFiles?: readonly File[] | undefined;
-  onUploaded: (files: MediaFile[]) => void;
+  onUploaded: (files: MediaFile[], outcome: UploadOutcome) => void;
   open: boolean;
   onClose: () => void;
   onCloseAutoFocus?: (event: Event) => void;
 }) {
+  const copy = useScreenText('media').media.uploadDialog;
   const api = useMediaApi();
   const defaultSend: SendFile = (file, onProgress, signal) =>
     api.upload(file, { onProgress, signal });
@@ -296,7 +311,7 @@ export function UploadDialog({
                 }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={onDrop}
-                className={`grid justify-items-start gap-2 rounded-md border border-dashed p-4 ${
+                className={`grid justify-items-start gap-2 rounded-item border border-dashed p-4 ${
                   isDragging ? 'border-primary bg-muted' : 'border-border'
                 }`}
               >
@@ -326,20 +341,22 @@ export function UploadDialog({
             ) : null}
             {hasList ? (
               <div className="grid gap-2">
-                <ul
-                  aria-label={copy.listLabel}
-                  className="m-0 max-h-80 list-none overflow-y-auto rounded-md border border-border bg-card p-0"
-                >
-                  {items.map((item) => (
-                    <UploadRow
-                      key={item.id}
-                      item={item}
-                      canEdit={!isStarted || item.status === 'failed'}
-                      onRemove={() => queue.remove(item.id)}
-                      onRetry={() => queue.retry(item.id)}
-                    />
-                  ))}
-                </ul>
+                <Card asChild padding="flush">
+                  <ul
+                    aria-label={copy.listLabel}
+                    className="m-0 max-h-80 list-none overflow-y-auto p-0"
+                  >
+                    {items.map((item) => (
+                      <UploadRow
+                        key={item.id}
+                        item={item}
+                        canEdit={!isStarted || item.status === 'failed'}
+                        onRemove={() => queue.remove(item.id)}
+                        onRetry={() => queue.retry(item.id)}
+                      />
+                    ))}
+                  </ul>
+                </Card>
                 {isStarted ? (
                   <ProgressBar label={copy.totalLabel} percent={batchPercent} />
                 ) : (

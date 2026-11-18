@@ -7,7 +7,9 @@
 #   pnpm dev:stack:stop   stop the apps and remove the containers and volumes
 #   pnpm e2e:spec tests/AdminAuth.e2e.spec.ts      (E2E_STACK=dev if a smoke stack is kept too)
 # Env comes only from .localEnv.agent (created with generated dev-only values when
-# missing; key names in apps/e2e/.env.example). Logs and pids: .dev-stack/.
+# missing; key names in apps/e2e/.env.example). The account logins (STACK_*) are
+# kept there too, generated once and reused on every start (ADR 0020).
+# Logs and pids: .dev-stack/.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,8 +29,10 @@ API_DIR="$ROOT_DIR/apps/cms-api"
 DOMAIN="domain.localhost"
 API_PREFIX="/api/v1"
 LOOPBACK="127.0.0.1"
+COMPOSE_PROJECT="abyss-dev"
 HEALTH_OK_BODY='"status":"ok"'
 TURNSTILE_TEST_SITE_KEY="1x00000000000000000000AA"
+WEB_SESSION_SECRET_KEY="WEB_SESSION_SECRET"
 RATE_LIMIT_OVERRIDE_OPT_IN="smoke"
 RATE_LIMIT_OVERRIDE="10000"
 READY_TIMEOUT_SECONDS=180
@@ -60,6 +64,7 @@ compose() { docker compose -f "$COMPOSE_FILE" "$@"; }
 pass() { echo "  ok   $1"; }
 fail() { echo "  FAIL $1" >&2; FAILURES=$((FAILURES + 1)); }
 FAILURES=0
+OWNER_EXISTS_MESSAGE="An owner account already exists"
 
 # api_exec [-e VAR=value ...] -- <command...>: runs in apps/cms-api on the host
 # (the smoke stack runs it in the container); stdin passes through.
@@ -73,13 +78,8 @@ api_exec() {
   (cd "$API_DIR" && env ${vars[@]+"${vars[@]}"} "$@")
 }
 
-ensure_local_env_is_ignored() {
-  git -C "$ROOT_DIR" check-ignore -q .localEnv.agent || { echo ".localEnv.agent is not git-ignored." >&2; exit 1; }
-  grep -qxF .localEnv.agent "$ROOT_DIR/.dockerignore" || { echo ".localEnv.agent is not in .dockerignore." >&2; exit 1; }
-}
-
 create_local_env() {
-  ensure_local_env_is_ignored
+  stack_ensure_local_env_ignored "$LOCAL_ENV_FILE"
   (
     umask 077
     {
@@ -90,7 +90,7 @@ create_local_env() {
       echo "DEV_STACK_WEB_PORT=$DEFAULT_WEB_PORT"
       echo "DEV_STACK_MAILPIT_HTTP_PORT=$DEFAULT_MAILPIT_HTTP_PORT"
       echo "DEV_STACK_MAILPIT_SMTP_PORT=$DEFAULT_MAILPIT_SMTP_PORT"
-      for name in DB_PASSWORD JWT_ACCESS_SECRET OTP_PEPPER TOTP_ENC_KEY; do
+      for name in DB_PASSWORD JWT_ACCESS_SECRET OTP_PEPPER TOTP_ENC_KEY "$WEB_SESSION_SECRET_KEY"; do
         echo "$name=$(stack_random_secret)"
       done
     } >"$LOCAL_ENV_FILE"
@@ -98,9 +98,15 @@ create_local_env() {
   echo "Created .localEnv.agent with generated dev-only values."
 }
 
+# The web BFF seals its cookies with WEB_SESSION_SECRET; an older .localEnv.agent gets one added.
+ensure_web_session_secret() {
+  grep -q "^$WEB_SESSION_SECRET_KEY=" "$LOCAL_ENV_FILE" || echo "$WEB_SESSION_SECRET_KEY=$(stack_random_secret)" >>"$LOCAL_ENV_FILE"
+}
+
 load_local_env() {
   [[ -f "$LOCAL_ENV_FILE" ]] || create_local_env
-  ensure_local_env_is_ignored
+  stack_ensure_local_env_ignored "$LOCAL_ENV_FILE"
+  ensure_web_session_secret
   set -a
   # shellcheck source=/dev/null
   source "$LOCAL_ENV_FILE"
@@ -113,7 +119,7 @@ load_local_env() {
   export DEV_STACK_MAILPIT_SMTP_PORT="${DEV_STACK_MAILPIT_SMTP_PORT:-$DEFAULT_MAILPIT_SMTP_PORT}"
   ADMIN_ORIGIN="http://admin.$DOMAIN:$ADMIN_PORT"
   WEB_ORIGIN="http://$DOMAIN:$WEB_PORT_DEV"
-  API_BASE_URL="$WEB_ORIGIN$API_PREFIX"
+  API_BASE_URL="$ADMIN_ORIGIN$API_PREFIX"
   MAILPIT_URL="http://mail.$DOMAIN:$DEV_STACK_MAILPIT_HTTP_PORT"
 }
 
@@ -128,7 +134,11 @@ export_api_env() {
   export ALLOW_LOGIN_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN"
   export LOGIN_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" LOGIN_RATE_LIMIT_EMAIL="$RATE_LIMIT_OVERRIDE"
   export REFRESH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" SETUP_STATUS_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
-  export SETUP_SUBMIT_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
+  export SETUP_SUBMIT_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" TWO_FACTOR_EMAIL_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
+  export TWO_FACTOR_MANAGE_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
+  export ACCOUNT_INVITE_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ACCOUNT_INVITE_RATE_LIMIT_ACTOR="$RATE_LIMIT_OVERRIDE"
+  export OTP_ISSUE_RATE_LIMIT_ACCOUNT="$RATE_LIMIT_OVERRIDE"
+  export PASSWORD_SUBMIT_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" PASSWORD_CHANGE_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE"
   # Cloudflare's public always-pass test secret (same value as the smoke stack).
   TURNSTILE_SECRET_KEY="$(sed -n 's/^TURNSTILE_SECRET_KEY=//p' "$ROOT_DIR/scripts/stack/cms-api.env")"
   export TURNSTILE_SECRET_KEY
@@ -212,11 +222,19 @@ build_prerequisites() {
   pnpm --dir "$ROOT_DIR" --filter @abyss/cms-api build
 }
 
+# owner:bootstrap refuses a second owner, so a restart on kept data is not a failure.
+bootstrap_owner_once() {
+  local out_file="$STATE_DIR/owner-bootstrap.out" status=0
+  printf '%s\n' "$STACK_OWNER_PASSWORD" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}" >"$out_file" 2>&1 || status=$?
+  cat "$out_file" >>"$STATE_DIR/migrate.log"
+  ((status == 0)) || grep -q "$OWNER_EXISTS_MESSAGE" "$out_file" || { echo "owner:bootstrap failed (see $STATE_DIR/migrate.log)." >&2; exit 1; }
+}
+
 prepare_data() {
   echo "Migrating and seeding..."
   api_exec -- npm run --silent db:migrate >>"$STATE_DIR/migrate.log" 2>&1
   api_exec -- node dist/modules/content-engine/cli/ContentMigrate.command.js >>"$STATE_DIR/migrate.log" 2>&1
-  printf '%s\n' "$STACK_OWNER_PASSWORD" | api_exec -e OWNER_EMAIL="$STACK_OWNER_EMAIL" -- "${OWNER_BOOTSTRAP_CMD[@]}" >>"$STATE_DIR/migrate.log" 2>&1
+  bootstrap_owner_once
   stack_seed_extra_accounts
   ((FAILURES == 0)) || { echo "Seeding failed." >&2; exit 1; }
 }
@@ -225,20 +243,27 @@ start_apps() {
   echo "Starting cms-api, cms-admin and web in dev mode..."
   start_app cms-api pnpm --dir "$ROOT_DIR" --filter @abyss/cms-api start:dev
   VITE_API_BASE_URL="$API_BASE_URL" DEV_SERVER_PORT="$ADMIN_PORT" \
+    DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
-  DEV_SERVER_PORT="$WEB_PORT_DEV" DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
-    API_INTERNAL_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 \
-    NEXT_PUBLIC_API_BASE_URL="$API_PREFIX" NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
-    WEB_STATUS_PAGE_ENABLED=true \
-    start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
+  # The web server needs the reader-account API token, which needs cms-api up.
+  STACK_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX"
+  stack_mint_content_token "$COMPOSE_PROJECT" "$LOCAL_ENV_FILE"
+  # web reads APP_API_URL and WEB_REVALIDATE_SECONDS=0 (no data cache); APP_ENV=development keeps the mock fallback on.
+  # Turnstile keys pinned (blank hostname and opt-in) so apps/web/.env cannot override them and fail the always-pass check.
+  DEV_SERVER_PORT="$WEB_PORT_DEV" APP_API_TOKEN="$STACK_APP_API_TOKEN" \
+    TURNSTILE_SECRET_KEY="$TURNSTILE_SECRET_KEY" TURNSTILE_EXPECTED_HOSTNAME="" ALLOW_TURNSTILE_TEST_SECRET="" \
+    APP_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 APP_ENV=development \
+    BFF_AUTH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ALLOW_BFF_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN" \
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
+    start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-admin ($ADMIN_ORIGIN)" cms-admin admin_is_up
   wait_until "web ($WEB_ORIGIN)" web web_is_up
 }
 
 write_e2e_vars() {
   stack_resolve_db_identity
-  stack_export_e2e_env "$ADMIN_ORIGIN" "$API_BASE_URL" "$MAILPIT_URL"
+  stack_export_e2e_env "$ADMIN_ORIGIN" "$API_BASE_URL" "$MAILPIT_URL" "$WEB_ORIGIN"
   (
     umask 077
     for name in "${E2E_VARS[@]}"; do printf 'export %s=%q\n' "$name" "${!name}"; done >"$E2E_VARS_FILE"
@@ -254,7 +279,7 @@ start_stack() {
   mkdir -p "$STATE_DIR"
   trap 'code=$?; if ((code != 0)); then stop_stack; fi; exit $code' EXIT
   export_api_env
-  stack_generate_credentials "$DOMAIN"
+  stack_load_accounts "$DOMAIN" "$LOCAL_ENV_FILE"
   echo "Starting Postgres and Mailpit (project abyss-dev)..."
   compose up --detach --wait --wait-timeout "$READY_TIMEOUT_SECONDS"
   export DB_PASSWORD
@@ -272,6 +297,7 @@ print_demo_summary() {
   echo "  Web:     $WEB_ORIGIN"
   echo "  Admin:   $ADMIN_ORIGIN"
   echo "  Mailpit: $MAILPIT_URL"
+  echo "Web reads cms-api through APP_API_URL with WEB_REVALIDATE_SECONDS=0; mock page text is on."
   echo "Reviewer access is on: open the web and choose Reviewer access (needs internet for the Turnstile widget)."
   echo "Stop with: pnpm dev:stack:stop"
 }
@@ -284,9 +310,22 @@ demo() {
   print_demo_summary
 }
 
+# seed: adds one media file and one document with a draft to a running dev stack.
+seed() {
+  load_local_env
+  export_api_env
+  stack_load_accounts "$DOMAIN" "$LOCAL_ENV_FILE"
+  api_is_ready || { echo "The dev stack is not running (pnpm dev:stack)." >&2; exit 1; }
+  demo_sign_in_owner
+  demo_seed_media
+  demo_seed_document_with_draft
+  echo "Seeded one media file and one '$DEMO_SEED_DOCUMENT_SLUG' document with a draft."
+}
+
 case "${1:-start}" in
   start) start_stack ;;
   demo) demo ;;
+  seed) seed ;;
   stop) load_local_env; stop_stack; echo "Dev stack stopped." ;;
-  *) echo "Usage: dev-stack.sh [start|demo|stop]" >&2; exit 2 ;;
+  *) echo "Usage: dev-stack.sh [start|demo|seed|stop]" >&2; exit 2 ;;
 esac

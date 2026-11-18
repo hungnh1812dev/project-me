@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentListPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { ContentType } from '@features/content-types';
 import type { DocumentListItem } from '@features/content/Content.api';
 import type { FakeHandler } from '@test/FakeApi.fixture';
@@ -10,8 +10,8 @@ import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
-const copy = COPY.content.collection;
-const bulk = COPY.content.bulk;
+const copy = EN_TEXT.content.collection;
+const bulk = EN_TEXT.content.bulk;
 const SLUG = 'post';
 
 function field(path: string, type: string, system = false) {
@@ -141,9 +141,9 @@ describe('CollectionListPage: list', () => {
     await screen.findByRole('link', { name: 'Post 1' });
     expect(screen.getByRole('columnheader', { name: copy.columns.status })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: copy.columns.status })).not.toBeInTheDocument();
-    expect(screen.getByText(COPY.content.publishState.draft)).toBeInTheDocument();
-    expect(screen.getByText(COPY.content.publishState.modified)).toBeInTheDocument();
-    expect(screen.getByText(COPY.content.publishState.published)).toBeInTheDocument();
+    expect(screen.getByText(EN_TEXT.content.publishState.draft)).toBeInTheDocument();
+    expect(screen.getByText(EN_TEXT.content.publishState.modified)).toBeInTheDocument();
+    expect(screen.getByText(EN_TEXT.content.publishState.published)).toBeInTheDocument();
   });
 
   it('has no Status column when the items carry no publish state', async () => {
@@ -195,7 +195,7 @@ describe('CollectionListPage: list', () => {
   it('shows a retry when the list fails', async () => {
     await open({ [LIST_KEY]: () => ({ status: 500 }) });
     expect(await screen.findByText(copy.loadFailed)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.access.errors.retry })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: EN_TEXT.access.errors.retry })).toBeInTheDocument();
   });
 
   it('opens the one document of a single type', async () => {
@@ -224,7 +224,7 @@ describe('CollectionListPage: list', () => {
       [LIST_KEY]: () => ({ status: 200, data: page([]) }),
     });
     expect(
-      await screen.findByRole('heading', { name: COPY.content.newTitle('Blog Post') }),
+      await screen.findByRole('heading', { name: EN_TEXT.content.newTitle('Blog Post') }),
     ).toBeInTheDocument();
     expect(api.callsTo(`GET ${CONTENT_TYPES.ONE(SLUG)}`).length).toBeGreaterThan(0);
   });
@@ -281,11 +281,11 @@ describe('CollectionListPage: bulk actions', () => {
       },
     });
     await screen.findByRole('link', { name: 'Post 1' });
-    expect(screen.getAllByText(COPY.content.publishState.draft)).toHaveLength(5);
+    expect(screen.getAllByText(EN_TEXT.content.publishState.draft)).toHaveLength(5);
     const user = await selectFive();
     await user.click(screen.getByRole('button', { name: bulk.publish(5) }));
     await waitFor(() =>
-      expect(screen.getAllByText(COPY.content.publishState.published)).toHaveLength(5),
+      expect(screen.getAllByText(EN_TEXT.content.publishState.published)).toHaveLength(5),
     );
   });
 

@@ -1,15 +1,19 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { NAV_GROUP_OPEN_STORAGE_KEY } from '@configs/NavSections.constants';
 import type { Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, renderApp, renderInApp, TEST_USER } from '@test/RenderApp.fixture';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes } from 'react-router';
+
+import { LeaveGuardProvider, useLeaveGuard } from './LeaveGuard';
+import { SideMenu } from './SideMenu';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
-const nav = COPY.access.nav;
+const nav = EN_TEXT.access.nav;
 
 const readerRole: Role = {
   id: 'role_reader',
@@ -68,6 +72,13 @@ async function open(
   await services.session.restore();
   renderApp(services);
 }
+
+const mediaReaderRole: Role = {
+  ...readerRole,
+  id: 'role_media',
+  slug: 'media-reader',
+  permissions: [{ ...readerRole.permissions[0]!, subject: 'media' }],
+};
 
 const mainNav = () => screen.getByRole('navigation', { name: nav.label });
 
@@ -168,12 +179,62 @@ describe('SideMenu', () => {
     expect(menu.queryByRole('heading', { name: nav.singleTypes })).not.toBeInTheDocument();
   });
 
+  it('shows the Welcome panel and no nav landmark when no page is readable', async () => {
+    await open(
+      { ...TEST_USER, role: 'guest' },
+      {
+        [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 403 }),
+        [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+      },
+    );
+
+    const heading = await screen.findByRole('heading', { name: nav.welcomeTitle });
+    const panel = heading.closest('section') as HTMLElement;
+    expect(panel).toHaveAccessibleName(nav.welcomeTitle);
+    expect(within(panel).getByText(nav.welcomeText)).toBeInTheDocument();
+    expect(within(panel).queryByRole('link')).not.toBeInTheDocument();
+    expect(within(panel).queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: nav.label })).not.toBeInTheDocument();
+  });
+
+  it('shows only File Library to a caller holding only media read', async () => {
+    await open({ ...TEST_USER, role: 'media-reader' }, {}, [mediaReaderRole]);
+
+    expect(await within(mainNav()).findByRole('link', { name: nav.media })).toBeInTheDocument();
+    expect(within(mainNav()).getAllByRole('link')).toHaveLength(1);
+    expect(screen.queryByRole('heading', { name: nav.welcomeTitle })).not.toBeInTheDocument();
+  });
+
+  it('shows the skeleton and no Welcome panel while the catalog loads', async () => {
+    await open(TEST_USER, {
+      [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => new Promise(() => {}),
+    });
+
+    expect(await within(mainNav()).findByText(nav.loading)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: nav.welcomeTitle })).not.toBeInTheDocument();
+  });
+
+  it('keeps the retry row and no Welcome panel when the catalog fails for a no-access caller', async () => {
+    await open(
+      { ...TEST_USER, role: 'guest' },
+      {
+        [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 403 }),
+        [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => ({ status: 500 }),
+      },
+    );
+
+    expect(await screen.findByText(nav.catalogError)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: nav.welcomeTitle })).not.toBeInTheDocument();
+  });
+
   it('holds navigation only: no Sign out or Security link', async () => {
     await open();
 
     await within(mainNav()).findByRole('link', { name: 'Blog Post' });
-    expect(screen.queryByRole('button', { name: COPY.session.signOut })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: COPY.session.securityLink })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: EN_TEXT.session.signOut })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: EN_TEXT.session.securityLink }),
+    ).not.toBeInTheDocument();
   });
 
   it('marks the open page as current', async () => {
@@ -183,6 +244,11 @@ describe('SideMenu', () => {
 
     await userEvent.click(link);
     expect(link).toHaveAttribute('aria-current', 'page');
+    expect(link).toHaveClass('aria-[current=page]:bg-nav-active', 'rounded-item');
+    const others = within(mainNav())
+      .getAllByRole('link')
+      .filter((other) => other !== link);
+    for (const other of others) expect(other).not.toHaveAttribute('aria-current');
   });
 
   it('shows one line with a retry when the catalog fails, then recovers', async () => {
@@ -232,5 +298,100 @@ describe('MobileMenu', () => {
     await userEvent.click(screen.getByRole('button', { name: nav.menu }));
     await userEvent.click(await screen.findByRole('button', { name: nav.closeMenu }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  describe('for a caller who can read no page', () => {
+    const openAsGuest = () =>
+      open(
+        { ...TEST_USER, role: 'guest' },
+        {
+          [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 403 }),
+          [`GET ${API_ENDPOINTS.CONTENT_TYPES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+        },
+      );
+
+    it('shows the Welcome panel inside the Menu sheet', async () => {
+      await openAsGuest();
+      await userEvent.click(screen.getByRole('button', { name: nav.menu }));
+      const sheet = await screen.findByRole('dialog');
+
+      expect(
+        await within(sheet).findByRole('heading', { name: nav.welcomeTitle }),
+      ).toBeInTheDocument();
+      expect(within(sheet).getByText(nav.welcomeText)).toBeInTheDocument();
+      expect(within(sheet).queryByRole('navigation', { name: nav.label })).not.toBeInTheDocument();
+    });
+
+    it('keeps the app-name link, Menu button and user menu in the shell', async () => {
+      await openAsGuest();
+      await screen.findByRole('heading', { name: nav.welcomeTitle });
+
+      expect(screen.getAllByRole('link', { name: EN_TEXT.app.name }).length).toBeGreaterThan(0);
+      expect(screen.getByRole('button', { name: nav.menu })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('shows the nav landmark and the Menu button together for an owner', async () => {
+    await open();
+
+    expect(await within(mainNav()).findByRole('link', { name: 'Blog Post' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: nav.menu })).toBeInTheDocument();
+  });
+
+  describe('with a page holding unsaved work', () => {
+    function UnsavedPage() {
+      useLeaveGuard(true);
+      return (
+        <SideMenu
+          nav={{
+            hooks: [],
+            items: [
+              {
+                label: 'Files',
+                path: '/media',
+                section: 'utilities',
+                subject: 'media',
+                action: 'read',
+              },
+            ],
+          }}
+        />
+      );
+    }
+
+    async function openGuarded() {
+      const { services } = createTestServices({
+        [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
+        [`GET ${ME}`]: () => ({ status: 200, data: TEST_USER }),
+        [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+      });
+      await services.session.restore();
+      renderInApp(
+        services,
+        <LeaveGuardProvider>
+          <Routes>
+            <Route path="/" element={<UnsavedPage />} />
+            <Route path="/media" element={<p>Media route</p>} />
+          </Routes>
+        </LeaveGuardProvider>,
+      );
+      return screen.findByRole('link', { name: 'Files' });
+    }
+
+    it('asks before leaving, keeps the page on stay and navigates on leave', async () => {
+      const link = await openGuarded();
+      const leaveDialog = EN_TEXT.common.leaveDialog;
+
+      await userEvent.click(link);
+      await userEvent.click(await screen.findByRole('button', { name: leaveDialog.stay }));
+      expect(screen.queryByText('Media route')).not.toBeInTheDocument();
+
+      await userEvent.click(link);
+      await userEvent.click(await screen.findByRole('button', { name: leaveDialog.leave }));
+      expect(await screen.findByText('Media route')).toBeInTheDocument();
+    });
   });
 });

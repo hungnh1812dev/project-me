@@ -3,6 +3,8 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   REFRESH_TOKEN_REUSE_GRACE_MS,
+  REFRESH_TOKEN_TTL_MS,
+  SESSION_REFRESH_TOKEN_TTL_MS,
 } from './Identity.constants';
 
 const ACTIVE_ACCOUNT_STATUS = 'active';
@@ -48,6 +50,11 @@ export interface RotatedTokenFacts {
   readonly revokedAt: Date | null;
   readonly successor: RotationSuccessorFacts | null;
   readonly account: Pick<LoginAccountFacts, 'status' | 'deletedAt'>;
+}
+
+/** D22: a remembered session keeps its refresh token 30 days, an unremembered one 12 hours. */
+export function refreshTokenTtlMsOf(rememberMe: boolean): number {
+  return rememberMe ? REFRESH_TOKEN_TTL_MS : SESSION_REFRESH_TOKEN_TTL_MS;
 }
 
 /**

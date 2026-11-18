@@ -62,6 +62,7 @@ describe('session', () => {
     const outcome = await services.session.signIn({
       email: TEST_USER.email,
       password: 'pw',
+      rememberMe: false,
     });
     expect(outcome).toEqual({ kind: 'signed-in', accessToken: 't2' });
     expect(services.store.getState().auth.status).toBe('authenticated');
@@ -77,6 +78,7 @@ describe('session', () => {
     const outcome = await services.session.signIn({
       email: TEST_USER.email,
       password: 'pw',
+      rememberMe: false,
     });
     expect(outcome).toEqual({
       kind: 'two-factor-required',

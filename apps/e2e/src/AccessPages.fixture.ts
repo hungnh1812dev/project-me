@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 import { ADMIN_COPY } from './Apps.contract';
-import { CV_PAGE_SLUG } from './E2e.constants';
+import { PAGE_CV_A_SLUG } from './E2e.constants';
 
 const access = ADMIN_COPY.access;
 
@@ -27,13 +27,15 @@ export const roleDiscardButton = (page: Page): Locator =>
   page.getByRole('button', { name: access.role.discard });
 
 const readCvPageCell = (page: Page): Locator =>
-  permissionCell(page, access.matrix.actions.read, CV_PAGE_SLUG);
+  permissionCell(page, access.matrix.actions.read, PAGE_CV_A_SLUG);
 
-/** Lets the Editor role read only the `position` field of cv-page. */
+/** Lets the Editor role read only the `position` field of page-cv-a. */
 export async function limitEditorToPositionField(page: Page): Promise<void> {
   await openRole(page, 'Editor');
   await readCvPageCell(page).check();
-  await page.getByRole('button', { name: access.matrix.detailsLabel(CV_PAGE_SLUG) }).click();
+  await page
+    .getByRole('button', { name: access.matrix.detailsLabel(PAGE_CV_A_SLUG), exact: true })
+    .click();
   await page.getByRole('radio', { name: access.fields.some }).check();
   await page
     .getByRole('group', { name: access.fields.readable })
@@ -43,7 +45,7 @@ export async function limitEditorToPositionField(page: Page): Promise<void> {
   await expect(page.getByRole('status')).toContainText('Permissions saved');
 }
 
-/** Puts the shared Editor role back to reading no cv-page. */
+/** Puts the shared Editor role back to reading no page-cv-a. */
 export async function restoreEditorRole(page: Page): Promise<void> {
   await openRole(page, 'Editor');
   await readCvPageCell(page).uncheck();

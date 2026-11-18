@@ -66,6 +66,7 @@ function build(
     }),
   };
   const logger = {
+    info: jest.fn(),
     warn: jest.fn((_message: string, _context?: string) => undefined),
     error: jest.fn(),
   };

@@ -1,7 +1,7 @@
 /** DI token for the frozen `IAppConfig`. */
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
-export const NODE_ENVS = ['development', 'test', 'production'] as const;
+export const NODE_ENVS = ['development', 'staging', 'production'] as const;
 export const MAIL_PROVIDERS = ['console', 'smtp'] as const;
 export const MEDIA_PROVIDERS = ['fake', 'cloudinary', 'local'] as const;
 /** DB_SSL_MODE values (libpq names). `verify-full` checks the CA and the host name. */
@@ -89,7 +89,18 @@ export const RATE_LIMIT_OVERRIDE_ENV_KEYS = [
   'REFRESH_RATE_LIMIT_IP',
   'SETUP_STATUS_RATE_LIMIT_IP',
   'SETUP_SUBMIT_RATE_LIMIT_IP',
+  'TWO_FACTOR_EMAIL_RATE_LIMIT_IP',
+  'TWO_FACTOR_MANAGE_RATE_LIMIT_IP',
+  'ACCOUNT_INVITE_RATE_LIMIT_IP',
+  'ACCOUNT_INVITE_RATE_LIMIT_ACTOR',
+  'OTP_ISSUE_RATE_LIMIT_ACCOUNT',
+  'PASSWORD_SUBMIT_RATE_LIMIT_IP',
+  'PASSWORD_CHANGE_RATE_LIMIT_IP',
 ] as const;
+
+/** The one override key no throttle rule binds: it replaces the per-account code cap in OtpService. */
+export const OTP_ISSUE_LIMIT_OVERRIDE_ENV_KEY =
+  'OTP_ISSUE_RATE_LIMIT_ACCOUNT' satisfies (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 
 export type RateLimitOverrideEnvKey = (typeof RATE_LIMIT_OVERRIDE_ENV_KEYS)[number];
 

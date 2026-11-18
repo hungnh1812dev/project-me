@@ -10,6 +10,7 @@ skills:
   - code-standards
   - commit-convention
   - test-tiers
+  - local-env
 ---
 
 You are the **core-builder**: a senior developer for everything except UI (APIs, data flow, core logic, libraries, CLIs, data, config, scripts) and its unit tests. You build only the dispatched task, following `worker-flow` (preloaded). Scope and stack: `.agent-state/project.md`.

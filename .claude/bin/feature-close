@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Closed-feature check for .agent-state (session-handoff rules).
+
+Usage (from the repo root):
+  .claude/bin/feature-close --check    fail when a done feature breaks the close rules
+
+Rules checked for each `done` row of .agent-state/features.md (session-handoff, "Files" table):
+  - the feature folder keeps only SUMMARY.md and CHECKLIST.md (git-ignored entries are not counted)
+  - the Summary column links the folder's SUMMARY.md
+  - SUMMARY.md exists
+  - the folder has no live state files: board.md, handoff.md, current.md, qc-issues-handoff.md,
+    qc-progress.md, checklists/, findings/, resolved/
+Prints one line per violation and exits 1; prints nothing and exits 0 when all done features pass.
+"""
+
+import os
+import re
+import subprocess
+import sys
+
+STATE = ".agent-state"
+FEATURES = os.path.join(STATE, "features.md")
+ALLOWED = {"SUMMARY.md", "CHECKLIST.md"}
+
+
+def git_ignored(root, names):
+    if not names:
+        return set()
+    paths = [os.path.join(root, n) for n in names]
+    out = subprocess.run(
+        ["git", "check-ignore", "--stdin"],
+        input="\n".join(paths),
+        capture_output=True,
+        text=True,
+        cwd=root,
+    )
+    return {os.path.basename(p.rstrip("/")) for p in out.stdout.splitlines()}
+
+
+def done_rows(path):
+    rows = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) < 7 or not re.fullmatch(r"\d+", cells[0]):
+                continue
+            if cells[2].startswith("done"):
+                rows.append(cells)
+    return rows
+
+
+def check(root):
+    problems = []
+    for cells in done_rows(os.path.join(root, FEATURES)):
+        name = cells[1]
+        folder_rel = cells[3].strip("`")
+        summary_cell = cells[6]
+        folder = os.path.join(root, STATE, folder_rel)
+        if not os.path.isdir(folder):
+            problems.append(f"{name}: folder {folder_rel} missing")
+            continue
+        entries = sorted(os.listdir(folder))
+        ignored = git_ignored(root, [os.path.join(folder, e) for e in entries])
+        live = [e for e in entries if e not in ignored and e not in ALLOWED]
+        for entry in live:
+            problems.append(f"{name}: {folder_rel}{entry} must not stay after close")
+        if "SUMMARY.md" not in entries:
+            problems.append(f"{name}: {folder_rel}SUMMARY.md missing")
+        if f"{folder_rel}SUMMARY.md" not in summary_cell:
+            problems.append(f"{name}: Summary column does not link {folder_rel}SUMMARY.md")
+    return problems
+
+
+def main(argv):
+    if argv != ["--check"]:
+        print(__doc__.strip().splitlines()[2], file=sys.stderr)
+        return 2
+    root = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True
+    ).stdout.strip()
+    problems = check(root)
+    for p in problems:
+        print(p)
+    return 1 if problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

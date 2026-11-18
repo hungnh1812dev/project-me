@@ -1,5 +1,5 @@
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES } from '@configs/Http.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import { AxiosError, type AxiosResponse } from 'axios';
 
 import { toPasswordError } from './Password.errors';
@@ -11,9 +11,9 @@ function httpError(status: number, data: unknown = null, headers: Record<string,
 
 describe('toPasswordError', () => {
   it.each([
-    [API_ERROR_CODES.INVALID_OTP, 'invalid-code', COPY.password.errors.invalidCode],
-    [API_ERROR_CODES.WEAK_PASSWORD, 'weak-password', COPY.password.errors.weakPassword],
-    [API_ERROR_CODES.TOTP_REQUIRED, 'totp-required', COPY.password.errors.totpRequired],
+    [API_ERROR_CODES.INVALID_OTP, 'invalid-code', EN_TEXT.password.errors.invalidCode],
+    [API_ERROR_CODES.WEAK_PASSWORD, 'weak-password', EN_TEXT.password.errors.weakPassword],
+    [API_ERROR_CODES.TOTP_REQUIRED, 'totp-required', EN_TEXT.password.errors.totpRequired],
   ])('maps %s', (errorCode, kind, message) => {
     expect(toPasswordError(httpError(400, { errorCode }))).toEqual({
       kind,
@@ -24,14 +24,14 @@ describe('toPasswordError', () => {
   it('turns Retry-After into a wait message', () => {
     expect(toPasswordError(httpError(429, null, { 'retry-after': '30' }))).toEqual({
       kind: 'rate-limited',
-      message: COPY.password.errors.rateLimitedSeconds(30),
+      message: EN_TEXT.password.errors.rateLimitedSeconds(30),
     });
   });
 
   it('falls back to a generic wait without Retry-After', () => {
     expect(toPasswordError(httpError(429))).toEqual({
       kind: 'rate-limited',
-      message: COPY.password.errors.rateLimited,
+      message: EN_TEXT.password.errors.rateLimited,
     });
   });
 
@@ -46,7 +46,7 @@ describe('toPasswordError', () => {
     const error = new AxiosError('Network Error', AxiosError.ERR_NETWORK);
     expect(toPasswordError(error)).toEqual({
       kind: 'network',
-      message: COPY.password.errors.network,
+      message: EN_TEXT.password.errors.network,
     });
   });
 });

@@ -20,7 +20,7 @@ setup_body() {
 
 # setup_status_is <fragment> <label>
 setup_status_is() {
-  request GET "$WEB_ORIGIN$API_PREFIX/setup/status"
+  request GET "$ADMIN_ORIGIN$API_PREFIX/setup/status"
   if [[ "$STATUS" == "200" && "$(cat "$BODY")" == *"$1"* ]]; then pass "$2"; else fail "$2: $STATUS $(cat "$BODY")"; fi
 }
 
@@ -30,15 +30,15 @@ check_owner_setup() {
   setup_token="$(sed -n "s/^$SETUP_TOKEN_KEY=//p" "$CMS_API_ENV_FILE")"
   if [[ -z "$setup_token" ]]; then fail "$SETUP_TOKEN_KEY is not set in $CMS_API_ENV_FILE"; fi
   setup_status_is "$SETUP_STATUS_OPEN" "setup status is open before the owner exists"
-  request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
+  request POST "$ADMIN_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
     --data "$(setup_body "wrong-$setup_token")"
   expect_status "setup with a wrong token is refused" 401
-  request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
+  request POST "$ADMIN_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
     --data "$(setup_body "$setup_token")"
   expect_status "setup with the right token creates the owner" 201
   if [[ -z "$(header Set-Cookie)" && "$(cat "$BODY")" != *accessToken* ]]; then pass "setup answer carries no cookie and no access token"; else fail "setup answer carries a session"; fi
   setup_status_is "$SETUP_STATUS_CLOSED" "setup status is closed after the owner exists"
-  request POST "$WEB_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
+  request POST "$ADMIN_ORIGIN$API_PREFIX/setup/owner" -H 'Content-Type: application/json' \
     --data "$(setup_body "$setup_token")"
   expect_status "a second setup submit is a 404" 404
   in_api "owner:bootstrap refuses a second owner" "$STACK_OWNER_PASSWORD" 0 \

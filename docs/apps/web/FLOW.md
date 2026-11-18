@@ -5,7 +5,7 @@ summary: BFF request pipeline and page rendering
 
 # web: flows
 
-Part of the [project spec](../../../SPEC.md). App `web`: [SPEC.md](SPEC.md) (app-wide requirements and decisions) · [FLOW.md](FLOW.md) (processes every flow of the app goes through) · [RULES.md](RULES.md) (rules every flow of the app must keep). In these files `Applies to: all flows.` means every flow that touches this app.
+Part of the [project spec](../../../SPEC.md). App `web`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md). In these files a section without an `Applies to:` line covers every flow that touches this app.
 
 ## BFF request pipeline
 
@@ -24,13 +24,13 @@ Every BFF route, in this order (D21):
 
 ```mermaid
 flowchart LR
-  req(["browser request /bff/v1/*"]) --> m{"method allowed?"}
+  req(["browser request /api/v1/*"]) --> m{"method allowed?"}
   m --> o{"Origin = WEB_ORIGIN?"}
   o --> b{"JSON, at most 8 KiB?"}
   b --> rl{"rate limit"}
   rl --> z{"Zod schema"}
   z --> t{"Turnstile (where needed)"}
-  t --> up["one cms-api call on API_INTERNAL_URL"]
+  t --> up["one cms-api call on APP_API_URL"]
   up --> ans["allowlisted answer, no-store"]
 ```
 
@@ -39,5 +39,6 @@ flowchart LR
 Applies to flows: `public-site`.
 
 1. `src/proxy.ts` creates the per-request nonce and sets the CSP header (D17).
-2. Server Components fetch content anonymously through GraphQL from `API_INTERNAL_URL`, cached for `WEB_REVALIDATE_SECONDS`.
-3. Client components call only the BFF under `/bff/v1`, through the browser API client.
+2. The header runs its header and sign-in queries and the page its page query (public-site PS-1), through server GraphQL → server RESTful on `APP_API_URL` with `APP_API_TOKEN`, each cached for its own revalidate seconds (default 180 s, WEB-4).
+3. Where `APP_ENV` is not `production` (WEB-9), a query whose read failed (GraphQL `errors` with HTTP 200 included, or a single type that answers null), is answered from `MockView.ts` by its mock key, above the fetch and never cached; otherwise `executeGraphql` throws and the part shows its error state or its last-resort text. A collection that answers empty is never mocked: its page shows 404 or a no-data state (WEB-5).
+4. Client components get their text as props from the server component of their part and call only the BFF under `/api/v1`, through the client RESTful layer (WEB-1, WEB-3).

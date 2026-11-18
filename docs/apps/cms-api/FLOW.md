@@ -5,11 +5,9 @@ summary: Request pipeline, authorization decision, deploy and migrate
 
 # cms-api: flows
 
-Part of the [project spec](../../../SPEC.md). App `cms-api`: [SPEC.md](SPEC.md) (app-wide requirements and decisions) · [FLOW.md](FLOW.md) (processes every flow of the app goes through) · [RULES.md](RULES.md) (rules every flow of the app must keep). In these files `Applies to: all flows.` means every flow that touches this app.
+Part of the [project spec](../../../SPEC.md). App `cms-api`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md). In these files a section without an `Applies to:` line covers every flow that touches this app.
 
 ## Request pipeline
-
-Applies to: all flows.
 
 1. The request reaches cms-api under `/api/v1` (Traefik never strips the prefix; trailing slashes are tolerated, [canonical-values.md](../../global/reference/canonical-values.md)).
 2. The shared HTTP pipeline (`src/common`) adds the request id and security headers, resolves the client IP (D7) and applies the throttles.

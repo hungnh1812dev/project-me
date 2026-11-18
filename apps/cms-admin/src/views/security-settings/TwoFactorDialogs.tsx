@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { Button, FormAlert } from '@abyss/form-commons';
+import { Button, Card, FormAlert } from '@abyss/form-commons';
 import { Modal, ModalActions } from '@components/Modal';
 import {
   TOTP_QR_SIZE_PX,
   TOTP_SECRET_GROUP_SIZE,
   type TwoFactorMethod,
 } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useEmailCode } from '@features/auth';
 import { ConfirmWithCodeForm } from '@features/security/ConfirmWithCodeForm';
 import { toSecurityError } from '@features/security/Security.errors';
@@ -14,7 +14,6 @@ import { useSecurityApi } from '@features/security/SecurityApi.context';
 import { useMutation } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
 
-const copy = COPY.security;
 const SECRET_GROUPS = new RegExp(`.{1,${TOTP_SECRET_GROUP_SIZE}}`, 'g');
 
 /** Shared props: close without change, finish, or 2FA changed elsewhere. */
@@ -34,6 +33,7 @@ function groupSecret(secret: string): string {
  * needs the app's current code and the password.
  */
 export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps) {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const setup = useMutation({ mutationFn: security.setupTotp });
   const { mutate: startSetup } = setup;
@@ -88,7 +88,7 @@ export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps
         >
           <div className="grid gap-3 text-sm">
             <p>{copy.totpSetup.scanStep}</p>
-            <div className="w-fit rounded-md border border-border bg-card p-3 text-foreground">
+            <Card padding="compact" className="w-fit text-foreground">
               <QRCodeSVG
                 value={setup.data.otpauthUri}
                 size={TOTP_QR_SIZE_PX}
@@ -96,7 +96,7 @@ export function TotpSetupDialog({ onClose, onDone, onStateChanged }: DialogProps
                 bgColor="transparent"
                 title={copy.totpSetup.qrLabel}
               />
-            </div>
+            </Card>
             <div className="grid gap-1">
               <p className="text-muted-foreground">{copy.totpSetup.manualKeyLabel}</p>
               <code
@@ -121,6 +121,7 @@ export function EmailTwoFactorDialog({
   onDone,
   onStateChanged,
 }: DialogProps & { email: string }) {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const emailCode = useEmailCode(security.sendEmailCode, true);
   return (
@@ -153,6 +154,7 @@ export function DisableTwoFactorDialog({
   onDone,
   onStateChanged,
 }: DialogProps & { method: TwoFactorMethod }) {
+  const copy = useScreenText('security').security;
   const security = useSecurityApi();
   const emailCode = useEmailCode(security.sendEmailCode, method === 'email');
   return (

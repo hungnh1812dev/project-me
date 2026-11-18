@@ -1,9 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Button, FormAlert, TextInput, type FormAlertTone } from '@abyss/form-commons';
 import { rateLimitedMessage, type ApiFailure } from '@apis/client/ApiFailure.errors';
 import { ModalActions } from '@components/Modal';
 import { PASSWORD_LENGTH, TOTP_CODE_LENGTH, type TwoFactorMethod } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT, useScreenText, type ScreenText } from '@configs/locales';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -12,17 +12,19 @@ import { z } from 'zod';
 import type { useEmailCode } from '../auth';
 import { toSecurityError } from './Security.errors';
 
-const copy = COPY.security;
+type SecurityCopy = ScreenText<'security'>['security'];
+
 const CODE_PATTERN = new RegExp(`^\\d{${TOTP_CODE_LENGTH}}$`);
 
-const confirmSchema = z.object({
-  code: z.string().trim().regex(CODE_PATTERN, copy.validation.codeInvalid),
-  password: z
-    .string()
-    .min(1, copy.validation.passwordRequired)
-    .max(PASSWORD_LENGTH.MAX, copy.errors.wrongPassword),
-});
-type ConfirmValues = z.input<typeof confirmSchema>;
+const createConfirmSchema = (copy: SecurityCopy) =>
+  z.object({
+    code: z.string().trim().regex(CODE_PATTERN, copy.validation.codeInvalid),
+    password: z
+      .string()
+      .min(1, copy.validation.passwordRequired)
+      .max(PASSWORD_LENGTH.MAX, copy.errors.wrongPassword),
+  });
+type ConfirmValues = z.input<ReturnType<typeof createConfirmSchema>>;
 
 export interface ConfirmValuesOut {
   code: string;
@@ -44,9 +46,9 @@ function sendAlertOf(failure: ApiFailure | null): Alert | null {
     };
   }
   if (failure.kind === 'network') {
-    return { tone: 'warning', message: COPY.password.errors.network };
+    return { tone: 'warning', message: COMMON_TEXT.password.errors.network };
   }
-  return { tone: 'error', message: COPY.password.errors.unexpected };
+  return { tone: 'error', message: COMMON_TEXT.password.errors.unexpected };
 }
 
 /**
@@ -80,6 +82,8 @@ export function ConfirmWithCodeForm({
   /** Shown above the fields (QR code, warnings). */
   children?: ReactNode;
 }) {
+  const { security: copy } = useScreenText('security');
+  const confirmSchema = useMemo(() => createConfirmSchema(copy), [copy]);
   const [alert, setAlert] = useState<Alert | null>(null);
   const form = useForm<ConfirmValues>({
     resolver: zodResolver(confirmSchema),
@@ -116,7 +120,7 @@ export function ConfirmWithCodeForm({
         case 'weak-password':
           break;
       }
-      setAlert({ tone: 'error', message: COPY.password.errors.unexpected });
+      setAlert({ tone: 'error', message: COMMON_TEXT.password.errors.unexpected });
     },
   });
 

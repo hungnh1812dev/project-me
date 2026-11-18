@@ -4,6 +4,7 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 
 ## Testing
 - Frontend tests: Vitest + jsdom, `src/**/*.test.tsx`; jsdom needs the ResizeObserver stub and the `<dialog>` polyfill (test/Vitest.setup.ts in form-commons and cms-admin); ProseMirror is driven through `element.editor`. form-commons must be rebuilt (`pnpm --filter @abyss/form-commons build`) before apps see new exports.
+- cms-admin: a new screen of copy must be added to `ALL_SCREENS` in `test/Vitest.setup.ts`, or the first test of a component using it renders nothing; a view's nav hook lives in its view folder (a feature may not import `access`, lint-enforced).
 - Admin tests use fake handlers keyed "METHOD /path" (`test/FakeApi.fixture.ts`, createTestServices).
 - Contract tests read `apps/cms-api/content/public-constants.json` with `readFileSync` from `process.cwd()` (never import it in app code); add a mirror check there when a client copies a new cms-api constant.
 
@@ -15,7 +16,7 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 - apps/web: server content reads go through `apis/server/graphql/Graphql.server.ts` (anonymous, `next.revalidate`), browser ones through `apis/client/Graphql.client.ts`; richtext is sanitized with `utils/SafeRichtext.rules.ts` (browser) or `SafeRichtext.server.ts` (server, jsdom; never import it from a client file). jsdom has no types: `src/Jsdom.d.ts` declares the used part.
 - apps/web: `app/**/page.tsx` loads data and renders its view from `views/<page>/` (the view and every part only that page uses); features keep data access and shared parts; features, components, libs, apis, utils and configs never import views; a view folder imports no other view (ESLint).
 - apps/web CV: richtext is sanitized once where data enters (`loadCvPage` server, `useCvContent` refetch, both via `sanitizeCvRichtext`); components render `dangerouslySetInnerHTML` of clean data only, so any new data path must call it. Masked paths are checked with `isMaskedField`. After touching server sanitizer imports, run `grep -rl jsdom .next/static` (must be empty).
-- Local `next build` of apps/web needs `NEXT_PUBLIC_API_BASE_URL` in the shell (agents never read .env.local).
+- Local `next build` of apps/web needs `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in the shell (agents never read .env.local).
 
 - form-commons: a new input reuses `forms/FieldWiring.setup.ts` and `ui/Control.constants.ts` (internal, `KitBoundaries.architecture.test.ts` guards it); do not write bare class words (e.g. "ring") in kit comments, Tailwind scans sources (R3-16).
 - cms-admin: features reach auth only through `features/auth` (`useCurrentUser`, `useSession`, `Session`); `auth/AuthWiring.setup.ts` is `src/app/**` only; no `app/` from features/lib (ESLint boundaries in `eslint.config.mjs`). Auth tests build their store with `AuthStore.fixture.ts`.
@@ -29,5 +30,9 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 
 ## User decisions in force
 - apps/web: features import each other only through `index.ts`; `session` is below `auth` and `reviewer`, which never import each other; `**/*.fixture.*` only in `*.test.*` (eslint + `src/FeatureTiers.architecture.test.ts`).
-- cms-admin admin UI (ADR 0020, Q-UI1/4/5/6): menu routes, `/media` kept as the File Library route, 200 px media cards and the palette are in the ADR. Icons from `lucide-react`; Tiptap 3 packages pinned to 3.32.0.
+- cms-admin admin UI (Q-UI1/4/5/6): menu routes, `/media` kept as the File Library route, 200 px media cards; palette and look: D23 (`docs/apps/cms-admin/SPEC.md`). (ADR 0020 is stable-stack-accounts; there is no admin UI ADR.) Icons from `lucide-react`; Tiptap 3 packages pinned to 3.32.0.
 - Richtext editor: images keep the alt-text action; image order changes with up/down buttons only, no drag (Q-UI10).
+- Web BFF path is `/api/v1/*` on the web origin (2026-11-06, web-api-path, ADR 0018 amended): no alias or redirect from `/bff/v1`, which answers 404.
+- cms-admin premium look (2026-11-10, admin-ui-premium-saas): the document action bar sticks to the bottom with the `--shadow-bar-top` token; invite and resend toasts drop the email address (no personal data in toasts); the sidebar menu is hidden when no item is visible, and a role with no read permission sees the Welcome panel (ADM-11); dialog footers keep the destructive confirm below Cancel at 375 px.
+- Browser checks never read or pass the owner password: signed-in e2e specs sign in inside the test with the env values; the QC browser does not sign in (2026-11-10).
+- apps/web (2026-11-13, web-env-errors; amended 2026-11-16, cv-states-mock): a single type that answers null, or a failed read, gets its mock where APP_ENV is not production; a collection that answers empty is never mocked (404 or a no-data state); /cv never answers 404 or 500 for its content: a failed read with no mock, or no published main CV, shows the no-CV-live state (200, noindex); with the mocks off, /cv shows the CV without labels when cv-common-text is missing; the staging smoke stack seeds published site-shell and CV content matching the web mocks; a web build with `ENVIRONMENT=production` needs `APP_ENV=production`.

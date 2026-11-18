@@ -8,9 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
-
-const copy = COPY.content.bulk.deleteDialog;
+import { useScreenText } from '@configs/locales';
 
 /** Confirms a bulk delete; the button says how many documents go. */
 export function BulkDeleteDialog({
@@ -28,6 +26,7 @@ export function BulkDeleteDialog({
   onConfirm: () => void;
   onCloseAutoFocus: (event: Event) => void;
 }) {
+  const copy = useScreenText('content').content.bulk.deleteDialog;
   return (
     <Dialog
       open={open}

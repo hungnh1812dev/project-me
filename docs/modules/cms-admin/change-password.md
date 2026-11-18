@@ -22,7 +22,7 @@ react-hook-form + zod schema; mutation through the security feature's API contex
 
 ## Technologies
 
-React 19, TanStack Query (`@tanstack/react-query`), react-hook-form + zod where there is a form, `@abyss/form-commons` components; text from `configs/Copy.constants.ts`.
+React 19, TanStack Query (`@tanstack/react-query`), react-hook-form + zod where there is a form, `@abyss/form-commons` components; text from `configs/locales` (`useScreenText`).
 
 ## Entry points
 
@@ -30,7 +30,7 @@ Route `APP_ROUTES.CHANGE_PASSWORD` (`/settings/password`).
 
 ## Where to change what
 
-The route is in `configs/App.routes.ts` and the page is registered in `views/Views.registry.ts`. Text goes in `configs/Copy.constants.ts`, never inline. A component a second page needs moves to `features/` or `components/` (code-standards §4.6).
+The route is in `configs/App.routes.ts` and the page is registered in `views/Views.registry.ts`. Text goes in `configs/locales/en/<Screen>.ts`, never inline; the page lists the screens it reads in `textScreens` of its `Views.registry.ts` entry. A component a second page needs moves to `features/` or `components/` (code-standards §4.6).
 
 ## Files
 

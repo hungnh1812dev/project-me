@@ -21,3 +21,15 @@ allowBuilds:
 # pins multer 2.4.0 exactly. Drop this when a Nest release pins >= 2.5.0.
 overrides:
   multer: 2.5.0
+
+# WARNING (check later): GHSA-fc5q-39xc-vjpf (picomatch ReDoS through repeated
+# extglobs, <=4.0.7) has no fixed release (npm latest 4.0.7 on 2026-11-18).
+# It is reached only through @abyss/base-config > typescript-eslint >
+# tinyglobby / fdir: lint time, globs from the repo's own config, no untrusted
+# input. Drop this when picomatch 4.0.8 or later is on npm: refresh the
+# lockfile so every picomatch 4 resolves to it (or add a scoped overrides entry
+# if the refresh cannot reach it), then remove this entry;
+# `pnpm audit --prod --audit-level high` must pass without it.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf

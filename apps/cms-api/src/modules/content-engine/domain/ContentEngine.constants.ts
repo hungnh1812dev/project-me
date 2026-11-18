@@ -4,6 +4,9 @@ export const CONTENT_DB_SCHEMA = 'content';
 /** SPEC §6: max component nesting below the root. */
 export const MAX_COMPONENT_DEPTH = 3;
 
+/** Nesting past which input is refused before the recursive schema parse (stack safety, not a product rule). */
+export const PARSE_SAFE_NESTING_LIMIT = 100;
+
 /** SPEC §6: Postgres NAMEDATALEN - 1. Longer names are silently truncated by Postgres. */
 export const MAX_IDENTIFIER_BYTES = 63;
 
@@ -13,11 +16,17 @@ export const SQL_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_]*$/;
 /** Content type slug as written in the definition (kebab-case, used in URLs). */
 export const SLUG_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
-/** Joins the slug and component field names into a component table name. */
+/** Joins the slug and component values into a component table name. */
 export const TABLE_PATH_SEPARATOR = '__';
 
 /** Max length of a content type `displayName`, counted in Unicode code points. */
 export const DISPLAY_NAME_MAX_LENGTH = 60;
+
+/** Widths a non-component field may take in the admin form grid (ADR 0019 decision 8). */
+export const FIELD_WIDTHS = ['1/3', '1/2', 'full'] as const;
+
+/** Width the content types API reports for a field that sets none. */
+export const DEFAULT_FIELD_WIDTH = 'full' satisfies (typeof FIELD_WIDTHS)[number];
 
 export const CONTENT_TYPE_KINDS = ['single', 'collection'] as const;
 
@@ -26,13 +35,24 @@ export const SCALAR_FIELD_TYPES = [
   'text',
   'richtext',
   'integer',
+  'biginteger',
+  'float',
+  'double',
   'decimal',
   'boolean',
   'date',
   'datetime',
+  'time',
+  'enumeration',
   'json',
   'media',
 ] as const;
+
+/** Entries an `enumeration` field may list in `options`. */
+export const MAX_ENUM_OPTIONS = 50;
+
+/** Max length of one `options` entry, counted in Unicode code points. */
+export const MAX_ENUM_OPTION_LENGTH = 100;
 
 export const COMPONENT_FIELD_TYPE = 'component';
 
@@ -98,7 +118,7 @@ export const DEFINITION_RULES = {
   IDENTIFIER_COLLISION: 'identifier.collision',
   /** A component is nested deeper than MAX_COMPONENT_DEPTH. */
   COMPONENT_DEPTH_EXCEEDED: 'component.depth_exceeded',
-  /** `displayName` is empty, untrimmed, holds a control character or is too long. */
+  /** A `displayName`, on the content type or on a field, is empty, untrimmed, holds a control character or is too long. */
   DISPLAY_NAME_INVALID: 'display_name.invalid',
 } as const;
 

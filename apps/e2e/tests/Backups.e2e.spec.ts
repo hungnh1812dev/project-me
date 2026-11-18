@@ -71,7 +71,7 @@ async function stubOwnerWithTwoFactor(page: Page) {
 
 const mainMenu = (page: Page) => page.getByRole('navigation', { name: nav.label });
 const backupsLink = (page: Page) =>
-  mainMenu(page).getByRole('link', { name: copy.nav, exact: true });
+  mainMenu(page).getByRole('link', { name: ADMIN_COPY.access.nav.backups, exact: true });
 const checkBackups = (page: Page) => page.getByRole('button', { name: copy.check.button }).click();
 
 function collectConsoleErrors(page: Page): string[] {
@@ -80,7 +80,7 @@ function collectConsoleErrors(page: Page): string[] {
   return errors;
 }
 
-test.describe('backups page', () => {
+test.describe('backups page', { tag: ['@cms-admin', '@cms-api', '@backups'] }, () => {
   test('feature off: page shows the not-configured state after Check backups', async ({ page }) => {
     const errors = collectConsoleErrors(page);
     await signInAsOwner(page);
@@ -162,7 +162,7 @@ test.describe('backups page', () => {
   });
 });
 
-test.describe('backup download dialog', () => {
+test.describe('backup download dialog', { tag: ['@cms-admin', '@cms-api', '@backups'] }, () => {
   const openDialog = async (page: Page) => {
     await page.goto(APP_ROUTES.BACKUPS);
     await checkBackups(page);
@@ -183,6 +183,19 @@ test.describe('backup download dialog', () => {
     );
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
+  });
+
+  test('2FA owner: Esc closes the dialog and focus returns to the row button', async ({ page }) => {
+    await stubList(page, HTTP.OK, fixtureList());
+    await stubOwnerWithTwoFactor(page);
+    await signInAsOwner(page);
+    const dialog = await openDialog(page);
+    await expect(dialog.getByLabel(security.fields.currentPassword)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole('button', { name: copy.download.buttonLabel(FILE_SOON) }),
+    ).toBeFocused();
   });
 
   test('2FA owner: validation, wrong code, wrong password, rate limit, success', async ({

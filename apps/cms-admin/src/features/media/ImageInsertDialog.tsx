@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@abyss/form-commons';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useQueryClient } from '@tanstack/react-query';
 
 import type { MediaFile } from './Media.api';
@@ -15,8 +15,6 @@ import { MEDIA_IMAGE_MIME_TYPES } from './Media.constants';
 import { MEDIA_QUERY_KEY } from './Media.queries';
 import { MediaPickerDialog } from './MediaPickerDialog';
 import { UploadDialog } from './UploadDialog';
-
-const copy = COPY.media.imageInsert;
 
 /** What the editor needs to put a library image at the cursor. */
 export interface InsertedImage {
@@ -41,6 +39,7 @@ export function ImageInsertDialog({
   canUpload: boolean;
   canChoose: boolean;
 }) {
+  const copy = useScreenText('media').media.imageInsert;
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>('choose');
 

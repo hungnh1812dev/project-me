@@ -1,15 +1,15 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { EN_TEXT } from '@configs/locales/en';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { TOTP_SETUP, ENABLE, DISABLE, EMAIL_SEND_CODE } = API_ENDPOINTS.TWO_FACTOR;
-const copy = COPY.security;
+const copy = EN_TEXT.security;
 const PASSWORD = 'correct horse battery staple';
 const SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 
@@ -45,9 +45,9 @@ describe('SecuritySettingsPage', () => {
   it('is linked from the user menu and shows 2FA off', async () => {
     await openSecurity([TEST_USER]);
     await userEvent.click(
-      screen.getByRole('button', { name: COPY.session.accountMenu(TEST_USER.displayName) }),
+      screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
     );
-    expect(screen.getByRole('menuitem', { name: COPY.session.securityLink })).toHaveAttribute(
+    expect(screen.getByRole('menuitem', { name: EN_TEXT.session.securityLink })).toHaveAttribute(
       'href',
       APP_ROUTES.SECURITY_SETTINGS,
     );
@@ -82,7 +82,7 @@ describe('SecuritySettingsPage', () => {
     );
     await userEvent.type(within(dialog).getByLabelText(/^Current password/), `${PASSWORD}{Enter}`);
 
-    expect(await screen.findByText(copy.twoFactor.enabledTotp)).toBeVisible();
+    expect(await findToast(copy.twoFactor.enabledTotp)).toBeVisible();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText(copy.twoFactor.statusTotp)).toBeInTheDocument();
     expect(api.callsTo(`POST ${ENABLE}`)[0]?.data).toBe(
@@ -169,7 +169,7 @@ describe('SecuritySettingsPage', () => {
     await userEvent.type(within(dialog).getByLabelText(/^Email code/), '654321');
     await userEvent.type(within(dialog).getByLabelText(/^Current password/), PASSWORD);
     await userEvent.click(within(dialog).getByRole('button', { name: copy.disable.submit }));
-    expect(await screen.findByText(copy.twoFactor.disabled)).toBeVisible();
+    expect(await findToast(copy.twoFactor.disabled)).toBeVisible();
     expect(screen.getByText(copy.twoFactor.statusOff)).toBeInTheDocument();
   });
 
@@ -185,7 +185,7 @@ describe('SecuritySettingsPage', () => {
     expect(within(dialog).getByRole('alert')).toHaveTextContent(copy.twoFactor.emailWarning);
     await userEvent.type(within(dialog).getByLabelText(/^Email code/), '111222');
     await userEvent.type(within(dialog).getByLabelText(/^Current password/), `${PASSWORD}{Enter}`);
-    expect(await screen.findByText(copy.twoFactor.enabledEmail)).toBeVisible();
+    expect(await findToast(copy.twoFactor.enabledEmail)).toBeVisible();
     expect(api.callsTo(`POST ${EMAIL_SEND_CODE}`)).toHaveLength(1);
   });
 
@@ -197,7 +197,7 @@ describe('SecuritySettingsPage', () => {
       }),
     });
     await userEvent.click(screen.getByRole('button', { name: copy.twoFactor.setUpTotp }));
-    expect(await screen.findByText(copy.errors.stateChanged)).toBeVisible();
+    expect(await findToast(copy.errors.stateChanged)).toBeVisible();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByText(copy.twoFactor.statusTotp)).toBeInTheDocument();
   });

@@ -4,7 +4,7 @@ import {
   CLOUDINARY_IMAGE_ORIGIN,
   RICHTEXT_TEXT_ALIGNMENTS,
   RICHTEXT_TEXT_COLOR_HEXES,
-} from '../configs/Security.constants';
+} from '@/configs/Security.constants';
 
 /**
  * Richtext allowlist for rendering (SPEC D13, render part). It mirrors the

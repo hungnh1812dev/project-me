@@ -1,17 +1,21 @@
-import '../assets/styles/global.css';
+import '@/styles/global.css';
 
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { connection } from 'next/server';
 
-import { AccountMenu } from '../components/layouts/AccountMenu';
-import { Providers } from '../components/layouts/AppProviders';
-import { CspNonce } from '../components/layouts/CspNonce';
-import { COPY } from '../configs/Copy.constants';
-import { NONCE_HEADER } from '../configs/Security.constants';
+import { Providers } from '@/components/layouts/AppProviders';
+import { CspNonce } from '@/components/layouts/CspNonce';
+import { SiteHeader } from '@/components/layouts/SiteHeader';
+import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
+import { NONCE_HEADER } from '@/configs/Security.constants';
+import { loadSiteHeader } from '@/features/site-header/SiteHeader.server';
 
-export const metadata: Metadata = { title: COPY.app.name };
+export async function generateMetadata(): Promise<Metadata> {
+  const siteHeader = await loadSiteHeader();
+  return { title: siteHeader?.header.name ?? LAST_RESORT_TEXT.appName };
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // The CSP nonce is made per request, so every page renders per request.
@@ -23,12 +27,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <CspNonce nonce={nonce} />
         <Providers>
           <div className="min-h-dvh">
-            <header className="border-border bg-card border-b">
-              <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
-                <span className="text-sm font-semibold">{COPY.app.name}</span>
-                <AccountMenu />
-              </div>
-            </header>
+            <SiteHeader />
             <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
           </div>
         </Providers>

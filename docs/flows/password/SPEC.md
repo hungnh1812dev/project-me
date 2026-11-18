@@ -6,7 +6,7 @@ summary: Invitation acceptance (set password), forgot and reset password, signed
 
 # Password: spec
 
-Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md) (what it must do) · [FLOW.md](FLOW.md) (steps and modules) · [RULES.md](RULES.md) (rules every change must keep).
+Part of the [project spec](../../../SPEC.md). Flow `password`: [SPEC.md](SPEC.md) · [FLOW.md](FLOW.md) · [RULES.md](RULES.md).
 
 ## Behaviour
 
@@ -36,7 +36,3 @@ Public self-registration (Q2, [access-admin](../access-admin/SPEC.md)).
 ## Open questions
 
 None.
-
-## Change log
-
-- 2026-11-04 Flow folder created from the old SPEC (D8, D9, §9 "Password").

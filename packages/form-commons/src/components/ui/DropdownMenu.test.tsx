@@ -55,4 +55,14 @@ describe('DropdownMenu', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+
+  it('rounds items with the item radius and the menu with the surface radius', async () => {
+    const trigger = renderMenu();
+    await userEvent.click(trigger);
+    const menu = await screen.findByRole('menu');
+    expect(menu).toHaveClass('rounded-surface');
+    for (const item of screen.getAllByRole('menuitem')) {
+      expect(item).toHaveClass('rounded-item');
+    }
+  });
 });

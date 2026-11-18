@@ -7,8 +7,8 @@ import {
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
 } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
 import { API_ERROR_CODES } from '@configs/Http.constants';
+import { COMMON_TEXT, useScreenText, type ScreenText } from '@configs/locales';
 import type { TwoFactorChallenge } from '@features/auth/Auth.api';
 import { useSession } from '@features/auth/Session.context';
 import { useEmailCode } from '@features/auth/useEmailCode';
@@ -17,13 +17,15 @@ import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const copy = COPY.login.twoFactor;
+type TwoFactorCopy = ScreenText<'login'>['login']['twoFactor'];
+
 const CODE_PATTERN = new RegExp(`^\\d{${TOTP_CODE_LENGTH}}$`);
 
-const codeSchema = z.object({
-  code: z.string().trim().regex(CODE_PATTERN, copy.codeInvalid),
-});
-type CodeValues = z.input<typeof codeSchema>;
+const codeSchemaOf = (copy: TwoFactorCopy) =>
+  z.object({
+    code: z.string().trim().regex(CODE_PATTERN, copy.codeInvalid),
+  });
+type CodeValues = z.input<ReturnType<typeof codeSchemaOf>>;
 
 interface Alert {
   tone: FormAlertTone;
@@ -35,7 +37,7 @@ function methodOf(methods: readonly string[]): TwoFactorMethod | undefined {
 }
 
 /** Failure -> alert, or 'expired' when the temp token is dead. */
-function alertOf(failure: ApiFailure): Alert | 'expired' {
+function alertOf(failure: ApiFailure, copy: TwoFactorCopy): Alert | 'expired' {
   switch (failure.kind) {
     case 'rate-limited':
       return {
@@ -43,7 +45,7 @@ function alertOf(failure: ApiFailure): Alert | 'expired' {
         message: rateLimitedMessage(failure.retryAfterSeconds),
       };
     case 'network':
-      return { tone: 'warning', message: COPY.password.errors.network };
+      return { tone: 'warning', message: COMMON_TEXT.password.errors.network };
     case 'http':
       if (failure.errorCode === API_ERROR_CODES.INVALID_TEMP_TOKEN) {
         return 'expired';
@@ -51,9 +53,9 @@ function alertOf(failure: ApiFailure): Alert | 'expired' {
       if (failure.errorCode === API_ERROR_CODES.INVALID_2FA_CODE) {
         return { tone: 'error', message: copy.errors.invalidCode };
       }
-      return { tone: 'error', message: COPY.password.errors.unexpected };
+      return { tone: 'error', message: COMMON_TEXT.password.errors.unexpected };
     case 'unexpected':
-      return { tone: 'error', message: COPY.password.errors.unexpected };
+      return { tone: 'error', message: COMMON_TEXT.password.errors.unexpected };
   }
 }
 
@@ -71,6 +73,7 @@ export function TwoFactorModal({
   onCancel: () => void;
   onExpired: () => void;
 }) {
+  const copy = useScreenText('login').login.twoFactor;
   const method = methodOf(challenge.methods);
   return (
     <Modal
@@ -110,6 +113,7 @@ function CodeForm({
   onCancel: () => void;
   onExpired: () => void;
 }) {
+  const copy = useScreenText('login').login.twoFactor;
   const session = useSession();
   const [alert, setAlert] = useState<Alert | null>(null);
   // A dead temp token ends the step, whichever call found out.
@@ -117,11 +121,11 @@ function CodeForm({
     () => session.sendLoginEmailCode(tempToken),
     method === 'email',
     (failure) => {
-      if (alertOf(failure) === 'expired') onExpired();
+      if (alertOf(failure, copy) === 'expired') onExpired();
     },
   );
   const form = useForm<CodeValues>({
-    resolver: zodResolver(codeSchema),
+    resolver: zodResolver(codeSchemaOf(copy)),
     defaultValues: { code: '' },
     mode: 'onTouched',
   });
@@ -133,7 +137,7 @@ function CodeForm({
   const verify = useMutation({
     mutationFn: session.completeTwoFactor,
     onError: (cause) => {
-      const mapped = alertOf(apiFailureOf(cause));
+      const mapped = alertOf(apiFailureOf(cause), copy);
       if (mapped === 'expired') {
         onExpired();
         return;
@@ -149,7 +153,7 @@ function CodeForm({
     verify.mutate({ tempToken, code: values.code.trim() });
   });
 
-  const sendAlert = email.failure === null ? null : alertOf(email.failure);
+  const sendAlert = email.failure === null ? null : alertOf(email.failure, copy);
   const shown = alert ?? (sendAlert === 'expired' ? null : sendAlert);
   const resent = method === 'email' && email.sentCount > 1 && shown === null;
 

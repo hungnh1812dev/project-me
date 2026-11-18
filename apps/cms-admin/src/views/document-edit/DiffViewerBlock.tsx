@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Radio } from '@abyss/form-commons';
+import { Card, Radio } from '@abyss/form-commons';
 
 export type DiffSide = 'server' | 'client';
 
@@ -27,7 +27,7 @@ export interface DiffViewerBlockProps {
 
 const SIDES: readonly DiffSide[] = ['server', 'client'];
 const OPTION_CLASSES =
-  'grid min-w-0 cursor-pointer content-start gap-1 rounded-md border p-2 text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring';
+  'grid min-w-0 cursor-pointer content-start gap-1 rounded-item border p-2 text-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring';
 const SELECTED_OPTION_CLASSES = 'border-primary bg-info-soft';
 const IDLE_OPTION_CLASSES = 'border-border bg-background hover:bg-muted';
 
@@ -48,47 +48,46 @@ function DiffViewerBlock({
 }: DiffViewerBlockProps) {
   const options: Record<DiffSide, DiffViewerOption> = { server, client };
   return (
-    <fieldset
-      data-slot="diff-viewer-block"
-      className="m-0 grid min-w-0 gap-2 rounded-md border border-border bg-card p-3"
-    >
-      <legend className="sr-only">{title}</legend>
-      <div className="flex items-center justify-between gap-2" aria-hidden>
-        <span className="text-sm font-medium text-foreground">{title}</span>
-        <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-          {changeLabel}
-        </span>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {SIDES.map((side) => {
-          const option = options[side];
-          const selected = choice === side;
-          return (
-            <label
-              key={side}
-              className={`${OPTION_CLASSES} ${selected ? SELECTED_OPTION_CLASSES : IDLE_OPTION_CLASSES}`}
-            >
-              <span className="flex items-center gap-2 font-medium text-foreground">
-                <Radio
-                  name={name}
-                  value={side}
-                  checked={selected}
-                  onChange={() => onChoiceChange(side)}
-                />
-                {option.label}
-              </span>
-              <span className="min-w-0 break-words whitespace-pre-wrap text-foreground">
-                {option.content === null ? (
-                  <span className="text-muted-foreground">{emptyText}</span>
-                ) : (
-                  option.content
-                )}
-              </span>
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
+    <Card asChild padding="compact">
+      <fieldset data-slot="diff-viewer-block" className="m-0 grid min-w-0 gap-2">
+        <legend className="sr-only">{title}</legend>
+        <div className="flex items-center justify-between gap-2" aria-hidden>
+          <span className="text-sm font-medium text-foreground">{title}</span>
+          <span className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            {changeLabel}
+          </span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SIDES.map((side) => {
+            const option = options[side];
+            const selected = choice === side;
+            return (
+              <label
+                key={side}
+                className={`${OPTION_CLASSES} ${selected ? SELECTED_OPTION_CLASSES : IDLE_OPTION_CLASSES}`}
+              >
+                <span className="flex items-center gap-2 font-medium text-foreground">
+                  <Radio
+                    name={name}
+                    value={side}
+                    checked={selected}
+                    onChange={() => onChoiceChange(side)}
+                  />
+                  {option.label}
+                </span>
+                <span className="min-w-0 break-words whitespace-pre-wrap text-foreground">
+                  {option.content === null ? (
+                    <span className="text-muted-foreground">{emptyText}</span>
+                  ) : (
+                    option.content
+                  )}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+    </Card>
   );
 }
 

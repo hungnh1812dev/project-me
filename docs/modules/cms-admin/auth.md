@@ -53,7 +53,7 @@ Tests: 10 files (not listed).
 | `AuthWiring.setup.ts` | Builds the auth API, reducer and cross-tab options |
 | `BackToSignIn.tsx` | Link back to sign-in |
 | `CrossTabRefresh.ts` | Cross-tab single refresh via locks and channel |
-| `Login.errors.ts` | Maps login failures to kinds |
+| `Login.errors.ts` | Maps login failures to kinds; takes the `login` screen text as its last parameter |
 | `LoginNotice.rules.ts` | Notice shown on the login screen |
 | `Password.api.ts` | Reset and set-password calls |
 | `Password.errors.ts` | Maps password failures to kinds |
@@ -64,7 +64,7 @@ Tests: 10 files (not listed).
 | `Session.ts` | Session lifecycle (restore, refresh, logout) |
 | `SessionLoading.tsx` | Loading state while the session restores |
 | `Setup.api.ts` | First-owner setup calls |
-| `Setup.errors.ts` | Maps setup failures |
+| `Setup.errors.ts` | Maps setup failures; takes the `setup` screen text as its last parameter |
 | `SetupApi.context.tsx` | Context for the setup API |
 | `SingleFlight.rules.ts` | Shares one in-flight promise between callers |
 | `index.ts` | Public exports |

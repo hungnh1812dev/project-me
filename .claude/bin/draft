@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""Planner drafts: doc changes wait in .agent-state/drafts/<name>/ until the user approves them.
+
+Usage (from any folder of the repo; <name> is the planner job's agent name, e.g. plan-remember-me):
+  draft start <name> <path>...   copy each repo file into the draft (a missing file starts empty, as new)
+                                 and record its hash; a path already in the draft is left as it is
+  draft list                     the open drafts and their files
+  draft diff <name> [--stat]     what the draft changes against the repo files
+  draft apply <name>             copy the draft over the repo files, run module-index when a doc changed,
+                                 then remove the draft; refused when a repo file changed since `start`
+                                 (nothing is copied; the conflicts are listed)
+  draft rebase <name>            merge into the draft what changed in the repo files since `start` (3-way,
+                                 `git merge-file`); a clash is left as conflict markers in the draft copy
+  draft drop <name>              remove the draft
+
+Edit the copies under .agent-state/drafts/<name>/<path>; never the repo files while a draft is open.
+Prints nothing and exits 0 when apply, drop or start succeed.
+"""
+import difflib, hashlib, json, os, re, shutil, subprocess, sys
+
+PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DRAFTS_DIR = ".agent-state/drafts"
+BASE_FILE = ".base.json"
+BASE_COPIES = ".base"
+CONFLICT_MARKER = "<<<<<<< draft"
+NEW = "new"
+NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+MODULE_INDEX = ".claude/bin/module-index"
+INDEXED_DOCS = ("docs/", "SPEC.md")
+
+
+def fail(message):
+    print(f"draft: {message}")
+    sys.exit(1)
+
+
+def checked_path(path):
+    """A repo-relative path a draft may hold; exits on anything outside the repo or off limits."""
+    rel = os.path.normpath(path)
+    first = rel.split(os.sep)[0]
+    if os.path.isabs(path) or rel.startswith("..") or first in (".git", ".agent-state"):
+        fail(f"{path}: not a repo file a draft may change")
+    if os.path.basename(rel).startswith(".env") and os.path.basename(rel) != ".env.example":
+        fail(f"{path}: .env files are off limits")
+    return rel
+
+
+def draft_dir(name):
+    if not NAME.match(name or ""):
+        fail(f"bad draft name {name!r}")
+    return os.path.join(DRAFTS_DIR, name)
+
+
+def file_hash(path):
+    if not os.path.isfile(path):
+        return NEW
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def load_base(d):
+    try:
+        return json.load(open(os.path.join(d, BASE_FILE)))
+    except (OSError, ValueError):
+        fail(f"no draft at {d}")
+
+
+def draft_files(d):
+    """Repo paths of every file in the draft folder."""
+    found = []
+    for root, _, names in os.walk(d):
+        for n in names:
+            rel = os.path.relpath(os.path.join(root, n), d)
+            if rel != BASE_FILE and not rel.startswith(BASE_COPIES + os.sep):
+                found.append(rel)
+    return sorted(found)
+
+
+def unstarted(d, base):
+    """Files someone put in the draft without `start`: their base is unknown, so apply could overwrite work."""
+    return [p for p in draft_files(d) if p not in base]
+
+
+def start(name, paths):
+    d = draft_dir(name)
+    os.makedirs(d, exist_ok=True)
+    base_path = os.path.join(d, BASE_FILE)
+    base = json.load(open(base_path)) if os.path.exists(base_path) else {}
+    for path in map(checked_path, paths):
+        if path in base:
+            continue
+        copy = os.path.join(d, path)
+        os.makedirs(os.path.dirname(copy) or ".", exist_ok=True)
+        if os.path.isfile(path):
+            shutil.copy2(path, copy)
+            keep = os.path.join(d, BASE_COPIES, path)
+            os.makedirs(os.path.dirname(keep), exist_ok=True)
+            shutil.copy2(path, keep)
+        else:
+            open(copy, "w").close()
+        base[path] = file_hash(path)
+    with open(base_path, "w") as fh:
+        json.dump(base, fh, indent=1, sort_keys=True)
+
+
+def read_lines(path):
+    try:
+        return open(path, errors="replace").read().splitlines(keepends=True)
+    except OSError:
+        return []
+
+
+def diff(name, stat):
+    d = draft_dir(name)
+    base = load_base(d)
+    for path in unstarted(d, base):
+        print(f"not started (run `draft start {name} {path}`): {path}")
+    for path in sorted(base):
+        old = [] if base[path] == NEW else read_lines(path)
+        new = read_lines(os.path.join(d, path))
+        lines = list(difflib.unified_diff(old, new, f"a/{path}", f"b/{path}"))
+        if not lines:
+            continue
+        if stat:
+            added = sum(1 for l in lines if l.startswith("+") and not l.startswith("+++"))
+            removed = sum(1 for l in lines if l.startswith("-") and not l.startswith("---"))
+            print(f"{path}{' (new)' if base[path] == NEW else ''}: +{added} -{removed}")
+        else:
+            sys.stdout.writelines(l if l.endswith("\n") else l + "\n" for l in lines)
+
+
+def apply(name):
+    d = draft_dir(name)
+    base = load_base(d)
+    problems = [f"not started: {p}" for p in unstarted(d, base)]
+    problems += [f"changed since the draft started: {p}" for p in sorted(base) if file_hash(p) != base[p]]
+    problems += [f"conflict markers left: {p}" for p in sorted(base)
+                 if CONFLICT_MARKER in "".join(read_lines(os.path.join(d, p)))]
+    if problems:
+        fail("nothing applied; " + "; ".join(problems) + f" (`draft rebase {name}` merges repo changes in)")
+    changed = []
+    for path in sorted(base):
+        copy = os.path.join(d, path)
+        if file_hash(copy) == base[path] or (base[path] == NEW and os.path.getsize(copy) == 0):
+            continue
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        shutil.copyfile(copy, path)
+        changed.append(path)
+    if os.path.exists(MODULE_INDEX) and any(p.startswith(INDEXED_DOCS) for p in changed):
+        subprocess.run([MODULE_INDEX], check=False)
+    shutil.rmtree(d)
+
+
+def rebase(name):
+    d = draft_dir(name)
+    base = load_base(d)
+    clashes = []
+    for path in sorted(p for p in base if file_hash(p) != base[p]):
+        copy, keep = os.path.join(d, path), os.path.join(d, BASE_COPIES, path)
+        if base[path] == NEW:
+            clashes.append(f"{path}: created in the repo after the draft started; merge by hand")
+            continue
+        if not os.path.isfile(path):
+            clashes.append(f"{path}: removed from the repo after the draft started; merge by hand")
+            continue
+        result = subprocess.run(["git", "merge-file", "-L", "draft", "-L", "start", "-L", "repo", copy, keep, path],
+                                capture_output=True, text=True)
+        if result.returncode:
+            clashes.append(f"{path}: {result.returncode} conflict(s), markers left in {copy}")
+        shutil.copy2(path, keep)
+        base[path] = file_hash(path)
+    with open(os.path.join(d, BASE_FILE), "w") as fh:
+        json.dump(base, fh, indent=1, sort_keys=True)
+    if clashes:
+        fail("; ".join(clashes))
+
+
+def drop(name):
+    d = draft_dir(name)
+    load_base(d)
+    shutil.rmtree(d)
+
+
+def list_drafts():
+    for name in sorted(os.listdir(DRAFTS_DIR)) if os.path.isdir(DRAFTS_DIR) else []:
+        base = load_base(os.path.join(DRAFTS_DIR, name))
+        print(f"{name}: {', '.join(sorted(base))}")
+
+
+def main():
+    os.chdir(PROJECT_DIR)
+    args = sys.argv[1:]
+    if len(args) >= 3 and args[0] == "start":
+        start(args[1], args[2:])
+    elif args == ["list"]:
+        list_drafts()
+    elif len(args) in (2, 3) and args[0] == "diff" and args[2:] in ([], ["--stat"]):
+        diff(args[1], args[2:] == ["--stat"])
+    elif len(args) == 2 and args[0] == "apply":
+        apply(args[1])
+    elif len(args) == 2 and args[0] == "rebase":
+        rebase(name=args[1])
+    elif len(args) == 2 and args[0] == "drop":
+        drop(args[1])
+    else:
+        print(__doc__)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

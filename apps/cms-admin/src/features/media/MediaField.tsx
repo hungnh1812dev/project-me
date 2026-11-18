@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MediaInput } from '@abyss/form-commons';
 import { useRestoreFocus } from '@components/useRestoreFocus';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { useQueryClient } from '@tanstack/react-query';
 import { useController } from 'react-hook-form';
 
@@ -12,10 +12,9 @@ import { libraryFileToInput, mediaToForm } from './MediaFieldValue.rules';
 import { MediaPickerDialog } from './MediaPickerDialog';
 import { UploadDialog } from './UploadDialog';
 
-const copy = COPY.media;
-
 /** A `media` field of the dynamic form: upload, pick from the library, or detach. */
 export function MediaField({ name, label }: { name: string; label: string }) {
+  const copy = useScreenText('media').media;
   const { field, fieldState } = useController({ name });
   const queryClient = useQueryClient();
   const caller = useCallerAccess();

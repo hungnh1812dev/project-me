@@ -3,7 +3,7 @@ import 'server-only';
 import createDOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 
-import { sanitizeRichtextWith, withRichtextRules } from '../utils/SafeRichtext.rules';
+import { sanitizeRichtextWith, withRichtextRules } from '@/utils/SafeRichtext.rules';
 
 // Kept out of SafeRichtext.rules.ts so that jsdom never reaches a client chunk.
 let serverPurifier: ReturnType<typeof createDOMPurify> | undefined;

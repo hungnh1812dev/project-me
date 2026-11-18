@@ -16,11 +16,11 @@ const record = {
   values: {
     position: 'Engineer',
     isMain: true,
-    company: 'Acme',
+    name: 'Acme',
     summary: '<p>Hi</p>',
   },
   components: {
-    skill: [
+    skills: [
       {
         componentUid: UID_A,
         values: { level: 'Senior', skill: 'React' },
@@ -32,15 +32,15 @@ const record = {
         components: {},
       },
     ],
-    experience: [
+    experiences: [
       {
         componentUid: UID_ROLE,
         values: { company: 'Acme', location: null },
         components: {
-          role: [
+          roles: [
             {
               componentUid: '00000000-0000-4000-8000-0000000000d1',
-              values: { position: 'Dev', teamSize: 5, techStack: ['ts'] },
+              values: { position: 'Dev', teamSize: 5, techStacks: ['ts'] },
               components: {},
             },
           ],
@@ -55,26 +55,26 @@ describe('toFormValues', () => {
     const form = toFormValues(tree, null);
     expect(form.position).toBe('');
     expect(form.isMain).toBe(false);
-    expect(form.skill).toEqual([]);
+    expect(form.skills).toEqual([]);
   });
 
   it('loads values, component uids and nested items', () => {
     const form = toFormValues(tree, record);
     expect(form.position).toBe('Engineer');
     expect(form.isMain).toBe(true);
-    expect((form.skill as FormValues[])[1]).toEqual({
+    expect((form.skills as FormValues[])[1]).toEqual({
       [ITEM_UID_KEY]: UID_B,
       level: 'Mid',
       skill: 'Node',
     });
-    const role = ((form.experience as FormValues[])[0]!.role as FormValues[])[0]!;
+    const role = ((form.experiences as FormValues[])[0]!.roles as FormValues[])[0]!;
     expect(role.teamSize).toBe('5');
-    expect(role.techStack).toBe('[\n  "ts"\n]');
+    expect(role.techStacks).toBe('[\n  "ts"\n]');
   });
 
   it('builds a blank item with an empty uid', () => {
-    const item = emptyItem(node('experience'));
-    expect(item).toMatchObject({ [ITEM_UID_KEY]: '', company: '', role: [] });
+    const item = emptyItem(node('experiences'));
+    expect(item).toMatchObject({ [ITEM_UID_KEY]: '', company: '', roles: [] });
   });
 });
 
@@ -82,10 +82,10 @@ describe('toDocumentTree on create', () => {
   it('sends only filled fields and omits empty component lists', () => {
     const form = toFormValues(tree, null);
     form.position = 'Engineer';
-    form.skill = [{ ...emptyItem(node('skill')), skill: 'React' }];
+    form.skills = [{ ...emptyItem(node('skills')), skill: 'React' }];
     expect(toDocumentTree(tree, form, null, NONE)).toEqual({
       values: { position: 'Engineer', isMain: false },
-      components: { skill: [{ values: { skill: 'React' } }] },
+      components: { skills: [{ values: { skill: 'React' } }] },
     });
   });
 
@@ -110,19 +110,19 @@ describe('toDocumentTree on update', () => {
   it('sends only the changed top-level fields, null for a cleared one', () => {
     const form = structuredClone(initial);
     form.position = 'Lead';
-    form.company = '';
+    form.name = '';
     expect(toDocumentTree(tree, form, initial, NONE)).toEqual({
-      values: { position: 'Lead', company: null },
+      values: { position: 'Lead', name: null },
     });
   });
 
   it('keeps the uid of existing items and omits it for new ones, in the new order', () => {
     const form = structuredClone(initial);
-    const [first, second] = form.skill as FormValues[];
-    form.skill = [second, first, { ...emptyItem(node('skill')), skill: 'Go' }];
+    const [first, second] = form.skills as FormValues[];
+    form.skills = [second, first, { ...emptyItem(node('skills')), skill: 'Go' }];
     const body = toDocumentTree(tree, form, initial, NONE);
     expect(body.values).toBeUndefined();
-    expect(body.components?.skill).toEqual([
+    expect(body.components?.skills).toEqual([
       { componentUid: UID_B, values: { level: 'Mid', skill: 'Node' } },
       { componentUid: UID_A, values: { level: 'Senior', skill: 'React' } },
       { values: { skill: 'Go' } },
@@ -131,33 +131,97 @@ describe('toDocumentTree on update', () => {
 
   it('sends an empty list when every item was removed', () => {
     const form = structuredClone(initial);
-    form.skill = [];
+    form.skills = [];
     expect(toDocumentTree(tree, form, initial, NONE).components).toEqual({
-      skill: [],
+      skills: [],
     });
   });
 
   it('sends nested components with their uids', () => {
     const form = structuredClone(initial);
-    ((form.experience as FormValues[])[0]!.role as FormValues[])[0]!.position = 'Lead';
+    ((form.experiences as FormValues[])[0]!.roles as FormValues[])[0]!.position = 'Lead';
     const body = toDocumentTree(tree, form, initial, NONE);
-    const experience = body.components?.experience?.[0];
+    const experience = body.components?.experiences?.[0];
     expect(experience?.componentUid).toBe(UID_ROLE);
-    expect(experience?.components?.role?.[0]).toMatchObject({
+    expect(experience?.components?.roles?.[0]).toMatchObject({
       componentUid: '00000000-0000-4000-8000-0000000000d1',
-      values: { position: 'Lead', teamSize: 5, techStack: ['ts'] },
+      values: { position: 'Lead', teamSize: 5, techStacks: ['ts'] },
     });
   });
 
   it('never sends masked paths, even when they differ', () => {
-    const masked = new Set(['company', 'reference', 'experience.location']);
+    const masked = new Set(['name', 'references', 'experiences.location']);
     const form = structuredClone(initial);
-    form.company = 'changed';
+    form.name = 'changed';
     form.position = 'Lead';
-    (form.experience as FormValues[])[0]!.location = 'Hanoi';
+    (form.experiences as FormValues[])[0]!.location = 'Hanoi';
     const body = toDocumentTree(tree, form, initial, masked);
     expect(body.values).toEqual({ position: 'Lead' });
-    expect(body.components?.experience?.[0]?.values).not.toHaveProperty('location');
-    expect(body.components).not.toHaveProperty('reference');
+    expect(body.components?.experiences?.[0]?.values).not.toHaveProperty('location');
+    expect(body.components).not.toHaveProperty('references');
+  });
+});
+
+describe('field defaults (CE-5)', () => {
+  const field = (path: string, type: string, extra: object = {}) => ({
+    path,
+    type,
+    system: false,
+    component: false,
+    repeatable: false,
+    rootScalar: !path.includes('.'),
+    conditionKind: null,
+    sensitive: false,
+    ...extra,
+  });
+  const defaults = buildFieldTree([
+    field('title', 'text', { default: 'Untitled' }),
+    field('count', 'integer', { default: 3 }),
+    field('big', 'biginteger', { default: '9007199254740993' }),
+    field('ratio', 'float', { default: 1.5 }),
+    field('active', 'boolean', { default: true }),
+    field('kind', 'enumeration', { default: 'b', options: ['a', 'b'] }),
+    field('opens', 'time', { default: '09:30' }),
+    field('meta', 'json', { default: { a: 1 } }),
+    field('note', 'string'),
+    field('items', 'component', { component: true, repeatable: true, rootScalar: false }),
+    field('items.label', 'text', { default: 'New' }),
+    field('items.size', 'integer'),
+  ]);
+
+  it('fills a new document per type with the converted default', () => {
+    const form = toFormValues(defaults, null);
+    expect(form).toMatchObject({
+      title: 'Untitled',
+      count: '3',
+      big: '9007199254740993',
+      ratio: '1.5',
+      active: true,
+      kind: 'b',
+      opens: '09:30',
+      note: '',
+      items: [],
+    });
+    expect(form.meta).toBe(JSON.stringify({ a: 1 }, null, 2));
+    expect(toDocumentTree(defaults, form, null, NONE).values).toMatchObject({
+      big: '9007199254740993',
+      count: 3,
+      meta: { a: 1 },
+    });
+  });
+
+  it('fills a new component entry with its fields defaults', () => {
+    const entry = emptyItem(defaults.find((item) => item.name === 'items')!);
+    expect(entry).toMatchObject({ [ITEM_UID_KEY]: '', label: 'New', size: '' });
+  });
+
+  it('never fills a default into a stored document', () => {
+    const form = toFormValues(defaults, { values: { title: null }, components: {} });
+    expect(form).toMatchObject({ title: '', count: '', active: false, kind: '' });
+    const stored = toFormValues(defaults, {
+      values: {},
+      components: { items: [{ componentUid: UID_A, values: {}, components: {} }] },
+    });
+    expect(stored.items).toEqual([{ [ITEM_UID_KEY]: UID_A, label: '', size: '' }]);
   });
 });

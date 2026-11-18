@@ -1,10 +1,46 @@
 {
   "slug": "profile",
   "displayName": "Profile",
-  "kind": "collection",
+  "kind": "single",
   "draftAndPublish": true,
   "fields": [
-    { "name": "name", "type": "string" },
-    { "name": "photo", "type": "media" }
+    {
+      "name": "name",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "address",
+      "type": "text",
+      "sensitive": true,
+      "width": "1/2"
+    },
+    {
+      "name": "phone",
+      "type": "text",
+      "sensitive": true,
+      "width": "1/2"
+    },
+    {
+      "name": "email",
+      "type": "text",
+      "sensitive": true,
+      "width": "1/2"
+    },
+    {
+      "name": "linkedin",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "github",
+      "type": "text",
+      "sensitive": true,
+      "width": "1/2"
+    },
+    {
+      "name": "avatar",
+      "type": "media"
+    }
   ]
 }

@@ -1,5 +1,5 @@
-import { COPY } from '@configs/Copy.constants';
 import { HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import { AxiosError, isAxiosError, isCancel } from 'axios';
 
 const SECONDS_PER_MINUTE = 60;
@@ -60,7 +60,7 @@ export function apiFailureOf(error: unknown): ApiFailure {
 
 /** "Too many attempts. Try again in …" from a Retry-After value. */
 export function rateLimitedMessage(seconds: number | undefined): string {
-  const { errors } = COPY.password;
+  const { errors } = COMMON_TEXT.password;
   if (seconds === undefined) return errors.rateLimited;
   if (seconds < SECONDS_PER_MINUTE) return errors.rateLimitedSeconds(seconds);
   return errors.rateLimitedMinutes(Math.ceil(seconds / SECONDS_PER_MINUTE));

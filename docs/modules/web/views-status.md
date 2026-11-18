@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/views/status
 app: web
-summary: Web service status card (the `/status` page; to move to the homepage by D21)
+summary: The /status page, which renders the module status
 ---
 
 # Status (web)
@@ -14,23 +14,23 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Shows whether cms-api answers its liveness probe. Today it is the `/status` page behind `WEB_STATUS_PAGE_ENABLED`; D21 removes that page and shows the card on the homepage.
+The `/status` page: it loads the module status text and renders `ModuleStatus` ([`features/status`](status.md)). It loads no CV data.
 
 ## Techniques
 
-Client component: `useLiveHealth` checks once on load (checking, ok, error), and the card offers a manual re-check.
+Server Component (web RULES "Page layout"); `app/status/page.tsx` renders only it.
 
 ## Technologies
 
-React, TanStack Query.
+React.
 
 ## Entry points
 
-`StatusCard` (rendered by `app/status/page.tsx`).
+`PageStatus` (rendered by `app/status/page.tsx`).
 
 ## Where to change what
 
-Card text and states: `StatusCard.tsx`; the check: `useLiveHealth.ts`; the call: `features/status`.
+Heading, card and the check: `features/status`.
 
 ## Files
 
@@ -38,15 +38,14 @@ Card text and states: `StatusCard.tsx`; the check: `useLiveHealth.ts`; the call:
 <!-- prettier-ignore-start -->
 
 ```
-status/ (2 files)
+status/ (1 file)
 ```
 
-Tests: 0 files (not listed).
+Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
-| `StatusCard.tsx` | The service status card (exports `StatusCard`) |
-| `useLiveHealth.ts` | Liveness state of cms-api for the card (exports `LiveHealthState`, `useLiveHealth`) |
+| `PageStatus.tsx` | The `/status` page: loads the module status text and renders `ModuleStatus` (exports `PageStatus`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

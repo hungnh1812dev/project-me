@@ -30,7 +30,7 @@ Imported by feature modules; wired in `App.setup.ts`.
 
 ## Where to change what
 
-New error kind: `DescribeHttpException.rules.ts`. New shared limit or header: the matching `constants/` file.
+New error kind: `DescribeHttpException.rules.ts`. New shared limit or header: the matching `constants/` file. A path without a request-duration line: `skippedPathPrefixes` in `App.setup.ts`; the slow-request threshold: `SLOW_REQUEST_THRESHOLD_MS` in `RequestTiming.middleware.ts`.
 
 ## Files
 
@@ -44,14 +44,14 @@ common/ (0 files)
   filters/ (1 file)
   guards/ (1 file)
   http/ (4 files)
-  middleware/ (3 files)
+  middleware/ (4 files)
   rate-limit/ (3 files)
   time/ (2 files)
   types/ (1 file)
   validation/ (1 file)
 ```
 
-Tests: 8 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
@@ -69,6 +69,7 @@ Tests: 8 files (not listed).
 | `http/RequestParsing.rules.ts` | Holds (exports `invalidRequest`, `parseRequest`) |
 | `middleware/ByteLimit.rules.ts` | Body-size checks (`declaresBodyOver`, `createByteCounter`) and connection endings after an early answer: `closeAfterAnswer` (destroy) and `discardBodyAfterAnswer` (read and drop the rest, 16 MiB / 5 s cap); `sendContinueWhenBodyIsRead` (100 Continue only once the body is read) |
 | `middleware/RequestId.middleware.ts` | Holds (exports `RequestWithId`, `requestIdMiddleware`) |
+| `middleware/RequestTiming.middleware.ts` | Logs one line per finished request (method, path without query, status, duration ms), warn above the threshold, skipping given path prefixes (API-1) (exports `SLOW_REQUEST_THRESHOLD_MS`, `REQUEST_LOG_CONTEXT`, `RequestTimingOptions`, `createRequestTimingMiddleware`) |
 | `middleware/SecurityHeaders.middleware.ts` | Holds (exports `securityHeadersMiddleware`) |
 | `rate-limit/RateLimit.module.ts` | Holds (exports `RateLimitModuleOptions`, `RateLimitModule`) |
 | `rate-limit/RateLimit.store.ts` | Holds (exports `RateLimitHit`, `RateLimitStore`, `RATE_LIMIT_STORE`, `RATE_LIMIT_STORE_MAX_KEYS` +1) |

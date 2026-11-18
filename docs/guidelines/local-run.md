@@ -12,13 +12,13 @@ pnpm demo
 pnpm dev:stack:stop     # when you are done
 ```
 
-The dev stack and `pnpm demo` run with `REVIEWER_FEATURE_ENABLED` and `WEB_STATUS_PAGE_ENABLED` both `true`, so the reviewer flow and `/status` work; production runs with both `false`.
+The dev stack and `pnpm demo` run with `REVIEWER_FEATURE_ENABLED` `true`, so the reviewer flow works from the cms-admin Reviewer page; production runs with `false`. Web has no reviewer button and no `/status` switch.
 
 The stack runs Postgres 17. A dev-stack volume created on Postgres 16 does not start on 17: run `pnpm dev:stack:stop` once, which stops the stack and removes its containers and volumes, then start again. The data is demo data.
 
-`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and choose Reviewer access (needs internet for the Turnstile widget).
+`pnpm demo` starts Postgres and Mailpit in containers and cms-api, cms-admin and web in dev mode on your machine, applies the migrations, turns reviewer access on, and publishes sample CV content (a made-up person with `example.com` addresses and `555` phone numbers, from `scripts/demo/content/`; one file per content type, so a new type is a new file). It ends by printing the web, admin and Mailpit addresses. Open the web and sign in (needs internet for the Turnstile widget).
 
-The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account").
+The generated values (ports, secrets) live in the git-ignored `.localEnv.agent`, created on the first run; change a port there if the run reports it taken. The test account logins (`STACK_OWNER_*`, `STACK_2FA_*`, `STACK_READER_*`, `STACK_READER_2FA_*`, email and password) are generated once and kept there too; every dev and smoke start seeds its accounts with them, so the same logins work on whichever stack runs (ADR 0020). Signing in to the admin locally needs a separate owner setup (section 3, "Create the one owner account"). The web server's API token (`STACK_APP_API_TOKEN`, read-only, created by the reader account) is minted by `pnpm dev:stack` and `pnpm smoke` after the accounts are seeded and stored there too; to create it the script gives the `guest` role `api_tokens: create` for a moment and takes it back straight away (also on failure). It is reused while it still works, and the start fails if a `pageCvAList` read with it does not mask `experiences.company`. Nothing outside these two scripts grants it.
 
 Requirements: Node >= 24, pnpm 11, Docker (database, smoke stack, cms-api integration tests).
 
@@ -30,7 +30,7 @@ pnpm install
 
 | Goal                                          | Use                                                   |
 | --------------------------------------------- | ----------------------------------------------------- |
-| See the web and the reviewer flow at once     | Quick start (`pnpm demo`)                             |
+| See the web and the sign-in flow at once      | Quick start (`pnpm demo`)                             |
 | Run the apps in dev mode on a throwaway stack | `pnpm dev:stack` (the demo without the reviewer step) |
 | Work on one app with hot reload               | Section 2 to 5 (dev servers + a local Postgres)       |
 | See the whole thing behind Traefik, like prod | Section 6 (smoke stack, needs only Docker)            |
@@ -111,10 +111,11 @@ pnpm --filter @abyss/cms-admin dev
 
 Open `http://admin.domain.localhost:5173` (Chromium resolves `*.localhost` to loopback), so the origin matches cms-api `ADMIN_ORIGIN`.
 
-| Key                 | Meaning                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------ |
-| `VITE_API_BASE_URL` | absolute cms-api base, no trailing slash: `http://localhost:3000/api/v1`. Bundled at build |
-| `DEV_SERVER_PORT`   | dev only, default 5173                                                                     |
+| Key                    | Meaning                                                                                                                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_API_BASE_URL`    | cms-api base on the admin origin: `https://admin.<domain>/api/v1` in production; in dev `/api/v1` with `DEV_API_PROXY_TARGET=http://localhost:3000`, or the absolute `http://localhost:3000/api/v1`. Bundled at build |
+| `DEV_SERVER_PORT`      | dev only, default 5173                                                                                                                                                                                                |
+| `DEV_API_PROXY_TARGET` | dev only, `http://localhost:3000`; the dev server forwards `/api` to it; empty = no proxy                                                                                                                             |
 
 ## 5. web (port 5174)
 
@@ -123,24 +124,29 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm --filter @abyss/web dev
 ```
 
-Open `http://domain.localhost:5174`. The dev server forwards `/api` to cms-api when `DEV_API_PROXY_TARGET` is set, so the browser sees one origin, like production.
+Open `http://domain.localhost:5174`. The browser calls only web's own routes; the Node server reaches cms-api through `APP_API_URL`. Page text and CV data come from cms-api; with no token or no reachable API, outside production, web shows built-in mock content (WEB-5), so web runs alone.
 
-| Key                              | Kind                | Meaning                                                                                 |
-| -------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_API_BASE_URL`       | browser, build time | `/api/v1` (required; a missing value fails the build)                                   |
-| `NEXT_PUBLIC_ADMIN_URL`          | browser, build time | optional; empty hides the "Open CMS" link                                               |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | browser, build time | optional public site key; empty hides "Reviewer access". Cloudflare publishes test keys |
-| `API_INTERNAL_URL`               | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`                   |
-| `WEB_REVALIDATE_SECONDS`         | server, runtime     | data cache seconds, default 60; use `0` while developing content                        |
-| `WEB_PORT`                       | server, runtime     | port of `pnpm start` (production server), default 8080                                  |
-| `DEV_SERVER_PORT`                | dev only            | read from the shell, not `.env.local`; default 5174                                     |
-| `DEV_API_PROXY_TARGET`           | dev only            | `http://localhost:3000`; empty = no proxy                                               |
+| Key                                    | Kind                | Meaning                                                                                             |
+| -------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_ADMIN_URL`                | browser, build time | optional; empty hides the "Open CMS" link                                                           |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required). Cloudflare publishes test keys                                          |
+| `APP_API_URL`                          | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`                               |
+| `APP_API_TOKEN`                        | server, runtime     | cms-api API token for page content (required in production; optional here)                          |
+| `WEB_ORIGIN`                           | server, runtime     | exact origin of the site (required), `http://domain.localhost:5174` in dev                          |
+| `WEB_SESSION_SECRET`                   | server, runtime     | session cookie key (required; 32+ bytes in production)                                              |
+| `TURNSTILE_SECRET_KEY`                 | server, runtime     | Turnstile secret (required); Cloudflare publishes test secrets                                      |
+| `TURNSTILE_EXPECTED_HOSTNAME`          | server, runtime     | bare host a Turnstile answer must carry; required in production                                     |
+| `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER` | server, runtime     | visitor IP source, see `apps/web/.env.example`                                                      |
+| `WEB_REVALIDATE_SECONDS`               | server, runtime     | optional override of every call's cache (default 180 s); `0` in dev                                 |
+| `APP_ENV`                              | server, build + run | `development`, `staging` or `production`; required, equal at build and run; mocks off in production |
+| `WEB_PORT`                             | server, runtime     | port of `pnpm start` (production server), default 8080                                              |
+| `DEV_SERVER_PORT`                      | dev only            | read from the shell, not `.env.local`; default 5174                                                 |
 
-`NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web and admin have no secrets.
+`NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web holds its secrets (`WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`) as server-only env; admin has none.
 
 ## 6. Smoke stack (everything behind Traefik, Docker only)
 
-`docker-compose.smoke.yml` builds and starts Postgres, Mailpit (catches OTP mail), the cms-api init container (`deploy:migrate`), cms-api, web, cms-admin and Traefik, with the same routing as production. It is for local testing only; CI does not use it. Static cms-api settings are in `scripts/stack/cms-api.env`; per-run secrets are generated by `scripts/smoke.sh`, so you do not provide any. The checks live in `scripts/smoke/<group>.sh` (one `check_<group>()` function each); `smoke.sh` keeps the stack lifecycle, the assert helpers and the call order.
+`docker-compose.smoke.yml` builds and starts Postgres, Mailpit (catches OTP mail), the cms-api init container (`deploy:migrate`), cms-api, web, cms-admin and Traefik, with the same routing as production. It is for local testing only; CI does not use it. Static cms-api settings are in `scripts/stack/cms-api.env`; per-run secrets are generated by `scripts/smoke.sh`, so you do not provide any; only the account logins (`STACK_*`) are read from `.localEnv.agent` and reused. The checks live in `scripts/smoke/<group>.sh` (one `check_<group>()` function each); `smoke.sh` keeps the stack lifecycle, the assert helpers and the call order. The `content` group publishes the site-shell, sign-in, status and CV content from the web mocks (`scripts/smoke/SeedContent.mjs`, the same text as `WEB_COPY` in the e2e suite), because the smoke web runs with `APP_ENV=staging` and shows no mock text; it signs in as the owner once.
 
 ```
 pnpm smoke                    # build, start, check routing/auth/mail/headers, tear down
@@ -150,7 +156,7 @@ pnpm --filter @abyss/e2e browsers:install    # first time only
 docker compose -p abyss-smoke down -v        # stop a kept stack
 ```
 
-URLs with a kept stack: `http://domain.localhost:8080` (web, `/api` to cms-api) and `http://admin.domain.localhost:8080` (admin). Other switches (`SMOKE_DOMAIN`, `SMOKE_HTTP_PORT`, `SMOKE_TIMEOUT_SECONDS`, `SMOKE_NO_BUILD`) are listed at the top of `scripts/smoke.sh`. Run one e2e spec against a kept stack with `pnpm e2e:spec <spec> [-g <name>]`; the e2e keys are in `apps/e2e/.env.example`, and `pnpm smoke` sets them for you.
+URLs with a kept stack: `http://domain.localhost:8080` (web, `/api` to cms-api) and `http://admin.domain.localhost:8080` (admin). Other switches (`SMOKE_DOMAIN`, `SMOKE_HTTP_PORT`, `SMOKE_TIMEOUT_SECONDS`, `SMOKE_NO_BUILD`, `SMOKE_WEB_PRODUCTION`) are listed at the top of `scripts/smoke.sh`. Run one e2e spec against a kept stack with `pnpm e2e:spec <spec> [-g <name>]`; the e2e keys are in `apps/e2e/.env.example`, and `pnpm smoke` sets them for you.
 
 ## 7. Everyday commands
 

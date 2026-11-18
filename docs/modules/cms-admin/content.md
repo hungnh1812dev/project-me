@@ -32,6 +32,10 @@ React 19, react-hook-form, TanStack Query, axios (API client), `@abyss/form-comm
 
 `ContentType.displayName` (from the content-type API) is the only name shown to people: the menu label (`useContentNavItems`), the list page title and table caption, and the new/edit titles. The slug stays in routes and API calls. While the type loads, the title is a `TitleSkeleton`; if it cannot be loaded, the title is `Content`.
 
+## Labels, inputs and widths
+
+A field label is the definition's `displayName`, else `labelOf(name)` (`techStack` -> `Tech Stack`); `FieldTree.rules.ts` is the only place labels are made (component group headings and item titles reuse the node label). `text` is a one-line input, `string` a multi-line text area. `biginteger` keeps its digit string end to end (never `Number`), `float` and `double` are sent as numbers, `time` uses `TimePicker`, and `enumeration` is a select of the field's `options` (a stored value no longer listed stays as an extra "not allowed" choice until another is picked). Each field level is a 6-column grid: `FIELD_COLUMN_SPAN` (`Content.constants.ts`) maps the field `width` (`1/3` -> 2, `1/2` -> 3, `full` -> 6; absent = `full`) to a column span from `sm` up; below `sm` every field takes the row, and a component group always spans the row. A field's `default` (API value form, `FieldNode.defaultValue`) fills a new document and a new component entry through the same adapter `toForm` as a stored value; a stored document is never filled. `FieldValueInput` (exported from `index.ts`) is the one input of a field in API value form for other screens.
+
 ## Where to change what
 
 A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`.
@@ -42,27 +46,29 @@ A new field type: one adapter in `Field.registry.tsx` (plus value converters in 
 <!-- prettier-ignore-start -->
 
 ```
-content/ (15 files)
+content/ (17 files)
 ```
 
-Tests: 7 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
 | `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove and up/down reorder |
 | `Content.api.ts` | `createContentApi` and the document, list, presence, bulk, publish, unpublish and discard calls and types |
-| `Content.constants.ts` | Field types, document status, publish states, component limits, mask keys, presence timing, page size |
+| `Content.constants.ts` | Field types, field column spans, document status, publish states, component limits, mask keys, presence timing, page size |
 | `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
 | `Content.feature.ts` | `contentFeature`: feature registration (API service) |
 | `Content.queries.ts` | `CONTENT_QUERY_KEYS`, `useDocumentListQuery`, `useContentTypesQuery` |
 | `ContentApi.context.tsx` | React context that provides the content API |
-| `Document.form.ts` | `toFormValues`, `toDocumentTree`, `emptyItem`: API tree <-> form values |
-| `DynamicFormRenderer.tsx` | `DynamicFormRenderer`: renders a content type's fields from the registry |
-| `Field.registry.tsx` | `FIELD_REGISTRY`, `adapterFor`: one adapter per field type; list formatting helpers |
-| `FieldTree.rules.ts` | `buildFieldTree`, `labelOf`: field tree of a content type |
-| `FieldValues.rules.ts` | Value converters per field type (text, number, integer, boolean, datetime, json) |
+| `Document.form.ts` | `toFormValues`, `toDocumentTree`, `emptyItem`: API tree <-> form values; a new document and a new entry start at the fields' defaults (CE-5) |
+| `DynamicFormRenderer.tsx` | `DynamicFormRenderer`: renders a content type's fields from the registry in a 6-column grid sized by field width |
+| `Field.registry.tsx` | `FIELD_REGISTRY`, `adapterFor`: one adapter per field type (incl. `EnumerationField`); list formatting helpers |
+| `FieldTree.rules.ts` | `buildFieldTree`, `labelOf`: field tree of a content type; label is `displayName` or the generated name, with the field width |
+| `FieldValueInput.tsx` | `FieldValueInput`: the editor input of one field node, controlled in API value form (an empty input gives `undefined`), for reuse by other screens |
+| `FieldValues.rules.ts` | Value converters per field type (text, number text, number, boolean, datetime, json) |
 | `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the collection list Status column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
+| `index.ts` | public exports of the feature: `FieldValueInput` |
 | `useContentNavItems.ts` | `useContentNavItems`, `contentNavItemsOf`: content menu items per readable content type |
 
 <!-- prettier-ignore-end -->

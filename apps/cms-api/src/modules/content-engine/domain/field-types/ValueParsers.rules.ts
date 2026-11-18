@@ -8,6 +8,8 @@ export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0
 export const VALUE_PATTERNS = {
   INTEGER: /^-?\d{1,15}$/,
   DECIMAL: /^-?\d{1,30}(?:\.\d{1,12})?$/,
+  BIGINTEGER: /^-?\d{1,19}$/,
+  TIME: /^([01]\d|2[0-3]):[0-5]\d(?::([0-5]\d))?$/,
   DATE: /^\d{4}-\d{2}-\d{2}$/,
   DATETIME: /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2}))?$/,
 } as const;
@@ -42,4 +44,21 @@ export function parseDatetime(raw: string): string | undefined {
 /** A UUID in its stored lower-case form; `undefined` = invalid. */
 export function parseUuid(raw: string): string | undefined {
   return UUID_PATTERN.test(raw) ? raw.toLowerCase() : undefined;
+}
+
+const INT8_MIN = -(2n ** 63n);
+const INT8_MAX = 2n ** 63n - 1n;
+
+/** A whole number in the int8 range as its digit string (a number only when a safe integer); `undefined` = invalid. */
+export function parseBigInteger(raw: unknown): string | undefined {
+  if (typeof raw === 'number') return Number.isSafeInteger(raw) ? String(raw) : undefined;
+  if (typeof raw !== 'string' || !VALUE_PATTERNS.BIGINTEGER.test(raw)) return undefined;
+  const value = BigInt(raw);
+  return value >= INT8_MIN && value <= INT8_MAX ? value.toString() : undefined;
+}
+
+/** `HH:MM` or `HH:MM:SS` (24 h) as `HH:MM:SS`; `undefined` = invalid. */
+export function parseTime(raw: string): string | undefined {
+  const match = VALUE_PATTERNS.TIME.exec(raw);
+  return match === null ? undefined : `${raw.slice(0, 5)}:${match[2] ?? '00'}`;
 }

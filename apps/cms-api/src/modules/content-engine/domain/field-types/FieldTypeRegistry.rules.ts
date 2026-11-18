@@ -3,8 +3,10 @@ import { type FieldTypeSpec } from './FieldType.entity';
 import { sanitizeRichtext } from './RichtextSanitizer.rules';
 import {
   INT4_MAX,
+  parseBigInteger,
   parseDate,
   parseDatetime,
+  parseTime,
   parseUuid,
   VALUE_PATTERNS,
 } from './ValueParsers.rules';
@@ -14,8 +16,8 @@ type ScalarFieldType = (typeof SCALAR_FIELD_TYPES)[number];
 const coerceText = (value: unknown) => (typeof value === 'string' ? value : undefined);
 
 /**
- * `string`, `text` and `richtext` differ only in validation and editor, so
- * they share a column type and a mask.
+ * `text` (short, one line), `string` (long plain text) and `richtext` differ
+ * only in validation and editor, so they share a column type and a mask.
  */
 const TEXT_LIKE = {
   columnType: 'text',
@@ -23,9 +25,22 @@ const TEXT_LIKE = {
   listQueryable: true,
   maskedValue: 'sentinel',
   referencesMedia: false,
+  acceptsDefault: true,
   graphqlOutput: 'String',
   coerceValue: coerceText,
 } as const satisfies FieldTypeSpec;
+
+const coerceFiniteNumber = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
+const NUMBER_LIKE = {
+  columnType: 'bigint',
+  conditionKind: 'decimal',
+  listQueryable: true,
+  maskedValue: 'null',
+  referencesMedia: false,
+  acceptsDefault: true,
+} as const;
 
 export const FIELD_TYPE_SPECS = {
   string: TEXT_LIKE,
@@ -44,9 +59,32 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: true,
     maskedValue: 'null',
     referencesMedia: false,
+    acceptsDefault: true,
     graphqlOutput: 'Int',
-    coerceValue: (value) =>
-      Number.isInteger(value) && Math.abs(value as number) <= INT4_MAX ? value : undefined,
+    coerceValue: (value, context) =>
+      Number.isInteger(value) &&
+      Math.abs(value as number) <= INT4_MAX &&
+      !(context?.field?.unsigned === true && (value as number) < 0)
+        ? value
+        : undefined,
+  },
+  biginteger: {
+    ...NUMBER_LIKE,
+    graphqlOutput: 'BigInt',
+    // A digit string both ways: a JS number loses digits past 2^53.
+    coerceValue: (value) => parseBigInteger(value),
+  },
+  float: {
+    ...NUMBER_LIKE,
+    graphqlOutput: 'Float',
+    columnType: 'real',
+    coerceValue: coerceFiniteNumber,
+  },
+  double: {
+    ...NUMBER_LIKE,
+    graphqlOutput: 'Float',
+    columnType: 'double precision',
+    coerceValue: coerceFiniteNumber,
   },
   decimal: {
     columnType: 'numeric',
@@ -54,6 +92,7 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: true,
     maskedValue: 'null',
     referencesMedia: false,
+    acceptsDefault: true,
     graphqlOutput: 'Decimal',
     coerceValue: (value) => {
       if (typeof value === 'number') {
@@ -68,6 +107,7 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: true,
     maskedValue: 'null',
     referencesMedia: false,
+    acceptsDefault: true,
     graphqlOutput: 'Boolean',
     coerceValue: (value) => (typeof value === 'boolean' ? value : undefined),
   },
@@ -77,6 +117,7 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: true,
     maskedValue: 'null',
     referencesMedia: false,
+    acceptsDefault: true,
     graphqlOutput: 'Date',
     coerceValue: (value) => (typeof value === 'string' ? parseDate(value) : undefined),
   },
@@ -86,8 +127,27 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: true,
     maskedValue: 'null',
     referencesMedia: false,
+    acceptsDefault: true,
     graphqlOutput: 'DateTime',
     coerceValue: (value) => (typeof value === 'string' ? parseDatetime(value) : undefined),
+  },
+  time: {
+    columnType: 'time',
+    conditionKind: 'string',
+    listQueryable: true,
+    maskedValue: 'null',
+    referencesMedia: false,
+    acceptsDefault: true,
+    graphqlOutput: 'Time',
+    coerceValue: (value) => (typeof value === 'string' ? parseTime(value) : undefined),
+  },
+  enumeration: {
+    ...TEXT_LIKE,
+    // Without the field in the context no option list is known, so nothing is accepted.
+    coerceValue: (value, context) =>
+      typeof value === 'string' && context?.field?.options?.includes(value) === true
+        ? value
+        : undefined,
   },
   json: {
     columnType: 'jsonb',
@@ -95,6 +155,7 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: false,
     maskedValue: 'null',
     referencesMedia: false,
+    acceptsDefault: true,
     graphqlOutput: 'Json',
     // Any JSON value is valid; the column encode below only serializes it.
     coerceValue: (value) => value,
@@ -107,6 +168,7 @@ export const FIELD_TYPE_SPECS = {
     listQueryable: false,
     maskedValue: 'null',
     referencesMedia: true,
+    acceptsDefault: false,
     graphqlOutput: 'Media',
     // The file's public `document_id`; the internal id never crosses the API.
     coerceValue: (value) => (typeof value === 'string' ? parseUuid(value) : undefined),

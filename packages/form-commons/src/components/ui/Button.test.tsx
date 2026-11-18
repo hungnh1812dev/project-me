@@ -55,3 +55,37 @@ describe('Button', () => {
     expect(link).toHaveAttribute('data-slot', 'button');
   });
 });
+
+describe('Button styling hooks', () => {
+  it('uses the shared focus edge classes and the control radius', () => {
+    render(<Button>Save</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('rounded-control', 'focus-visible:ring-ring/50');
+    expect(button).toHaveClass('focus-visible:outline-focus-edge');
+  });
+
+  it('primary carries the primary shadow tokens; destructive none, with a rose focus', () => {
+    render(
+      <>
+        <Button variant="primary">Save</Button>
+        <Button variant="destructive">Delete</Button>
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveClass(
+      'shadow-primary',
+      'hover:shadow-primary-hover',
+    );
+    const destructive = screen.getByRole('button', { name: 'Delete' });
+    expect(destructive.className).not.toMatch(/(^|\s)(hover:)?shadow-primary/);
+    expect(destructive).toHaveClass('focus-visible:outline-destructive');
+  });
+
+  it('pressed scale is off under reduced motion; disabled drops the shadow', () => {
+    render(<Button disabled>Save</Button>);
+    expect(screen.getByRole('button')).toHaveClass(
+      'active:scale-[0.98]',
+      'motion-reduce:active:scale-100',
+      'disabled:shadow-none',
+    );
+  });
+});

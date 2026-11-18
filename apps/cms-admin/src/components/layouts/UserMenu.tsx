@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  CONTROL_FOCUS_RING_ONLY_CLASSES,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -9,18 +10,24 @@ import {
 } from '@abyss/form-commons';
 import { APP_ROUTES } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
-import { COPY } from '@configs/Copy.constants';
+import { COMMON_TEXT } from '@configs/locales';
 import { useCurrentUser, useSession } from '@features/auth';
 import { Link } from 'react-router';
 
+import { useConfirmLeave, useGuardedLinkClick } from './LeaveGuard';
+
 const ACCOUNT_LINKS = [
-  { path: APP_ROUTES.PROFILE, label: COPY.session.profileLink, isForReviewer: true },
+  { path: APP_ROUTES.PROFILE, label: COMMON_TEXT.session.profileLink, isForReviewer: true },
   {
     path: APP_ROUTES.CHANGE_PASSWORD,
-    label: COPY.session.changePasswordLink,
+    label: COMMON_TEXT.session.changePasswordLink,
     isForReviewer: false,
   },
-  { path: APP_ROUTES.SECURITY_SETTINGS, label: COPY.session.securityLink, isForReviewer: false },
+  {
+    path: APP_ROUTES.SECURITY_SETTINGS,
+    label: COMMON_TEXT.session.securityLink,
+    isForReviewer: false,
+  },
 ] as const;
 
 /** First code point, so an emoji is never split into a lone surrogate. */
@@ -44,6 +51,8 @@ export function UserMenu() {
   const user = useCurrentUser();
   const session = useSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const confirmLeave = useConfirmLeave();
+  const handleLinkClick = useGuardedLinkClick();
   if (!user) return null;
   const isReviewer = user.role === REVIEWER_ROLE_SLUG;
   const links = ACCOUNT_LINKS.filter((link) => !isReviewer || link.isForReviewer);
@@ -51,8 +60,8 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={COPY.session.accountMenu(user.displayName)}
-        className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-sm font-medium text-foreground outline-none hover:bg-primary/20 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        aria-label={COMMON_TEXT.session.accountMenu(user.displayName)}
+        className={`duration-fast flex size-9 items-center justify-center rounded-full bg-nav-active text-sm font-medium text-nav-active-foreground transition-colors hover:bg-muted ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         <span aria-hidden="true">{initialsOf(user.displayName, user.email)}</span>
       </DropdownMenuTrigger>
@@ -65,7 +74,9 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {links.map((link) => (
           <DropdownMenuItem key={link.path} asChild>
-            <Link to={link.path}>{link.label}</Link>
+            <Link to={link.path} onClick={(event) => handleLinkClick(event, link.path)}>
+              {link.label}
+            </Link>
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
@@ -73,12 +84,15 @@ export function UserMenu() {
           disabled={isSigningOut}
           aria-busy={isSigningOut}
           onSelect={() => {
-            setIsSigningOut(true);
-            // The session ends either way; this component then unmounts.
-            void session.signOut();
+            void confirmLeave().then((isConfirmed) => {
+              if (!isConfirmed) return;
+              setIsSigningOut(true);
+              // The session ends either way; this component then unmounts.
+              void session.signOut();
+            });
           }}
         >
-          {COPY.session.signOut}
+          {COMMON_TEXT.session.signOut}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

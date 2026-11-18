@@ -14,6 +14,7 @@ import { Field } from '@/components/forms/field';
 import { useRequiredFormContext } from '@/components/forms/FieldWiring.setup';
 import { Button } from '@/components/ui/Button';
 import {
+  CONTROL_FOCUS_CLASSES,
   CONTROL_FOCUS_WITHIN_CLASSES,
   CONTROL_INVALID_CLASSES,
 } from '@/components/ui/Control.constants';
@@ -89,7 +90,10 @@ function ColorControl({
               title={swatch.label}
               onClick={() => choose(swatch.run)}
               style={{ backgroundColor: swatch.hex ?? undefined }}
-              className="text-primary-foreground focus-visible:ring-ring flex size-7 items-center justify-center rounded-md border border-black/10 outline-none focus-visible:ring-2"
+              className={cn(
+                'text-primary-foreground border-border rounded-control flex size-7 items-center justify-center border outline-none',
+                CONTROL_FOCUS_CLASSES,
+              )}
             >
               {swatch.isActive && <Check aria-hidden className="size-4" />}
             </button>
@@ -246,7 +250,7 @@ function RichtextInput<TFieldValues extends FieldValues = FieldValues>({
           data-slot="richtext"
           aria-invalid={control['aria-invalid']}
           className={cn(
-            'border-input bg-card rounded-md border',
+            'border-input bg-card rounded-control border',
             CONTROL_FOCUS_WITHIN_CLASSES,
             CONTROL_INVALID_CLASSES,
             disabled && 'opacity-50',

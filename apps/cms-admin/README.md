@@ -12,6 +12,7 @@ Features (`src/features/`):
 - `content`: dynamic document form, collection list with bulk actions, conflict merge, presence.
 - `reviewer`: reviewer switch, sessions log and the read-only reviewer mode.
 - `backups`: owner-only list of the nightly database backups and a download behind password + 2FA code (ADR 0013). The nav item always shows for the owner; the page reads the list only when the owner presses "Check backups" (the server throttles it per actor), and then shows the not-configured state when the storage keys are unset.
+- `views/schema-builder`: owner-only schema builder page (`/schema-builder`): a drag-and-drop field canvas, property panel and live check through `POST /content-types/validate`; it only exports the schema JSON (copy or download) and writes nothing on the server (flow schema-builder).
 - `status`: status page that calls `GET /api/v1/health/live`.
 
 ## Auth (D14)
@@ -252,10 +253,12 @@ pnpm --filter @abyss/cms-admin dev       # http://localhost:5173 (DEV_SERVER_POR
   key is documented in [`.env.example`](.env.example). `VITE_*` values are
   baked in at build time, so they are public: never put secrets there.
 - `src/configs/Api.endpoints.ts` is the single map of API paths.
-- `src/configs/Copy.constants.ts` re-exports `COPY`, the user-facing text
-  until an i18n module exists. Sections live in `src/configs/copy/*.copy.ts`
-  (shared text and nav labels in `common.copy.ts`) and are joined in
-  `copy/index.ts`; only that folder imports a section file (ESLint).
+- `src/configs/locales/` holds the user-facing text. `en/` has one file per
+  screen (`Login.ts`, `Content.ts`, ...) plus `Common.ts` (shared text, always
+  loaded). Product code reads it only through `@configs/locales`
+  (`loadScreenText`, `useScreenText`, `COMMON_TEXT`); tests may also import
+  `@configs/locales/en` (`EN_TEXT`). ESLint rejects any other import of a
+  locale folder or file.
 - `src/configs/` keeps only cross-feature constants (`Http.constants`,
   `Auth.constants`, `App.routes`). A feature's own constants live in
   `src/features/<name>/<Name>.constants.ts`; other code reads them through
@@ -278,6 +281,8 @@ on `nginx-unprivileged` (non-root, port 8080). `nginx.conf` sets
 `absolute_redirect off; port_in_redirect off;` so nginx never redirects to its
 internal host or port behind Traefik, and falls back to `index.html` for client
 routes. The build fails without `VITE_API_BASE_URL`.
+
+`public/robots.txt` disallows every crawler on the admin host (public-site PS-4); Vite copies it to the root of `dist/` and nginx serves it before the SPA fallback.
 
 ## Scripts
 

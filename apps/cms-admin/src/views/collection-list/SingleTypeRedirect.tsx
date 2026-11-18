@@ -1,12 +1,10 @@
 import { FormAlert } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton } from '@components/PageStates';
 import { contentEditPath, contentNewPath } from '@configs/App.routes';
-import { COPY } from '@configs/Copy.constants';
+import { useScreenText } from '@configs/locales';
 import { isForbidden } from '@features/access';
 import { useDocumentListQuery } from '@features/content/Content.queries';
 import { Navigate } from 'react-router';
-
-const list = COPY.content.collection;
 
 /**
  * `/content/:slug` of a single type: sends the caller to the one document's
@@ -21,6 +19,7 @@ export function SingleTypeRedirect({
   displayName: string;
   draftAndPublish: boolean;
 }) {
+  const list = useScreenText('content').content.collection;
   const documents = useDocumentListQuery(slug, 1, undefined, draftAndPublish, true);
 
   if (documents.isSuccess) {

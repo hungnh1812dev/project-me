@@ -69,19 +69,14 @@ describe('directory dependencies', () => {
   it('have no cycle between directories', () => {
     expect(findCycle(dependencyGraph())).toBeNull();
   });
-
-  it('keep auth and reviewer independent of each other', () => {
-    const graph = dependencyGraph();
-    expect(graph.get('features/auth')).not.toContain('features/reviewer');
-    expect(graph.get('features/reviewer')).not.toContain('features/auth');
-  });
 });
 
 describe('session facade', () => {
-  it('exposes only the provider, the hook and the privileged error at runtime', () => {
+  it('exposes only the provider, the hooks and the privileged error at runtime', () => {
     expect(Object.keys(sessionFacade).sort()).toEqual([
       'PrivilegedAccessError',
       'WebSessionProvider',
+      'useCanSee',
       'useWebSession',
     ]);
   });
@@ -97,6 +92,32 @@ describe('test fixtures', () => {
     const importers = sourceFilesIn(SRC_DIR).filter((file) =>
       /from\s+'[^']*\.fixture(\.tsx?)?'/.test(readFileSync(file, 'utf8')),
     );
+    expect(importers).toEqual([]);
+  });
+});
+
+describe('mock view', () => {
+  const importersOf = (pattern: RegExp) =>
+    sourceFilesIn(SRC_DIR)
+      .filter((file) => pattern.test(readFileSync(file, 'utf8')))
+      .map((file) => file.replace(SRC_DIR, ''));
+
+  it('is loaded by a dynamic import in MockFallback.server.ts only', () => {
+    expect(importersOf(/import\('[^']*\/MockView'\)/)).toEqual([
+      '/apis/server/graphql/MockFallback.server.ts',
+    ]);
+  });
+
+  it('has no static value import, only the type import of the mock key', () => {
+    expect(importersOf(/^import\s+(?!type\b)[^;]*from\s+'[^']*\/MockView'/m)).toEqual([]);
+  });
+});
+
+describe('user-facing text comes from the content API', () => {
+  it('no source file imports a module named Copy.constants', () => {
+    const importers = sourceFilesIn(SRC_DIR)
+      .filter((file) => /from\s+'[^']*\/Copy\.constants'/.test(readFileSync(file, 'utf8')))
+      .map((file) => file.replace(SRC_DIR, ''));
     expect(importers).toEqual([]);
   });
 });

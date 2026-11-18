@@ -4,10 +4,10 @@ MAIL_POLL_ATTEMPTS="15"
 
 check_mail() {
   echo "Password reset mail through SMTP to Mailpit"
-  request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
+  request POST "$ADMIN_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
     --data "$(printf '{"email":"%s"}' "$STACK_OWNER_EMAIL")"
   expect_status "request-otp answers 202" 202
-  request POST "$WEB_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
+  request POST "$ADMIN_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
     --data "$(printf '{"email":"nobody@%s"}' "$SMOKE_DOMAIN")"
   expect_status "request-otp answers 202 for an unknown email too" 202
   local mail_seen=0

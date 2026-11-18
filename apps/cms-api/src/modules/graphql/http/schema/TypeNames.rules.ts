@@ -54,9 +54,12 @@ export function rootNamesOf(slug: string) {
   };
 }
 
-/** `CvPage` + `experience` -> `CvPage_Experience`; again with `role` -> `CvPage_Experience_Role`. */
-export function componentTypeName(parent: string, field: string): string {
-  return `${parent}${COMPONENT_NAME_SEPARATOR}${pascalCase(field)}`;
+/**
+ * Parent type name + the `component` value of the field (not its `name`):
+ * `CvPage` + `experience` -> `CvPage_Experience`; again with `role` -> `CvPage_Experience_Role`.
+ */
+export function componentTypeName(parent: string, component: string): string {
+  return `${parent}${COMPONENT_NAME_SEPARATOR}${pascalCase(component)}`;
 }
 
 /**
