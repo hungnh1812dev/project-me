@@ -1,7 +1,7 @@
-import { cn } from 'cn';
 import type { FieldValues } from 'react-hook-form';
 
 import { TextAreaInput, type TextAreaInputProps } from '@/components/forms/text-area-input';
+import { CodeTextarea } from '@/components/ui/CodeTextarea';
 
 export interface JsonInputProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -22,13 +22,12 @@ export function isValidJsonText(text: string): boolean {
 }
 
 /**
- * JSON editor (a monospace textarea). The form value is the raw text; blank
+ * JSON editor (a `CodeTextarea`: dark, monospace, line numbers). The form value is the raw text; blank
  * means "no value". Invalid JSON is reported on blur / submit.
  */
 function JsonInput<TFieldValues extends FieldValues = FieldValues>({
   invalidMessage,
   rules,
-  className,
   ...props
 }: JsonInputProps<TFieldValues>) {
   return (
@@ -36,7 +35,7 @@ function JsonInput<TFieldValues extends FieldValues = FieldValues>({
       {...props}
       spellCheck={false}
       autoComplete="off"
-      className={cn('font-mono', className)}
+      textareaComponent={CodeTextarea}
       rules={{
         ...rules,
         validate: (value, formValues) => {

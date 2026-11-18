@@ -16,6 +16,8 @@ export interface TextAreaInputProps<
   required?: boolean;
   id?: string | undefined;
   fieldClassName?: string | undefined;
+  /** Replaces the plain `Textarea` (e.g. `CodeTextarea`); it takes the `Textarea` props. */
+  textareaComponent?: React.ComponentType<React.ComponentProps<'textarea'>> | undefined;
 }
 
 /** Multi-line text bound to the surrounding react-hook-form `FormProvider`. */
@@ -27,6 +29,7 @@ function TextAreaInput<TFieldValues extends FieldValues = FieldValues>({
   required,
   id,
   fieldClassName,
+  textareaComponent: TextareaComponent = Textarea,
   onChange,
   onBlur,
   ...textareaProps
@@ -47,7 +50,7 @@ function TextAreaInput<TFieldValues extends FieldValues = FieldValues>({
       id={id}
     >
       {(control) => (
-        <Textarea
+        <TextareaComponent
           {...textareaProps}
           {...control}
           name={registration.name}
