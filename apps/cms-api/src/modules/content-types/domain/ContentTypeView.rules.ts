@@ -28,6 +28,8 @@ export interface ContentFieldView {
   readonly displayName?: string;
   /** Share of the admin form row; the schema value or the default. Absent on components. */
   readonly width?: FieldWidth;
+  /** Allowed values of an `enumeration` field; absent on every other type. */
+  readonly options?: readonly string[];
   /** Only components can be repeatable. */
   readonly repeatable: boolean;
   /** A scalar field at the root (not inside a component). */
@@ -113,6 +115,9 @@ export function contentTypeView(
         component,
         ...(field.displayName === undefined ? {} : { displayName: field.displayName }),
         ...(isComponentField(field) ? {} : { width: field.width ?? defaultFieldWidth }),
+        ...(isComponentField(field) || field.options === undefined
+          ? {}
+          : { options: field.options }),
         repeatable: component && field.repeatable === true,
         rootScalar,
         conditionKind: rootScalar ? (conditionField(field.name)?.kind ?? null) : null,

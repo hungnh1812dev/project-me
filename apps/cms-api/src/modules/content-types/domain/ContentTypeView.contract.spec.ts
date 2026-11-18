@@ -40,6 +40,7 @@ const PROFILE = {
   draftAndPublish: false,
   fields: [
     { name: 'email', type: 'string' },
+    { name: 'level', type: 'enumeration', options: ['low', 'high'] },
     { name: 'phone', type: 'string', width: '1/2', displayName: 'Phone number' },
     {
       name: 'experience',
@@ -60,6 +61,12 @@ const view = contentTypeView(
 );
 
 describe('GET /content-types contract', () => {
+  it('adds options on an enumeration field only', () => {
+    const level = view.fields.find((f) => f.path === 'level')!;
+    expect(Object.keys(level).sort()).toEqual([...FIELD_KEYS, 'options', 'width'].sort());
+    expect(level).toMatchObject({ options: ['low', 'high'] });
+  });
+
   it('adds displayName and width on content fields and nothing else', () => {
     const phone = view.fields.find((f) => f.path === 'phone')!;
     expect(Object.keys(phone).sort()).toEqual([...FIELD_KEYS, 'displayName', 'width'].sort());

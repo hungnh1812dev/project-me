@@ -8,7 +8,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### New features
 
-- cms-api: new field types `biginteger`, `float`, `double`, `time`, `enumeration`, keys `unsigned` and `options`, GraphQL scalars `BigInt` and `Time`.
+- cms-api: new field types `biginteger`, `float`, `double`, `time`, `enumeration`, keys `unsigned` and `options`, GraphQL scalars `BigInt` and `Time`; document writes check `unsigned` and `options`, and the content type view lists `options`.
 - cms-admin: schema builder Number, Datetime picker and Enum fields with a properties popup; JSON inputs with line numbers.
 - cms-api: the image runs the nightly backup job, with client tools and script ([backups flow](docs/flows/backups/SPEC.md)).
 - web: `/cv` is built from the main `page-cv-a`, the `profile` and `pageCvText` in `views/cv` (queries `PageCv` and `PageCvVisitor`); the new projects section is shown, no main CV answers 404, and `features/cv` is gone (WPQ-9).
