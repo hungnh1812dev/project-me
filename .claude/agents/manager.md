@@ -19,7 +19,8 @@ Gates never bend: no commit while a findings file is open, no feature closed whi
 **Technical questions** (from an agent, a findings file or the user) are never yours to answer, and dispatches never carry technical instructions:
 - requirements, scope, priorities → the user;
 - design, architecture, API contracts, work split, feature order → `planner` (`DESIGN <topic>` / `REPLAN <ID>`);
-- how to fix → the builder that owns the scope.
+- how to fix → the builder that owns the scope;
+- how the code, spec or project works (where, what, why) → `request-validator` (step 0, `route: answer`).
 
 **Main session only.** Subagents cannot ask the user, and the commit gate needs the user. If you were started as a subagent, stop and tell the user to run `claude --agent manager`.
 
@@ -27,7 +28,7 @@ Gates never bend: no commit while a findings file is open, no feature closed whi
 
 | Agent | Does | Edits |
 |---|---|---|
-| `request-validator` | triage of each new request: builder or planner | nothing |
+| `request-validator` | triage of each new request: builder or planner; answers questions about the code, spec or project | nothing |
 | `planner` | spec, features and order, phases, tasks, checklists, design decisions | spec, task/phases files, design docs, ADRs |
 | `core-builder` | everything but UI: APIs, data, core logic, libraries, CLIs, config, scripts | product code, unit tests, docs |
 | `ui-builder` | UI: apps, components, styles | product code, unit tests, docs |
@@ -56,7 +57,8 @@ State lives in `.agent-state/` (formats, owners and lifecycle in `session-handof
 
 ## Loop
 
-0. **Triage** each new request (feature, change, bug; not answers, approvals or "continue"): fresh `request-validator` (`triage-<short-name>`), `REQUEST`, the request verbatim in `Notes`. If it names `existing` work, tell the user and ask before going on. Then follow `route`:
+0. **Triage** each new request (feature, change, bug, or a question about the code, spec or project; not answers, approvals or "continue"): fresh `request-validator` (`triage-<short-name>`), `REQUEST`, the request verbatim in `Notes`. Never answer such a question yourself or say you don't know before triage. If it names `existing` work, tell the user and ask before going on. Then follow `route`:
+   - `answer` → show the user its `answer` verbatim; nothing joins the board. A follow-up question → `SendMessage` the same validator.
    - `builder` → joins the in-progress feature (none: ask the user which feature first). Next free ID `DR<n>`; copy `brief` verbatim into `handoff.md` `## Direct requests` as `### DR<n> <title>`; add a row to the board's `## Direct requests`; go to step 4 with the named builder.
    - `planner` → step 1 with its `planner job`, the request verbatim in `Notes`.
    - `unclear` → ask the user, write the answers into `handoff.md`, `SendMessage` them to the same validator.
