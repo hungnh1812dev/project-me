@@ -204,5 +204,55 @@ test.describe(
       const optionsOnText = await check([{ name: 'title', type: 'text', options: ['a'] }]);
       expect(pathsOf(optionsOnText)).toContain('fields.0.options');
     });
+
+    test('defaults: valid on every allowed type, each wrong default reported on fields.0.default', async ({
+      request,
+    }) => {
+      const owner = bearer(await ownerApiToken(request));
+      const check = async (fields: unknown[]) => {
+        const answer = await request.post(apiUrl(API_PATHS.CONTENT_TYPES_VALIDATE), {
+          data: { definition: { ...validDefinition, fields }, mode: 'create' },
+          headers: owner,
+        });
+        expect(answer.status()).toBe(HTTP.OK);
+        return (await answer.json()) as ValidateAnswer;
+      };
+      const pathsOf = (answer: ValidateAnswer) =>
+        answer.errors.map((error) => error.path.join('.'));
+
+      const accepted = await check([
+        { name: 'a', type: 'text', default: 'hello' },
+        { name: 'b', type: 'string', default: 'long text' },
+        { name: 'c', type: 'richtext', default: '<p>hi</p>' },
+        { name: 'd', type: 'integer', default: 3 },
+        { name: 'e', type: 'biginteger', default: '9007199254740993' },
+        { name: 'f', type: 'decimal', default: '1.5' },
+        { name: 'g', type: 'float', default: 1.5 },
+        { name: 'h', type: 'double', default: 2.5 },
+        { name: 'i', type: 'boolean', default: false },
+        { name: 'j', type: 'date', default: '2026-01-31' },
+        { name: 'k', type: 'datetime', default: '2026-01-31T10:00:00.000Z' },
+        { name: 'l', type: 'time', default: '08:30' },
+        { name: 'm', type: 'enumeration', options: ['x', 'y'], default: 'x' },
+        { name: 'n', type: 'json', default: { a: 1 } },
+      ]);
+      expect(accepted).toEqual({ valid: true, errors: [] });
+
+      const wrong: unknown[][] = [
+        [{ name: 'a', type: 'media', default: 'x' }],
+        [{ name: 'a', type: 'text', default: null }],
+        [{ name: 'a', type: 'integer', default: 'abc' }],
+        [{ name: 'a', type: 'integer', unsigned: true, default: -1 }],
+        [{ name: 'a', type: 'enumeration', options: ['x'], default: 'z' }],
+        [{ name: 'a', type: 'time', default: '25:99' }],
+        [{ name: 'a', type: 'richtext', default: '<img src=x onerror=alert(1)>' }],
+        [{ name: 'a', type: 'richtext', default: '<script>alert(1)</script>' }],
+      ];
+      for (const fields of wrong) {
+        const answer = await check(fields);
+        expect(answer.valid, JSON.stringify(fields)).toBe(false);
+        expect(pathsOf(answer), JSON.stringify(fields)).toContain('fields.0.default');
+      }
+    });
   },
 );
