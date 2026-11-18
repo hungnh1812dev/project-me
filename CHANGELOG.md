@@ -91,6 +91,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: one full stack per tier 3 run: only qc starts it for a checklist run (kept mode without e2e; the full suite only when the user asks), a running stack on the same `HEAD` is reused and stays up across a session break (`Stack:` line in `handoff.md`), builders never start it, and a re-test round runs only the failed specs plus the scope of the fix commits.
 - root: the manager triages a question about the code, spec or project through `request-validator` instead of answering it or saying it does not know; the validator returns `route: answer` with file:line evidence, and the manager shows it to the user verbatim.
 - root: builders, qc and security-qc ask the user (report `blocked`) before adding, changing or deleting anything that affects a database: schema, migrations, seeds, DB config, or data reset and bulk changes, local included (`local-env` "Database changes").
+- root: `docs/global/reference/env-vars.md` lists every app's environment variables with purpose, required at start, default and scope.
 
 ## 0.1.0 (2026-11-05)
 
