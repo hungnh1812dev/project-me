@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Version pins that must agree across files: Turbo (ci.yml, Dockerfiles, root
-# package.json) and the Node major (.nvmrc, Dockerfiles).
+# package.json), the Node major (.nvmrc, Dockerfiles) and the PostgreSQL major
+# (cms-api Dockerfile client tools, compose files, integration test image).
 # Usage: pins-check.sh [repo-root]    default: the repository this script lives in
 # Exits 1 and names every mismatch; prints the agreed pins on success.
 set -euo pipefail
@@ -39,6 +40,16 @@ node_pins() {
   done
 }
 
+postgres_pins() {
+  local file
+  echo "apps/cms-api/Dockerfile $(extract '^ARG POSTGRES_MAJOR=([0-9]+).*' "${root}/apps/cms-api/Dockerfile")"
+  for file in docker-compose.smoke.yml docker-compose.dev.yml; do
+    echo "${file} $(extract '^[[:space:]]*image:[[:space:]]*postgres:([0-9]+).*' "${root}/${file}")"
+  done
+  file=apps/cms-api/test/fixtures/Postgres.fixture.ts
+  echo "${file} $(extract ".*'postgres:([0-9]+).*" "${root}/${file}")"
+}
+
 # Reads "<file> <value>" lines; reports empty values and any value that differs from the first
 check_agree() {
   local label="$1" first='' file value
@@ -56,5 +67,6 @@ check_agree() {
 
 check_agree "turbo" < <(turbo_pins)
 check_agree "node major" < <(node_pins)
+check_agree "postgres major" < <(postgres_pins)
 
 [ "${failures}" -eq 0 ]

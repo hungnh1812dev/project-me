@@ -44,30 +44,49 @@ passes silently.
 
 Every field has a `name` and a `type`. Optional on every field:
 
-| Key           | Type                       | Meaning                                                                                                                                                                                                                                         |
-| ------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `required`    | boolean                    | A value must be present on save. Default `false`.                                                                                                                                                                                               |
-| `displayName` | string                     | Admin label of the field (1-60 characters, same rules as the type's `displayName`; error path `fields[i].displayName`). Metadata only. Without it the admin derives a label from `name`.                                                        |
-| `width`       | `"1/3"`, `"1/2"`, `"full"` | Share of the admin form row. Not allowed on a `component` (`schema.invalid`). Metadata only. `GET /content-types` always reports it, `full` when unset.                                                                                         |
-| `sensitive`   | boolean                    | The field is masked for `public` and `reviewer` unless their type-specific `read` row lists it; the wildcard `*` grant does not cover it (SPEC D2, [access control](access-control.md#sensitive-fields-spec-d2-task-rv-mask)). Default `false`. |
+| Key           | Type                        | Meaning                                                                                                                                                                                                                                                                                                                     |
+| ------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `required`    | boolean                     | A value must be present on save. Default `false`.                                                                                                                                                                                                                                                                           |
+| `displayName` | string                      | Admin label of the field (1-60 characters, same rules as the type's `displayName`; error path `fields[i].displayName`). Metadata only. Without it the admin derives a label from `name`.                                                                                                                                    |
+| `width`       | `"1/3"`, `"1/2"`, `"full"`  | Share of the admin form row. Not allowed on a `component` (`schema.invalid`). Metadata only. `GET /content-types` always reports it, `full` when unset.                                                                                                                                                                     |
+| `default`     | a value of the field's type | Starting value of the field in a new document in cms-admin. Not allowed on `media` and `component`; must be a value the API accepts on a write of the field (CM-11 in [content-modeling](../flows/content-modeling/SPEC.md); error path `fields[i].default`). Metadata only. `GET /content-types` reports it only when set. |
+| `sensitive`   | boolean                     | The field is masked for `public` and `reviewer` unless their type-specific `read` row lists it; the wildcard `*` grant does not cover it (SPEC D2, [access control](access-control.md#sensitive-fields-spec-d2-task-rv-mask)). Default `false`.                                                                             |
 
 ### Field types
 
-| `type`      | Stores                                              | Masked value (SPEC §6) |
-| ----------- | --------------------------------------------------- | ---------------------- |
-| `text`      | short text (one line)                               | `"***"`                |
-| `string`    | long plain text                                     | `"***"`                |
-| `richtext`  | sanitized HTML (SPEC D13)                           | `"***"`                |
-| `integer`   | whole number                                        | `null`                 |
-| `decimal`   | exact decimal number                                | `null`                 |
-| `boolean`   | true / false                                        | `null`                 |
-| `date`      | calendar date, no time                              | `null`                 |
-| `datetime`  | point in time (UTC)                                 | `null`                 |
-| `json`      | free JSON (e.g. a list of tags)                     | `null`                 |
-| `media`     | one file from the media library (`file_library.id`) | `null`                 |
-| `component` | nested group of fields in its own table             | `null`                 |
+| `type`        | Stores                                                                                                                                                                                                                           | Masked value (SPEC §6) |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `text`        | short text (one line)                                                                                                                                                                                                            | `"***"`                |
+| `string`      | long plain text                                                                                                                                                                                                                  | `"***"`                |
+| `richtext`    | sanitized HTML (SPEC D13)                                                                                                                                                                                                        | `"***"`                |
+| `enumeration` | one value of the field's `options` (below), as text; GraphQL `String`                                                                                                                                                            | `"***"`                |
+| `integer`     | whole number, 4 bytes; with `unsigned` (below) never negative                                                                                                                                                                    | `null`                 |
+| `biginteger`  | whole number, 8 bytes; API value a string of digits with an optional leading `-` (a number is accepted on input only when it is a safe integer), so no digit is lost past 2^53; GraphQL scalar `BigInt` (a string, as `Decimal`) | `null`                 |
+| `decimal`     | exact decimal number                                                                                                                                                                                                             | `null`                 |
+| `float`       | floating-point number, 4 bytes (about 6 significant digits); GraphQL `Float`                                                                                                                                                     | `null`                 |
+| `double`      | floating-point number, 8 bytes (about 15 significant digits); GraphQL `Float`                                                                                                                                                    | `null`                 |
+| `boolean`     | true / false                                                                                                                                                                                                                     | `null`                 |
+| `date`        | calendar date, no time                                                                                                                                                                                                           | `null`                 |
+| `datetime`    | point in time (UTC)                                                                                                                                                                                                              | `null`                 |
+| `time`        | time of day, no date and no time zone; `HH:MM` or `HH:MM:SS` (24-hour) in, always `HH:MM:SS` out; GraphQL scalar `Time` (a string)                                                                                               | `null`                 |
+| `json`        | free JSON (e.g. a list of tags)                                                                                                                                                                                                  | `null`                 |
+| `media`       | one file from the media library (`file_library.id`)                                                                                                                                                                              | `null`                 |
+| `component`   | nested group of fields in its own table                                                                                                                                                                                          | `null`                 |
+
+Value ranges and limits are in [canonical-values.md](../global/reference/canonical-values.md) "Number field types", "Time values" and "Enum options". A value of the wrong form or out of range is refused on write with 400. Each new type filters and sorts like an existing one: `biginteger`, `float` and `double` as numbers (condition kind `decimal`), `time` and `enumeration` as text (condition kind `string`; `HH:MM:SS` sorts in time order).
 
 Column types are chosen by the SQL generator; see [Migrations](#migrations).
+
+### Type-specific keys
+
+Allowed only on the type named; anywhere else they are `schema.invalid`. Both are metadata only, like `width`: changing them generates a comment-only migration (no DDL) and updates the stored definition.
+
+| Key        | On                       | Type             | Meaning                                                                                                                                                                                                      |
+| ---------- | ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `unsigned` | `integer`                | boolean          | `true`: the API refuses a negative value (range in canonical-values "Number field types"); the column stays `integer`. Default `false`.                                                                      |
+| `options`  | `enumeration` (required) | array of strings | The allowed values, in the order the admin shows them; limits in canonical-values "Enum options". The API refuses a value not in the list. A field changed to `enumeration` keeps any stored value as it is. |
+
+A stored value the current keys no longer allow (a negative number after `unsigned` is set, a value removed from `options`) is still read and returned as stored; the next save of that document must change it, or it is refused like any other bad value.
 
 **Open unions in `GET /content-types`.** The `type` of a field view (a field
 type, or a value kind such as `uuid` for system fields) and its
@@ -118,16 +137,16 @@ Field names are what the API uses as property names. Write them in
 camelCase (`teamSize`); snake_case is accepted too. The SQL name is the
 snake_case form.
 
-| Object                 | Rule                                              | cv-page example                  |
-| ---------------------- | ------------------------------------------------- | -------------------------------- |
-| Column                 | field name, each capital becomes `_` + lowercase  | `teamSize` → `team_size`         |
-| Root table             | slug with `-` → `_`                               | `cv-page` → `cv_page`            |
-| Component table        | parent table + `__` + `component` value column    | `cv_page__experience__role`      |
-| Primary key            | `<table>_pk`                                      | `cv_page_pk`                     |
-| Draft / published uniq | `<root>_draft_uq`, `<root>_published_uq`          | `cv_page_published_uq`           |
-| Published list index   | `<root>_published_idx`                            | `cv_page_published_idx`          |
-| Parent FK / index      | `<component>_parent_fk`, `<component>_parent_idx` | `cv_page__experience_parent_idx` |
-| Media FK               | `<table>_<column>_media_fk`                       | `post_cover_image_media_fk`      |
+| Object                 | Rule                                              | page-cv-a example                  |
+| ---------------------- | ------------------------------------------------- | ---------------------------------- |
+| Column                 | field name, each capital becomes `_` + lowercase  | `teamSize` → `team_size`           |
+| Root table             | slug with `-` → `_`                               | `page-cv-a` → `page_cv_a`          |
+| Component table        | parent table + `__` + `component` value column    | `page_cv_a__experience__role`      |
+| Primary key            | `<table>_pk`                                      | `page_cv_a_pk`                     |
+| Draft / published uniq | `<root>_draft_uq`, `<root>_published_uq`          | `page_cv_a_published_uq`           |
+| Published list index   | `<root>_published_idx`                            | `page_cv_a_published_idx`          |
+| Parent FK / index      | `<component>_parent_fk`, `<component>_parent_idx` | `page_cv_a__experience_parent_idx` |
+| Media FK               | `<table>_<column>_media_fk`                       | `post_cover_image_media_fk`        |
 
 `__` appears only as the path separator, which is why names may not contain
 it. Table, index and constraint names share one namespace in the `content`
@@ -156,37 +175,36 @@ error has this shape, ready for the admin UI and the CLI:
 When several files are validated together (`validateDefinitions`), the path
 starts with the file's index in the list.
 
-| `rule`                     | Rejected when                                                                                                                                                                                                                                                                                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema.invalid`           | The shape is wrong: missing or unknown key, wrong value type, unknown `type`, a component without `fields` or `component`, `fields`/`repeatable`/`component` on a non-component, `width` on a component or outside `1/3`, `1/2`, `full`, an empty field list.                                                                                           |
-| `identifier.invalid`       | The slug is not kebab-case, or a field's SQL name fails `^[a-z][a-z0-9_]*$`, contains `__` or ends with `_` (so: no capital first letter, digit first, `-`, spaces, non-ASCII).                                                                                                                                                                         |
-| `display_name.invalid`     | `displayName` is empty, has leading or trailing whitespace, holds a line break or another control character, or is longer than 60 Unicode code points (an emoji counts once). The path is `displayName`, or `fields[i].displayName` for a field. A missing type-level key is `schema.invalid`.                                                          |
-| `identifier.reserved`      | A field's SQL name is an engine-owned column (above, plus `status`) or a Postgres reserved word (`order`, `user`, `select`, ...); a component field's `name` is exempt from the reserved-word check only (it is an API key with no column; its table segment is the `component` value, which keeps every check). A slug may not map to a reserved word. |
-| `identifier.too_long`      | A composed table, column, index or constraint name is longer than **63 bytes** (Postgres would silently truncate it). The generator never truncates.                                                                                                                                                                                                    |
-| `identifier.collision`     | Two fields at the same level map to the same SQL name (`teamSize` and `team_size`), or two generated table/index/constraint names are equal in the `content` schema.                                                                                                                                                                                    |
-| `component.depth_exceeded` | A component sits deeper than level 3.                                                                                                                                                                                                                                                                                                                   |
+| `rule`                     | Rejected when                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema.invalid`           | The shape is wrong: missing or unknown key, wrong value type, unknown `type`, a component without `fields` or `component`, `fields`/`repeatable`/`component` on a non-component, `width` on a component or outside `1/3`, `1/2`, `full`, an empty field list; `unsigned` on a type other than `integer`; `default` on `media` or `component`, `null`, or not a value the field accepts (CM-11; path `fields[i].default`); `options` on a type other than `enumeration`, an `enumeration` without `options`, or `options` empty, over the entry limit, holding two equal entries, or holding an entry that is empty, longer than the limit or has leading or trailing whitespace (path `fields[i].options`, or `fields[i].options[j]` for one entry). |
+| `identifier.invalid`       | The slug is not kebab-case, or a field's SQL name fails `^[a-z][a-z0-9_]*$`, contains `__` or ends with `_` (so: no capital first letter, digit first, `-`, spaces, non-ASCII).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `display_name.invalid`     | `displayName` is empty, has leading or trailing whitespace, holds a line break or another control character, or is longer than 60 Unicode code points (an emoji counts once). The path is `displayName`, or `fields[i].displayName` for a field. A missing type-level key is `schema.invalid`.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `identifier.reserved`      | A field's SQL name is an engine-owned column (above, plus `status`) or a Postgres reserved word (`order`, `user`, `select`, ...); a component field's `name` is exempt from the reserved-word check only (it is an API key with no column; its table segment is the `component` value, which keeps every check). A slug may not map to a reserved word.                                                                                                                                                                                                                                                                                                                                                                                              |
+| `identifier.too_long`      | A composed table, column, index or constraint name is longer than **63 bytes** (Postgres would silently truncate it). The generator never truncates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `identifier.collision`     | Two fields at the same level map to the same SQL name (`teamSize` and `team_size`), or two generated table/index/constraint names are equal in the `content` schema.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `component.depth_exceeded` | A component sits deeper than level 3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 Length budget: the longest suffix decides. A root table may be at most 49
 bytes (`_published_idx` adds 14), a component table at most 52 bytes
 (`_parent_idx` adds 11). Shape errors are reported alone; length and
 collision checks run only once every name is well formed.
 
-## Worked example: `cv-page`
+## Worked example: `page-cv-a`
 
-`apps/cms-api/content/schemas/cv-page.json` (ported from the old ERD; the
-old `responsitoryLink` is spelled `repositoryLink`, and the old
-`reviewerSessionId` column is gone, SPEC D2). A component field carries its
-`component` value, which names its table; `width` is `1/3`, `1/2` or `full`:
+`apps/cms-api/content/schemas/page-cv-a.json` (a collection of CV pages, no
+web reader yet). A component field carries its `component` value, which names
+its table; `width` is `1/3`, `1/2` or `full`:
 
 ```json
 {
-  "slug": "cv-page",
+  "slug": "page-cv-a",
   "kind": "collection",
   "draftAndPublish": true,
   "fields": [
-    { "name": "position", "type": "text", "width": "1/2" },
-    { "name": "isMain", "type": "boolean", "width": "1/2" },
-    { "name": "name", "type": "text" },
+    { "name": "position", "type": "text", "width": "1/3" },
+    { "name": "isMain", "type": "boolean", "width": "1/3" },
+    { "name": "name", "type": "text", "width": "1/3" },
     { "name": "summary", "type": "richtext" },
     {
       "name": "experiences",
@@ -194,15 +212,15 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
       "component": "experience",
       "repeatable": true,
       "fields": [
-        { "name": "company", "type": "text", "width": "1/2" },
+        { "name": "company", "type": "text", "width": "1/2", "sensitive": true },
         {
           "name": "roles",
           "type": "component",
           "component": "role",
           "repeatable": true,
           "fields": [
-            { "name": "teamSize", "type": "integer", "width": "1/2" },
-            { "name": "techStack", "type": "json" }
+            { "name": "teamSize", "type": "integer", "width": "1/3" },
+            { "name": "techStacks", "type": "json" }
           ]
         }
       ]
@@ -211,29 +229,23 @@ old `responsitoryLink` is spelled `repositoryLink`, and the old
 }
 ```
 
-(Shortened: the real file also has `skills`, `educations`, `languages`,
-`references` (component `reference`) and, inside a role, `projects`.) It
-produces 8 tables:
+(Shortened: the real file also has `skills`, `projects` and, as a single
+component, `educations`.) It produces 6 tables (acceptance criterion 16):
 
 ```
-cv_page                                root: position, is_main, name, summary
-cv_page__skill                         level, skill
-cv_page__experience                    company, location, period
-cv_page__experience__role              position, period, team_size, tech_stack, responsibilities
-cv_page__experience__role__project     name, team_size, role, live_link, repository_link, tech_stack, responsibilities
-cv_page__education                     degree, institution, period, location, description
-cv_page__language                      language, level
-cv_page__reference                     name, phone, role
+page_cv_a                      root: name, position, is_main, summary
+page_cv_a__skill               skill, level
+page_cv_a__experience          company, location, period
+page_cv_a__experience__role    position, period, team_size, projects, tech_stacks, responsibilities
+page_cv_a__project             name, team_size, role, live_link, repository_link, tech_stack, responsibilities
+page_cv_a__education           degree, institution, period, location
 ```
 
-`resume` and `header` use the same table naming (`resume__experience__role__project`,
-`header__nav__sub_navigation`); their tables were renamed with their data by
-migration `0006_content.sql`.
+`header` uses the same table naming (`header__nav__sub_navigation`).
 
-Sensitive fields: `cv-contact` `address`, `phone`, `email`, `github`, and
-`resume` `experiences.company`, `referees.phone` (migration
-`0004_sensitive_site_fields.sql`, no DDL); `cv-page` `experiences.company`,
-`references.phone` (migration `0008_content.sql`, no DDL).
+Sensitive fields: `profile` `address`, `phone`, `email`, `github`, and
+`page-cv-a` `experiences.company`. Integration specs that need a type deeper
+than depth 2 use a fixture definition inside the spec, never a repo schema.
 
 ## Data-migration notes
 
@@ -267,6 +279,30 @@ over is written here.
   loss and no re-save needed. Clients that send or query `referees` for
   `cv-page` must use `references`; `resume` keeps `referees`.
 
+### `0014_content.sql` (public-site content types reshaped, Q-PS7)
+
+- Dropped with their rows (written with `content:generate --allow-destructive`,
+  accepted by the user, 2026-11-15; no data is carried over): `cv-contact`,
+  `cv-page`, `resume`, `site-text`, `module-sign-in`, `module-page-status` and
+  `cv-page-text`, each with its component tables. A rename is a drop and a
+  create: `module-sign-in` became `module-auth`, `module-page-status` became
+  `module-status`, `cv-page-text` became `page-cv-text`, all created empty.
+- `profile.photo` dropped; the old `profile` collection becomes a single; migration
+  0014 keeps every existing row (it does not delete extra rows), so remove surplus
+  `profile` rows by hand where an environment has more than one.
+- New empty types: `module-auth`, `module-status`, `page-cv-text`; `header`
+  gains `navLabel`, `navCvLink`, `notFoundTitle`, `notFoundDescription`.
+- The stacks reseed from the web mocks; production content is entered again
+  in cms-admin.
+
+### `0016_content.sql` (`page-cv-text` renamed to `cv-common-text`, Q-PS7)
+
+- A rename is a drop and a create (written with `content:generate
+--allow-destructive`, accepted by the user, 2026-11-16): `page-cv-text` and
+  its component tables are dropped with their rows; `cv-common-text` is created
+  empty. No data is carried over; enter the texts again in cms-admin. The SDL
+  has `cvCommonText`, no `pageCvText`.
+
 ## Migrations
 
 Content tables are never created at runtime. Changes go through two
@@ -289,7 +325,7 @@ pnpm build && pnpm content:migrate        # apply pending migrations (needs the 
    same result on every machine.
 3. Writes `NNNN_<name>.sql` (next sequence number) and the new snapshot.
    Nothing changed → nothing written. A change with no DDL (e.g. `string` →
-   `richtext`, `kind`) still writes a comment-only migration so the
+   `richtext`, `kind`, `unsigned`, `options`, `default`) still writes a comment-only migration so the
    `_content_types` row gets updated.
 
 | Change                                  | SQL                                  | Destructive? |
@@ -306,15 +342,19 @@ is passed. Review the SQL with `--dry-run` first.
 
 ### Column types
 
-| Field type                   | Column                         |
-| ---------------------------- | ------------------------------ |
-| `string`, `text`, `richtext` | `text`                         |
-| `integer`, `media`           | `integer`                      |
-| `decimal`                    | `numeric` (no fixed precision) |
-| `boolean`                    | `boolean`                      |
-| `date`                       | `date`                         |
-| `datetime`                   | `timestamptz`                  |
-| `json`                       | `jsonb`                        |
+| Field type                                  | Column                                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `string`, `text`, `richtext`, `enumeration` | `text` (`enumeration`: no Postgres enum type or `CHECK`; the API checks `options`) |
+| `integer`, `media`                          | `integer`                                                                          |
+| `biginteger`                                | `bigint`                                                                           |
+| `decimal`                                   | `numeric` (no fixed precision)                                                     |
+| `float`                                     | `real`                                                                             |
+| `double`                                    | `double precision`                                                                 |
+| `boolean`                                   | `boolean`                                                                          |
+| `date`                                      | `date`                                                                             |
+| `datetime`                                  | `timestamptz`                                                                      |
+| `time`                                      | `time` (without time zone)                                                         |
+| `json`                                      | `jsonb`                                                                            |
 
 All field columns are nullable: `required` is enforced by the API (drafts may
 be incomplete), not by `NOT NULL`. Not generated yet: the `media` FK to

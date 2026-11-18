@@ -24,7 +24,7 @@ import {
 } from '../../src/modules/content-engine/cli/ContentGenerate.command';
 import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 
-const CV_PAGE_FILE = 'cv-page.json';
+const PAGE_CV_A_FILE = 'page-cv-a.json';
 
 interface Workspace {
   schemasDir: string;
@@ -59,15 +59,15 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     }
   }
 
-  /** Fresh database + temp folders holding a copy of cv-page.json. */
+  /** Fresh database + temp folders holding a copy of page-cv-a.json. */
   async function workspace(): Promise<Workspace> {
     const root = await mkdtemp(join(tmpdir(), 'abyss-content-'));
     cleanup.push(root);
     const schemasDir = join(root, 'schemas');
     await mkdir(schemasDir);
     await copyFile(
-      join(DEFAULT_CONTENT_PATHS.schemasDir, CV_PAGE_FILE),
-      join(schemasDir, CV_PAGE_FILE),
+      join(DEFAULT_CONTENT_PATHS.schemasDir, PAGE_CV_A_FILE),
+      join(schemasDir, PAGE_CV_A_FILE),
     );
 
     const database = `t_${randomUUID().replace(/-/g, '')}`;
@@ -120,11 +120,11 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     );
   }
 
-  async function editCvPage(
+  async function editPageCvA(
     ws: Workspace,
     edit: (definition: { fields: Record<string, unknown>[] }) => void,
   ): Promise<void> {
-    const file = join(ws.schemasDir, CV_PAGE_FILE);
+    const file = join(ws.schemasDir, PAGE_CV_A_FILE);
     const definition = JSON.parse(await readFile(file, 'utf8')) as {
       fields: Record<string, unknown>[];
     };
@@ -132,7 +132,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await writeFile(file, JSON.stringify(definition));
   }
 
-  it('cv-page produces exactly the 8 tables of SPEC §8.2 (§12-16)', async () => {
+  it('page-cv-a produces exactly its 6 tables (criterion 16)', async () => {
     const ws = await workspace();
     expect(await generate(ws)).toMatchObject({
       status: 'written',
@@ -140,19 +140,17 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     });
     expect(await migrate(ws)).toEqual({
       applied: ['0001_test.sql'],
-      upserted: ['cv-page'],
+      upserted: ['page-cv-a'],
       removed: [],
     });
 
     expect(await contentTables(ws)).toEqual([
-      'cv_page',
-      'cv_page__education',
-      'cv_page__experience',
-      'cv_page__experience__role',
-      'cv_page__experience__role__project',
-      'cv_page__language',
-      'cv_page__reference',
-      'cv_page__skill',
+      'page_cv_a',
+      'page_cv_a__education',
+      'page_cv_a__experience',
+      'page_cv_a__experience__role',
+      'page_cv_a__project',
+      'page_cv_a__skill',
     ]);
 
     const [row] = await query<{
@@ -168,10 +166,10 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       await readFile(join(ws.migrationsDir, 'snapshot.json'), 'utf8'),
     ) as { contentTypes: Record<string, { hash: string }> };
     expect(row).toEqual({
-      slug: 'cv-page',
+      slug: 'page-cv-a',
       kind: 'collection',
       draft_and_publish: true,
-      definition_hash: snapshot.contentTypes['cv-page']?.hash,
+      definition_hash: snapshot.contentTypes['page-cv-a']?.hash,
     });
   });
 
@@ -180,31 +178,31 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await generate(ws);
     await migrate(ws);
     const documentId = randomUUID();
-    const insertRoot = `INSERT INTO content.cv_page (document_id, published_at) VALUES ($1, $2) RETURNING id`;
+    const insertRoot = `INSERT INTO content.page_cv_a (document_id, published_at) VALUES ($1, $2) RETURNING id`;
 
     const [draft] = await query<{ id: number }>(ws.databaseUrl, insertRoot, [documentId, null]);
     await query(ws.databaseUrl, insertRoot, [documentId, new Date()]);
     await expect(query(ws.databaseUrl, insertRoot, [documentId, null])).rejects.toThrow(
-      /cv_page_draft_uq/,
+      /page_cv_a_draft_uq/,
     );
     await expect(query(ws.databaseUrl, insertRoot, [documentId, new Date()])).rejects.toThrow(
-      /cv_page_published_uq/,
+      /page_cv_a_published_uq/,
     );
 
     const [experience] = await query<{ id: number }>(
       ws.databaseUrl,
-      `INSERT INTO content.cv_page__experience (component_uid, parent_id) VALUES ($1, $2) RETURNING id`,
+      `INSERT INTO content.page_cv_a__experience (component_uid, parent_id) VALUES ($1, $2) RETURNING id`,
       [randomUUID(), draft?.id],
     );
     await query(
       ws.databaseUrl,
-      `INSERT INTO content.cv_page__experience__role (component_uid, parent_id) VALUES ($1, $2)`,
+      `INSERT INTO content.page_cv_a__experience__role (component_uid, parent_id) VALUES ($1, $2)`,
       [randomUUID(), experience?.id],
     );
-    await query(ws.databaseUrl, 'DELETE FROM content.cv_page WHERE id = $1', [draft?.id]);
+    await query(ws.databaseUrl, 'DELETE FROM content.page_cv_a WHERE id = $1', [draft?.id]);
     const [left] = await query<{ count: string }>(
       ws.databaseUrl,
-      'SELECT count(*) FROM content.cv_page__experience__role',
+      'SELECT count(*) FROM content.page_cv_a__experience__role',
     );
     expect(left?.count).toBe('0');
   });
@@ -229,7 +227,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const ws = await workspace();
     await generate(ws);
     await migrate(ws);
-    await editCvPage(ws, (definition) => {
+    await editPageCvA(ws, (definition) => {
       definition.fields.push({ name: 'githubUrl', type: 'string' });
     });
 
@@ -239,9 +237,9 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     });
     expect(await migrate(ws)).toMatchObject({
       applied: ['0002_test.sql'],
-      upserted: ['cv-page'],
+      upserted: ['page-cv-a'],
     });
-    expect(await columns(ws, 'cv_page')).toContainEqual({
+    expect(await columns(ws, 'page_cv_a')).toContainEqual({
       column_name: 'github_url',
       data_type: 'text',
     });
@@ -252,34 +250,37 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await generate(ws);
     await migrate(ws);
     const tablesBefore = await contentTables(ws);
-    const file = join(ws.schemasDir, CV_PAGE_FILE);
+    const file = join(ws.schemasDir, PAGE_CV_A_FILE);
     const definition = JSON.parse(await readFile(file, 'utf8')) as Record<string, unknown>;
-    await writeFile(file, JSON.stringify({ ...definition, displayName: 'Renamed CV Page' }));
+    await writeFile(file, JSON.stringify({ ...definition, displayName: 'Renamed Page CV' }));
 
     expect(await generate(ws)).toMatchObject({ status: 'written', fileName: '0002_test.sql' });
     const migration = await readFile(join(ws.migrationsDir, '0002_test.sql'), 'utf8');
     expect(migration).toContain('Definition metadata only: no DDL needed.');
-    expect(await migrate(ws)).toMatchObject({ applied: ['0002_test.sql'], upserted: ['cv-page'] });
+    expect(await migrate(ws)).toMatchObject({
+      applied: ['0002_test.sql'],
+      upserted: ['page-cv-a'],
+    });
 
     expect(await contentTables(ws)).toEqual(tablesBefore);
     const [row] = await query<{ definition: { displayName: string } }>(
       ws.databaseUrl,
       'SELECT definition FROM content._content_types',
     );
-    expect(row?.definition.displayName).toBe('Renamed CV Page');
+    expect(row?.definition.displayName).toBe('Renamed Page CV');
   });
 
   it('refuses a dropped field without --allow-destructive, applies it with', async () => {
     const ws = await workspace();
     await generate(ws);
     await migrate(ws);
-    await editCvPage(ws, (definition) => {
+    await editPageCvA(ws, (definition) => {
       definition.fields = definition.fields.filter((field) => field.name !== 'summary');
     });
 
     const refused = generate(ws);
     await expect(refused).rejects.toBeInstanceOf(DestructiveChangeError);
-    await expect(refused).rejects.toThrow(/Drop column cv_page\.summary/);
+    await expect(refused).rejects.toThrow(/Drop column page_cv_a\.summary/);
     await expect(refused).rejects.toThrow(/--allow-destructive/);
     expect(await readdir(ws.migrationsDir)).toEqual(['0001_test.sql', 'snapshot.json']);
 
@@ -291,7 +292,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       status: 'written',
     });
     await migrate(ws);
-    const names = (await columns(ws, 'cv_page')).map((c) => c.column_name);
+    const names = (await columns(ws, 'page_cv_a')).map((c) => c.column_name);
     expect(names).not.toContain('summary');
   });
 
@@ -301,33 +302,33 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await migrate(ws);
     await query(
       ws.databaseUrl,
-      `INSERT INTO content.cv_page (document_id, is_main) VALUES ($1, true)`,
+      `INSERT INTO content.page_cv_a (document_id, is_main) VALUES ($1, true)`,
       [randomUUID()],
     );
-    await editCvPage(ws, (definition) => {
+    await editPageCvA(ws, (definition) => {
       const isMain = definition.fields.find((field) => field.name === 'isMain');
       if (isMain) isMain.type = 'string';
     });
 
     await expect(generate(ws)).rejects.toThrow(
-      /Change type of cv_page\.is_main from boolean to text/,
+      /Change type of page_cv_a\.is_main from boolean to text/,
     );
     await generate(ws, { allowDestructive: true });
     await migrate(ws);
-    expect(await columns(ws, 'cv_page')).toContainEqual({
+    expect(await columns(ws, 'page_cv_a')).toContainEqual({
       column_name: 'is_main',
       data_type: 'text',
     });
     const [row] = await query<{ is_main: string }>(
       ws.databaseUrl,
-      'SELECT is_main FROM content.cv_page',
+      'SELECT is_main FROM content.page_cv_a',
     );
     expect(row?.is_main).toBe('true');
   });
 
   it('renames component tables with their rows, constraints and indexes', async () => {
     const ws = await workspace();
-    await rm(join(ws.schemasDir, CV_PAGE_FILE));
+    await rm(join(ws.schemasDir, PAGE_CV_A_FILE));
     const definition = (parent: string, child: string) => ({
       slug: 'rename-demo',
       displayName: 'Rename demo',
@@ -429,7 +430,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const results = await Promise.all([migrate(ws), migrate(ws), migrate(ws)]);
     const applied = results.flatMap((result) => result.applied);
     expect(applied).toEqual(['0001_test.sql']);
-    expect(await contentTables(ws)).toHaveLength(8);
+    expect(await contentTables(ws)).toHaveLength(6);
     const rows = await query(ws.databaseUrl, 'SELECT name FROM content._migrations');
     expect(rows).toHaveLength(1);
   });

@@ -1,14 +1,6 @@
 import { useRef, useState } from 'react';
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  useToast,
-} from '@abyss/form-commons';
+import { Button, useToast } from '@abyss/form-commons';
+import { ConfirmDialog } from '@components/ConfirmDialog';
 import { useScreenText } from '@configs/locales';
 import type { PermissionAction } from '@features/access';
 import { useCallerAccess } from '@features/access/useCallerAccess';
@@ -111,6 +103,7 @@ export function DocumentActions({
   const busy = lifecycle.isPending || isSaving;
   const isDraftOrModified = state === PUBLISH_STATE.DRAFT || state === PUBLISH_STATE.MODIFIED;
   const isLive = state === PUBLISH_STATE.MODIFIED || state === PUBLISH_STATE.PUBLISHED;
+  const dialogText = lastConfirmed === 'discard' ? copy.discardDialog : copy.unpublishDialog;
   const canDiscard =
     holds('update') && access.canWriteEveryField(slug, rootFieldNames) && hasLifecycle;
 
@@ -160,70 +153,18 @@ export function DocumentActions({
       ) : null}
       <ConfirmDialog
         open={confirming !== null}
-        action={lastConfirmed}
+        title={dialogText.title}
+        description={`${dialogText.description}${
+          lastConfirmed === 'discard' && isFormDirty ? ` ${copy.discardDialog.unsavedEdits}` : ''
+        }`}
+        cancelLabel={dialogText.cancel}
+        confirmLabel={dialogText.confirm}
+        confirmVariant={lastConfirmed === 'discard' ? 'destructive' : 'warning'}
         onCloseFocus={() => opener.current?.focus()}
-        isFormDirty={isFormDirty}
         isRunning={lifecycle.isPending}
         onConfirm={() => lifecycle.mutate(lastConfirmed)}
         onCancel={() => setConfirming(null)}
       />
     </fieldset>
-  );
-}
-
-function ConfirmDialog({
-  open,
-  action,
-  onCloseFocus,
-  isFormDirty,
-  isRunning,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  action: ConfirmedAction;
-  isFormDirty: boolean;
-  isRunning: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-  onCloseFocus: () => void;
-}) {
-  const copy = useScreenText('content').content.actions;
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const text = action === 'discard' ? copy.discardDialog : copy.unpublishDialog;
-  return (
-    <Dialog open={open} onOpenChange={(isOpen) => (isOpen ? undefined : onCancel())}>
-      <DialogContent
-        onOpenAutoFocus={(event) => {
-          event.preventDefault();
-          cancelRef.current?.focus();
-        }}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          onCloseFocus();
-        }}
-      >
-        <DialogHeader>
-          <DialogTitle>{text.title}</DialogTitle>
-          <DialogDescription>
-            {text.description}
-            {action === 'discard' && isFormDirty ? ` ${copy.discardDialog.unsavedEdits}` : ''}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button ref={cancelRef} type="button" onClick={onCancel}>
-            {text.cancel}
-          </Button>
-          <Button
-            type="button"
-            variant={action === 'discard' ? 'destructive' : 'warning'}
-            loading={isRunning}
-            onClick={onConfirm}
-          >
-            {text.confirm}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

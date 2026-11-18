@@ -14,6 +14,10 @@ const EN_LOADERS = {
   media: () => import('./en/Media').then(({ MEDIA_COPY }) => ({ media: MEDIA_COPY })),
   reviewer: () =>
     import('./en/Reviewer').then(({ REVIEWER_COPY }) => ({ reviewer: REVIEWER_COPY })),
+  schemaBuilder: () =>
+    import('./en/SchemaBuilder').then(({ SCHEMA_BUILDER_COPY }) => ({
+      schemaBuilder: SCHEMA_BUILDER_COPY,
+    })),
   security: () =>
     import('./en/Security').then(({ SECURITY_COPY }) => ({ security: SECURITY_COPY })),
   setup: () => import('./en/Setup').then(({ SETUP_COPY }) => ({ setup: SETUP_COPY })),

@@ -1,12 +1,10 @@
 import { render, screen } from '@testing-library/react';
 
-import { CV_PAGE_MOCK } from '@/apis/server/restful/mocks/CvPage.mock';
-import { CvContact } from '@/features/cv/Cv.graphql';
-
 import { ContactCard } from './ContactCard';
-import { MaskedTextContext } from './ResumeSections';
+import { MaskedTextContext } from './CvSection';
+import type { Profile } from './PageCv.graphql';
 
-function contactOf(overrides: Partial<CvContact> = {}): CvContact {
+function profileOf(overrides: Partial<Profile> = {}): Profile {
   return {
     name: 'Mai Tran',
     address: '12 Example Street, Hanoi',
@@ -20,22 +18,27 @@ function contactOf(overrides: Partial<CvContact> = {}): CvContact {
   };
 }
 
-const FALLBACK = 'Mai Tran';
-const TEXT = CV_PAGE_MOCK.cvPageText.contact;
+const MASKED_TEXT = 'Sign in to view';
 
-function Card(props: { contact: CvContact | null; fallbackName: string }) {
+function Card({
+  profile,
+  maskedText = null,
+}: {
+  profile: Profile | null;
+  maskedText?: string | null;
+}) {
   return (
-    <MaskedTextContext.Provider value={CV_PAGE_MOCK.cvPageText.maskedValue}>
-      <ContactCard {...props} text={TEXT} />
+    <MaskedTextContext.Provider value={maskedText}>
+      <ContactCard profile={profile} />
     </MaskedTextContext.Provider>
   );
 }
 
 describe('ContactCard', () => {
   it('renders readable values as links where a link makes sense', () => {
-    render(<Card contact={contactOf()} fallbackName={FALLBACK} />);
+    render(<Card profile={profileOf()} />);
 
-    expect(screen.getByRole('heading', { level: 2, name: TEXT.title })).toBeInTheDocument();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'mai@example.com' })).toHaveAttribute(
       'href',
       'mailto:mai@example.com',
@@ -52,7 +55,7 @@ describe('ContactCard', () => {
   });
 
   it('shows initials when there is no avatar', () => {
-    render(<Card contact={contactOf()} fallbackName={FALLBACK} />);
+    render(<Card profile={profileOf()} />);
     expect(screen.getByText('MT')).toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
@@ -60,10 +63,9 @@ describe('ContactCard', () => {
   it('shows the avatar image with its alt text when present', () => {
     render(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           avatar: { url: 'https://res.cloudinary.com/x/a.png', alt: 'Mai' },
         })}
-        fallbackName={FALLBACK}
       />,
     );
     expect(screen.getByRole('img', { name: 'Mai' })).toBeInTheDocument();
@@ -72,30 +74,44 @@ describe('ContactCard', () => {
   it('shows the placeholder and none of the masked values', () => {
     const { container } = render(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           address: '***',
           phone: '***',
           email: '***',
           github: null,
           _maskedFields: ['address', 'phone', 'email', 'github'],
         })}
-        fallbackName={FALLBACK}
+        maskedText={MASKED_TEXT}
       />,
     );
-    expect(screen.getAllByText(CV_PAGE_MOCK.cvPageText.maskedValue)).toHaveLength(4);
+    expect(screen.getAllByText(MASKED_TEXT)).toHaveLength(4);
     expect(container).not.toHaveTextContent('***');
     expect(screen.queryByRole('link', { name: /mailto|tel:/ })).toBeNull();
     expect(screen.getByRole('link', { name: /linkedin/ })).toBeInTheDocument();
   });
 
+  it('leaves a masked value out, never raw, when there is no masked text', () => {
+    const { container } = render(
+      <Card profile={profileOf({ phone: '***', _maskedFields: ['phone'] })} />,
+    );
+    expect(container).not.toHaveTextContent('***');
+    expect(screen.queryByRole('link', { name: /\+84/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'mai@example.com' })).toBeInTheDocument();
+  });
+
+  it('shows no initials without a name and an avatar', () => {
+    render(<Card profile={profileOf({ name: null })} />);
+    expect(screen.queryByText('MT')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'mai@example.com' })).toBeInTheDocument();
+  });
+
   it('does not link a value that is not a safe target', () => {
     render(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           linkedin: 'javascript:alert(1)',
           email: 'not an email',
         })}
-        fallbackName={FALLBACK}
       />,
     );
     expect(screen.queryByRole('link', { name: /javascript/ })).toBeNull();
@@ -104,18 +120,17 @@ describe('ContactCard', () => {
   });
 
   it('renders nothing without a contact or without any value', () => {
-    const { container, rerender } = render(<Card contact={null} fallbackName={FALLBACK} />);
+    const { container, rerender } = render(<Card profile={null} />);
     expect(container).toBeEmptyDOMElement();
     rerender(
       <Card
-        contact={contactOf({
+        profile={profileOf({
           address: null,
           phone: '',
           email: null,
           linkedin: null,
           github: null,
         })}
-        fallbackName={FALLBACK}
       />,
     );
     expect(container).toBeEmptyDOMElement();

@@ -1,7 +1,6 @@
 import type { ClientApi } from '@/apis/client/Api.client';
-import { apiFailureOf } from '@/apis/client/ApiFailure.errors';
+import { API_ERROR_CODES, WebApiError } from '@/apis/WebApi.errors';
 import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
-import { BFF_ERROR_CODES } from '@/configs/Auth.constants';
 
 /** The signed-in account as the BFF returns it: no token, no permission list. */
 export interface CurrentUser {
@@ -52,8 +51,10 @@ async function rethrowPrivilegedRefusal<T>(call: Promise<T>): Promise<T> {
   try {
     return await call;
   } catch (cause) {
-    const failure = apiFailureOf(cause);
-    if (failure.kind === 'http' && failure.errorCode === BFF_ERROR_CODES.PRIVILEGED_ACCOUNT) {
+    if (
+      cause instanceof WebApiError &&
+      cause.errorCode === API_ERROR_CODES.BFF.PRIVILEGED_ACCOUNT
+    ) {
       throw new PrivilegedAccessError();
     }
     throw cause;

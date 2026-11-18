@@ -5,17 +5,26 @@ import { CONTENT_ERROR_CODES } from './ContentEngine.constants';
 import { ContentTypeRegistry, type TableNode } from './ContentTypeRegistry.entity';
 import { assertTreeInput, ContentTreeError } from './TreeInput.rules';
 
-const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
+const PAGE_CV_A_PATH = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'content',
+  'schemas',
+  'page-cv-a.json',
+);
 const UID = '0b9e7c1e-4c4e-4b8a-9f00-5d2a3c1b7e10';
 
-function cvPageRoot(): TableNode {
-  const definition: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
-  return ContentTypeRegistry.fromDefinitions([definition]).resolve('cv-page').root;
+function pageCvARoot(): TableNode {
+  const definition: unknown = JSON.parse(readFileSync(PAGE_CV_A_PATH, 'utf8'));
+  return ContentTypeRegistry.fromDefinitions([definition]).resolve('page-cv-a').root;
 }
 
 function treeError(input: unknown): ContentTreeError {
   try {
-    assertTreeInput(cvPageRoot(), input);
+    assertTreeInput(pageCvARoot(), input);
   } catch (error) {
     if (error instanceof ContentTreeError) return error;
     throw error;
@@ -26,7 +35,7 @@ function treeError(input: unknown): ContentTreeError {
 describe('assertTreeInput', () => {
   it('accepts a valid nested tree', () => {
     expect(() =>
-      assertTreeInput(cvPageRoot(), {
+      assertTreeInput(pageCvARoot(), {
         values: { position: 'Lead', isMain: true },
         components: {
           experiences: [

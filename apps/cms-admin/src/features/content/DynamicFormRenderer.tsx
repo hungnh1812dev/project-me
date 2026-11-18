@@ -57,7 +57,7 @@ export function DynamicFormRenderer({
         }
         return (
           <div key={node.path} className={spanOf(node)}>
-            {adapter.render({ name, label: node.label, copy })}
+            {adapter.render({ name, label: node.label, options: node.options, copy })}
           </div>
         );
       })}

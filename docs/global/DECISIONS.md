@@ -39,6 +39,7 @@ Generated from each `**D<n> <Title>.**` paragraph; D1–D15 are the fixes for re
 | D21 | Web BFF and web hardening | [apps/web/SPEC.md](../apps/web/SPEC.md) |
 | D22 | Remember me | [flows/sign-in/SPEC.md](../flows/sign-in/SPEC.md) |
 | D23 | cms-admin premium theme | [apps/cms-admin/SPEC.md](../apps/cms-admin/SPEC.md) |
+| D24 | Schema builder | [flows/schema-builder/SPEC.md](../flows/schema-builder/SPEC.md) |
 <!-- prettier-ignore-end -->
 <!-- decision-index:end -->
 

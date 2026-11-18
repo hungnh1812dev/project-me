@@ -1,0 +1,20 @@
+# Checklist - LG-W
+Base: debe158c · Updated: 2026-11-14 after RECHECK tier=3 (2026-11-14, web 0.0.1g)
+Test scope: debe158c..8f650a5d · changed: apps/web api v1 routes (import aliases only, 7 routes and their unit tests), docs · flows: public-site BFF · specs: none (no e2e spec covers the web /api/v1 routes; apps/e2e Api.endpoints.ts unchanged)
+
+Planner rows are in `tasks/plan.md` "Checkpoint LG-W" (CLG-43 to CLG-54). Status of qc rows after CHECK tier=3 (LG-api-1 re-check 2026-11-14):
+
+| ID | Method | Checker | Status | Note |
+|---|---|---|---|---|
+| CLG-43 | T3 cli | qc | pass | verbs get/logs/one exec; gens web 9, cms-api 38 before and after |
+| CLG-44 | T3 cli | qc | pass | ingress, images, build APP_ENV=staging recorded; commits INFERRED (user, git history and image creation times, no labels): web debe158c dirty (33 files), cms-api 6e02d5ee; both contain 3b5ae508 |
+| CLG-45 | T3 cli | qc | pass | settings match web.md/browser origin; pod health 200/200; NetworkPolicy recorded |
+| CLG-46 | T3 cli | qc | pass | matrix recorded; 7 of 8 rows differ, all explained by cause 1 |
+| CLG-47 | T3 browser | qc | pass | /api/v1 requests 404, /cv 500 error state, console 404/500/React #441, no CSP error; Turnstile not reached |
+| CLG-48 | T3 cli | qc | pass | 3 causes, verdict: no mock content |
+| CLG-49 | T3 cli | qc | pass | against https://project-me.localhost, web-staging 0.0.1d: health 200 {"status":"ok"}; session 200 {"user":null}; cv 401 BFF_SESSION_REQUIRED; 3 sign-in POSTs {} 400 BFF_INVALID_REQUEST; logout 204 with both __Host- cookies cleared; login without Origin 403 BFF_ORIGIN_NOT_ALLOWED; /api/unknown 404 Next HTML; all /api/v1 no-store; HTTP 301 to HTTPS. Ingress no longer routes /api/v1 to cms-api |
+| CLG-50 | T3 browser | qc | pass | RE-RUN web 0.0.1g (pod 88 s old, 2026-11-14): home console empty, /api/v1/health 200 and /session 200; /cv console only GET /cv 500 and #441 (accepted, QCI-W3), no CSP error, no failing /api/v1 request. Earlier: web 0.0.1e rebuilt from 8f650a5d (image created 13:32Z, after commit 13:29Z), re-run 2026-11-14: expected text of replan-LG-api-1 (/cv 500 + React #441 accepted as designed, user 2026-11-14, QCI-W3): home console empty, /api/v1/health 200 and /session 200; /cv console only GET /cv 500 and #441, /session 200; no CSP error, no failing /api/v1 request |
+| CLG-51 | T3 cli | security-qc (qc run; security-qc confirmed log and source part) | pass | RE-RUN web:0.0.1g (2026-11-14, qc part): 18 log lines, 0 hits for `Server env validated`, `[mock]`, `Calling GET`; only startup lines and `[api-error] cms-api-graphql NO_DATA - SiteShell` x13; apps/web clean, no console.log in apps/web/src; health 200, session 200, cv 401, login {} 400. Earlier: web:0.0.1e rebuilt from 8f650a5d (re-run 2026-11-14, pod 17 min old), apps/web tree clean, tag has no -dirty; no console.log or `Server env validated` in apps/web/src; runtime APP_ENV staging = build value (production check moved to CLG-55 in LG-F); 203 log lines: 0 hits for `Server env validated`, `[mock]`, `Calling GET`; no debug string in apps/web/src; health 200, session 200, cv 401, login {} 400 |
+| CLG-54 | T3 cli | qc | pass | scope: import-alias edits only in apps/web api v1 routes (8f650a5d); no e2e spec covers them, no spec run; same routes checked live on k3s 0.0.1e (health 200, session 200, cv 401, login {} 400) and by their unit tests |
+| CLG-52 | T1 static | security-qc | pass | triage-web-api-k3s.md, LG-W-qc findings, resolved/LG-W-qc-2.md, checklist notes: no secret value, token or cookie; web-secrets values only APP_ENV plus the non-secret keys the user allowed (handoff 2026-11-14 answer 2); env dump named, never copied |
+| CLG-53 | T1 static | security-qc | pass | debe158c..8f650a5d: only repo code change is 8f650a5d (14 import paths to `@/apis`, `@/configs`, `@/features`, tsconfig maps them to the same src files; no logic, schema, Turnstile or method change); DR2 went through its security gate before commit; cc82de24 docs only, no secret value, rollback warns the old image logs the env; ingress and image fixes are deploy-repo/user side |

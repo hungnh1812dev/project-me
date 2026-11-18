@@ -2,6 +2,7 @@ import 'server-only';
 
 import { z } from 'zod';
 
+import { logApiError, WebApiError } from '@/apis/WebApi.errors';
 import {
   BFF_BODY_MAX_BYTES,
   BFF_RATE_LIMITS,
@@ -19,7 +20,7 @@ import { TurnstileAction } from '@/configs/Security.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
 import { verifyHumanCheck } from '../restful/Turnstile.client';
-import { BffError, bffErrorResponse } from './Bff.errors';
+import { BffError, bffErrorOf, bffErrorResponse } from './Bff.errors';
 import { visitorIpOf } from './ClientIp.rules';
 import { FixedWindowRateLimiter } from './RateLimit.rules';
 
@@ -161,9 +162,19 @@ async function runPipeline<TSchema extends z.ZodObject>(
   });
 }
 
-/** Refusals log the route and code only: no body, token, code, cookie, email or password. */
-function logRefusal(request: Request, errorCode: string): void {
-  console.warn(`[bff] ${request.method} ${new URL(request.url).pathname} ${errorCode}`);
+/** Logs a failure once, with the method and path as its operation: codes only, never a body, token or cookie. */
+function logFailure(request: Request, error: unknown): void {
+  const failure = error instanceof WebApiError ? error : bffErrorOf(error);
+  logApiError(
+    new WebApiError({
+      source: failure.source,
+      errorCode: failure.errorCode,
+      statusCode: failure.statusCode,
+      operation: `${request.method} ${new URL(request.url).pathname}`,
+      retryAfterSeconds: failure.retryAfterSeconds,
+      upstreamErrorCode: failure.upstreamErrorCode,
+    }),
+  );
 }
 
 /**
@@ -179,9 +190,8 @@ export function defineBffRoute<TSchema extends z.ZodObject = z.ZodObject<Record<
     try {
       response = await runPipeline(options, request);
     } catch (error) {
-      const bffError = error instanceof BffError ? error : new BffError('BFF_UPSTREAM_FAILED');
-      logRefusal(request, bffError.errorCode);
-      response = bffErrorResponse(bffError);
+      logFailure(request, error);
+      response = bffErrorResponse(bffErrorOf(error));
     }
     response.headers.set(CACHE_CONTROL_HEADER, CACHE_CONTROL_NO_STORE);
     return response;

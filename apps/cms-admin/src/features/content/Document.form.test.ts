@@ -40,7 +40,7 @@ const record = {
           roles: [
             {
               componentUid: '00000000-0000-4000-8000-0000000000d1',
-              values: { position: 'Dev', teamSize: 5, techStack: ['ts'] },
+              values: { position: 'Dev', teamSize: 5, techStacks: ['ts'] },
               components: {},
             },
           ],
@@ -69,7 +69,7 @@ describe('toFormValues', () => {
     });
     const role = ((form.experiences as FormValues[])[0]!.roles as FormValues[])[0]!;
     expect(role.teamSize).toBe('5');
-    expect(role.techStack).toBe('[\n  "ts"\n]');
+    expect(role.techStacks).toBe('[\n  "ts"\n]');
   });
 
   it('builds a blank item with an empty uid', () => {
@@ -145,7 +145,7 @@ describe('toDocumentTree on update', () => {
     expect(experience?.componentUid).toBe(UID_ROLE);
     expect(experience?.components?.roles?.[0]).toMatchObject({
       componentUid: '00000000-0000-4000-8000-0000000000d1',
-      values: { position: 'Lead', teamSize: 5, techStack: ['ts'] },
+      values: { position: 'Lead', teamSize: 5, techStacks: ['ts'] },
     });
   });
 
@@ -159,5 +159,69 @@ describe('toDocumentTree on update', () => {
     expect(body.values).toEqual({ position: 'Lead' });
     expect(body.components?.experiences?.[0]?.values).not.toHaveProperty('location');
     expect(body.components).not.toHaveProperty('references');
+  });
+});
+
+describe('field defaults (CE-5)', () => {
+  const field = (path: string, type: string, extra: object = {}) => ({
+    path,
+    type,
+    system: false,
+    component: false,
+    repeatable: false,
+    rootScalar: !path.includes('.'),
+    conditionKind: null,
+    sensitive: false,
+    ...extra,
+  });
+  const defaults = buildFieldTree([
+    field('title', 'text', { default: 'Untitled' }),
+    field('count', 'integer', { default: 3 }),
+    field('big', 'biginteger', { default: '9007199254740993' }),
+    field('ratio', 'float', { default: 1.5 }),
+    field('active', 'boolean', { default: true }),
+    field('kind', 'enumeration', { default: 'b', options: ['a', 'b'] }),
+    field('opens', 'time', { default: '09:30' }),
+    field('meta', 'json', { default: { a: 1 } }),
+    field('note', 'string'),
+    field('items', 'component', { component: true, repeatable: true, rootScalar: false }),
+    field('items.label', 'text', { default: 'New' }),
+    field('items.size', 'integer'),
+  ]);
+
+  it('fills a new document per type with the converted default', () => {
+    const form = toFormValues(defaults, null);
+    expect(form).toMatchObject({
+      title: 'Untitled',
+      count: '3',
+      big: '9007199254740993',
+      ratio: '1.5',
+      active: true,
+      kind: 'b',
+      opens: '09:30',
+      note: '',
+      items: [],
+    });
+    expect(form.meta).toBe(JSON.stringify({ a: 1 }, null, 2));
+    expect(toDocumentTree(defaults, form, null, NONE).values).toMatchObject({
+      big: '9007199254740993',
+      count: 3,
+      meta: { a: 1 },
+    });
+  });
+
+  it('fills a new component entry with its fields defaults', () => {
+    const entry = emptyItem(defaults.find((item) => item.name === 'items')!);
+    expect(entry).toMatchObject({ [ITEM_UID_KEY]: '', label: 'New', size: '' });
+  });
+
+  it('never fills a default into a stored document', () => {
+    const form = toFormValues(defaults, { values: { title: null }, components: {} });
+    expect(form).toMatchObject({ title: '', count: '', active: false, kind: '' });
+    const stored = toFormValues(defaults, {
+      values: {},
+      components: { items: [{ componentUid: UID_A, values: {}, components: {} }] },
+    });
+    expect(stored.items).toEqual([{ [ITEM_UID_KEY]: UID_A, label: '', size: '' }]);
   });
 });

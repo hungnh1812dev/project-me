@@ -1,25 +1,20 @@
 import { render, screen } from '@testing-library/react';
 
-import { SHELL_TEXT, ShellTextProvider } from '../features/session/Session.fixture';
-import { LAST_RESORT_TEXT } from '../features/site-shell';
+import { LAST_RESORT_TEXT } from '../configs/LastResort.constants';
+import { loadNotFoundText } from '../features/not-found/NotFoundPage.server';
 import NotFound from './not-found';
 
-describe('NotFound', () => {
-  it('explains that the page does not exist, with the shell text', () => {
-    render(
-      <ShellTextProvider>
-        <NotFound />
-      </ShellTextProvider>,
-    );
-    expect(
-      screen.getByRole('heading', { level: 1, name: SHELL_TEXT.siteText.notFoundTitle }),
-    ).toBeInTheDocument();
-  });
+vi.mock('../features/not-found/NotFoundPage.server', () => ({
+  loadNotFoundText: vi.fn<typeof loadNotFoundText>(),
+}));
 
-  it('falls back to the last-resort text outside the provider', () => {
+describe('NotFound', () => {
+  it('shows the last-resort text and loads no data', () => {
     render(<NotFound />);
     expect(
       screen.getByRole('heading', { level: 1, name: LAST_RESORT_TEXT.notFoundTitle }),
     ).toBeInTheDocument();
+    expect(screen.getByText(LAST_RESORT_TEXT.notFoundDescription)).toBeInTheDocument();
+    expect(loadNotFoundText).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { answerHealthRead } from '../../../../features/status/Health.server';
+import { answerHealthRead } from '@/features/status/Health.server';
 
 const defineBffRoute = vi.hoisted(() =>
   vi.fn<() => Record<string, unknown>>(() => ({ GET: vi.fn<() => void>() })),

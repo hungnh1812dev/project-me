@@ -4,6 +4,7 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 
 ## Testing
 - Frontend tests: Vitest + jsdom, `src/**/*.test.tsx`; jsdom needs the ResizeObserver stub and the `<dialog>` polyfill (test/Vitest.setup.ts in form-commons and cms-admin); ProseMirror is driven through `element.editor`. form-commons must be rebuilt (`pnpm --filter @abyss/form-commons build`) before apps see new exports.
+- cms-admin: a new screen of copy must be added to `ALL_SCREENS` in `test/Vitest.setup.ts`, or the first test of a component using it renders nothing; a view's nav hook lives in its view folder (a feature may not import `access`, lint-enforced).
 - Admin tests use fake handlers keyed "METHOD /path" (`test/FakeApi.fixture.ts`, createTestServices).
 - Contract tests read `apps/cms-api/content/public-constants.json` with `readFileSync` from `process.cwd()` (never import it in app code); add a mirror check there when a client copies a new cms-api constant.
 
@@ -34,3 +35,4 @@ apps/cms-admin, apps/web, packages/form-commons. grep the section you need; cros
 - Web BFF path is `/api/v1/*` on the web origin (2026-11-06, web-api-path, ADR 0018 amended): no alias or redirect from `/bff/v1`, which answers 404.
 - cms-admin premium look (2026-11-10, admin-ui-premium-saas): the document action bar sticks to the bottom with the `--shadow-bar-top` token; invite and resend toasts drop the email address (no personal data in toasts); the sidebar menu is hidden when no item is visible, and a role with no read permission sees the Welcome panel (ADM-11); dialog footers keep the destructive confirm below Cancel at 375 px.
 - Browser checks never read or pass the owner password: signed-in e2e specs sign in inside the test with the env values; the QC browser does not sign in (2026-11-10).
+- apps/web (2026-11-13, web-env-errors; amended 2026-11-16, cv-states-mock): a single type that answers null, or a failed read, gets its mock where APP_ENV is not production; a collection that answers empty is never mocked (404 or a no-data state); /cv never answers 404 or 500 for its content: a failed read with no mock, or no published main CV, shows the no-CV-live state (200, noindex); with the mocks off, /cv shows the CV without labels when cv-common-text is missing; the staging smoke stack seeds published site-shell and CV content matching the web mocks; a web build with `ENVIRONMENT=production` needs `APP_ENV=production`.

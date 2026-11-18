@@ -33,6 +33,10 @@ The schema format of `apps/cms-api/content/schemas/cv-page.json` as changed on 2
 - **CM-9 `width`** (optional, on non-component fields only; on a component field: `schema.invalid`) takes `1/3`, `1/2` or `full` ([canonical-values.md](../../global/reference/canonical-values.md) "Field widths"); any other value (`""`, `50%`) is `schema.invalid`. It is metadata only. `GET /content-types` field views always carry the resolved `width` (cms-api applies the default `full`).
 - **CM-10 Schemas moved to the format.** `cv-page.json` uses `text`, `component` values, `width` as fractions (`50%` becomes `1/2`) and `repositoryLink` (the uncommitted `responsitoryLink` is a typo; no committed migration ever created that column, so no data moves). `resume.json`, `header.json`, `cv-contact.json` and `profile.json` change every short `string` field to `text` and give each component field a `component` value (Q-CPS4). One generated migration (`0006`) and the printed SDL hold the change; its destructive parts in `cv_page` need `--allow-destructive` and the data-migration note (Q-CPS3).
 
+### Field default values (feature `schema-builder-fields` phase 2, user 2026-11-18, Q-TID3..Q-TID5)
+
+- **CM-11 `default`.** Optional on every field whose type an editor types or picks a value for: `text`, `string`, `richtext`, `integer`, `biginteger`, `decimal`, `float`, `double`, `boolean`, `date`, `datetime`, `time`, `enumeration`, `json`. On `media` and `component` it is `schema.invalid`; so is `null`. The value must be one the API accepts on a write of that field: the field type's own value check, with the field's `unsigned` and `options` (an `enumeration` default is one of its `options`), else `schema.invalid` with path `fields[i].default`. A `richtext` default is checked with no media origin and is refused when sanitizing changes it (so it holds no image). It is metadata only (comment-only migration, no column `DEFAULT`); stored documents keep their values when it is added, changed or removed. `GET /content-types` field views carry it, in the API's value form (a `time` as `HH:MM:SS`, a `biginteger` as a digit string), only when the schema sets it. The API never applies it: only cms-admin does (CE-5 in [content-editing](../content-editing/SPEC.md); Q-TID4). It is allowed on a `sensitive` field and, being schema metadata, holds no secret (Q-TID5). Defaults are fixed values only (Q-TID3). A new type that takes a value is one field type entry that says it accepts a default.
+
 ## Acceptance
 
 Global success criterion of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 16.
@@ -50,6 +54,8 @@ Q1 (Kysely for content queries) is global: [DECISIONS.md](../../global/DECISIONS
 Group 2 owner-private runtime DDL ([out of scope](../../../SPEC.md)).
 
 ## Open questions
+
+The field default answers Q-TID3..Q-TID5 (CM-11) are in [schema-builder](../schema-builder/SPEC.md) "Answered questions".
 
 For the user (ADR 0019 "Open"; the generated migration, task CPS-3, waits for them):
 

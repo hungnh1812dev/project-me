@@ -16,7 +16,10 @@
 #   SMOKE_E2E=1            also run the Playwright suite (@abyss/e2e) against the
 #                          stack as the bootstrapped owner
 #   SMOKE_NO_BUILD=1       reuse the images from the last build (only when no
-#                          product code changed since, e.g. e2e-only edits)
+#                          product code changed since, e.g. e2e-only edits; never
+#                          together with a changed SMOKE_WEB_PRODUCTION)
+#   SMOKE_WEB_PRODUCTION=1 build and run web with APP_ENV=production (mocks compiled out,
+#                          default data cache window) instead of staging with no cache
 #
 # The account logins (STACK_*) come from .localEnv.agent, generated once and reused
 # (ADR 0020); every other secret is generated per run and the file is read for nothing else.
@@ -30,7 +33,7 @@ source "$ROOT_DIR/scripts/lib/stack-seed.sh"
 # shellcheck source=lib/expected-output.sh
 source "$ROOT_DIR/scripts/lib/expected-output.sh"
 # Check sections: each defines check_<section>() functions, run in order below.
-for section_file in routing security-headers cors init-container database-roles owner-setup auth mail; do
+for section_file in routing security-headers cors init-container database-roles owner-setup auth mail content; do
   # shellcheck source=/dev/null
   source "$ROOT_DIR/scripts/smoke/$section_file.sh"
 done
@@ -60,6 +63,10 @@ E2E_VARS_FILE="$ROOT_DIR/.smoke/e2e-vars.sh"
 
 export SMOKE_DOMAIN="${SMOKE_DOMAIN:-$DEFAULT_DOMAIN}"
 export SMOKE_HTTP_PORT="${SMOKE_HTTP_PORT:-$DEFAULT_HTTP_PORT}"
+if [[ "${SMOKE_WEB_PRODUCTION:-}" == "1" ]]; then
+  export SMOKE_WEB_APP_ENV=production
+  export SMOKE_WEB_REVALIDATE_SECONDS=
+fi
 TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-$DEFAULT_TIMEOUT_SECONDS}"
 
 ADMIN_HOST="admin.$SMOKE_DOMAIN"
@@ -269,6 +276,7 @@ check_init_container
 check_database_roles
 check_owner_setup
 check_migrations_again
+check_seed_content
 check_content_token
 check_auth
 check_two_factor

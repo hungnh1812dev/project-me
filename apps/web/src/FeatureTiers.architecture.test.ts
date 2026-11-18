@@ -97,11 +97,19 @@ describe('test fixtures', () => {
 });
 
 describe('mock view', () => {
-  it('is imported by MockFallback.server.ts only', () => {
-    const importers = sourceFilesIn(SRC_DIR)
-      .filter((file) => /from\s+'[^']*\/MockView'/.test(readFileSync(file, 'utf8')))
+  const importersOf = (pattern: RegExp) =>
+    sourceFilesIn(SRC_DIR)
+      .filter((file) => pattern.test(readFileSync(file, 'utf8')))
       .map((file) => file.replace(SRC_DIR, ''));
-    expect(importers).toEqual(['/apis/server/restful/MockFallback.server.ts']);
+
+  it('is loaded by a dynamic import in MockFallback.server.ts only', () => {
+    expect(importersOf(/import\('[^']*\/MockView'\)/)).toEqual([
+      '/apis/server/graphql/MockFallback.server.ts',
+    ]);
+  });
+
+  it('has no static value import, only the type import of the mock key', () => {
+    expect(importersOf(/^import\s+(?!type\b)[^;]*from\s+'[^']*\/MockView'/m)).toEqual([]);
   });
 });
 

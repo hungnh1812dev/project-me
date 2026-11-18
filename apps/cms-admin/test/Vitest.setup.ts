@@ -37,6 +37,7 @@ const ALL_SCREENS: readonly ScreenName[] = [
   'login',
   'media',
   'reviewer',
+  'schemaBuilder',
   'security',
   'setup',
   'status',

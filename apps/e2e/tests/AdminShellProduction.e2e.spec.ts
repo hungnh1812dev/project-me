@@ -6,7 +6,7 @@ const DESKTOP = { width: 1280, height: 800 };
 const NOTIFICATIONS_REGION = /^Notifications/;
 const HEADER_HEIGHT_PX = '64px';
 
-test.describe('shell in the production build', () => {
+test.describe('shell in the production build', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('sticky sidebar and header render from the production CSS, no console error, toast region mounted', async ({
     page,
   }) => {

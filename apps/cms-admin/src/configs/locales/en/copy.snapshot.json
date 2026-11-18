@@ -6,6 +6,12 @@
     "toast": {
       "region": "Notifications",
       "close": "Dismiss notification"
+    },
+    "leaveDialog": {
+      "title": "Leave this page?",
+      "description": "Your changes are not saved. If you leave now, they are lost.",
+      "stay": "Stay on this page",
+      "leave": "Leave without saving"
     }
   },
   "app": {
@@ -237,6 +243,7 @@
       "media": "File Library",
       "reviewer": "Reviewers",
       "backups": "Backups",
+      "schemaBuilder": "Schema builder",
       "content": "Content",
       "singleTypes": "Single types",
       "collectionTypes": "Collection types",
@@ -923,6 +930,10 @@
     "richtextLoading": "Loading the text editor…",
     "invalidInteger": "Enter a whole number, for example 12.",
     "invalidDecimal": "Enter a number, for example 12.5.",
+    "enumeration": {
+      "emptyChoice": "Choose a value",
+      "notAllowed": "SAMPLE (not allowed)"
+    },
     "invalidJson": "Enter valid JSON, for example [\"React\", \"Node\"].",
     "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
     "list": {
@@ -1021,6 +1032,216 @@
       "twoFactorOff": "Downloading a backup needs two-factor sign-in. Turn it on in your security settings first.",
       "openSecurity": "Open security settings",
       "close": "Close"
+    }
+  },
+  "schemaBuilder": {
+    "title": "Schema builder",
+    "description": "Design a content type and export its schema file. Nothing is saved on the server: you add the file to the repository yourself.",
+    "forbidden": "Only the owner can use the schema builder.",
+    "start": {
+      "title": "Start a content type",
+      "hint": "Begin with an empty definition, or import an existing schema file to change it.",
+      "newType": "New content type",
+      "importJson": "Import JSON"
+    },
+    "restartDialog": {
+      "title": "Start again?",
+      "description": "The definition has changes that are not exported. Starting again replaces them.",
+      "cancel": "Keep working",
+      "confirm": "Discard and start again"
+    },
+    "typeKeys": {
+      "heading": "Content type",
+      "slug": "Slug",
+      "slugHint": "Lower case, used in the API path and as the schema file name.",
+      "displayName": "Display name",
+      "kind": "Kind",
+      "kindOptions": {
+        "collection": "Collection (many documents)",
+        "single": "Single (one document)"
+      },
+      "draftAndPublish": "Draft and publish",
+      "draftAndPublishHint": "Edits stay in a draft until someone publishes them."
+    },
+    "fields": {
+      "heading": "Fields",
+      "count": "SAMPLE fields",
+      "empty": "No fields yet. Add the first field to start building.",
+      "emptyComponent": "No fields in this component yet.",
+      "addField": "Add field",
+      "addFieldTo": "Add field to SAMPLE",
+      "paletteHeading": "Field types",
+      "paletteHint": "Pick a type to add it at the end of the top level, or drag it to a place in the fields.",
+      "listLabel": "Fields of SAMPLE",
+      "rootListLabel": "Fields"
+    },
+    "row": {
+      "select": "Edit SAMPLE",
+      "edit": "Properties of SAMPLE",
+      "moveUp": "Move SAMPLE up",
+      "moveDown": "Move SAMPLE down",
+      "moveTo": "Move SAMPLE to another list",
+      "moveToRoot": "Top level",
+      "moveToComponent": "Inside SAMPLE",
+      "duplicate": "Duplicate SAMPLE",
+      "remove": "Delete SAMPLE",
+      "hasErrors": "Has validation errors",
+      "groupedType": "SAMPLE · undefined",
+      "markers": {
+        "required": "Required",
+        "sensitive": "Sensitive",
+        "repeatable": "Repeatable",
+        "width": "Width SAMPLE"
+      },
+      "deleteDialog": {
+        "title": "Delete SAMPLE?",
+        "description": "This component holds SAMPLE fields. Deleting it removes them too.",
+        "cancel": "Keep it",
+        "confirm": "Delete SAMPLE"
+      }
+    },
+    "dnd": {
+      "instructions": "To move a field, focus its drag handle and press space or enter. Use the arrow keys to choose a place, space or enter to drop it there, and escape to cancel.",
+      "fieldHandle": "Drag SAMPLE",
+      "paletteHandle": "Drag SAMPLE into the fields",
+      "place": "position SAMPLE of undefined in undefined",
+      "pickedUp": "Picked up SAMPLE.",
+      "over": "SAMPLE is over undefined.",
+      "overNothing": "SAMPLE is not over a place that can take it.",
+      "dropped": "SAMPLE dropped at undefined.",
+      "droppedNowhere": "SAMPLE was not dropped on a place that can take it. Nothing changed.",
+      "cancelled": "Dragging SAMPLE cancelled. Nothing changed."
+    },
+    "property": {
+      "heading": "Field properties",
+      "description": "Changes apply as you type.",
+      "done": "Done",
+      "options": {
+        "label": "Options",
+        "empty": "No options yet. Add at least one.",
+        "option": "Option SAMPLE",
+        "add": "Add option",
+        "moveUp": "Move option SAMPLE up",
+        "moveDown": "Move option SAMPLE down",
+        "remove": "Remove option SAMPLE"
+      },
+      "name": "Name",
+      "displayName": "Display name",
+      "type": "Type",
+      "numberType": "Number type",
+      "dateType": "Date type",
+      "textType": "Text type",
+      "defaultValue": "Default value",
+      "noDefault": "No default",
+      "defaultTrue": "True",
+      "defaultFalse": "False",
+      "required": "Required",
+      "sensitive": "Sensitive",
+      "sensitiveHint": "Hidden from public and reviewer roles unless they are granted the field.",
+      "width": "Width",
+      "widthUnset": "Not set",
+      "widthOptions": {
+        "1/3": "One third",
+        "1/2": "Half",
+        "full": "Full width"
+      },
+      "component": "Component",
+      "componentHint": "The name of the component this field holds.",
+      "repeatable": "Repeatable",
+      "typeRefusal": {
+        "holdsFields": "Delete the fields inside this component before changing its type.",
+        "tooDeep": "A component here would nest deeper than 3 levels."
+      }
+    },
+    "fieldGroups": {
+      "textInput": "Text input",
+      "number": "Number",
+      "datetimePicker": "Datetime picker"
+    },
+    "fieldVariants": {
+      "singleLine": "Single line",
+      "multiLine": "Multi-line",
+      "unsignedInteger": "Unsigned integer",
+      "integer": "Integer",
+      "biginteger": "Big integer",
+      "float": "Float",
+      "double": "Double",
+      "decimal": "Decimal",
+      "date": "Date",
+      "datetime": "Date and time",
+      "time": "Time"
+    },
+    "fieldTypes": {
+      "text": "Single line",
+      "string": "Multi-line",
+      "richtext": "Text editor",
+      "integer": "Whole number",
+      "biginteger": "Big integer",
+      "float": "Float",
+      "double": "Double",
+      "decimal": "Decimal number",
+      "boolean": "Yes / no",
+      "date": "Date",
+      "datetime": "Date and time",
+      "time": "Time",
+      "enumeration": "Enum",
+      "json": "JSON",
+      "media": "Media",
+      "component": "Component"
+    },
+    "import": {
+      "title": "Import a schema file",
+      "description": "Load an existing content type to change it, or a file you saved earlier. Your current work stays if the file is refused.",
+      "fileLabel": "Schema file (.json)",
+      "fileAccept": ".json,application/json",
+      "textLabel": "Or paste the JSON",
+      "textPlaceholder": "{ \"slug\": \"cv-page\", \"fields\": [] }",
+      "readFailed": "The file could not be read. Pick it again or paste its text.",
+      "empty": "Pick a file or paste the JSON first.",
+      "submit": "Load schema",
+      "cancel": "Cancel",
+      "refusal": {
+        "notJson": "This text is not valid JSON.",
+        "notObject": "The JSON must be an object with the content type keys, not a list or a value.",
+        "fieldsMissing": "The content type has no \"fields\" list. Add \"fields\": [] and try again.",
+        "fieldNotObject": "Every entry of a \"fields\" list must be an object.",
+        "tooManyFields": "This file has more than SAMPLE fields. Split it into smaller content types or components and import them one at a time.",
+        "tooDeep": "This file nests fields more than SAMPLE levels deep. Flatten the components or split them into separate components and import them one at a time."
+      }
+    },
+    "validation": {
+      "heading": "Validation",
+      "waiting": "Checking the definition",
+      "checking": "Checking again",
+      "valid": "No errors",
+      "errorCount": "SAMPLE errors",
+      "listLabel": "Validation errors",
+      "typeLevel": "Content type",
+      "unavailable": "Validation unavailable",
+      "unavailableHint": "The check could not be completed. Export stays off until it runs.",
+      "retry": "Try again",
+      "selectError": "Go to the field of SAMPLE at undefined"
+    },
+    "export": {
+      "heading": "Export",
+      "copy": "Copy JSON",
+      "download": "Download",
+      "copied": "Schema JSON copied",
+      "copyFailed": "The browser blocked copying. Use Download instead.",
+      "reason": {
+        "checking": "Export is off while the definition is being checked.",
+        "unavailable": "Export is off because validation is unavailable.",
+        "invalid": "Fix the validation errors to export."
+      },
+      "nextSteps": {
+        "heading": "Next steps",
+        "steps": {
+          "0": "Save the file under apps/cms-api/content/schemas/.",
+          "1": "Run content:generate to create the migration.",
+          "2": "Review the migration. Destructive changes need --allow-destructive and a note.",
+          "3": "Commit the schema file and the migration."
+        }
+      }
     }
   }
 }

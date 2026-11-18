@@ -15,13 +15,13 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
-import type { Alert } from '@/apis/client/ApiFailure.errors';
+import type { Alert } from '@/apis/client/ClientApi.errors';
 import { appEnv } from '@/configs/Browser.env';
 import { TURNSTILE } from '@/configs/Security.constants';
-import { useRequiredSignInText } from '@/features/site-shell';
 
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
+import type { SignInText } from './SignIn.graphql';
 import { TwoFactorStep } from './TwoFactorStep';
 import { useHumanCheck } from './useHumanCheck';
 
@@ -42,11 +42,13 @@ export function WebLoginDialog({
   open,
   onOpenChange,
   returnFocusRef,
+  text,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Element that gets focus on close; the opener may have re-rendered since the dialog opened. */
   returnFocusRef?: RefObject<HTMLElement | null>;
+  text: SignInText;
 }) {
   const siteKey = appEnv.turnstileSiteKey;
   const [openingCount, setOpeningCount] = useState(open ? 1 : 0);
@@ -65,17 +67,21 @@ export function WebLoginDialog({
         }}
       >
         {siteKey === undefined ? (
-          <HumanCheckUnavailable />
+          <HumanCheckUnavailable text={text} />
         ) : (
-          <LoginFlow key={openingCount} siteKey={siteKey} onClose={() => onOpenChange(false)} />
+          <LoginFlow
+            key={openingCount}
+            siteKey={siteKey}
+            text={text}
+            onClose={() => onOpenChange(false)}
+          />
         )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function HumanCheckUnavailable() {
-  const copy = useRequiredSignInText();
+function HumanCheckUnavailable({ text: copy }: { text: SignInText }) {
   return (
     <DialogHeader>
       <DialogTitle>{copy.title}</DialogTitle>
@@ -84,10 +90,17 @@ function HumanCheckUnavailable() {
   );
 }
 
-function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void }) {
+function LoginFlow({
+  siteKey,
+  text: copy,
+  onClose,
+}: {
+  siteKey: string;
+  text: SignInText;
+  onClose: () => void;
+}) {
   const session = useWebSession();
-  const copy = useRequiredSignInText();
-  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.LOGIN);
+  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.LOGIN, copy.humanCheck);
   const [alert, setAlert] = useState<Alert | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [hasExpired, setHasExpired] = useState(false);
@@ -151,6 +164,7 @@ function LoginFlow({ siteKey, onClose }: { siteKey: string; onClose: () => void 
         <TwoFactorStep
           challenge={challenge}
           siteKey={siteKey}
+          text={copy}
           onCancel={closeChallenge}
           onExpired={expireChallenge}
           onDone={onClose}

@@ -14,20 +14,19 @@ describe('labelOf', () => {
   });
 });
 
-describe('buildFieldTree (cv-page)', () => {
+describe('buildFieldTree (page-cv-a)', () => {
   const tree = buildFieldTree(CV_PAGE_TYPE.fields);
 
   it('keeps root fields in definition order', () => {
     expect(tree.map((node) => node.name)).toEqual([
+      'name',
       'position',
       'isMain',
-      'name',
       'summary',
       'skills',
       'experiences',
+      'projects',
       'educations',
-      'languages',
-      'references',
     ]);
   });
 
@@ -36,9 +35,7 @@ describe('buildFieldTree (cv-page)', () => {
     expect(experience?.repeatable).toBe(true);
     const role = experience?.children.find((node) => node.name === 'roles');
     expect(role?.path).toBe('experiences.roles');
-    const project = role?.children.find((node) => node.name === 'projects');
-    expect(project?.path).toBe('experiences.roles.projects');
-    expect(role?.children.map((node) => node.name)).toContain('techStack');
+    expect(role?.children.map((node) => node.name)).toContain('techStacks');
     expect(role?.children.find((node) => node.name === 'teamSize')?.type).toBe('integer');
   });
 
@@ -63,5 +60,27 @@ describe('buildFieldTree (cv-page)', () => {
       { ...CV_PAGE_TYPE.fields[0]!, path: 'title' },
     ]);
     expect(built.map((node) => node.path)).toEqual(['title']);
+  });
+});
+
+describe('buildFieldTree defaults', () => {
+  const base = { system: false, component: false, repeatable: false, rootScalar: true };
+  const field = (path: string, extra: { type: string; default?: unknown }) => ({
+    ...base,
+    path,
+    conditionKind: null,
+    sensitive: false,
+    ...extra,
+  });
+
+  it('carries a default as defaultValue, even a falsy one', () => {
+    const tree = buildFieldTree([
+      field('count', { type: 'integer', default: 0 }),
+      field('active', { type: 'boolean', default: false }),
+      field('title', { type: 'text' }),
+    ]);
+    expect(tree[0]?.defaultValue).toBe(0);
+    expect(tree[1]?.defaultValue).toBe(false);
+    expect(tree[2]).not.toHaveProperty('defaultValue');
   });
 });

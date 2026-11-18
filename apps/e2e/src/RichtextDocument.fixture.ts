@@ -1,7 +1,7 @@
 import { expect, type APIRequestContext, type APIResponse, type Page } from '@playwright/test';
 
 import { API_PATHS, apiUrl } from './Api.endpoints';
-import { CV_PAGE_SLUG, HTTP } from './E2e.constants';
+import { HTTP, PAGE_CV_A_SLUG } from './E2e.constants';
 import { bearer } from './Session.fixture';
 
 export interface DraftRef {
@@ -30,7 +30,7 @@ export async function createCvPage(
   token: string,
   position: string,
 ): Promise<DraftRef> {
-  const response = await request.post(apiUrl(API_PATHS.documents(CV_PAGE_SLUG)), {
+  const response = await request.post(apiUrl(API_PATHS.documents(PAGE_CV_A_SLUG)), {
     headers: bearer(token),
     data: { values: { position } },
   });
@@ -44,7 +44,7 @@ export function putSummary(
   { documentId, version }: DraftRef,
   summary: string,
 ): Promise<APIResponse> {
-  return request.put(apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId)), {
+  return request.put(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId)), {
     headers: bearer(token),
     data: { version, values: { summary } },
   });
@@ -56,7 +56,7 @@ export async function readDraft(
   token: string,
   documentId: string,
 ): Promise<{ version: number; summary: string }> {
-  const response = await request.get(apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId)), {
+  const response = await request.get(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId)), {
     headers: bearer(token),
     params: { status: 'draft' },
   });
@@ -73,7 +73,7 @@ export async function removeCvPage(
   token: string,
   documentId: string,
 ): Promise<void> {
-  const response = await request.delete(apiUrl(API_PATHS.document(CV_PAGE_SLUG, documentId)), {
+  const response = await request.delete(apiUrl(API_PATHS.document(PAGE_CV_A_SLUG, documentId)), {
     headers: bearer(token),
   });
   expect(response.status()).toBe(HTTP.NO_CONTENT);

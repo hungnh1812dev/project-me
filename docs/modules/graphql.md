@@ -329,7 +329,7 @@ apps/cms-api/src/modules/graphql/
 │       ├── SchemaBuilder.rules.ts  # buildGraphqlSchema(definitions): pure, cached by the module; scalar field output types come from the field-type registry (`graphqlOutput`)
 │       ├── SharedTypes.entity.ts   # DocumentStatus, SortDirection, PageMeta, Media
 │       ├── TypeNames.rules.ts      # naming + collision checks
-│       ├── Scalars.rules.ts        # Date, DateTime, Decimal, JSON
+│       ├── Scalars.rules.ts        # Date, DateTime, Time, BigInt, Decimal, JSON
 │       └── FilterInputs.rules.ts   # kind -> filter input, args -> FilterClause/SortKey
 └── cli/PrintSchema.command.ts  # SDL from content/schemas (no DB), --check
 ```
@@ -340,7 +340,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 
 ## apps/web usage
 
-- Query documents live next to the feature (`features/cv/cv.query.ts`): a
+- Query documents live next to the feature (the feature's query file under `features/`): a
   plain string + hand-written result types, no client library (Q-G6).
 - Server: `lib/graphql/graphql-fetch.server.ts` (`server-only`) POSTs to
   `${APP_API_URL}/graphql` with the `APP_API_TOKEN` Bearer (public profile) and no forwarded
@@ -366,7 +366,7 @@ Architecture test (like `RecordSerializer.architecture.spec.ts`): files in
 - **Q-G6 web client**: no GraphQL client library; `graphql` as a web
   devDependency for the contract test.
 - **Q-G7 which CV**: the web shows the published cv-page with `isMain = true`
-  (newest `updatedAt` if several; none = empty state).
+  (newest `updatedAt` if several; none = the no-CV-live state on `/cv` (public-site PS-2)).
 
 ## Implementation notes
 
@@ -454,7 +454,7 @@ Tests: 12 files (not listed).
 | `http/rules/Limits.rules.ts` | `MaxDepthRule`, `MaxRootFieldsRule`, `MaxFieldNodesRule`: query size limits |
 | `http/rules/Visibility.rules.ts` | `ContentTypeVisibilityRule`: refuses root fields of unreadable content types |
 | `http/schema/FilterInputs.rules.ts` | `FILTER_INPUTS`, `filterToClauses`, `sortToKeys`: filter and sort inputs |
-| `http/schema/Scalars.rules.ts` | `DateScalar`, `DateTimeScalar`, `DecimalScalar`, `JsonScalar` |
+| `http/schema/Scalars.rules.ts` | `DateScalar`, `DateTimeScalar`, `TimeScalar`, `BigIntScalar`, `DecimalScalar`, `JsonScalar` |
 | `http/schema/SchemaBuilder.rules.ts` | `buildGraphqlSchema`: schema from the content registry and the caller's access |
 | `http/schema/SharedTypes.entity.ts` | Shared types: document status, sort direction, page meta, media |
 | `http/schema/TypeNames.rules.ts` | Type and field names per content type, name clash detection |

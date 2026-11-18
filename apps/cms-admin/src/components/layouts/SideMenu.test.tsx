@@ -4,9 +4,13 @@ import { NAV_GROUP_OPEN_STORAGE_KEY } from '@configs/NavSections.constants';
 import type { Role } from '@features/access/Access.api';
 import type { CurrentUser } from '@features/auth/Auth.slice';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, renderApp, renderInApp, TEST_USER } from '@test/RenderApp.fixture';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Route, Routes } from 'react-router';
+
+import { LeaveGuardProvider, useLeaveGuard } from './LeaveGuard';
+import { SideMenu } from './SideMenu';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const nav = EN_TEXT.access.nav;
@@ -335,5 +339,59 @@ describe('MobileMenu', () => {
 
     expect(await within(mainNav()).findByRole('link', { name: 'Blog Post' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: nav.menu })).toBeInTheDocument();
+  });
+
+  describe('with a page holding unsaved work', () => {
+    function UnsavedPage() {
+      useLeaveGuard(true);
+      return (
+        <SideMenu
+          nav={{
+            hooks: [],
+            items: [
+              {
+                label: 'Files',
+                path: '/media',
+                section: 'utilities',
+                subject: 'media',
+                action: 'read',
+              },
+            ],
+          }}
+        />
+      );
+    }
+
+    async function openGuarded() {
+      const { services } = createTestServices({
+        [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
+        [`GET ${ME}`]: () => ({ status: 200, data: TEST_USER }),
+        [`GET ${API_ENDPOINTS.ROLES.LIST}`]: () => ({ status: 200, data: { data: [] } }),
+      });
+      await services.session.restore();
+      renderInApp(
+        services,
+        <LeaveGuardProvider>
+          <Routes>
+            <Route path="/" element={<UnsavedPage />} />
+            <Route path="/media" element={<p>Media route</p>} />
+          </Routes>
+        </LeaveGuardProvider>,
+      );
+      return screen.findByRole('link', { name: 'Files' });
+    }
+
+    it('asks before leaving, keeps the page on stay and navigates on leave', async () => {
+      const link = await openGuarded();
+      const leaveDialog = EN_TEXT.common.leaveDialog;
+
+      await userEvent.click(link);
+      await userEvent.click(await screen.findByRole('button', { name: leaveDialog.stay }));
+      expect(screen.queryByText('Media route')).not.toBeInTheDocument();
+
+      await userEvent.click(link);
+      await userEvent.click(await screen.findByRole('button', { name: leaveDialog.leave }));
+      expect(await screen.findByText('Media route')).toBeInTheDocument();
+    });
   });
 });

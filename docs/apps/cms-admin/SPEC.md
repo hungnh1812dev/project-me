@@ -76,3 +76,5 @@ It follows D14 and D17 ([DECISIONS.md](../../global/DECISIONS.md)).
 - **form-commons primitives change** (Button, IconButton, the shared control focus classes, Dialog, DropdownMenu, Popover, Tooltip, FormAlert) to read the new tokens only, so web keeps its look through the defaults; **Card and Toast are new** form-commons primitives (generic, shared by every cms-admin view; Toast wraps Radix like the other overlays).
 - **Kept:** no dark mode in v1; system font stack; button order secondary left, primary right, end-aligned, extended by ADM-6 for destructive actions.
 - **Focus indicator:** the requested indigo-500/50 halo alone is about 2:1 against white and fails WCAG 1.4.11, so a 1 px solid indigo-600 edge is added (ADM-9).
+
+**Router library (2026-11-14, user decision).** cms-admin routes with `react-router` (v7+, the single package); `react-router-dom` is not added.

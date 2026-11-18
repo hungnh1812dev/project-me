@@ -203,6 +203,10 @@ export const CONTENT_COPY = {
   richtextLoading: 'Loading the text editor…',
   invalidInteger: 'Enter a whole number, for example 12.',
   invalidDecimal: 'Enter a number, for example 12.5.',
+  enumeration: {
+    emptyChoice: 'Choose a value',
+    notAllowed: (value: string) => `${value} (not allowed)`,
+  },
   invalidJson: 'Enter valid JSON, for example ["React", "Node"].',
   protectedGroup: (label: string) => `${label} is protected for your role and is left unchanged.`,
   list: {

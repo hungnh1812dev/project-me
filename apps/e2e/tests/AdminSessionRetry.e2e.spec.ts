@@ -26,48 +26,52 @@ function recordRefreshes(page: Page): number[] {
   return statuses;
 }
 
-test('a 401 on a protected call refreshes once and retries it', async ({ page }) => {
-  await signInAsOwner(page);
+test.describe('admin session retry', { tag: ['@cms-admin', '@cms-api', '@sign-in'] }, () => {
+  test('a 401 on a protected call refreshes once and retries it', async ({ page }) => {
+    await signInAsOwner(page);
 
-  let refused = 0;
-  await page.route(
-    (url) => url.href.startsWith(ACCOUNTS_URL),
-    (route) => {
-      if (route.request().method() === 'GET' && refused === 0) {
-        refused += 1;
-        return route.fulfill({ status: UNAUTHORIZED, json: {} });
-      }
-      return route.continue();
-    },
-  );
-  const refreshes = recordRefreshes(page);
+    let refused = 0;
+    await page.route(
+      (url) => url.href.startsWith(ACCOUNTS_URL),
+      (route) => {
+        if (route.request().method() === 'GET' && refused === 0) {
+          refused += 1;
+          return route.fulfill({ status: UNAUTHORIZED, json: {} });
+        }
+        return route.continue();
+      },
+    );
+    const refreshes = recordRefreshes(page);
 
-  await page.goto('/accounts');
-  await expect(accountsHeading(page)).toBeVisible();
-  await expect(page.getByRole('button', { name: ADMIN_COPY.access.accounts.invite })).toBeVisible();
-  expect(refused).toBe(1);
-  // One refresh for the page start, one for the 401 - never a loop. The
-  // heading and button render before the retry's refresh answers, so wait.
-  await expect.poll(() => refreshes).toEqual([200, 200]);
-});
-
-test('a refresh the server refuses ends the session at /login', async ({ page }) => {
-  await signInAsOwner(page);
-
-  await page.route(
-    (url) => url.href.startsWith(ACCOUNTS_URL),
-    (route) => route.fulfill({ status: UNAUTHORIZED, json: {} }),
-  );
-  let startRefreshDone = false;
-  await page.route(REFRESH_URL, (route) => {
-    if (route.request().method() !== 'POST' || !startRefreshDone) {
-      startRefreshDone = true;
-      return route.continue();
-    }
-    return route.fulfill({ status: UNAUTHORIZED, json: {} });
+    await page.goto('/accounts');
+    await expect(accountsHeading(page)).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: ADMIN_COPY.access.accounts.invite }),
+    ).toBeVisible();
+    expect(refused).toBe(1);
+    // One refresh for the page start, one for the 401 - never a loop. The
+    // heading and button render before the retry's refresh answers, so wait.
+    await expect.poll(() => refreshes).toEqual([200, 200]);
   });
 
-  await page.goto('/accounts');
-  await expect(loginHeading(page)).toBeVisible();
-  await expect(page).toHaveURL(/\/login/);
+  test('a refresh the server refuses ends the session at /login', async ({ page }) => {
+    await signInAsOwner(page);
+
+    await page.route(
+      (url) => url.href.startsWith(ACCOUNTS_URL),
+      (route) => route.fulfill({ status: UNAUTHORIZED, json: {} }),
+    );
+    let startRefreshDone = false;
+    await page.route(REFRESH_URL, (route) => {
+      if (route.request().method() !== 'POST' || !startRefreshDone) {
+        startRefreshDone = true;
+        return route.continue();
+      }
+      return route.fulfill({ status: UNAUTHORIZED, json: {} });
+    });
+
+    await page.goto('/accounts');
+    await expect(loginHeading(page)).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+  });
 });

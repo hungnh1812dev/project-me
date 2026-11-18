@@ -24,4 +24,11 @@ function DateTimePicker<TFieldValues extends FieldValues = FieldValues>(
   return <TextInput<TFieldValues> {...props} type="datetime-local" />;
 }
 
-export { DatePicker, DateTimePicker };
+/** Form value is the native `HH:MM` string (`HH:MM:SS` when the value carries seconds). */
+function TimePicker<TFieldValues extends FieldValues = FieldValues>(
+  props: DatePickerProps<TFieldValues>,
+) {
+  return <TextInput<TFieldValues> {...props} type="time" />;
+}
+
+export { DatePicker, DateTimePicker, TimePicker };

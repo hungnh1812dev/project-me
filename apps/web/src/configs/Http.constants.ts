@@ -34,6 +34,10 @@ export const RETRY_AFTER_HEADER = 'retry-after';
 export const SECONDS_PER_MINUTE = 60;
 export const MS_PER_SECOND = 1000;
 
+/** Browser and shared-cache lifetime of robots.txt and sitemap.xml (PS-4). */
+const CRAWLER_FILES_MAX_AGE_SECONDS = 60 * SECONDS_PER_MINUTE;
+export const CRAWLER_FILES_CACHE_CONTROL = `public, max-age=${CRAWLER_FILES_MAX_AGE_SECONDS}`;
+
 /** Largest delay setTimeout accepts; a longer one fires at once (32-bit overflow). */
 export const MAX_TIMER_DELAY_MS = 2_147_483_647;
 
@@ -68,3 +72,6 @@ export const REDIRECT_STATUS_MIN = 300;
 
 /** Data cache lifetime of a server call that sets none (WEB-4). */
 export const DEFAULT_REVALIDATE_SECONDS = 180;
+
+/** Prefix of the one log line the API error logger writes per failure (WEB-10). */
+export const API_ERROR_LOG_PREFIX = '[api-error]';

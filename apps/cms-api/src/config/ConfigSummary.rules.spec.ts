@@ -40,7 +40,7 @@ const SECRET_KEYS_IN_SUMMARY: readonly string[] = [
 
 /** Valid values for keys whose format is not free text. */
 const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
-  NODE_ENV: 'test',
+  NODE_ENV: 'development',
   PORT: '3101',
   DB_PORT: '3102',
   DB_SSL_MODE: 'require',

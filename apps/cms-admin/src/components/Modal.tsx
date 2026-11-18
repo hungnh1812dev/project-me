@@ -20,6 +20,7 @@ export function Modal({
   description,
   onClose,
   onCloseAutoFocus,
+  isDismissedOutside = false,
   children,
 }: {
   title: string;
@@ -28,13 +29,17 @@ export function Modal({
   onClose: () => void;
   /** Pass `restoreFocus` of `useRestoreFocus` when the dialog has no Radix trigger. */
   onCloseAutoFocus?: (event: Event) => void;
+  /** An outside click also closes it; only for dialogs holding no entry to lose. */
+  isDismissedOutside?: boolean;
   children: ReactNode;
 }) {
   return (
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent
         {...(onCloseAutoFocus === undefined ? {} : { onCloseAutoFocus })}
-        onInteractOutside={(event) => event.preventDefault()}
+        {...(isDismissedOutside
+          ? {}
+          : { onInteractOutside: (event: Event) => event.preventDefault() })}
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >
         <DialogHeader>

@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/views/status
 app: web
-summary: Web status view shown on the homepage (heading, description, API health card)
+summary: The /status page, which renders the module status
 ---
 
 # Status (web)
@@ -14,23 +14,23 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Shows whether cms-api answers its liveness probe, read through `GET /api/v1/health`. It is the homepage (`/`); the CV lives on `/cv`.
+The `/status` page: it loads the module status text and renders `ModuleStatus` ([`features/status`](status.md)). It loads no CV data.
 
 ## Techniques
 
-Client component: `useLiveHealth` checks once on load (checking, ok, error), and the card offers a manual re-check.
+Server Component (web RULES "Page layout"); `app/status/page.tsx` renders only it.
 
 ## Technologies
 
-React, TanStack Query.
+React.
 
 ## Entry points
 
-`StatusView` (rendered by `app/page.tsx`).
+`PageStatus` (rendered by `app/status/page.tsx`).
 
 ## Where to change what
 
-Heading, card text and states: `StatusView.tsx`; the check: `useLiveHealth.ts`; the call: `features/status`.
+Heading, card and the check: `features/status`.
 
 ## Files
 
@@ -38,15 +38,14 @@ Heading, card text and states: `StatusView.tsx`; the check: `useLiveHealth.ts`; 
 <!-- prettier-ignore-start -->
 
 ```
-status/ (2 files)
+status/ (1 file)
 ```
 
 Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
-| `StatusView.tsx` | The status view: heading, description and the health card with text from the `text` prop; the last-resort card words when it is `null` (exports `StatusView`) |
-| `useLiveHealth.ts` | Liveness state of cms-api for the card (exports `LiveHealthState`, `useLiveHealth`) |
+| `PageStatus.tsx` | The `/status` page: loads the module status text and renders `ModuleStatus` (exports `PageStatus`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

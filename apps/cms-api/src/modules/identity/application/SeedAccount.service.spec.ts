@@ -45,7 +45,7 @@ describe('SeedAccountService.seed', () => {
       roleFound: true,
       emailTaken: false,
     });
-    await expect(service.seed(INPUT, { NODE_ENV: 'test' })).resolves.toEqual({
+    await expect(service.seed(INPUT, { NODE_ENV: 'development' })).resolves.toEqual({
       email: 'reader@example.com',
       roleSlug: 'admin',
     });
@@ -69,11 +69,11 @@ describe('SeedAccountService.seed', () => {
 
   it('refuses a missing role and a taken email, writing nothing', async () => {
     const missing = build({ roleFound: false, emailTaken: false });
-    await expect(missing.service.seed(INPUT, { NODE_ENV: 'test' })).rejects.toMatchObject({
+    await expect(missing.service.seed(INPUT, { NODE_ENV: 'development' })).rejects.toMatchObject({
       code: SEED_ACCOUNT_ERRORS.ROLE_REFUSED,
     });
     const taken = build({ roleFound: true, emailTaken: true });
-    await expect(taken.service.seed(INPUT, { NODE_ENV: 'test' })).rejects.toMatchObject({
+    await expect(taken.service.seed(INPUT, { NODE_ENV: 'development' })).rejects.toMatchObject({
       code: SEED_ACCOUNT_ERRORS.EMAIL_TAKEN,
     });
     expect(taken.createAccount).not.toHaveBeenCalled();

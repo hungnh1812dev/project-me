@@ -9,6 +9,22 @@
       "type": "text"
     },
     {
+      "name": "navLabel",
+      "type": "text"
+    },
+    {
+      "name": "navCvLink",
+      "type": "text"
+    },
+    {
+      "name": "notFoundTitle",
+      "type": "text"
+    },
+    {
+      "name": "notFoundDescription",
+      "type": "text"
+    },
+    {
       "name": "nav",
       "type": "component",
       "component": "nav",

@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
-import { CV_PAGE_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { signInAs } from '../src/Session.fixture';
 
@@ -9,7 +9,7 @@ const NARROW_VIEWPORT = { width: 375, height: 800 };
 const WIDE_VIEWPORT = { width: 1280, height: 800 };
 const OVERFLOW_TOLERANCE_PX = 1;
 /** Screens checked on their own below: roles (its table), and the empty or prompt states of the others. */
-const CARDLESS_PATHS = ['/roles', '/backups', `/content/${CV_PAGE_SLUG}`];
+const CARDLESS_PATHS = ['/roles', '/backups', `/content/${PAGE_CV_A_SLUG}`];
 const CARD_WAIT_MS = 5000;
 const TRANSPARENT = /rgba\(0, 0, 0, 0\)|transparent/;
 
@@ -26,7 +26,7 @@ const CARD_PATHS = [
   '/reviewer',
   '/backups',
   '/media',
-  `/content/${CV_PAGE_SLUG}`,
+  `/content/${PAGE_CV_A_SLUG}`,
 ];
 
 /** Cards of the page: computed radius, border and shadow, and whether one sits inside another. */
@@ -59,7 +59,7 @@ async function openScreen(page: Page, path: string): Promise<void> {
 const pageOverflowPx = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-test.describe.serial('cms-admin card screens', () => {
+test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api'] }, () => {
   let context: BrowserContext;
   let page: Page;
   const consoleProblems: string[] = [];
@@ -88,9 +88,11 @@ test.describe.serial('cms-admin card screens', () => {
         await expect(page.locator('h1')).toBeVisible();
         const cards = await readCards(page);
         expect(cards, path).toHaveLength(1);
-        expect(cards[0].radius, path).toBe(SURFACE_RADIUS_PX);
-        expect(cards[0].borderColor, path).toMatch(TRANSPARENT);
-        expect(cards[0].shadow, path).not.toBe('none');
+        const [card] = cards;
+        if (!card) throw new Error(`no card on ${path}`);
+        expect(card.radius, path).toBe(SURFACE_RADIUS_PX);
+        expect(card.borderColor, path).toMatch(TRANSPARENT);
+        expect(card.shadow, path).not.toBe('none');
         await expect(page.locator('main button[type="submit"]'), path).toHaveCount(1);
         expect(await pageOverflowPx(page), path).toBeLessThanOrEqual(OVERFLOW_TOLERANCE_PX);
       }
@@ -118,6 +120,7 @@ test.describe.serial('cms-admin card screens', () => {
     await page.goto('/login');
     await expect(page.locator('h1')).toBeVisible();
     const [card] = await readCards(page);
+    if (!card) throw new Error('the login card is missing');
     expect(card.borderWidth).toBe('1px');
     expect(card.borderColor).not.toMatch(TRANSPARENT);
     await page.emulateMedia({ forcedColors: 'none' });
@@ -176,7 +179,7 @@ test.describe.serial('cms-admin card screens', () => {
   });
 
   test('document edit: sticky action bar stays at the bottom on the card colour', async () => {
-    await page.goto(`/content/${CV_PAGE_SLUG}/new`);
+    await page.goto(`/content/${PAGE_CV_A_SLUG}/new`);
     await page.waitForLoadState('networkidle');
     const bar = page.locator('div.sticky.bottom-0').first();
     await expect(bar).toBeVisible();
@@ -245,10 +248,20 @@ test.describe.serial('cms-admin card screens', () => {
   });
 
   test('empty states stay inside a card', async () => {
-    await openScreen(page, `/content/${CV_PAGE_SLUG}`);
+    // The seeded stack holds page-cv-a documents, so the list answer is emptied.
+    await page.route(`**/documents/${PAGE_CV_A_SLUG}?*`, async (route) => {
+      const response = await route.fetch();
+      const body = (await response.json()) as { data: unknown[]; meta: Record<string, unknown> };
+      await route.fulfill({
+        response,
+        json: { ...body, data: [], meta: { ...body.meta, total: 0, totalPages: 0 } },
+      });
+    });
+    await openScreen(page, `/content/${PAGE_CV_A_SLUG}`);
     await expect(page.getByText('No documents yet')).toBeVisible();
     const empty = page.getByText('No documents yet');
     await expect(page.locator('[data-slot="card"]').filter({ has: empty })).toHaveCount(1);
+    await page.unroute(`**/documents/${PAGE_CV_A_SLUG}?*`);
   });
   test('a failed request shows the inline error with a retry, no broken layout', async () => {
     await page.route('**/api/v1/accounts*', (route) => route.abort());

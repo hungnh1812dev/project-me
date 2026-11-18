@@ -9,13 +9,13 @@ Part of the [project spec](../../../SPEC.md). Flow `content-modeling`: [SPEC.md]
 
 ## Actors
 
-- **Developer**: writes the JSON schema and reviews the generated migration.
+- **Developer**: writes the JSON schema (or exports it from the schema builder) and reviews the generated migration.
 - **CI**: checks `generate --check` and `print-schema --check`.
 - **Init container**: runs `deploy:migrate` (`db:migrate` + `content:migrate`) as `abyss_migrator` (D19).
 
 ## Steps
 
-1. Write or change `content/schemas/<type>.json` (root + up to 3 component levels).
+1. Write or change `content/schemas/<type>.json` (root + up to 3 component levels), by hand or with the cms-admin schema builder ([schema-builder](../schema-builder/FLOW.md)).
 2. `content:generate` validates it, diffs against `snapshot.json` and writes `content/migrations/000N_*.sql`; `graphql:print-schema` writes the SDL.
 3. Review and commit; destructive changes need `--allow-destructive` and a data-migration note.
 4. CI checks both outputs; the cms-api image is built.

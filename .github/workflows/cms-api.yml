@@ -41,6 +41,8 @@ jobs:
         run: pnpm turbo run typecheck lint --filter=@abyss/cms-api
       - name: Unit tests
         run: pnpm --filter @abyss/cms-api test:unit
+      - name: Nightly backup script
+        run: bash apps/cms-api/backup/nightly-backup.test.sh
       # Fail when the committed migrations or GraphQL SDL are behind the content types
       - name: Content migrations are committed
         run: pnpm --filter @abyss/cms-api content:generate -- --check

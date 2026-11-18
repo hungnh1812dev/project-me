@@ -30,7 +30,7 @@ Facade `index.ts`: `WebLoginDialog` (opened from the account menu).
 
 ## Where to change what
 
-Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. All sign-in text comes from `useRequiredSignInText()` of `features/site-shell` (the `signInText` single type), never from `Copy.constants`. The calls: `features/session` (`Auth.api.ts`).
+Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. The sign-in text comes from the `SignIn` query (`SignIn.graphql.ts`, `loadSignInText`; the `signInText` alias of the cms-api root field `moduleAuth`, which also holds `openCms`, `signedInAs` and `signOutFailed` for the account menu), never from `Copy.constants`. `components/layouts/SiteHeader.tsx` loads it and `AccountMenu` reads those three texts from it and passes it down as the `text` prop of `WebLoginDialog`, `TwoFactorStep`, `TurnstileWidget` and `useHumanCheck`; no component reads text from a context. With no sign-in text the account menu renders no sign-in button, no dialog, no signed-in line, no CMS link and no sign-out failure text, and a signed-in visitor keeps the sign-out button (Q-PS1b, Q-PS4). The calls: `features/session` (`Auth.api.ts`).
 
 ## Files
 
@@ -38,14 +38,16 @@ Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a p
 <!-- prettier-ignore-start -->
 
 ```
-auth/ (8 files)
+auth/ (10 files)
 ```
 
-Tests: 4 files (not listed).
+Tests: 6 files (not listed).
 
 | File | Description |
 |---|---|
-| `LoginAlerts.rules.ts` | Maps sign-in failures (BFF error codes, rate limit, network) to their alerts (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
+| `LoginAlerts.rules.ts` | Maps a `WebApiError` of a sign-in step (its `errorCode` and `retryAfterSeconds`) to its alert (exports `rateLimitedMessage`, `loginErrorAlertOf`, `credentialAlertOf`) |
+| `SignIn.graphql.ts` | Client-safe `SignIn` query: the sign-in text type and the query string (exports `SignInText`, `SignIn`, `SIGN_IN_QUERY`) |
+| `SignIn.server.ts` | `server-only` cached `loadSignInText`: `executeGraphql` with the mock key `sign-in`, `null` when the read fails (exports `loadSignInText`) |
 | `Turnstile.client.ts` | Types of the Cloudflare explicit-render API on `window.turnstile` (exports `TurnstileApi`) |
 | `TurnstileWidget.tsx` | Renders one Turnstile challenge for an action and loads the script only while mounted (exports `TurnstileWidget`) |
 | `TwoFactorStep.tsx` | Second sign-in step (code check; the BFF holds the temp token) (exports `TwoFactorStep`) |

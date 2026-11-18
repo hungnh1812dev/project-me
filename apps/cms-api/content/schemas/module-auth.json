@@ -1,0 +1,228 @@
+{
+  "slug": "module-auth",
+  "displayName": "Module Auth",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "title",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "emailLabel",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "passwordLabel",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "rememberMeLabel",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "rememberMeHint",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "submit",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "cancel",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "humanCheck",
+      "type": "component",
+      "component": "signInHumanCheck",
+      "fields": [
+        {
+          "name": "loading",
+          "type": "text"
+        },
+        {
+          "name": "required",
+          "type": "text"
+        },
+        {
+          "name": "expired",
+          "type": "text"
+        },
+        {
+          "name": "failed",
+          "type": "text"
+        },
+        {
+          "name": "unavailable",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "validation",
+      "type": "component",
+      "component": "signInValidation",
+      "fields": [
+        {
+          "name": "emailRequired",
+          "type": "text"
+        },
+        {
+          "name": "emailInvalid",
+          "type": "text"
+        },
+        {
+          "name": "passwordRequired",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "errors",
+      "type": "component",
+      "component": "signInErrors",
+      "fields": [
+        {
+          "name": "invalidCredentials",
+          "type": "text"
+        },
+        {
+          "name": "rateLimitedSecondsOne",
+          "type": "text"
+        },
+        {
+          "name": "rateLimitedSecondsOther",
+          "type": "text"
+        },
+        {
+          "name": "rateLimitedMinutesOne",
+          "type": "text"
+        },
+        {
+          "name": "rateLimitedMinutesOther",
+          "type": "text"
+        },
+        {
+          "name": "rateLimited",
+          "type": "text"
+        },
+        {
+          "name": "network",
+          "type": "text"
+        },
+        {
+          "name": "unexpected",
+          "type": "text"
+        },
+        {
+          "name": "humanCheckFailed",
+          "type": "text"
+        },
+        {
+          "name": "humanCheckUnavailable",
+          "type": "text"
+        },
+        {
+          "name": "privileged",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "twoFactor",
+      "type": "component",
+      "component": "signInTwoFactor",
+      "fields": [
+        {
+          "name": "title",
+          "type": "text"
+        },
+        {
+          "name": "totpDescription",
+          "type": "text"
+        },
+        {
+          "name": "emailDescription",
+          "type": "text"
+        },
+        {
+          "name": "emailWarning",
+          "type": "text"
+        },
+        {
+          "name": "totpLabel",
+          "type": "text"
+        },
+        {
+          "name": "emailLabel",
+          "type": "text"
+        },
+        {
+          "name": "totpHint",
+          "type": "text"
+        },
+        {
+          "name": "emailHint",
+          "type": "text"
+        },
+        {
+          "name": "codeInvalid",
+          "type": "text"
+        },
+        {
+          "name": "submit",
+          "type": "text"
+        },
+        {
+          "name": "cancel",
+          "type": "text"
+        },
+        {
+          "name": "resend",
+          "type": "text"
+        },
+        {
+          "name": "resent",
+          "type": "text"
+        },
+        {
+          "name": "expired",
+          "type": "text"
+        },
+        {
+          "name": "invalidCode",
+          "type": "text"
+        },
+        {
+          "name": "unsupportedMethod",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "name": "openCms",
+      "type": "text"
+    },
+    {
+      "name": "signedInAs",
+      "type": "text"
+    },
+    {
+      "name": "signOutFailed",
+      "type": "text"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ const BASE_ARGS = ['--email', 'a@example.com', '--password-stdin'];
 
 describe('assertSeedAllowed', () => {
   it('passes outside production', () => {
-    expect(() => assertSeedAllowed({ NODE_ENV: 'test' })).not.toThrow();
+    expect(() => assertSeedAllowed({ NODE_ENV: 'development' })).not.toThrow();
   });
 
   it('passes in production with the exact opt-in', () => {

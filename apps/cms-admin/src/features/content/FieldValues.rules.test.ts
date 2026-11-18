@@ -1,9 +1,9 @@
 import {
   datetimeToApi,
   datetimeToForm,
-  integerToApi,
   jsonToApi,
   jsonToForm,
+  numberToApi,
   numberToForm,
   textToApi,
   textToForm,
@@ -21,8 +21,10 @@ describe('field values', () => {
     expect(numberToForm(12)).toBe('12');
     expect(numberToForm('12.50')).toBe('12.50');
     expect(numberToForm(null)).toBe('');
-    expect(integerToApi('12')).toBe(12);
-    expect(integerToApi('')).toBeNull();
+    expect(numberToApi('12')).toBe(12);
+    expect(numberToApi('')).toBeNull();
+    expect(numberToApi('12.5')).toBe(12.5);
+    expect(numberToForm('9007199254740993')).toBe('9007199254740993');
   });
 
   it('round-trips a datetime through the local input format', () => {

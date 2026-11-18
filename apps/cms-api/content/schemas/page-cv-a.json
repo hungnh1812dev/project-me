@@ -1,0 +1,177 @@
+{
+  "slug": "page-cv-a",
+  "displayName": "Page CV (Type A)",
+  "kind": "collection",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "name",
+      "type": "text",
+      "width": "1/3"
+    },
+    {
+      "name": "position",
+      "type": "text",
+      "width": "1/3"
+    },
+    {
+      "name": "isMain",
+      "displayName": "Main Page",
+      "type": "boolean",
+      "width": "1/3"
+    },
+    {
+      "name": "summary",
+      "type": "richtext"
+    },
+    {
+      "name": "skills",
+      "type": "component",
+      "component": "skill",
+      "repeatable": true,
+      "fields": [
+        {
+          "name": "skill",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "level",
+          "type": "text",
+          "width": "1/2"
+        }
+      ]
+    },
+    {
+      "name": "experiences",
+      "type": "component",
+      "component": "experience",
+      "repeatable": true,
+      "fields": [
+        {
+          "name": "company",
+          "type": "text",
+          "width": "1/2",
+          "sensitive": true
+        },
+        {
+          "name": "location",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "period",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "roles",
+          "type": "component",
+          "component": "role",
+          "repeatable": true,
+          "fields": [
+            {
+              "name": "position",
+              "type": "text",
+              "width": "1/3"
+            },
+            {
+              "name": "period",
+              "type": "text",
+              "width": "1/3"
+            },
+            {
+              "name": "teamSize",
+              "displayName": "Team Size",
+              "type": "integer",
+              "width": "1/3"
+            },
+            {
+              "name": "projects",
+              "type": "text"
+            },
+            {
+              "name": "techStacks",
+              "displayName": "Technical Stacks",
+              "type": "json"
+            },
+            {
+              "name": "responsibilities",
+              "type": "richtext"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "projects",
+      "type": "component",
+      "component": "project",
+      "repeatable": true,
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "width": "1/3"
+        },
+        {
+          "name": "teamSize",
+          "displayName": "Team Size",
+          "type": "integer",
+          "width": "1/3"
+        },
+        {
+          "name": "role",
+          "type": "text",
+          "width": "1/3"
+        },
+        {
+          "name": "liveLink",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "repositoryLink",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "techStack",
+          "type": "json"
+        },
+        {
+          "name": "responsibilities",
+          "type": "richtext"
+        }
+      ]
+    },
+    {
+      "name": "educations",
+      "type": "component",
+      "component": "education",
+      "repeatable": true,
+      "fields": [
+        {
+          "name": "degree",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "institution",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "period",
+          "type": "text",
+          "width": "1/2"
+        },
+        {
+          "name": "location",
+          "type": "text",
+          "width": "1/2"
+        }
+      ]
+    }
+  ]
+}

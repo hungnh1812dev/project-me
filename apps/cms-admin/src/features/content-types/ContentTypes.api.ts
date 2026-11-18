@@ -14,6 +14,10 @@ export interface ContentTypeField {
   displayName?: string;
   /** Form row share; absent on components. */
   width?: FieldWidth;
+  /** Allowed values of an `enumeration` field; absent on every other type. */
+  options?: string[];
+  /** Starting value of a new field input, in API value form; absent when none. */
+  default?: unknown;
   repeatable: boolean;
   rootScalar: boolean;
   conditionKind: string | null;
@@ -33,3 +37,40 @@ export async function getContentTypes(client: AxiosInstance): Promise<ContentTyp
   const { data } = await client.get<{ data: ContentType[] }>(API_ENDPOINTS.CONTENT_TYPES.LIST);
   return data.data;
 }
+
+/** `create` checks a new type; `update` leaves out the registered type with the same slug. */
+export type DefinitionValidationMode = 'create' | 'update';
+
+export interface DefinitionValidationRequest {
+  definition: object;
+  mode: DefinitionValidationMode;
+}
+
+/** One rule a definition breaks; `path` points into the submitted definition. */
+export interface DefinitionError {
+  path: (string | number)[];
+  rule: string;
+  message: string;
+}
+
+export interface DefinitionValidation {
+  valid: boolean;
+  errors: DefinitionError[];
+}
+
+export function createContentTypesApi(client: AxiosInstance) {
+  return {
+    /** Asks cms-api whether a candidate definition passes the content-engine validator. */
+    validateDefinition: async (
+      request: DefinitionValidationRequest,
+    ): Promise<DefinitionValidation> => {
+      const { data } = await client.post<DefinitionValidation>(
+        API_ENDPOINTS.CONTENT_TYPES.VALIDATE,
+        request,
+      );
+      return data;
+    },
+  };
+}
+
+export type ContentTypesApi = ReturnType<typeof createContentTypesApi>;

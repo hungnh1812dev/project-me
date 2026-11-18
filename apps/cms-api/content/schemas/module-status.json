@@ -1,0 +1,68 @@
+{
+  "slug": "module-status",
+  "displayName": "Module Status",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "title",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "cardTitle",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "cardDescription",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "endpointLabel",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "lastCheckedLabel",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "notCheckedYet",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "stateChecking",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "stateOk",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "stateError",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "errorHint",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "checkAgain",
+      "type": "text",
+      "width": "1/2"
+    }
+  ]
+}

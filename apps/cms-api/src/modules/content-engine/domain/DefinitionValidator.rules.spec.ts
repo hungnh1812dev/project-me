@@ -7,13 +7,28 @@ import {
   MAX_IDENTIFIER_BYTES,
 } from './ContentEngine.constants';
 import {
+  normalizedDefaultOf,
+  type ContentTypeDefinition,
+  type FieldDefinition,
+} from './DefinitionSchema.rules';
+import {
   formatDefinitionPath,
+  validateCandidateDefinition,
   validateDefinition,
   validateDefinitions,
   type DefinitionValidationError,
 } from './DefinitionValidator.rules';
 
-const CV_PAGE_PATH = join(__dirname, '..', '..', '..', '..', 'content', 'schemas', 'cv-page.json');
+const PAGE_CV_A_PATH = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'content',
+  'schemas',
+  'page-cv-a.json',
+);
 
 type Field = Record<string, unknown>;
 
@@ -54,24 +69,21 @@ function rulesOf(input: unknown): string[] {
 }
 
 describe('validateDefinition', () => {
-  describe('cv-page.json', () => {
-    const cvPage: unknown = JSON.parse(readFileSync(CV_PAGE_PATH, 'utf8'));
+  describe('page-cv-a.json', () => {
+    const pageCvA: unknown = JSON.parse(readFileSync(PAGE_CV_A_PATH, 'utf8'));
 
     it('is accepted', () => {
-      expect(validateDefinition(cvPage)).toMatchObject({
+      expect(validateDefinition(pageCvA)).toMatchObject({
         ok: true,
-        definition: { slug: 'cv-page' },
-        tables: { length: 8 },
+        definition: { slug: 'page-cv-a' },
+        tables: { length: 6 },
       });
     });
 
-    it('flags only experiences.company and references.phone as sensitive', () => {
-      expect(JSON.stringify(cvPage).match(/"sensitive":true/g)).toHaveLength(2);
-      expect(JSON.stringify(cvPage)).toContain(
+    it('flags only experiences.company as sensitive', () => {
+      expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(1);
+      expect(JSON.stringify(pageCvA)).toContain(
         '"name":"company","type":"text","width":"1/2","sensitive":true',
-      );
-      expect(JSON.stringify(cvPage)).toContain(
-        '"name":"phone","type":"text","width":"1/2","sensitive":true',
       );
     });
   });
@@ -182,6 +194,135 @@ describe('validateDefinition', () => {
     it('points at the offending key', () => {
       const [error] = errorsOf(definition([component('a', [{ name: 'b', type: 'uuid' }])]));
       expect(error?.path).toEqual(['fields', 0, 'fields', 0, 'type']);
+    });
+  });
+
+  describe('unsigned and options keys', () => {
+    const enumeration = (options: unknown): Field => ({ name: 'a', type: 'enumeration', options });
+
+    it('accepts unsigned on integer and options on enumeration', () => {
+      expect(isValid(definition([{ name: 'a', type: 'integer', unsigned: true }]))).toBe(true);
+      expect(isValid(definition([enumeration(['one', 'two'])]))).toBe(true);
+    });
+
+    it.each([
+      ['unsigned on a string', { name: 'a', type: 'string', unsigned: true }, 'unsigned'],
+      ['unsigned on a biginteger', { name: 'a', type: 'biginteger', unsigned: true }, 'unsigned'],
+      ['a non-boolean unsigned', { name: 'a', type: 'integer', unsigned: 'yes' }, 'unsigned'],
+      ['options on a string', { name: 'a', type: 'string', options: ['x'] }, 'options'],
+      ['an enumeration without options', { name: 'a', type: 'enumeration' }, 'options'],
+      ['empty options', enumeration([]), 'options'],
+      ['51 options', enumeration(Array.from({ length: 51 }, (_, i) => `v${i}`)), 'options'],
+      ['duplicate options', enumeration(['a', 'a']), 'options'],
+      ['a blank option', enumeration(['a', '']), 'options'],
+      ['an option with a leading space', enumeration([' a']), 'options'],
+      ['an option with a trailing space', enumeration(['a ']), 'options'],
+      ['an option over 100 characters', enumeration(['x'.repeat(101)]), 'options'],
+      ['a non-string option', enumeration([1]), 'options'],
+    ])('rejects %s on fields[0].%s', (_label, field, key) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path.slice(0, 3)).toEqual(['fields', 0, key]);
+    });
+
+    it('accepts 50 options of 100 characters', () => {
+      const options = Array.from({ length: 50 }, (_, i) => String(i).padEnd(100, 'x'));
+      expect(isValid(definition([enumeration(options)]))).toBe(true);
+    });
+
+    it('names the entry that fails', () => {
+      const [error] = errorsOf(definition([enumeration(['a', ' b'])]));
+      expect(error?.path).toEqual(['fields', 0, 'options', 1]);
+    });
+  });
+
+  describe('default key', () => {
+    it.each([
+      ['text', 'hello'],
+      ['string', 'a\nb'],
+      ['richtext', '<p>Hi</p>'],
+      ['integer', 5],
+      ['biginteger', '9007199254740993'],
+      ['biginteger', 12],
+      ['decimal', '1.50'],
+      ['float', 1.5],
+      ['double', 2.5],
+      ['boolean', false],
+      ['date', '2026-01-31'],
+      ['datetime', '2026-01-31T10:00:00Z'],
+      ['time', '08:30'],
+      ['json', { a: [1] }],
+      ['json', false],
+    ])('accepts a default on %s: %j', (type, value) => {
+      expect(isValid(definition([{ name: 'a', type, default: value }]))).toBe(true);
+    });
+
+    it('accepts an enumeration default from its options and a default on an unsigned integer', () => {
+      const enumeration = { name: 'a', type: 'enumeration', options: ['x', 'y'], default: 'y' };
+      expect(isValid(definition([enumeration]))).toBe(true);
+      expect(
+        isValid(definition([{ name: 'a', type: 'integer', unsigned: true, default: 0 }])),
+      ).toBe(true);
+    });
+
+    it.each([
+      ['media', { name: 'a', type: 'media', default: 'x' }],
+      ['a component', { ...component('a', [{ name: 'b', type: 'text' }]), default: 'x' }],
+      ['null on text', { name: 'a', type: 'text', default: null }],
+      ['null on json', { name: 'a', type: 'json', default: null }],
+      ['a number on text', { name: 'a', type: 'text', default: 1 }],
+      ['a fraction on integer', { name: 'a', type: 'integer', default: 1.5 }],
+      ['a negative on unsigned', { name: 'a', type: 'integer', unsigned: true, default: -1 }],
+      ['a text on boolean', { name: 'a', type: 'boolean', default: 'true' }],
+      ['a bad time', { name: 'a', type: 'time', default: '25:00' }],
+      ['a bad date', { name: 'a', type: 'date', default: 'tomorrow' }],
+      ['a non-digit biginteger', { name: 'a', type: 'biginteger', default: '1.5' }],
+      [
+        'a value outside the options',
+        { name: 'a', type: 'enumeration', options: ['x'], default: 'z' },
+      ],
+      [
+        'richtext with an image',
+        { name: 'a', type: 'richtext', default: '<img src="https://x.test/a.png">' },
+      ],
+      [
+        'richtext with a script',
+        { name: 'a', type: 'richtext', default: '<script>alert(1)</script>' },
+      ],
+    ])('rejects a default on %s at fields[0].default', (_label, field) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path).toEqual(['fields', 0, 'default']);
+    });
+
+    it('names the field type in the message', () => {
+      const [error] = errorsOf(definition([{ name: 'a', type: 'media', default: 'x' }]));
+      expect(error?.message).toContain('media');
+    });
+
+    it('reports a nested field with its full path', () => {
+      const errors = errorsOf(
+        definition([component('c', [{ name: 'a', type: 'boolean', default: 1 }])]),
+      );
+      expect(errors[0]?.path).toEqual(['fields', 0, 'fields', 0, 'default']);
+    });
+
+    describe('normalizedDefaultOf', () => {
+      const normalized = (field: Record<string, unknown>) =>
+        normalizedDefaultOf(field as unknown as FieldDefinition);
+
+      it('gives the API value form', () => {
+        expect(normalized({ name: 'a', type: 'time', default: '08:30' })).toBe('08:30:00');
+        expect(normalized({ name: 'a', type: 'biginteger', default: 12 })).toBe('12');
+        expect(normalized({ name: 'a', type: 'biginteger', default: '12' })).toBe('12');
+      });
+
+      it('gives undefined when unset, on a component and on an invalid value', () => {
+        expect(normalized({ name: 'a', type: 'text' })).toBeUndefined();
+        expect(normalized({ name: 'a', type: 'media', default: 'x' })).toBeUndefined();
+        expect(normalized({ ...component('a', []), default: 'x' })).toBeUndefined();
+        expect(normalized({ name: 'a', type: 'integer', default: 'x' })).toBeUndefined();
+      });
     });
   });
 
@@ -507,6 +648,20 @@ describe('validateDefinition', () => {
   });
 });
 
+describe('validateDefinition with extreme nesting', () => {
+  it('answers a depth error instead of overflowing the stack', () => {
+    let fields: unknown[] = [];
+    for (let level = 0; level < 5000; level += 1) {
+      fields = [{ name: 'c', component: 'c', fields }];
+    }
+    const result = validateDefinition({ slug: 'deep', displayName: 'Deep', fields });
+    expect(result.ok).toBe(false);
+    expect(result.ok ? [] : result.errors.map(({ rule }) => rule)).toEqual([
+      DEFINITION_RULES.COMPONENT_DEPTH_EXCEEDED,
+    ]);
+  });
+});
+
 describe('validateDefinitions', () => {
   const simple = (slug: string) => definition([{ name: 'title', type: 'string' }], slug);
 
@@ -555,6 +710,73 @@ describe('validateDefinitions', () => {
         }),
       ],
     });
+  });
+});
+
+describe('validateCandidateDefinition', () => {
+  const simple = (slug: string): Record<string, unknown> =>
+    definition([{ name: 'title', type: 'string' }], slug);
+  const registeredPost = simple('post') as unknown as ContentTypeDefinition;
+
+  it('accepts a valid candidate when nothing is registered', () => {
+    expect(validateCandidateDefinition(simple('post'), [])).toEqual([]);
+  });
+
+  it('reports a slug equal to a registered slug on the candidate, naming only the slug', () => {
+    const errors = validateCandidateDefinition(simple('post'), [registeredPost]);
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['slug'],
+        rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
+        message: containing('the content type "post"'),
+      }),
+    );
+    for (const { message } of errors) expect(message).not.toMatch(/^\[|already used by \[/);
+  });
+
+  it('reports a component table that clashes with another type on the candidate field', () => {
+    const registered = definition([component('x', [{ name: 'a', type: 'text' }])]);
+    const candidate = definition([component('x', [{ name: 'b', type: 'text' }])]);
+    const errors = validateCandidateDefinition(candidate, [
+      registered as unknown as ContentTypeDefinition,
+    ]);
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['fields', 0, 'component'],
+        rule: DEFINITION_RULES.IDENTIFIER_COLLISION,
+        message: containing('the content type "post"'),
+      }),
+    );
+  });
+
+  it('returns only the candidate schema errors, without the list index', () => {
+    const errors = validateCandidateDefinition({ slug: 'x' }, [registeredPost]);
+    expect(errors.length).toBeGreaterThan(0);
+    for (const error of errors) expect(error.rule).toBe(DEFINITION_RULES.SCHEMA_INVALID);
+  });
+
+  it('never reports an error inside a registered definition', () => {
+    const broken = simple('Bad') as unknown as ContentTypeDefinition;
+    expect(validateCandidateDefinition(simple('other'), [broken])).toEqual([]);
+  });
+
+  it('keeps a self clash on the candidate path text', () => {
+    const second = { ...component('second', [{ name: 'y', type: 'text' }]), component: 'first' };
+    const errors = validateCandidateDefinition(
+      definition([component('first', [{ name: 'x', type: 'text' }]), second]),
+      [registeredPost],
+    );
+    expect(errors).toContainEqual(
+      expect.objectContaining({
+        path: ['fields', 1, 'component'],
+        message: containing('already used by fields[0].component'),
+      }),
+    );
+  });
+
+  it('keeps the CLI message of validateDefinitions', () => {
+    const result = validateDefinitions([simple('post'), simple('post')]);
+    expect(result.ok ? [] : result.errors[0]?.message).toEqual(containing('already used by [0].'));
   });
 });
 

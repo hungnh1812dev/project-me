@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { WebApiError } from '@/apis/WebApi.errors';
 import { TURNSTILE } from '@/configs/Security.constants';
 
 import { verifyHumanCheck } from './Turnstile.client';
@@ -128,5 +129,14 @@ describe('verifyHumanCheck', () => {
     expect(await errorCodeOf(verifyHumanCheck('tok', 'login', undefined))).toBe(
       'BFF_HUMAN_CHECK_UNAVAILABLE',
     );
+  });
+});
+
+describe('verifyHumanCheck failures', () => {
+  it('are WebApiErrors of source turnstile', async () => {
+    siteverifyAnswers({ success: false });
+    const failure = await verifyHumanCheck('tok', 'login', undefined).catch((e: unknown) => e);
+    expect(failure).toBeInstanceOf(WebApiError);
+    expect(failure).toMatchObject({ source: 'turnstile', errorCode: 'BFF_HUMAN_CHECK_FAILED' });
   });
 });

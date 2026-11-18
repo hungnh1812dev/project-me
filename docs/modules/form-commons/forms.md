@@ -65,13 +65,13 @@ Tests: 18 files (not listed).
 | `bulk-action-bar/index.ts` | Re-exports the folder's component and types |
 | `checkbox-input/CheckboxInput.tsx` | `CheckboxInput`: form-bound checkbox |
 | `checkbox-input/index.ts` | Re-exports the folder's component and types |
-| `date-picker/DatePicker.tsx` | `DatePicker`, `DateTimePicker`: form-bound date and date-time inputs |
+| `date-picker/DatePicker.tsx` | `DatePicker`, `DateTimePicker`, `TimePicker`: form-bound date, date-time and time (`HH:MM`) inputs |
 | `date-picker/index.ts` | Re-exports the folder's component and types |
 | `field/Field.tsx` | `Field`: label, description, error and control layout |
 | `field/index.ts` | Re-exports the folder's component and types |
 | `form-alert/FormAlert.tsx` | `FormAlert`: form-level message by tone |
 | `form-alert/index.ts` | Re-exports the folder's component and types |
-| `json-input/JsonInput.tsx` | `JsonInput`, `isValidJsonText`: JSON text input with validation |
+| `json-input/JsonInput.tsx` | `JsonInput`, `isValidJsonText`: JSON text input with validation, on `CodeTextarea` |
 | `json-input/index.ts` | Re-exports the folder's component and types |
 | `media-input/FileName.tsx` | `FileName`: file name with a shrinking head and a fixed `_<hash8>.<ext>` tail |
 | `media-input/MediaDetails.tsx` | `MediaDetails`, `formatFileSize`: stored file name (via `FileName`), size and dimensions |
