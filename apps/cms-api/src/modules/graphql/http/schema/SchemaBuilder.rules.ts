@@ -1,6 +1,7 @@
 import {
   GraphQLBoolean,
   GraphQLEnumType,
+  GraphQLFloat,
   GraphQLID,
   GraphQLInputObjectType,
   GraphQLInt,
@@ -41,7 +42,14 @@ import {
   type RootFieldExtension,
 } from '../../application/Graphql.constants';
 import { FILTER_INPUTS } from './FilterInputs.rules';
-import { DateScalar, DateTimeScalar, DecimalScalar, JsonScalar } from './Scalars.rules';
+import {
+  BigIntScalar,
+  DateScalar,
+  DateTimeScalar,
+  DecimalScalar,
+  JsonScalar,
+  TimeScalar,
+} from './Scalars.rules';
 import {
   DocumentStatusEnum,
   MediaType,
@@ -77,6 +85,8 @@ const listOf = <T extends GraphQLNullableOutputType>(type: T) =>
 const SHARED_TYPES = [
   DateScalar,
   DateTimeScalar,
+  TimeScalar,
+  BigIntScalar,
   DecimalScalar,
   JsonScalar,
   DocumentStatusEnum,
@@ -90,10 +100,13 @@ const SHARED_TYPES = [
 const GRAPHQL_OUTPUT_TYPES: Readonly<Record<GraphqlOutputName, GraphQLOutputType>> = {
   String: GraphQLString,
   Int: GraphQLInt,
+  Float: GraphQLFloat,
+  BigInt: BigIntScalar,
   Decimal: DecimalScalar,
   Boolean: GraphQLBoolean,
   Date: DateScalar,
   DateTime: DateTimeScalar,
+  Time: TimeScalar,
   Json: JsonScalar,
   Media: MediaType,
 };

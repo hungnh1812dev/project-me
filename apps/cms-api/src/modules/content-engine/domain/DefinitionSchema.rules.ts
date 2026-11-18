@@ -4,6 +4,8 @@ import {
   COMPONENT_FIELD_TYPE,
   CONTENT_TYPE_KINDS,
   FIELD_WIDTHS,
+  MAX_ENUM_OPTION_LENGTH,
+  MAX_ENUM_OPTIONS,
   SCALAR_FIELD_TYPES,
 } from './ContentEngine.constants';
 
@@ -32,6 +34,10 @@ export interface ScalarFieldDefinition extends BaseFieldDefinition {
   type: ScalarFieldType;
   /** Share of the admin form row; the content types API reports `full` when absent. */
   width?: FieldWidth | undefined;
+  /** `integer` only: the API refuses a negative value. */
+  unsigned?: boolean | undefined;
+  /** `enumeration` only (required there): the allowed values, in display order. */
+  options?: string[] | undefined;
 }
 
 export interface ComponentFieldDefinition extends BaseFieldDefinition {
@@ -60,11 +66,57 @@ const baseFieldShape = {
   displayName: z.string().optional(),
 };
 
-const scalarFieldSchema = z.strictObject({
-  ...baseFieldShape,
-  type: z.enum(SCALAR_FIELD_TYPES),
-  width: z.enum(FIELD_WIDTHS).optional(),
-});
+const ENUMERATION_TYPE = 'enumeration';
+const UNSIGNED_TYPE = 'integer';
+
+const optionSchema = z
+  .string()
+  .refine((option) => option !== '' && option === option.trim(), {
+    message: 'An option must be a non-blank string without leading or trailing whitespace.',
+  })
+  .refine((option) => [...option].length <= MAX_ENUM_OPTION_LENGTH, {
+    message: `An option may have at most ${MAX_ENUM_OPTION_LENGTH} characters.`,
+  });
+
+const optionsSchema = z
+  .array(optionSchema)
+  .min(1)
+  .max(MAX_ENUM_OPTIONS)
+  .refine((options) => new Set(options).size === options.length, {
+    message: 'Options must be unique.',
+  });
+
+const scalarFieldSchema = z
+  .strictObject({
+    ...baseFieldShape,
+    type: z.enum(SCALAR_FIELD_TYPES),
+    width: z.enum(FIELD_WIDTHS).optional(),
+    unsigned: z.boolean().optional(),
+    options: optionsSchema.optional(),
+  })
+  .superRefine((field, context) => {
+    if (field.unsigned !== undefined && field.type !== UNSIGNED_TYPE) {
+      context.addIssue({
+        code: 'custom',
+        path: ['unsigned'],
+        message: `"unsigned" is allowed only on ${UNSIGNED_TYPE} fields.`,
+      });
+    }
+    if (field.options !== undefined && field.type !== ENUMERATION_TYPE) {
+      context.addIssue({
+        code: 'custom',
+        path: ['options'],
+        message: `"options" is allowed only on ${ENUMERATION_TYPE} fields.`,
+      });
+    }
+    if (field.options === undefined && field.type === ENUMERATION_TYPE) {
+      context.addIssue({
+        code: 'custom',
+        path: ['options'],
+        message: `An ${ENUMERATION_TYPE} field needs "options".`,
+      });
+    }
+  });
 
 const componentFieldSchema = z.strictObject({
   ...baseFieldShape,

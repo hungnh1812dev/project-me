@@ -70,7 +70,7 @@ Tests: 11 files (not listed).
 | `domain/ContentRowMapping.rules.ts` | `toColumnValues`, `toDocument`: values <-> rows |
 | `domain/ContentTree.entity.ts` | `ContentRow`, `ComponentNode`, `ComponentTrees` |
 | `domain/ContentTypeRegistry.entity.ts` | `ContentTypeRegistry` (`definitions()` lists the registered ones), table nodes, `UnknownContentTypeError` |
-| `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`) |
+| `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`, `unsigned`, `options`) |
 | `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, `component` values, field `displayName`, depth, relations); `validateCandidateDefinition`: one candidate against the registered types, only its own errors, a clash names the other type by slug |
 | `domain/Naming.rules.ts` | `planTables` (tables named by `component`, with `apiPath`), `toSqlIdentifier`, table and relation names |
 | `domain/SqlGenerator.rules.ts` | `planMigration` (renames first, then create and column diff, then drops), `pairRenamedTables`, `renderMigrationSql`, snapshots and column types |
@@ -79,7 +79,7 @@ Tests: 11 files (not listed).
 | `domain/field-types/FieldTypeRegistry.rules.ts` | `FIELD_TYPE_SPECS`, `fieldTypeOf`: one spec per field type |
 | `domain/field-types/MediaColumns.rules.ts` | `mediaColumnsOf`, `richtextColumnsOf`: media and richtext columns per table |
 | `domain/field-types/RichtextSanitizer.rules.ts` | `sanitizeRichtext`: allowed tags, styles and image sources (D13) |
-| `domain/field-types/ValueParsers.rules.ts` | `parseDate`, `parseDatetime`, `parseUuid`, value patterns |
+| `domain/field-types/ValueParsers.rules.ts` | `parseBigInteger`, `parseDate`, `parseDatetime`, `parseTime`, `parseUuid`, value patterns |
 | `domain/field-types/index.ts` | Re-exports of the field-type rules |
 
 <!-- prettier-ignore-end -->

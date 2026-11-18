@@ -192,6 +192,41 @@ describe('sql-generator', () => {
     expect(plan.nextSnapshot.contentTypes).not.toHaveProperty('post');
   });
 
+  describe('new field types', () => {
+    const everyNewType = post([
+      TITLE,
+      { name: 'big', type: 'biginteger' },
+      { name: 'ratio', type: 'float' },
+      { name: 'precise', type: 'double' },
+      { name: 'opensAt', type: 'time' },
+      { name: 'size', type: 'enumeration', options: ['s', 'm'] },
+      { name: 'count', type: 'integer', unsigned: true },
+    ]);
+
+    it('creates each column with its type', () => {
+      const sql = diff([], [everyNewType]).statements.join('\n');
+      expect(sql).toContain('"big" bigint');
+      expect(sql).toContain('"ratio" real');
+      expect(sql).toContain('"precise" double precision');
+      expect(sql).toContain('"opens_at" time');
+      expect(sql).toContain('"size" text');
+      expect(sql).toContain('"count" integer');
+    });
+
+    it('plans no SQL when only unsigned or options change', () => {
+      const changed = post([
+        TITLE,
+        { name: 'big', type: 'biginteger' },
+        { name: 'ratio', type: 'float' },
+        { name: 'precise', type: 'double' },
+        { name: 'opensAt', type: 'time' },
+        { name: 'size', type: 'enumeration', options: ['s', 'm', 'l'] },
+        { name: 'count', type: 'integer' },
+      ]);
+      expect(diff([everyNewType], [changed]).statements).toEqual([]);
+    });
+  });
+
   describe('component table renames', () => {
     function tagged(
       tagsComponent: string,

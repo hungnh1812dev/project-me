@@ -92,6 +92,39 @@ export const DecimalScalar = new GraphQLScalarType<string, string>({
     ),
 });
 
+/** `HH:MM:SS`, 24 h; input also takes `HH:MM`. */
+export const TimeScalar = new GraphQLScalarType<string, string>({
+  name: SCALAR_NAMES.TIME,
+  description: 'Time of day, "HH:MM:SS".',
+  coerceOutputValue: (value) => expectString(value, SCALAR_NAMES.TIME),
+  coerceInputValue: (value) =>
+    patterned(expectString(value, SCALAR_NAMES.TIME), VALUE_PATTERNS.TIME, SCALAR_NAMES.TIME),
+  coerceInputLiteral: (node) =>
+    patterned(stringLiteral(node, SCALAR_NAMES.TIME), VALUE_PATTERNS.TIME, SCALAR_NAMES.TIME),
+});
+
+/** Whole number up to 8 bytes, a string so no digit is lost past 2^53 (as in REST). */
+export const BigIntScalar = new GraphQLScalarType<string, string>({
+  name: SCALAR_NAMES.BIG_INT,
+  description: 'Whole number up to 8 bytes as a string.',
+  coerceOutputValue: (value) =>
+    typeof value === 'number' || typeof value === 'bigint'
+      ? String(value)
+      : expectString(value, SCALAR_NAMES.BIG_INT),
+  coerceInputValue: (value) =>
+    patterned(
+      expectString(value, SCALAR_NAMES.BIG_INT),
+      VALUE_PATTERNS.BIGINTEGER,
+      SCALAR_NAMES.BIG_INT,
+    ),
+  coerceInputLiteral: (node) =>
+    patterned(
+      stringLiteral(node, SCALAR_NAMES.BIG_INT),
+      VALUE_PATTERNS.BIGINTEGER,
+      SCALAR_NAMES.BIG_INT,
+    ),
+});
+
 /** Any JSON value; output only (json fields cannot be filtered). */
 export const JsonScalar = new GraphQLScalarType<unknown, unknown>({
   name: SCALAR_NAMES.JSON,

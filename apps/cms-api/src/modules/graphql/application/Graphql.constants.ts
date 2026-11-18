@@ -8,6 +8,8 @@ export const QUERY_TYPE_NAME = 'Query';
 export const SCALAR_NAMES = {
   DATE: 'Date',
   DATE_TIME: 'DateTime',
+  TIME: 'Time',
+  BIG_INT: 'BigInt',
   DECIMAL: 'Decimal',
   JSON: 'JSON',
 } as const;

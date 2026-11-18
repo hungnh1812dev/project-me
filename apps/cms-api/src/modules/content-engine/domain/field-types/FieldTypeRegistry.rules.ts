@@ -3,8 +3,10 @@ import { type FieldTypeSpec } from './FieldType.entity';
 import { sanitizeRichtext } from './RichtextSanitizer.rules';
 import {
   INT4_MAX,
+  parseBigInteger,
   parseDate,
   parseDatetime,
+  parseTime,
   parseUuid,
   VALUE_PATTERNS,
 } from './ValueParsers.rules';
@@ -27,6 +29,17 @@ const TEXT_LIKE = {
   coerceValue: coerceText,
 } as const satisfies FieldTypeSpec;
 
+const coerceFiniteNumber = (value: unknown) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
+const NUMBER_LIKE = {
+  columnType: 'bigint',
+  conditionKind: 'decimal',
+  listQueryable: true,
+  maskedValue: 'null',
+  referencesMedia: false,
+} as const;
+
 export const FIELD_TYPE_SPECS = {
   string: TEXT_LIKE,
   text: TEXT_LIKE,
@@ -45,8 +58,30 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     graphqlOutput: 'Int',
-    coerceValue: (value) =>
-      Number.isInteger(value) && Math.abs(value as number) <= INT4_MAX ? value : undefined,
+    coerceValue: (value, context) =>
+      Number.isInteger(value) &&
+      Math.abs(value as number) <= INT4_MAX &&
+      !(context?.field?.unsigned === true && (value as number) < 0)
+        ? value
+        : undefined,
+  },
+  biginteger: {
+    ...NUMBER_LIKE,
+    graphqlOutput: 'BigInt',
+    // A digit string both ways: a JS number loses digits past 2^53.
+    coerceValue: (value) => parseBigInteger(value),
+  },
+  float: {
+    ...NUMBER_LIKE,
+    graphqlOutput: 'Float',
+    columnType: 'real',
+    coerceValue: coerceFiniteNumber,
+  },
+  double: {
+    ...NUMBER_LIKE,
+    graphqlOutput: 'Float',
+    columnType: 'double precision',
+    coerceValue: coerceFiniteNumber,
   },
   decimal: {
     columnType: 'numeric',
@@ -88,6 +123,23 @@ export const FIELD_TYPE_SPECS = {
     referencesMedia: false,
     graphqlOutput: 'DateTime',
     coerceValue: (value) => (typeof value === 'string' ? parseDatetime(value) : undefined),
+  },
+  time: {
+    columnType: 'time',
+    conditionKind: 'string',
+    listQueryable: true,
+    maskedValue: 'null',
+    referencesMedia: false,
+    graphqlOutput: 'Time',
+    coerceValue: (value) => (typeof value === 'string' ? parseTime(value) : undefined),
+  },
+  enumeration: {
+    ...TEXT_LIKE,
+    // Without the field in the context no option list is known, so nothing is accepted.
+    coerceValue: (value, context) =>
+      typeof value === 'string' && context?.field?.options?.includes(value) === true
+        ? value
+        : undefined,
   },
   json: {
     columnType: 'jsonb',

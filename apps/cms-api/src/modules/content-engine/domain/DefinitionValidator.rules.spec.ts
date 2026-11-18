@@ -193,6 +193,45 @@ describe('validateDefinition', () => {
     });
   });
 
+  describe('unsigned and options keys', () => {
+    const enumeration = (options: unknown): Field => ({ name: 'a', type: 'enumeration', options });
+
+    it('accepts unsigned on integer and options on enumeration', () => {
+      expect(isValid(definition([{ name: 'a', type: 'integer', unsigned: true }]))).toBe(true);
+      expect(isValid(definition([enumeration(['one', 'two'])]))).toBe(true);
+    });
+
+    it.each([
+      ['unsigned on a string', { name: 'a', type: 'string', unsigned: true }, 'unsigned'],
+      ['unsigned on a biginteger', { name: 'a', type: 'biginteger', unsigned: true }, 'unsigned'],
+      ['a non-boolean unsigned', { name: 'a', type: 'integer', unsigned: 'yes' }, 'unsigned'],
+      ['options on a string', { name: 'a', type: 'string', options: ['x'] }, 'options'],
+      ['an enumeration without options', { name: 'a', type: 'enumeration' }, 'options'],
+      ['empty options', enumeration([]), 'options'],
+      ['51 options', enumeration(Array.from({ length: 51 }, (_, i) => `v${i}`)), 'options'],
+      ['duplicate options', enumeration(['a', 'a']), 'options'],
+      ['a blank option', enumeration(['a', '']), 'options'],
+      ['an option with a leading space', enumeration([' a']), 'options'],
+      ['an option with a trailing space', enumeration(['a ']), 'options'],
+      ['an option over 100 characters', enumeration(['x'.repeat(101)]), 'options'],
+      ['a non-string option', enumeration([1]), 'options'],
+    ])('rejects %s on fields[0].%s', (_label, field, key) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path.slice(0, 3)).toEqual(['fields', 0, key]);
+    });
+
+    it('accepts 50 options of 100 characters', () => {
+      const options = Array.from({ length: 50 }, (_, i) => String(i).padEnd(100, 'x'));
+      expect(isValid(definition([enumeration(options)]))).toBe(true);
+    });
+
+    it('names the entry that fails', () => {
+      const [error] = errorsOf(definition([enumeration(['a', ' b'])]));
+      expect(error?.path).toEqual(['fields', 0, 'options', 1]);
+    });
+  });
+
   describe('field metadata', () => {
     it.each(['1/3', '1/2', 'full'])('accepts width %s on a scalar', (width) => {
       expect(isValid(definition([{ name: 'a', type: 'string', width }]))).toBe(true);

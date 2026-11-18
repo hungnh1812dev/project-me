@@ -4,6 +4,12 @@ scalar Date
 """ISO 8601 date and time."""
 scalar DateTime
 
+"""Time of day, "HH:MM:SS"."""
+scalar Time
+
+"""Whole number up to 8 bytes as a string."""
+scalar BigInt
+
 """Exact decimal number as a string."""
 scalar Decimal
 
