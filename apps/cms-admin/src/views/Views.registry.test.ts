@@ -1,7 +1,7 @@
 import { NAV_SECTION_IDS } from '@configs/NavSections.constants';
 import { describe, expect, it } from 'vitest';
 
-import { APP_NAV } from './Views.registry';
+import { APP_NAV, VIEWS } from './Views.registry';
 
 describe('view nav items', () => {
   it('only name sections that exist in NAV_SECTIONS', () => {
@@ -15,5 +15,13 @@ describe('view nav items', () => {
   it('ask for read permission, so a page the caller cannot read has no item', () => {
     expect(APP_NAV.items.length).toBeGreaterThan(0);
     expect(APP_NAV.items.filter((item) => item.action !== 'read')).toEqual([]);
+  });
+});
+
+describe('view text screens', () => {
+  it('preloads the content text on the schema builder, whose popup shows field value inputs', () => {
+    const schemaBuilder = VIEWS.find((view) => view.textScreens?.includes('schemaBuilder'));
+
+    expect(schemaBuilder?.textScreens).toContain('content');
   });
 });

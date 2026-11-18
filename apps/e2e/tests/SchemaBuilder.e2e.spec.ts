@@ -3,13 +3,16 @@ import { isDeepStrictEqual } from 'node:util';
 
 import { expect, test, type Locator, type Page, type Request } from '@playwright/test';
 
+import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
-import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
+import { PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import {
+  bearer,
   chooseUserMenuItem,
   expectSignedIn,
+  ownerApiToken,
   signInAsOwner,
   submitLogin,
 } from '../src/Session.fixture';
@@ -26,6 +29,7 @@ const DESKTOP = { width: 1280, height: 800 };
 const PHONE = { width: 375, height: 800 };
 const BLOCKED_STATUS = 429;
 const EDITED_SLUG = 'page-cv-a-edited';
+const FREE_SLUG_PREFIX = 'e2e-final-';
 
 const schemaFiles = readdirSync(SCHEMA_DIR).filter((name) => name.endsWith('.json'));
 const readSchema = (name: string) => readFileSync(new URL(name, SCHEMA_DIR), 'utf8');
@@ -301,7 +305,7 @@ test.describe(
 
 const BUILDER_SLUG = 'kbd-type';
 const COMPONENT_TYPE = ADMIN_COPY.schemaBuilder.fieldTypes.component;
-const STRING_TYPE = ADMIN_COPY.schemaBuilder.fieldTypes.string;
+const STRING_TYPE = ADMIN_COPY.schemaBuilder.fieldGroups.textInput;
 const TOP_LEVEL_DEPTH = 3;
 const ANNOUNCE_SETTLE_MS = 200;
 
@@ -507,12 +511,12 @@ test.describe(
           .getByRole('button', { name: /^Edit / }),
       ).toHaveCount(1);
 
-      // Reorder at the top level: the palette drop put field3 above field1, so move it below.
+      // Reorder at the top level: field3 sits above field1; ArrowDown names position 1 of 2 (product decision, SBF-B-qc#4).
       await dragByKeyboard(
         page,
         copy.dnd.fieldHandle('field3'),
         'ArrowDown',
-        /position 2 of \d+ in Fields\./,
+        /position 1 of 2 in Fields\./,
       );
       await expect(announcement(page)).toContainText('field3 dropped at');
       await expect(
@@ -520,7 +524,7 @@ test.describe(
           .getByRole('list', { name: copy.fields.rootListLabel, exact: true })
           .getByRole('button', { name: /^Edit / })
           .first(),
-      ).toHaveAttribute('aria-label', copy.row.select('field1'));
+      ).toHaveAttribute('aria-label', copy.row.select('field3'));
     });
 
     test('error marker follows its field after a reorder; choosing the error selects the field', async ({
@@ -778,8 +782,7 @@ test.describe(
 );
 
 const PALETTE_ORDER = [
-  copy.fieldTypes.text,
-  copy.fieldTypes.string,
+  copy.fieldGroups.textInput,
   copy.fieldTypes.richtext,
   copy.fieldGroups.number,
   copy.fieldTypes.boolean,
@@ -903,6 +906,256 @@ test.describe(
       await closeProperties(page);
       await expect(validCheck(page)).toBeVisible();
       await expect(page.getByRole('button', { name: copy.export.download })).toBeEnabled();
+    });
+
+    test('Text input drops as a single line, the Text type select keeps the other keys, Text editor drops as richtext', async ({
+      page,
+    }) => {
+      await startNewType(page);
+      await page.getByRole('button', { name: copy.fieldGroups.textInput, exact: true }).click();
+      await expect(propertiesDialog(page).getByLabel(copy.property.textType)).toHaveValue(
+        'singleLine',
+      );
+      await propertiesDialog(page).getByLabel(copy.property.required).check();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.width)
+        .selectOption({ label: copy.property.widthOptions['1/2'] });
+      await closeProperties(page);
+      await expect(
+        editButton(page, 'field1').getByText('Text input · Single line', { exact: true }),
+      ).toBeVisible();
+
+      await editButton(page, 'field1').click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.textType)
+        .selectOption({ label: copy.fieldVariants.multiLine });
+      await expect(propertiesDialog(page).getByLabel(copy.property.required)).toBeChecked();
+      await expect(propertiesDialog(page).getByLabel(copy.property.width)).toHaveValue('1/2');
+      await closeProperties(page);
+      await expect(
+        editButton(page, 'field1').getByText('Text input · Multi-line', { exact: true }),
+      ).toBeVisible();
+
+      await page.getByRole('button', { name: copy.fieldTypes.richtext, exact: true }).click();
+      await closeProperties(page);
+      await expect(
+        editButton(page, 'field2').getByText(copy.fieldTypes.richtext, { exact: true }),
+      ).toBeVisible();
+    });
+
+    test('defaults on several types round-trip in the exported JSON, after options', async ({
+      page,
+    }) => {
+      const fields = [
+        { name: 'title', type: 'text', default: 'Untitled' },
+        { name: 'count', type: 'integer', default: 5 },
+        { name: 'live', type: 'boolean', default: true },
+        { name: 'level', type: 'enumeration', options: ['low', 'high'], default: 'low' },
+      ];
+      await importText(
+        page,
+        JSON.stringify({
+          slug: 'with-defaults',
+          displayName: 'With defaults',
+          kind: 'collection',
+          draftAndPublish: false,
+          fields,
+        }),
+      );
+      await expect(validCheck(page)).toBeVisible();
+      const download = page.getByRole('button', { name: copy.export.download });
+      await expect(download).toBeEnabled();
+      const [saved] = await Promise.all([page.waitForEvent('download'), download.click()]);
+      const exported = JSON.parse(readFileSync(await saved.path(), 'utf8')) as {
+        fields: Record<string, unknown>[];
+      };
+      expect(exported.fields).toEqual(fields);
+      expect(Object.keys(exported.fields.at(-1) ?? {})).toEqual([
+        'name',
+        'type',
+        'options',
+        'default',
+      ]);
+    });
+
+    test('a default is set in the popup, kept from Single line to Multi-line, dropped when Number becomes Enum', async ({
+      page,
+    }) => {
+      await startNewType(page);
+      await page.getByRole('button', { name: copy.fieldGroups.textInput, exact: true }).click();
+      await propertiesDialog(page).getByLabel(copy.property.defaultValue).fill('Hello');
+      await propertiesDialog(page)
+        .getByLabel(copy.property.textType)
+        .selectOption({ label: copy.fieldVariants.multiLine });
+      await expect(propertiesDialog(page).getByLabel(copy.property.defaultValue)).toHaveValue(
+        'Hello',
+      );
+      await closeProperties(page);
+
+      await page.getByRole('button', { name: copy.fieldGroups.number, exact: true }).click();
+      await propertiesDialog(page).getByLabel(copy.property.defaultValue).fill('7');
+      await propertiesDialog(page)
+        .getByLabel(copy.property.type, { exact: true })
+        .selectOption({ label: copy.fieldTypes.enumeration });
+      await expect(propertiesDialog(page).getByLabel(copy.property.defaultValue)).toHaveValue('');
+      await closeProperties(page);
+    });
+
+    test('a default the options no longer allow is reported at the control and blocks export until cleared', async ({
+      page,
+    }) => {
+      await importText(
+        page,
+        JSON.stringify({
+          slug: 'enum-default',
+          displayName: 'Enum default',
+          kind: 'collection',
+          draftAndPublish: false,
+          fields: [{ name: 'level', type: 'enumeration', options: ['a', 'b'], default: 'a' }],
+        }),
+      );
+      await expect(validCheck(page)).toBeVisible();
+      await editButton(page, 'level').click();
+      await propertiesDialog(page)
+        .getByRole('button', { name: copy.property.options.remove(1) })
+        .click();
+      await expect(propertiesDialog(page).getByLabel(copy.property.defaultValue)).toHaveAttribute(
+        'aria-invalid',
+        'true',
+      );
+      await closeProperties(page);
+      await expect(validCheck(page)).toHaveCount(0);
+      await expect(page.getByRole('button', { name: copy.export.download })).toBeDisabled();
+
+      await editButton(page, 'level').click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.defaultValue)
+        .selectOption({ label: copy.property.noDefault });
+      await closeProperties(page);
+      await expect(validCheck(page)).toBeVisible();
+      await expect(page.getByRole('button', { name: copy.export.download })).toBeEnabled();
+    });
+
+    test('a type built in the popup with every kind and a default exports in key order, passes the validate route and imports back unchanged', async ({
+      page,
+      request,
+    }) => {
+      const owner = bearer(await ownerApiToken(request));
+      const validate = async (fields: unknown) => {
+        const answer = await request.post(apiUrl(API_PATHS.CONTENT_TYPES_VALIDATE), {
+          data: { definition: fields, mode: 'create' },
+          headers: owner,
+        });
+        return (await answer.json()) as {
+          valid: boolean;
+          errors: { path: (string | number)[] }[];
+        };
+      };
+      const defaultControl = () => propertiesDialog(page).getByLabel(copy.property.defaultValue);
+      const consoleErrors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') consoleErrors.push(message.text());
+      });
+      await startNewType(page);
+
+      await page.getByRole('button', { name: copy.fieldGroups.textInput, exact: true }).click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.textType)
+        .selectOption({ label: copy.fieldVariants.multiLine });
+      await defaultControl().fill('Hello');
+      await closeProperties(page);
+
+      await page.getByRole('button', { name: copy.fieldGroups.number, exact: true }).click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.numberType)
+        .selectOption({ label: copy.fieldVariants.biginteger });
+      await defaultControl().fill('9007199254740993');
+      await closeProperties(page);
+
+      await page.getByRole('button', { name: copy.fieldGroups.number, exact: true }).click();
+      await defaultControl().fill('-1');
+      await propertiesDialog(page)
+        .getByLabel(copy.property.numberType)
+        .selectOption({ label: copy.fieldVariants.unsignedInteger });
+      await expect(propertiesDialog(page).getByRole('alert')).toBeVisible();
+      await defaultControl().fill('3');
+      await expect(propertiesDialog(page).getByRole('alert')).toHaveCount(0);
+      await closeProperties(page);
+
+      await page
+        .getByRole('button', { name: copy.fieldGroups.datetimePicker, exact: true })
+        .click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.dateType)
+        .selectOption({ label: copy.fieldVariants.time });
+      await defaultControl().fill('08:30');
+      await closeProperties(page);
+
+      await addFieldByKeyboard(page, copy.fields.addField, copy.fieldTypes.enumeration);
+      await propertiesDialog(page).getByRole('button', { name: copy.property.options.add }).click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.options.option(1), { exact: true })
+        .fill('low');
+      await propertiesDialog(page).getByRole('button', { name: copy.property.options.add }).click();
+      await propertiesDialog(page)
+        .getByLabel(copy.property.options.option(2), { exact: true })
+        .fill('high');
+      await defaultControl().selectOption({ label: 'low' });
+      await closeProperties(page);
+
+      await expect(validCheck(page)).toBeVisible();
+      const download = page.getByRole('button', { name: copy.export.download });
+      await expect(download).toBeEnabled();
+      const [saved] = await Promise.all([page.waitForEvent('download'), download.click()]);
+      const text = readFileSync(await saved.path(), 'utf8');
+      const exported = JSON.parse(text) as {
+        slug: string;
+        fields: Record<string, unknown>[];
+      };
+      expect(exported.fields.map((field) => Object.keys(field))).toEqual([
+        ['name', 'type', 'default'],
+        ['name', 'type', 'default'],
+        ['name', 'type', 'unsigned', 'default'],
+        ['name', 'type', 'default'],
+        ['name', 'type', 'options', 'default'],
+      ]);
+      expect(exported.fields.map((field) => field.default)).toEqual([
+        'Hello',
+        '9007199254740993',
+        3,
+        '08:30',
+        'low',
+      ]);
+      expect(exported.fields.map((field) => field.type)).toEqual([
+        'string',
+        'biginteger',
+        'integer',
+        'time',
+        'enumeration',
+      ]);
+
+      const definition = { ...exported, slug: FREE_SLUG_PREFIX + RUN_ID };
+      expect(await validate(definition)).toEqual({ valid: true, errors: [] });
+      const enumField = exported.fields.at(-1) ?? {};
+      const withoutOption = await validate({
+        ...definition,
+        fields: [{ ...enumField, options: ['high'] }],
+      });
+      expect(withoutOption.errors.map((error) => error.path.join('.'))).toContain(
+        'fields.0.default',
+      );
+      const negative = await validate({
+        ...definition,
+        fields: [{ name: 'n', type: 'integer', unsigned: true, default: -1 }],
+      });
+      expect(negative.errors.map((error) => error.path.join('.'))).toContain('fields.0.default');
+
+      await page.getByRole('button', { name: copy.start.newType }).click();
+      await importText(page, text);
+      await expect(validCheck(page)).toBeVisible();
+      const [again] = await Promise.all([page.waitForEvent('download'), download.click()]);
+      expect(JSON.parse(readFileSync(await again.path(), 'utf8'))).toEqual(exported);
+      expect(consoleErrors).toEqual([]);
     });
 
     test('Escape closes the popup and focus returns to the row', async ({ page }) => {

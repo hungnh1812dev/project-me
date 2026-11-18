@@ -1,5 +1,9 @@
 /** Postgres `integer` bound: a larger value would be a database error, not a 400. */
 export const INT4_MAX = 2_147_483_647;
+/** Largest magnitude of a Postgres `real` (FLOAT4). */
+export const FLOAT4_MAX = 3.4028234663852886e38;
+/** Smallest non-zero magnitude of a Postgres `real`; below it Postgres raises an underflow error. */
+export const FLOAT4_MIN_NONZERO = 1.401298464324817e-45;
 
 /** Canonical UUID text form (any version), case-insensitive. */
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
