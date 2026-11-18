@@ -279,6 +279,9 @@ describe('drop places', () => {
       index: 2,
     });
     expect(placeOf(threeLevels, 'f4', 'f1', true)).toEqual({ parentId: null, index: 0 });
+    // a row dragged down onto a component row stays in place; up past it still moves (f4 over f1 above)
+    const stringThenComponent = build([null, 'string'], [null, 'component']);
+    expect(placeOf(stringThenComponent, 'f1', 'f2', true)).toEqual({ parentId: null, index: 0 });
     expect(placeOf(threeLevels, 'f4', 'list:f2', false)).toEqual({ parentId: 'f2', index: 1 });
     expect(placeOf(threeLevels, 'f4', 'list:root', false)).toEqual({ parentId: null, index: 2 });
   });

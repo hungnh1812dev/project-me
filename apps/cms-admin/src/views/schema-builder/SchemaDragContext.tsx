@@ -108,6 +108,16 @@ export function placeOf(
   if (parentId === undefined || list === undefined) return null;
   const isSameList = list.some((field) => field.id === String(activeId));
   const overIndex = list.findIndex((field) => field.id === over);
+  // Reaching a component row from above does not pass it: the row is a box around its own list. Whether the
+  // sortable rows have already shifted aside (so the target flips between the sibling and the box) then no longer changes the place.
+  const activeIndex = list.findIndex((field) => field.id === String(activeId));
+  if (
+    activeIndex >= 0 &&
+    activeIndex < overIndex &&
+    list[overIndex]?.type === COMPONENT_FIELD_TYPE
+  ) {
+    return { parentId, index: activeIndex };
+  }
   return { parentId, index: overIndex + (!isSameList && isBelowOver ? 1 : 0) };
 }
 
