@@ -10,6 +10,7 @@ import {
 } from '@abyss/form-commons';
 import { Modal, ModalActions } from '@components/Modal';
 import { useScreenText } from '@configs/locales';
+import { FieldValueInput } from '@features/content';
 import { ArrowDown, ArrowUp, Trash2 } from 'lucide-react';
 
 import {
@@ -36,6 +37,9 @@ const VARIANT_SELECT_LABELS = {
 } as const satisfies Record<FieldGroupKey, string>;
 
 const WIDTH_VALUES = ['1/3', '1/2', 'full'] as const;
+
+/** Types with no default (CM-11); the Default value control is left out. */
+const TYPES_WITHOUT_DEFAULT: readonly string[] = ['media', 'component'];
 
 interface FieldPropertiesDialogProps {
   tree: SchemaTree;
@@ -194,6 +198,70 @@ export function FieldPropertiesDialog({
       : [...WIDTH_VALUES, field.width];
   const setText = (key: 'displayName' | 'component', value: string) =>
     onSetKey(field.id, key, value === '' ? undefined : value);
+  const defaultControl = () => {
+    const error = errorsOf('default');
+    const noDefault = <option value="">{text.noDefault}</option>;
+    if (field.type === 'boolean' || field.type === 'enumeration') {
+      const isBoolean = field.type === 'boolean';
+      const current =
+        typeof field.default === 'string' || typeof field.default === 'boolean'
+          ? String(field.default)
+          : '';
+      const choices = isBoolean
+        ? [
+            { value: 'true', label: text.defaultTrue },
+            { value: 'false', label: text.defaultFalse },
+          ]
+        : (field.options ?? []).map((option) => ({ value: option, label: option }));
+      if (current !== '' && !choices.some((choice) => choice.value === current)) {
+        choices.push({ value: current, label: current });
+      }
+      const parse = (value: string) => (isBoolean ? value === 'true' : value);
+      return (
+        <Field label={text.defaultValue} error={error}>
+          {(control) => (
+            <NativeSelect
+              {...control}
+              value={current}
+              onChange={(event) =>
+                onSetKey(
+                  field.id,
+                  'default',
+                  event.target.value === '' ? undefined : parse(event.target.value),
+                )
+              }
+            >
+              {noDefault}
+              {choices.map((choice) => (
+                <option key={choice.value} value={choice.value}>
+                  {choice.label}
+                </option>
+              ))}
+            </NativeSelect>
+          )}
+        </Field>
+      );
+    }
+    return (
+      <div className="grid gap-1">
+        <FieldValueInput
+          key={`${field.id}-${field.type}`}
+          node={{
+            type: field.type,
+            label: text.defaultValue,
+            ...(field.options === undefined ? {} : { options: field.options }),
+          }}
+          value={field.default}
+          onChange={(value) => onSetKey(field.id, 'default', value)}
+        />
+        {error === undefined ? null : (
+          <p role="alert" className="m-0 text-sm text-destructive-strong">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  };
   const flag = (key: 'required' | 'sensitive' | 'repeatable', label: string, hint?: string) => (
     <div className="grid gap-1">
       <div className="flex items-center gap-2">
@@ -298,6 +366,7 @@ export function FieldPropertiesDialog({
             onChange={(options) => onSetKey(field.id, 'options', options)}
           />
         ) : null}
+        {TYPES_WITHOUT_DEFAULT.includes(field.type) ? null : defaultControl()}
         {flag('required', text.required)}
         {flag('sensitive', text.sensitive, text.sensitiveHint)}
         {isComponent ? (

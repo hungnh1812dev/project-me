@@ -195,4 +195,68 @@ describe('FieldPropertiesDialog', () => {
     expect(screen.getByLabelText(text.options.option(2))).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByText('Duplicate option')).toBeVisible();
   });
+
+  describe('Default value', () => {
+    it('is left out for a component and shown for the other types', () => {
+      show('f2');
+      expect(screen.queryByLabelText(text.defaultValue)).toBeNull();
+    });
+
+    it('renders the document input for a text and a whole number field and sets the key', async () => {
+      const { onSetKey } = show('f4');
+      await userEvent.type(screen.getByLabelText(text.defaultValue), '4');
+      expect(onSetKey).toHaveBeenLastCalledWith('f4', 'default', 4);
+    });
+
+    it('offers No default, True and False for a yes / no field, and removes the key', async () => {
+      const { onSetKey } = show('f3');
+      const select = screen.getByLabelText(text.defaultValue);
+      expect([...(select as HTMLSelectElement).options].map((o) => o.text)).toEqual([
+        text.noDefault,
+        text.defaultTrue,
+        text.defaultFalse,
+      ]);
+      await userEvent.selectOptions(select, text.defaultFalse);
+      expect(onSetKey).toHaveBeenLastCalledWith('f3', 'default', false);
+      await userEvent.selectOptions(select, text.defaultTrue);
+      expect(onSetKey).toHaveBeenLastCalledWith('f3', 'default', true);
+    });
+
+    it('offers the options of an enum and removes the key on No default', async () => {
+      const tree = schemaTreeReducer(
+        schemaTreeReducer(withFields, {
+          type: 'setFieldKey',
+          fieldId: 'f6',
+          key: 'options',
+          value: ['a', 'b'],
+        }),
+        { type: 'setFieldKey', fieldId: 'f6', key: 'default', value: 'b' },
+      );
+      const onSetKey = vi.fn<Parameters<typeof FieldPropertiesDialog>[0]['onSetKey']>();
+      renderInApp(
+        createTestServices().services,
+        <FieldPropertiesDialog
+          tree={tree}
+          field={findField(tree.fields, 'f6')!}
+          errors={[{ fieldId: 'f6', key: 'default', message: 'Not an option' }]}
+          onSetKey={onSetKey}
+          onChangeType={vi.fn<(fieldId: string, fieldType: string) => void>()}
+          onChangeVariant={vi.fn<(fieldId: string, variant: string) => void>()}
+          onClose={vi.fn<() => void>()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+        />,
+      );
+      const select = screen.getByLabelText<HTMLSelectElement>(text.defaultValue);
+      expect([...select.options].map((o) => o.text)).toEqual([text.noDefault, 'a', 'b']);
+      expect(select).toHaveValue('b');
+      expect(select).toHaveAccessibleDescription(expect.stringContaining('Not an option'));
+      await userEvent.selectOptions(select, text.noDefault);
+      expect(onSetKey).toHaveBeenLastCalledWith('f6', 'default', undefined);
+    });
+
+    it('shows the error next to the document input', () => {
+      show('f4', [{ fieldId: 'f4', key: 'default', message: 'Too large' }]);
+      expect(screen.getByText('Too large')).toBeVisible();
+    });
+  });
 });

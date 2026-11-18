@@ -313,4 +313,33 @@ describe('new field types and keys', () => {
     expect(field.options).toBeUndefined();
     expect(field.unknownKeys).toEqual({ options: [1] });
   });
+
+  it('writes default after options and round trips a file with defaults', () => {
+    const file = {
+      slug: 's',
+      fields: [
+        { name: 'a', type: 'integer', unsigned: true, default: 7, required: true },
+        { name: 'b', type: 'enumeration', options: ['x', 'y'], default: 'y' },
+        { name: 'c', type: 'boolean', default: false },
+        { name: 'd', type: 'json', default: { k: [1] } },
+      ],
+    };
+    const result = parseSchemaJson(JSON.stringify(file));
+    if (!result.ok) throw new Error('import refused');
+    const tree = schemaTreeReducer(createNewSchemaTree(), { type: 'load', tree: result.tree });
+    expect(JSON.parse(serializeSchemaTree(tree).json)).toEqual(file);
+    expect(Object.keys(exportedOf(tree).fields[0]!)).toEqual([
+      'name',
+      'type',
+      'unsigned',
+      'default',
+      'required',
+    ]);
+    expect(Object.keys(exportedOf(tree).fields[1]!)).toEqual([
+      'name',
+      'type',
+      'options',
+      'default',
+    ]);
+  });
 });

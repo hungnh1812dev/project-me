@@ -24,6 +24,7 @@ const FIELD_KEY_ORDER = [
   'type',
   'unsigned',
   'options',
+  'default',
   'component',
   'repeatable',
   'required',
@@ -37,6 +38,7 @@ const FIELD_OPTIONAL_KEYS: readonly OptionalFieldKey[] = [
   'displayName',
   'unsigned',
   'options',
+  'default',
   'component',
   'repeatable',
   'required',
@@ -59,6 +61,8 @@ const FIELD_DEFAULTS: Partial<Record<OptionalFieldKey, unknown>> = {
 const FIELD_STRING_KEYS = ['name', 'type', 'displayName', 'component', 'width'];
 const FIELD_BOOLEAN_KEYS = ['repeatable', 'required', 'sensitive', 'unsigned'];
 const FIELD_STRING_LIST_KEYS = ['options'];
+/** Keys that take any JSON value; a wrong one is the validator's to report. */
+const FIELD_ANY_VALUE_KEYS = ['default'];
 const TYPE_STRING_KEYS = ['slug', 'displayName', 'kind'];
 const TYPE_BOOLEAN_KEYS = ['draftAndPublish'];
 
@@ -82,7 +86,9 @@ function hasKnownShape(
   stringKeys: readonly string[],
   booleanKeys: readonly string[],
   stringListKeys: readonly string[],
+  anyValueKeys: readonly string[],
 ): boolean {
+  if (anyValueKeys.includes(key)) return true;
   if (stringListKeys.includes(key)) {
     return Array.isArray(value) && value.every((item) => typeof item === 'string');
   }
@@ -97,12 +103,14 @@ function splitKeys(
   stringKeys: readonly string[],
   booleanKeys: readonly string[],
   stringListKeys: readonly string[] = [],
+  anyValueKeys: readonly string[] = [],
 ): { known: PlainObject; unknownKeys: PlainObject } {
   const known: PlainObject = {};
   const unknownKeys: PlainObject = {};
   for (const [key, value] of Object.entries(source)) {
     if (key === 'fields') continue;
-    if (hasKnownShape(key, value, stringKeys, booleanKeys, stringListKeys)) known[key] = value;
+    if (hasKnownShape(key, value, stringKeys, booleanKeys, stringListKeys, anyValueKeys))
+      known[key] = value;
     else unknownKeys[key] = value;
   }
   return { known, unknownKeys };
@@ -115,6 +123,7 @@ function importField(raw: unknown): ImportedField {
     FIELD_STRING_KEYS,
     FIELD_BOOLEAN_KEYS,
     FIELD_STRING_LIST_KEYS,
+    FIELD_ANY_VALUE_KEYS,
   );
   const isComponent = known.type === COMPONENT_FIELD_TYPE;
   if (isComponent && !Array.isArray(raw.fields)) throw new ImportRefused('fieldsMissing');

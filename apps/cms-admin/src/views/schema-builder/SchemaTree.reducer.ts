@@ -21,9 +21,16 @@ export type OptionalFieldKey =
   | 'component'
   | 'repeatable'
   | 'unsigned'
-  | 'options';
+  | 'options'
+  | 'default';
 
 const ENUMERATION_FIELD_TYPE = 'enumeration' satisfies FieldTypeName;
+
+/** Types with no inputable fixed value (CM-11). */
+const TYPES_WITHOUT_DEFAULT: readonly string[] = ['media', COMPONENT_FIELD_TYPE];
+
+/** A default survives a type change only inside this pair: both hold the same kind of text. */
+const TEXT_TYPES: readonly string[] = ['text', 'string'];
 
 /** The types that may hold each key that is not free for every type (SB-8). A new typed key is one entry here. */
 const KEY_TYPE_RULES: Partial<Record<OptionalFieldKey, (type: string) => boolean>> = {
@@ -32,6 +39,7 @@ const KEY_TYPE_RULES: Partial<Record<OptionalFieldKey, (type: string) => boolean
   width: (type) => type !== COMPONENT_FIELD_TYPE,
   unsigned: (type) => type === 'integer',
   options: (type) => type === ENUMERATION_FIELD_TYPE,
+  default: (type) => !TYPES_WITHOUT_DEFAULT.includes(type),
 };
 
 const isKeyAllowed = (key: OptionalFieldKey, type: string) => KEY_TYPE_RULES[key]?.(type) ?? true;
@@ -49,6 +57,8 @@ export interface SchemaField {
   repeatable?: boolean;
   unsigned?: boolean;
   options?: readonly string[];
+  /** Fixed starting value in API value form; kept as typed so the validator can report a wrong one (SB-9). */
+  default?: unknown;
   /** Optional keys present on the field (an import's `required: false` stays exported). */
   heldKeys: readonly OptionalFieldKey[];
   /** Keys the builder has no control for, kept and exported unchanged (SB-3). */
@@ -89,7 +99,7 @@ export interface ImportedTree extends Omit<
 /** `null` is the root list; otherwise the id of the component that owns the list. */
 export type ListOwnerId = string | null;
 
-export type FieldKeyValue = string | boolean | readonly string[] | undefined;
+export type FieldKeyValue = unknown;
 
 export type SchemaTreeAction =
   | { type: 'startNew' }
@@ -410,7 +420,11 @@ function changeFieldType(tree: SchemaTree, fieldId: string, fieldType: string): 
 
 /** The field with a new type: keys the type does not allow are dropped, keys it starts with are added (SB-8). */
 function retyped(field: SchemaField, fieldType: string): SchemaField {
-  const dropped = field.heldKeys.filter((key) => !isKeyAllowed(key, fieldType));
+  const keepsDefault =
+    field.type === fieldType || (TEXT_TYPES.includes(field.type) && TEXT_TYPES.includes(fieldType));
+  const dropped = field.heldKeys.filter(
+    (key) => !isKeyAllowed(key, fieldType) || (key === 'default' && !keepsDefault),
+  );
   let next = withoutKeys({ ...field, type: fieldType }, dropped);
   if (fieldType === COMPONENT_FIELD_TYPE) {
     next = { ...next, component: next.name, heldKeys: [...next.heldKeys, 'component'] };

@@ -491,4 +491,67 @@ describe('number, datetime and enumeration fields', () => {
     );
     expect(copied.fields[1]).toMatchObject({ options: ['a', 'b'], heldKeys: ['options'] });
   });
+
+  describe('default key', () => {
+    const setDefault = (id: string, value: unknown) =>
+      ({ type: 'setFieldKey', fieldId: id, key: 'default', value }) as const;
+
+    it('sets the key on a type that takes it and refuses media and component', () => {
+      const { tree, id } = withField('integer');
+      const set = run(tree, setDefault(id, 5));
+      expect(fieldOf(set)).toMatchObject({ default: 5, heldKeys: ['default'] });
+      expect(run(set, setDefault(id, undefined)).fields[0]).not.toHaveProperty('default');
+      for (const type of ['media', 'component']) {
+        const other = withField(type);
+        expect(run(other.tree, setDefault(other.id, 'x'))).toBe(other.tree);
+      }
+    });
+
+    it('drops the default on a type change, except between text and multi-line text', () => {
+      const text = withField('text');
+      const typed = run(text.tree, setDefault(text.id, 'hi'));
+      const multi = run(typed, {
+        type: 'changeFieldVariant',
+        fieldId: text.id,
+        variant: 'multiLine',
+      });
+      expect(fieldOf(multi)).toMatchObject({ type: 'string', default: 'hi' });
+      const rich = run(typed, { type: 'changeFieldType', fieldId: text.id, fieldType: 'richtext' });
+      expect(fieldOf(rich).default).toBeUndefined();
+      expect(fieldOf(rich).heldKeys).not.toContain('default');
+
+      const number = withField('integer');
+      const numbered = run(number.tree, setDefault(number.id, 3));
+      const asEnum = run(numbered, {
+        type: 'changeFieldType',
+        fieldId: number.id,
+        fieldType: 'enumeration',
+      });
+      expect(fieldOf(asEnum).default).toBeUndefined();
+    });
+
+    it('keeps the default when the same type takes another variant', () => {
+      const { tree, id } = withField('integer');
+      const unsigned = run(tree, setDefault(id, 3), {
+        type: 'changeFieldVariant',
+        fieldId: id,
+        variant: 'unsignedInteger',
+      });
+      expect(fieldOf(unsigned)).toMatchObject({ default: 3, unsigned: true });
+    });
+
+    it('keeps a default the options no longer hold, and copies it when duplicating', () => {
+      const { tree, id } = withField('enumeration');
+      const kept = run(
+        tree,
+        { type: 'setFieldKey', fieldId: id, key: 'options', value: ['a', 'b'] },
+        setDefault(id, 'b'),
+        { type: 'setFieldKey', fieldId: id, key: 'options', value: ['a'] },
+        { type: 'duplicateField', fieldId: id },
+      );
+      expect(kept.fields[0]).toMatchObject({ options: ['a'], default: 'b' });
+      expect(kept.fields[1]).toMatchObject({ default: 'b' });
+      expect(kept.fields[1]!.heldKeys).toContain('default');
+    });
+  });
 });
