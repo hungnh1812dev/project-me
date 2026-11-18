@@ -30,6 +30,8 @@ export interface ContentFieldView {
   readonly width?: FieldWidth;
   /** Allowed values of an `enumeration` field; absent on every other type. */
   readonly options?: readonly string[];
+  /** Fixed value of the field for a new document, in the API's value form; absent when the schema sets none. */
+  readonly default?: unknown;
   /** Only components can be repeatable. */
   readonly repeatable: boolean;
   /** A scalar field at the root (not inside a component). */
@@ -85,6 +87,7 @@ export interface ViewVocabulary {
   readonly systemConditionFields: ConditionSystemFields;
   readonly joinFieldPath: (prefix: string, name: string) => string;
   readonly defaultFieldWidth: FieldWidth;
+  readonly normalizedDefaultOf: (field: FieldDefinition) => unknown;
 }
 
 /**
@@ -96,7 +99,7 @@ export function contentTypeView(
   type: RegisteredContentType,
   catalog: SubjectCatalog,
   visible: FieldVisibility,
-  { systemConditionFields, joinFieldPath, defaultFieldWidth }: ViewVocabulary,
+  { systemConditionFields, joinFieldPath, defaultFieldWidth, normalizedDefaultOf }: ViewVocabulary,
 ): ContentTypeView {
   const systemFieldNames = Object.keys(systemConditionFields) as SystemConditionField[];
   const conditionField = catalog.conditionFields(type.slug, null);
@@ -108,6 +111,7 @@ export function contentTypeView(
       if (!visible.fields.reaches(path)) continue;
       const component = isComponentField(field);
       const rootScalar = prefix === '' && !component;
+      const defaultValue = normalizedDefaultOf(field);
       fields.push({
         path,
         type: field.type,
@@ -118,6 +122,7 @@ export function contentTypeView(
         ...(isComponentField(field) || field.options === undefined
           ? {}
           : { options: field.options }),
+        ...(defaultValue === undefined ? {} : { default: defaultValue }),
         repeatable: component && field.repeatable === true,
         rootScalar,
         conditionKind: rootScalar ? (conditionField(field.name)?.kind ?? null) : null,

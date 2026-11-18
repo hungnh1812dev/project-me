@@ -23,6 +23,10 @@ describe('field type registry', () => {
     expect(FIELD_TYPE_SPECS.json.conditionKind).toBeNull();
   });
 
+  it('accepts a default on every type but media', () => {
+    expect(typesWhere((spec) => !spec.acceptsDefault)).toEqual(['media']);
+  });
+
   it('masks only text-like types with the sentinel', () => {
     expect(typesWhere((spec) => spec.maskedValue === 'sentinel')).toEqual([
       'string',

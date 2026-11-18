@@ -6,8 +6,10 @@ import {
   FIELD_WIDTHS,
   MAX_ENUM_OPTION_LENGTH,
   MAX_ENUM_OPTIONS,
+  RICHTEXT_FIELD_TYPE,
   SCALAR_FIELD_TYPES,
 } from './ContentEngine.constants';
+import { fieldTypeOf } from './field-types';
 
 /**
  * Shape of a content type definition (`content/schemas/<slug>.json`).
@@ -38,6 +40,8 @@ export interface ScalarFieldDefinition extends BaseFieldDefinition {
   unsigned?: boolean | undefined;
   /** `enumeration` only (required there): the allowed values, in display order. */
   options?: string[] | undefined;
+  /** Fixed value cms-admin puts in a new document; checked as an API write of this field (CM-11). */
+  default?: unknown;
 }
 
 export interface ComponentFieldDefinition extends BaseFieldDefinition {
@@ -86,6 +90,34 @@ const optionsSchema = z
     message: 'Options must be unique.',
   });
 
+/** The `default` of a scalar field in the API's value form; `undefined` when unset or not a valid value. */
+export function normalizedDefaultOf(field: FieldDefinition): unknown {
+  if (isComponentField(field) || field.default === undefined || field.default === null) {
+    return undefined;
+  }
+  return fieldTypeOf(field.type)?.coerceValue(field.default, {
+    field: { unsigned: field.unsigned, options: field.options },
+  });
+}
+
+function defaultIssueOf(field: ScalarFieldDefinition): string | undefined {
+  if (field.default === undefined) return undefined;
+  if (!fieldTypeOf(field.type)?.acceptsDefault) {
+    return `A ${field.type} field cannot have a "default".`;
+  }
+  if (field.default === null) return 'The "default" cannot be null.';
+  const isOptionListMissing = field.type === ENUMERATION_TYPE && field.options === undefined;
+  if (isOptionListMissing) return undefined;
+  const normalized = normalizedDefaultOf(field);
+  if (normalized === undefined) {
+    return `The "default" is not a value a ${field.type} field accepts.`;
+  }
+  if (field.type === RICHTEXT_FIELD_TYPE && normalized !== field.default) {
+    return 'The "default" is changed by the richtext sanitizer; it may hold no image or script.';
+  }
+  return undefined;
+}
+
 const scalarFieldSchema = z
   .strictObject({
     ...baseFieldShape,
@@ -93,6 +125,7 @@ const scalarFieldSchema = z
     width: z.enum(FIELD_WIDTHS).optional(),
     unsigned: z.boolean().optional(),
     options: optionsSchema.optional(),
+    default: z.unknown().optional(),
   })
   .superRefine((field, context) => {
     if (field.unsigned !== undefined && field.type !== UNSIGNED_TYPE) {
@@ -116,17 +149,33 @@ const scalarFieldSchema = z
         message: `An ${ENUMERATION_TYPE} field needs "options".`,
       });
     }
+    const defaultIssue = defaultIssueOf(field);
+    if (defaultIssue !== undefined) {
+      context.addIssue({ code: 'custom', path: ['default'], message: defaultIssue });
+    }
   });
 
-const componentFieldSchema = z.strictObject({
-  ...baseFieldShape,
-  type: z.literal(COMPONENT_FIELD_TYPE),
-  component: z.string(),
-  repeatable: z.boolean().optional(),
-  get fields(): z.ZodType<FieldDefinition[]> {
-    return fieldListSchema;
-  },
-});
+const componentFieldSchema = z
+  .strictObject({
+    ...baseFieldShape,
+    type: z.literal(COMPONENT_FIELD_TYPE),
+    component: z.string(),
+    repeatable: z.boolean().optional(),
+    // Declared only to refuse it with a message of its own (CM-11).
+    default: z.unknown().optional(),
+    get fields(): z.ZodType<FieldDefinition[]> {
+      return fieldListSchema;
+    },
+  })
+  .superRefine((field, context) => {
+    if (field.default !== undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['default'],
+        message: `A ${COMPONENT_FIELD_TYPE} field cannot have a "default".`,
+      });
+    }
+  });
 
 const fieldSchema: z.ZodType<FieldDefinition> = z.discriminatedUnion('type', [
   scalarFieldSchema,

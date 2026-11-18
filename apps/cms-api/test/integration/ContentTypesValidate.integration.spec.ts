@@ -181,6 +181,30 @@ describe('POST /content-types/validate (SCB-2, SB-10; Postgres 17 via Testcontai
     });
   });
 
+  it('accepts a valid default and reports a wrong one on fields[i].default', async () => {
+    const withFields = (fields: unknown[]) => ({ ...NEW_DEFINITION, fields });
+    const valid = await validate(owner, {
+      definition: withFields([
+        { name: 'tone', type: 'text', default: 'warm' },
+        { name: 'opensAt', type: 'time', default: '08:30' },
+      ]),
+      mode: 'create',
+    });
+    expect(valid.body).toEqual({ valid: true, errors: [] });
+    const invalid = await validate(owner, {
+      definition: withFields([
+        { name: 'tone', type: 'text', default: null },
+        { name: 'cover', type: 'media', default: 'x' },
+      ]),
+      mode: 'create',
+    });
+    const { errors } = invalid.body as ValidateBody;
+    expect(errors.map((error) => error.path)).toEqual([
+      ['fields', 0, 'default'],
+      ['fields', 1, 'default'],
+    ]);
+  });
+
   it('reports a collision for a registered slug in create mode', async () => {
     const res = await validate(owner, { definition: ARTICLE_DEFINITION, mode: 'create' });
     expect(res.status).toBe(200);

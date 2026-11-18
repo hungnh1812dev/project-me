@@ -23,6 +23,7 @@ export { ContentEngineModule } from './ContentEngine.module';
 export { ContentRegistry } from './application/ContentRegistry.service';
 export {
   isComponentField,
+  normalizedDefaultOf,
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type ContentTypeKind,

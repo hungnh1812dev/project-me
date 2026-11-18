@@ -50,6 +50,8 @@ export interface FieldTypeSpec {
   readonly maskedValue: 'sentinel' | 'null';
   /** The column holds a `file_library.id` that must be embedded on read and protected from deletion. */
   readonly referencesMedia: boolean;
+  /** An editor types or picks a value for the type, so a field of it may carry a `default` (CM-11). */
+  readonly acceptsDefault: boolean;
   readonly graphqlOutput: GraphqlOutputName;
   /**
    * Checks an API body value and returns the value to store (datetimes

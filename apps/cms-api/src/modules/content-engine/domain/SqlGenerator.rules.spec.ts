@@ -227,6 +227,24 @@ describe('sql-generator', () => {
     });
   });
 
+  describe('default key', () => {
+    const withDefault = (value: string | undefined) =>
+      post([
+        TITLE,
+        { name: 'tone', type: 'text', ...(value === undefined ? {} : { default: value }) },
+      ]);
+
+    it.each([
+      ['adding', undefined, 'warm'],
+      ['changing', 'warm', 'cool'],
+      ['removing', 'warm', undefined],
+    ])('plans no SQL when only a default is %s', (_label, before, after) => {
+      const plan = diff([withDefault(before)], [withDefault(after)]);
+      expect(plan.statements).toEqual([]);
+      expect(plan.changedSlugs).toEqual(['post']);
+    });
+  });
+
   describe('component table renames', () => {
     function tagged(
       tagsComponent: string,

@@ -7,13 +7,18 @@ import {
   reviewerActor,
   SubjectCatalog,
 } from '../../access';
-import { ContentTypeRegistry, DEFAULT_FIELD_WIDTH } from '../../content-engine';
+import {
+  ContentTypeRegistry,
+  DEFAULT_FIELD_WIDTH,
+  normalizedDefaultOf,
+} from '../../content-engine';
 import { contentTypeView, type ViewVocabulary } from './ContentTypeView.rules';
 
 const VOCABULARY: ViewVocabulary = {
   systemConditionFields: CONDITION_SYSTEM_FIELDS,
   joinFieldPath,
   defaultFieldWidth: DEFAULT_FIELD_WIDTH,
+  normalizedDefaultOf,
 };
 
 /**
@@ -41,6 +46,7 @@ const PROFILE = {
   fields: [
     { name: 'email', type: 'string' },
     { name: 'level', type: 'enumeration', options: ['low', 'high'] },
+    { name: 'opensAt', type: 'time', default: '08:30' },
     { name: 'phone', type: 'string', width: '1/2', displayName: 'Phone number' },
     {
       name: 'experience',
@@ -65,6 +71,14 @@ describe('GET /content-types contract', () => {
     const level = view.fields.find((f) => f.path === 'level')!;
     expect(Object.keys(level).sort()).toEqual([...FIELD_KEYS, 'options', 'width'].sort());
     expect(level).toMatchObject({ options: ['low', 'high'] });
+  });
+
+  it('adds default in the API value form only on a field that sets one', () => {
+    const opensAt = view.fields.find((f) => f.path === 'opensAt')!;
+    expect(Object.keys(opensAt).sort()).toEqual([...FIELD_KEYS, 'default', 'width'].sort());
+    expect(opensAt).toMatchObject({ default: '08:30:00' });
+    const email = view.fields.find((f) => f.path === 'email')!;
+    expect(email).not.toHaveProperty('default');
   });
 
   it('adds displayName and width on content fields and nothing else', () => {
