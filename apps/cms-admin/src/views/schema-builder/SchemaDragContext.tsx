@@ -14,6 +14,7 @@ import {
   DragOverlay,
   KeyboardCode,
   KeyboardSensor,
+  MeasuringStrategy,
   PointerSensor,
   pointerWithin,
   useSensor,
@@ -23,6 +24,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type KeyboardCoordinateGetter,
+  type KeyboardSensorProps,
   type UniqueIdentifier,
 } from '@dnd-kit/core';
 
@@ -205,6 +207,44 @@ export const builderKeyboardCoordinates: KeyboardCoordinateGetter = (event, args
       };
 };
 
+/** Zones are re-measured whenever they change: offering only the lists that take the item reflows the canvas right after pick-up, and rects taken before that left the keyboard target stale under load. */
+const DROPPABLE_MEASURING = { droppable: { strategy: MeasuringStrategy.Always } };
+
+/** The private members of dnd-kit 6.3 KeyboardSensor that ImmediateKeyboardSensor wraps. */
+interface KeyboardSensorInternals {
+  listeners: { add(eventName: string, handler: (event: Event) => void): void };
+  handleKeyDown: (event: Event) => void;
+  detach: () => void;
+}
+
+/**
+ * dnd-kit's KeyboardSensor starts listening for keys in a setTimeout, so the key that picked the item
+ * up does not drop it again. Chrome runs queued key presses before that timer when the main thread is
+ * busy (the production build right after pick-up), so an arrow or Escape pressed then was lost and the
+ * drag stayed where it began. This sensor listens at once, skipping only the pick-up key; the sensor's
+ * own timer later adds the same listener again, which the DOM ignores.
+ */
+class ImmediateKeyboardSensor extends KeyboardSensor {
+  constructor(props: KeyboardSensorProps) {
+    super(props);
+    const sensor = this as unknown as KeyboardSensorInternals;
+    const handleKeyDown = sensor.handleKeyDown;
+    const detach = sensor.detach.bind(this);
+    let isListening = true;
+    const handleKeyAfterPickUp = (event: Event) => {
+      if (isListening && event !== props.event) handleKeyDown(event);
+    };
+    sensor.handleKeyDown = handleKeyAfterPickUp;
+    // A drag ended before the sensor's timer fired gets the listener added after detach; remove it once more after that timer.
+    sensor.detach = () => {
+      isListening = false;
+      detach();
+      setTimeout(detach);
+    };
+    sensor.listeners.add('keydown', handleKeyAfterPickUp);
+  }
+}
+
 const DragTargetsContext = createContext<ReadonlySet<ListOwnerId> | null>(null);
 
 /** Whether the list takes the item being dragged; true while nothing is dragged. */
@@ -230,7 +270,7 @@ export function SchemaDragContext({ tree, onAdd, onMove, children }: SchemaDragC
   const focusHandleOf = useRef<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: DRAG_ACTIVATION_DISTANCE_PX } }),
-    useSensor(KeyboardSensor, { coordinateGetter: builderKeyboardCoordinates }),
+    useSensor(ImmediateKeyboardSensor, { coordinateGetter: builderKeyboardCoordinates }),
   );
   const allowedOwners = useMemo(
     () => (activeId === null ? null : allowedOwnersOf(tree, activeId)),
@@ -321,6 +361,7 @@ export function SchemaDragContext({ tree, onAdd, onMove, children }: SchemaDragC
       <DndContext
         sensors={sensors}
         collisionDetection={innermostCollision}
+        measuring={DROPPABLE_MEASURING}
         accessibility={{
           announcements,
           screenReaderInstructions: { draggable: copy.dnd.instructions },

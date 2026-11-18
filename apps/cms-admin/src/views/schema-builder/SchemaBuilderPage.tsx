@@ -115,8 +115,10 @@ export function SchemaBuilderPage() {
   const selectedField =
     selectedFieldId === null ? null : (findField(tree.fields, selectedFieldId) ?? null);
   // The row that opened the popup (or was added by it) gets focus back; the opener may be a drag or a menu item.
+  // Radix runs this a tick after the popup unmounts; focus the user already moved elsewhere is kept.
   const focusClosedRow = (event: Event) => {
     event.preventDefault();
+    if (document.activeElement !== document.body) return;
     document.querySelector<HTMLElement>(`[data-field-select="${closedFieldId.current}"]`)?.focus();
   };
   const addToList = (
@@ -177,12 +179,7 @@ export function SchemaBuilderPage() {
           {startActions}
         </Card>
       ) : (
-        <SchemaDragContext
-          tree={tree}
-          onAdd={addToList}
-          onMove={moveField}
-          onSelect={setSelectedFieldId}
-        >
+        <SchemaDragContext tree={tree} onAdd={addToList} onMove={moveField}>
           <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
             <div className="grid gap-6">
               <Card className="grid gap-4">

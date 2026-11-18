@@ -70,4 +70,32 @@ describe('AddFieldMenu', () => {
     await userEvent.click(screen.getByRole('menuitem', { name: copy.fieldTypes.boolean }));
     expect(onPick).toHaveBeenCalledWith('boolean');
   });
+
+  it('returns focus to the trigger when Escape closes the menu', async () => {
+    renderInApp(
+      createTestServices().services,
+      <AddFieldMenu canAddComponent onPick={vi.fn<(fieldType: FieldTypeName) => void>()} />,
+    );
+    const trigger = screen.getByRole('button', { name: copy.fields.addField });
+    await userEvent.click(trigger);
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
+  it('keeps focus the user moved elsewhere while the menu closes', async () => {
+    renderInApp(
+      createTestServices().services,
+      <>
+        <AddFieldMenu canAddComponent onPick={vi.fn<(fieldType: FieldTypeName) => void>()} />
+        <button type="button">Elsewhere</button>
+      </>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: copy.fields.addField }));
+    await userEvent.keyboard('{Escape}');
+    const elsewhere = screen.getByRole('button', { name: 'Elsewhere' });
+    elsewhere.focus();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(elsewhere).toHaveFocus();
+  });
 });

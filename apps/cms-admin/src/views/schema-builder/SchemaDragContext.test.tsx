@@ -1,7 +1,7 @@
 import { useReducer, useState } from 'react';
 import { EN_TEXT } from '@configs/locales/en';
 import { createTestServices, renderInApp } from '@test/RenderApp.fixture';
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { FieldPalette } from './FieldPalette';
@@ -144,6 +144,24 @@ describe('SchemaDragContext by keyboard', () => {
     expect(announcement()).toBe(copy.dnd.cancelled('f1'));
     const root = screen.getByRole('list', { name: copy.fields.rootListLabel });
     expect(names(root)).toEqual([copy.row.select('f1'), copy.row.select('f2')]);
+  });
+
+  it('cancels with Escape pressed right after pick-up, before dnd-kit listens for keys', () => {
+    renderInApp(
+      createTestServices().services,
+      <Harness
+        steps={[
+          [null, 'string'],
+          [null, 'boolean'],
+        ]}
+      />,
+    );
+    const handle = screen.getByRole('button', { name: copy.dnd.fieldHandle('f1') });
+    handle.focus();
+    fireEvent.keyDown(handle, { code: 'Space', key: ' ' });
+    expect(announcement()).not.toContain('dropped');
+    fireEvent.keyDown(handle, { code: 'Escape', key: 'Escape' });
+    expect(announcement()).toBe(copy.dnd.cancelled('f1'));
   });
 
   it('moves a field into a component', async () => {

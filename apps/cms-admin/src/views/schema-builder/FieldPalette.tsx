@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   Button,
   DropdownMenu,
@@ -41,7 +42,7 @@ export function FieldPalette({ canAddComponent, onPick }: FieldPaletteProps) {
         </h2>
         <p className="m-0 text-sm text-muted-foreground">{copy.fields.paletteHint}</p>
       </div>
-      <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
+      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-2 p-0">
         {offeredItems(canAddComponent).map((item) => (
           <PaletteItemRow
             key={item.defaultType}
@@ -85,7 +86,7 @@ function PaletteItemRow({ type, icon: Icon, label, onPick }: PaletteItemProps) {
       <Button
         type="button"
         size="sm"
-        className="flex-1 justify-start whitespace-nowrap"
+        className="min-w-0 flex-1 justify-start"
         onClick={() => onPick(type)}
       >
         <Icon aria-hidden="true" />
@@ -103,6 +104,7 @@ interface AddFieldMenuProps extends FieldPaletteProps {
 /** The palette as the "Add field" menu of one list. */
 export function AddFieldMenu({ ownerName, canAddComponent, onPick }: AddFieldMenuProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
+  const isPicked = useRef(false);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -115,9 +117,23 @@ export function AddFieldMenu({ ownerName, canAddComponent, onPick }: AddFieldMen
           {copy.fields.addField}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent
+        align="start"
+        onCloseAutoFocus={(event) => {
+          // A pick opens the properties popup, which owns focus; Escape returns it to the trigger.
+          // Focus the user already moved elsewhere during the close tick is kept.
+          if (isPicked.current || document.activeElement !== document.body) event.preventDefault();
+          isPicked.current = false;
+        }}
+      >
         {offeredItems(canAddComponent).map((item) => (
-          <DropdownMenuItem key={item.defaultType} onSelect={() => onPick(item.defaultType)}>
+          <DropdownMenuItem
+            key={item.defaultType}
+            onSelect={() => {
+              isPicked.current = true;
+              onPick(item.defaultType);
+            }}
+          >
             <item.icon aria-hidden="true" />
             {paletteItemLabel(item, copy)}
           </DropdownMenuItem>
