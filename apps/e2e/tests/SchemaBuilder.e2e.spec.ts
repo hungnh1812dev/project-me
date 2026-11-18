@@ -412,6 +412,7 @@ test.describe(
           .and(page.locator(':not([aria-disabled="true"])')),
       ).toHaveCount(0);
       await page.keyboard.press('Escape');
+      await expect(page.getByRole('menuitem', { name: STRING_TYPE, exact: true })).toHaveCount(0);
 
       await addFieldByKeyboard(page, copy.fields.addFieldTo('field1'), STRING_TYPE);
       await addFieldByKeyboard(page, copy.fields.addField, STRING_TYPE);
@@ -419,6 +420,8 @@ test.describe(
       await closeProperties(page);
 
       // Move to: the plain field at the top level goes into the innermost component.
+      // Done hands focus back to the row; wait for it so it does not land after the next press.
+      await expect(editButton(page, 'field2')).toBeFocused();
       await page
         .getByRole('button', { name: copy.row.moveTo('field2'), exact: true })
         .last()
