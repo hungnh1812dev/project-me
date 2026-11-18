@@ -7,13 +7,18 @@ import {
   reviewerActor,
   SubjectCatalog,
 } from '../../access';
-import { ContentTypeRegistry, DEFAULT_FIELD_WIDTH } from '../../content-engine';
+import {
+  ContentTypeRegistry,
+  DEFAULT_FIELD_WIDTH,
+  normalizedDefaultOf,
+} from '../../content-engine';
 import { contentTypeView, type ViewVocabulary } from './ContentTypeView.rules';
 
 const VOCABULARY: ViewVocabulary = {
   systemConditionFields: CONDITION_SYSTEM_FIELDS,
   joinFieldPath,
   defaultFieldWidth: DEFAULT_FIELD_WIDTH,
+  normalizedDefaultOf,
 };
 
 const PROFILE = {

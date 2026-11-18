@@ -22,6 +22,9 @@ const FIELD_KEY_ORDER = [
   'name',
   'displayName',
   'type',
+  'unsigned',
+  'options',
+  'default',
   'component',
   'repeatable',
   'required',
@@ -33,6 +36,9 @@ const FIELD_KEY_ORDER = [
 const TYPE_OPTIONAL_KEYS: readonly OptionalTypeKey[] = ['displayName', 'kind', 'draftAndPublish'];
 const FIELD_OPTIONAL_KEYS: readonly OptionalFieldKey[] = [
   'displayName',
+  'unsigned',
+  'options',
+  'default',
   'component',
   'repeatable',
   'required',
@@ -49,10 +55,14 @@ const FIELD_DEFAULTS: Partial<Record<OptionalFieldKey, unknown>> = {
   repeatable: false,
   required: false,
   sensitive: false,
+  unsigned: false,
 };
 
 const FIELD_STRING_KEYS = ['name', 'type', 'displayName', 'component', 'width'];
-const FIELD_BOOLEAN_KEYS = ['repeatable', 'required', 'sensitive'];
+const FIELD_BOOLEAN_KEYS = ['repeatable', 'required', 'sensitive', 'unsigned'];
+const FIELD_STRING_LIST_KEYS = ['options'];
+/** Keys that take any JSON value; a wrong one is the validator's to report. */
+const FIELD_ANY_VALUE_KEYS = ['default'];
 const TYPE_STRING_KEYS = ['slug', 'displayName', 'kind'];
 const TYPE_BOOLEAN_KEYS = ['draftAndPublish'];
 
@@ -75,7 +85,13 @@ function hasKnownShape(
   value: unknown,
   stringKeys: readonly string[],
   booleanKeys: readonly string[],
+  stringListKeys: readonly string[],
+  anyValueKeys: readonly string[],
 ): boolean {
+  if (anyValueKeys.includes(key)) return true;
+  if (stringListKeys.includes(key)) {
+    return Array.isArray(value) && value.every((item) => typeof item === 'string');
+  }
   if (stringKeys.includes(key)) return typeof value === 'string';
   if (booleanKeys.includes(key)) return typeof value === 'boolean';
   return false;
@@ -86,12 +102,15 @@ function splitKeys(
   source: PlainObject,
   stringKeys: readonly string[],
   booleanKeys: readonly string[],
+  stringListKeys: readonly string[] = [],
+  anyValueKeys: readonly string[] = [],
 ): { known: PlainObject; unknownKeys: PlainObject } {
   const known: PlainObject = {};
   const unknownKeys: PlainObject = {};
   for (const [key, value] of Object.entries(source)) {
     if (key === 'fields') continue;
-    if (hasKnownShape(key, value, stringKeys, booleanKeys)) known[key] = value;
+    if (hasKnownShape(key, value, stringKeys, booleanKeys, stringListKeys, anyValueKeys))
+      known[key] = value;
     else unknownKeys[key] = value;
   }
   return { known, unknownKeys };
@@ -99,7 +118,13 @@ function splitKeys(
 
 function importField(raw: unknown): ImportedField {
   if (!isPlainObject(raw)) throw new ImportRefused('fieldNotObject');
-  const { known, unknownKeys } = splitKeys(raw, FIELD_STRING_KEYS, FIELD_BOOLEAN_KEYS);
+  const { known, unknownKeys } = splitKeys(
+    raw,
+    FIELD_STRING_KEYS,
+    FIELD_BOOLEAN_KEYS,
+    FIELD_STRING_LIST_KEYS,
+    FIELD_ANY_VALUE_KEYS,
+  );
   const isComponent = known.type === COMPONENT_FIELD_TYPE;
   if (isComponent && !Array.isArray(raw.fields)) throw new ImportRefused('fieldsMissing');
   const children = isComponent ? (raw.fields as unknown[]).map(importField) : [];
@@ -228,6 +253,8 @@ export interface ErrorPathTarget {
   fieldId: string | null;
   /** The key the path ends on (`name`, `slug`, `fields`); `undefined` when it ends on a field. */
   key: string | undefined;
+  /** The list position the path ends on, such as the option of `options[1]`. */
+  itemIndex?: number;
 }
 
 /** A validator error placed on the tree: the field and key it points at, with its message. */
@@ -251,7 +278,9 @@ export function fieldIdOfErrorPath(
     position += 2;
   }
   const key = path[position];
-  return { fieldId, key: key === undefined ? undefined : String(key) };
+  const target: ErrorPathTarget = { fieldId, key: key === undefined ? undefined : String(key) };
+  const item = path[position + 1];
+  return typeof item === 'number' ? { ...target, itemIndex: item } : target;
 }
 
 /** Renders `['fields', 5, 'fields', 2, 'name']` as `fields[5].fields[2].name`. */

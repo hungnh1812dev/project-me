@@ -23,6 +23,7 @@ export { ContentEngineModule } from './ContentEngine.module';
 export { ContentRegistry } from './application/ContentRegistry.service';
 export {
   isComponentField,
+  normalizedDefaultOf,
   type ComponentFieldDefinition,
   type ContentTypeDefinition,
   type ContentTypeKind,
@@ -38,12 +39,15 @@ export {
   mediaFieldNamesByTable,
   richtextColumnsOf,
   richtextFieldNamesByTable,
+  parseBigInteger,
   parseDate,
   parseDatetime,
+  parseTime,
   parseUuid,
   UUID_PATTERN,
   VALUE_PATTERNS,
   type CoerceContext,
+  type CoerceFieldKeys,
   type FieldTypeSpec,
   type FieldValueKind,
   type GraphqlOutputName,

@@ -191,31 +191,75 @@ describe('SchemaBuilderPage', () => {
   });
 
   describe('canvas editing', () => {
-    const pickType = async (label: string, menuName = copy.fields.addField) => {
+    const addType = async (label: string, menuName = copy.fields.addField) => {
       await userEvent.click(screen.getByRole('button', { name: menuName }));
       await userEvent.click(await screen.findByRole('menuitem', { name: label }));
     };
+    const closeDialog = async () => {
+      await userEvent.click(await screen.findByRole('button', { name: copy.property.done }));
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    };
+    /** Adds a field; the popup it opens is closed again so the next control is reachable. */
+    const pickType = async (label: string, menuName = copy.fields.addField) => {
+      await addType(label, menuName);
+      await closeDialog();
+    };
 
-    it('adds a field by the menu, selects it and edits it in the property panel', async () => {
+    it('adds a field by the menu, opens its popup and edits it live', async () => {
       const { api } = await open(TEST_USER);
       await startNew();
-      expect(screen.getByText(copy.property.empty)).toBeVisible();
-      await pickType(copy.fieldTypes.string);
-      expect(screen.getByRole('button', { name: copy.row.select('field1') })).toHaveAttribute(
-        'aria-pressed',
-        'true',
-      );
+      expect(screen.queryByRole('dialog')).toBeNull();
+      await addType(copy.fieldGroups.textInput);
+      expect(await screen.findByRole('dialog', { name: 'field1' })).toBeVisible();
       const name = screen.getByLabelText(copy.property.name);
       expect(name).toHaveValue('field1');
       await userEvent.clear(name);
       await userEvent.type(name, 'title');
       await userEvent.click(screen.getByRole('checkbox', { name: copy.property.required }));
-      expect(screen.getByRole('button', { name: copy.row.select('title') })).toHaveTextContent(
-        copy.row.markers.required,
-      );
+      await userEvent.keyboard('{Escape}');
+      await vi.waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      const row = screen.getByRole('button', { name: copy.row.select('title') });
+      expect(row).toHaveTextContent(copy.row.markers.required);
+      expect(row).toHaveFocus();
       await vi.waitFor(() =>
         expect(lastRequest(api).definition).toMatchObject({
-          fields: [{ name: 'title', type: 'string', required: true }],
+          fields: [{ name: 'title', type: 'text', required: true }],
+        }),
+      );
+    });
+
+    it('opens the popup from the row name and from its Edit control, not from the other controls', async () => {
+      await open(TEST_USER);
+      await startNew();
+      await pickType(copy.fieldGroups.textInput);
+      await userEvent.click(screen.getByRole('button', { name: copy.row.moveDown('field1') }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      await userEvent.click(screen.getByRole('button', { name: copy.row.select('field1') }));
+      expect(await screen.findByRole('dialog', { name: 'field1' })).toBeVisible();
+      await closeDialog();
+      await userEvent.click(screen.getByRole('button', { name: copy.row.edit('field1') }));
+      expect(await screen.findByRole('dialog', { name: 'field1' })).toBeVisible();
+    });
+
+    it('sets a number type and enum options in the popup and sends them to the check', async () => {
+      const { api } = await open(TEST_USER);
+      await startNew();
+      await addType(copy.fieldGroups.number);
+      await userEvent.selectOptions(
+        await screen.findByLabelText(copy.property.numberType),
+        copy.fieldVariants.unsignedInteger,
+      );
+      await closeDialog();
+      await addType(copy.fieldTypes.enumeration);
+      await userEvent.click(await screen.findByRole('button', { name: copy.property.options.add }));
+      await userEvent.type(screen.getByLabelText(copy.property.options.option(1)), 'draft');
+      await closeDialog();
+      await vi.waitFor(() =>
+        expect(lastRequest(api).definition).toMatchObject({
+          fields: [
+            { type: 'integer', unsigned: true },
+            { type: 'enumeration', options: ['draft'] },
+          ],
         }),
       );
     });
@@ -230,10 +274,13 @@ describe('SchemaBuilderPage', () => {
         await userEvent.click(
           await screen.findByRole('menuitem', { name: copy.fieldTypes.component }),
         );
+        await closeDialog();
       }
       expect(screen.getAllByRole('button', { name: adderName })).toHaveLength(3);
       await userEvent.click(screen.getAllByRole('button', { name: adderName })[0]!);
-      expect(await screen.findByRole('menuitem', { name: copy.fieldTypes.string })).toBeVisible();
+      expect(
+        await screen.findByRole('menuitem', { name: copy.fieldGroups.textInput }),
+      ).toBeVisible();
       expect(screen.queryByRole('menuitem', { name: copy.fieldTypes.component })).toBeNull();
     });
 
@@ -241,7 +288,7 @@ describe('SchemaBuilderPage', () => {
       await open(TEST_USER);
       await startNew();
       await pickType(copy.fieldTypes.component);
-      await pickType(copy.fieldTypes.string);
+      await pickType(copy.fieldGroups.textInput);
       await userEvent.click(screen.getByRole('button', { name: copy.row.moveTo('field2') }));
       await userEvent.click(
         await screen.findByRole('menuitem', { name: copy.row.moveToComponent('field1') }),
@@ -270,10 +317,9 @@ describe('SchemaBuilderPage', () => {
         } satisfies DefinitionValidation,
       }));
       await startNew();
-      await pickType(copy.fieldTypes.string);
-      await pickType(copy.fieldTypes.string);
+      await pickType(copy.fieldGroups.textInput);
+      await pickType(copy.fieldGroups.textInput);
       const second = screen.getByRole('button', { name: copy.row.select('field2') });
-      expect(second).toHaveAttribute('aria-pressed', 'true');
       const marked = await screen.findByRole('button', { name: copy.row.select('field1') });
       await vi.waitFor(() => expect(marked).toHaveTextContent(copy.row.hasErrors));
       expect(second).not.toHaveTextContent(copy.row.hasErrors);
@@ -282,7 +328,7 @@ describe('SchemaBuilderPage', () => {
           name: copy.validation.selectError('name-format', 'fields[0].name'),
         }),
       );
-      expect(marked).toHaveAttribute('aria-pressed', 'true');
+      expect(await screen.findByRole('dialog', { name: 'field1' })).toBeVisible();
       expect(screen.getByLabelText(copy.property.name)).toHaveAccessibleDescription(
         expect.stringContaining('Use snake case'),
       );

@@ -930,6 +930,10 @@
     "richtextLoading": "Loading the text editor…",
     "invalidInteger": "Enter a whole number, for example 12.",
     "invalidDecimal": "Enter a number, for example 12.5.",
+    "enumeration": {
+      "emptyChoice": "Choose a value",
+      "notAllowed": "SAMPLE (not allowed)"
+    },
     "invalidJson": "Enter valid JSON, for example [\"React\", \"Node\"].",
     "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
     "list": {
@@ -1073,6 +1077,7 @@
     },
     "row": {
       "select": "Edit SAMPLE",
+      "edit": "Properties of SAMPLE",
       "moveUp": "Move SAMPLE up",
       "moveDown": "Move SAMPLE down",
       "moveTo": "Move SAMPLE to another list",
@@ -1081,6 +1086,7 @@
       "duplicate": "Duplicate SAMPLE",
       "remove": "Delete SAMPLE",
       "hasErrors": "Has validation errors",
+      "groupedType": "SAMPLE · undefined",
       "markers": {
         "required": "Required",
         "sensitive": "Sensitive",
@@ -1108,10 +1114,27 @@
     },
     "property": {
       "heading": "Field properties",
-      "empty": "Select a field to edit its properties.",
+      "description": "Changes apply as you type.",
+      "done": "Done",
+      "options": {
+        "label": "Options",
+        "empty": "No options yet. Add at least one.",
+        "option": "Option SAMPLE",
+        "add": "Add option",
+        "moveUp": "Move option SAMPLE up",
+        "moveDown": "Move option SAMPLE down",
+        "remove": "Remove option SAMPLE"
+      },
       "name": "Name",
       "displayName": "Display name",
       "type": "Type",
+      "numberType": "Number type",
+      "dateType": "Date type",
+      "textType": "Text type",
+      "defaultValue": "Default value",
+      "noDefault": "No default",
+      "defaultTrue": "True",
+      "defaultFalse": "False",
       "required": "Required",
       "sensitive": "Sensitive",
       "sensitiveHint": "Hidden from public and reviewer roles unless they are granted the field.",
@@ -1130,15 +1153,38 @@
         "tooDeep": "A component here would nest deeper than 3 levels."
       }
     },
+    "fieldGroups": {
+      "textInput": "Text input",
+      "number": "Number",
+      "datetimePicker": "Datetime picker"
+    },
+    "fieldVariants": {
+      "singleLine": "Single line",
+      "multiLine": "Multi-line",
+      "unsignedInteger": "Unsigned integer",
+      "integer": "Integer",
+      "biginteger": "Big integer",
+      "float": "Float",
+      "double": "Double",
+      "decimal": "Decimal",
+      "date": "Date",
+      "datetime": "Date and time",
+      "time": "Time"
+    },
     "fieldTypes": {
-      "text": "Long text",
-      "string": "Short text",
-      "richtext": "Rich text",
+      "text": "Single line",
+      "string": "Multi-line",
+      "richtext": "Text editor",
       "integer": "Whole number",
+      "biginteger": "Big integer",
+      "float": "Float",
+      "double": "Double",
       "decimal": "Decimal number",
       "boolean": "Yes / no",
       "date": "Date",
       "datetime": "Date and time",
+      "time": "Time",
+      "enumeration": "Enum",
       "json": "JSON",
       "media": "Media",
       "component": "Component"

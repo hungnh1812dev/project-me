@@ -192,6 +192,59 @@ describe('sql-generator', () => {
     expect(plan.nextSnapshot.contentTypes).not.toHaveProperty('post');
   });
 
+  describe('new field types', () => {
+    const everyNewType = post([
+      TITLE,
+      { name: 'big', type: 'biginteger' },
+      { name: 'ratio', type: 'float' },
+      { name: 'precise', type: 'double' },
+      { name: 'opensAt', type: 'time' },
+      { name: 'size', type: 'enumeration', options: ['s', 'm'] },
+      { name: 'count', type: 'integer', unsigned: true },
+    ]);
+
+    it('creates each column with its type', () => {
+      const sql = diff([], [everyNewType]).statements.join('\n');
+      expect(sql).toContain('"big" bigint');
+      expect(sql).toContain('"ratio" real');
+      expect(sql).toContain('"precise" double precision');
+      expect(sql).toContain('"opens_at" time');
+      expect(sql).toContain('"size" text');
+      expect(sql).toContain('"count" integer');
+    });
+
+    it('plans no SQL when only unsigned or options change', () => {
+      const changed = post([
+        TITLE,
+        { name: 'big', type: 'biginteger' },
+        { name: 'ratio', type: 'float' },
+        { name: 'precise', type: 'double' },
+        { name: 'opensAt', type: 'time' },
+        { name: 'size', type: 'enumeration', options: ['s', 'm', 'l'] },
+        { name: 'count', type: 'integer' },
+      ]);
+      expect(diff([everyNewType], [changed]).statements).toEqual([]);
+    });
+  });
+
+  describe('default key', () => {
+    const withDefault = (value: string | undefined) =>
+      post([
+        TITLE,
+        { name: 'tone', type: 'text', ...(value === undefined ? {} : { default: value }) },
+      ]);
+
+    it.each([
+      ['adding', undefined, 'warm'],
+      ['changing', 'warm', 'cool'],
+      ['removing', 'warm', undefined],
+    ])('plans no SQL when only a default is %s', (_label, before, after) => {
+      const plan = diff([withDefault(before)], [withDefault(after)]);
+      expect(plan.statements).toEqual([]);
+      expect(plan.changedSlugs).toEqual(['post']);
+    });
+  });
+
   describe('component table renames', () => {
     function tagged(
       tagsComponent: string,

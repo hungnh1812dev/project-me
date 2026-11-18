@@ -4,7 +4,17 @@ export type FieldValueKind =
 
 /** Name of the GraphQL output type of a field; the graphql module maps it to the type object. */
 export type GraphqlOutputName =
-  'String' | 'Int' | 'Decimal' | 'Boolean' | 'Date' | 'DateTime' | 'Json' | 'Media';
+  | 'String'
+  | 'Int'
+  | 'Float'
+  | 'BigInt'
+  | 'Decimal'
+  | 'Boolean'
+  | 'Date'
+  | 'DateTime'
+  | 'Time'
+  | 'Json'
+  | 'Media';
 
 /**
  * Everything the content modules decide per scalar field type. Adding a type
@@ -12,9 +22,16 @@ export type GraphqlOutputName =
  * a missing answer is a compile error, never a silent default.
  */
 /** Request-scoped facts a type may need to check a value (additive; types that do not need it ignore it). */
+export interface CoerceFieldKeys {
+  readonly unsigned?: boolean | undefined;
+  readonly options?: readonly string[] | undefined;
+}
+
 export interface CoerceContext {
   /** Origins a richtext `img` src may point to (the active media storage's delivery origin). */
   readonly richtextImageOrigins?: readonly string[] | undefined;
+  /** The field being written: its `unsigned` and `options` keys. */
+  readonly field?: CoerceFieldKeys | undefined;
 }
 
 export interface FieldTypeSpec {
@@ -33,6 +50,8 @@ export interface FieldTypeSpec {
   readonly maskedValue: 'sentinel' | 'null';
   /** The column holds a `file_library.id` that must be embedded on read and protected from deletion. */
   readonly referencesMedia: boolean;
+  /** An editor types or picks a value for the type, so a field of it may carry a `default` (CM-11). */
+  readonly acceptsDefault: boolean;
   readonly graphqlOutput: GraphqlOutputName;
   /**
    * Checks an API body value and returns the value to store (datetimes

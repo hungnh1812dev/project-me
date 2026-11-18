@@ -23,11 +23,16 @@ describe('field type registry', () => {
     expect(FIELD_TYPE_SPECS.json.conditionKind).toBeNull();
   });
 
+  it('accepts a default on every type but media', () => {
+    expect(typesWhere((spec) => !spec.acceptsDefault)).toEqual(['media']);
+  });
+
   it('masks only text-like types with the sentinel', () => {
     expect(typesWhere((spec) => spec.maskedValue === 'sentinel')).toEqual([
       'string',
       'text',
       'richtext',
+      'enumeration',
     ]);
   });
 
@@ -41,6 +46,11 @@ describe('field type registry', () => {
       text: 'text',
       richtext: 'text',
       integer: 'integer',
+      biginteger: 'bigint',
+      float: 'real',
+      double: 'double precision',
+      enumeration: 'text',
+      time: 'time',
       decimal: 'numeric',
       boolean: 'boolean',
       date: 'date',
@@ -53,6 +63,70 @@ describe('field type registry', () => {
   it('encodes json as text and no other type', () => {
     expect(FIELD_TYPE_SPECS.json.encodeForColumn([1, 2])).toBe('[1,2]');
     expect(typesWhere((spec) => 'encodeForColumn' in spec)).toEqual(['json']);
+  });
+
+  describe('new value rules', () => {
+    const coerce = (type: keyof typeof FIELD_TYPE_SPECS, value: unknown, field?: object) =>
+      FIELD_TYPE_SPECS[type].coerceValue(value, field === undefined ? undefined : { field });
+
+    it.each([
+      ['9223372036854775807', '9223372036854775807'],
+      ['-9223372036854775808', '-9223372036854775808'],
+      ['9007199254740993', '9007199254740993'],
+      [42, '42'],
+      [-1, '-1'],
+    ])('accepts biginteger %p as %p', (value, expected) => {
+      expect(coerce('biginteger', value)).toBe(expected);
+    });
+
+    it.each(['9223372036854775808', '-9223372036854775809', '12a', '1.5', '', 2 ** 60, 1.5, null])(
+      'refuses biginteger %p',
+      (value) => {
+        expect(coerce('biginteger', value)).toBeUndefined();
+      },
+    );
+
+    it.each(['float', 'double'] as const)('%s takes a finite number only', (type) => {
+      expect(coerce(type, 1.5)).toBe(1.5);
+      expect(coerce(type, Number.NaN)).toBeUndefined();
+      expect(coerce(type, Infinity)).toBeUndefined();
+      expect(coerce(type, '1.5')).toBeUndefined();
+    });
+
+    it.each([
+      ['09:30', '09:30:00'],
+      ['23:59:59', '23:59:59'],
+      ['00:00', '00:00:00'],
+    ])('accepts time %p as %p', (value, expected) => {
+      expect(coerce('time', value)).toBe(expected);
+    });
+
+    it.each(['25:00', '24:00', '12:60', '12:30:60', '9:30', '12', '', 930])(
+      'refuses time %p',
+      (value) => {
+        expect(coerce('time', value)).toBeUndefined();
+      },
+    );
+
+    it('refuses a negative integer only when unsigned', () => {
+      expect(coerce('integer', -1)).toBe(-1);
+      expect(coerce('integer', -1, { unsigned: false })).toBe(-1);
+      expect(coerce('integer', -1, { unsigned: true })).toBeUndefined();
+      expect(coerce('integer', 0, { unsigned: true })).toBe(0);
+      expect(coerce('integer', 2147483647, { unsigned: true })).toBe(2147483647);
+    });
+
+    it('accepts an enumeration value only from the options', () => {
+      const field = { options: ['red', 'green'] };
+      expect(coerce('enumeration', 'red', field)).toBe('red');
+      expect(coerce('enumeration', 'blue', field)).toBeUndefined();
+      expect(coerce('enumeration', 1, field)).toBeUndefined();
+    });
+
+    it('refuses every enumeration value without the field in the context', () => {
+      expect(coerce('enumeration', 'red')).toBeUndefined();
+      expect(coerce('enumeration', 'red', {})).toBeUndefined();
+    });
   });
 
   describe('fieldTypeOf', () => {

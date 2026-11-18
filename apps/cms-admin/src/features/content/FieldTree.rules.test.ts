@@ -62,3 +62,25 @@ describe('buildFieldTree (page-cv-a)', () => {
     expect(built.map((node) => node.path)).toEqual(['title']);
   });
 });
+
+describe('buildFieldTree defaults', () => {
+  const base = { system: false, component: false, repeatable: false, rootScalar: true };
+  const field = (path: string, extra: { type: string; default?: unknown }) => ({
+    ...base,
+    path,
+    conditionKind: null,
+    sensitive: false,
+    ...extra,
+  });
+
+  it('carries a default as defaultValue, even a falsy one', () => {
+    const tree = buildFieldTree([
+      field('count', { type: 'integer', default: 0 }),
+      field('active', { type: 'boolean', default: false }),
+      field('title', { type: 'text' }),
+    ]);
+    expect(tree[0]?.defaultValue).toBe(0);
+    expect(tree[1]?.defaultValue).toBe(false);
+    expect(tree[2]).not.toHaveProperty('defaultValue');
+  });
+});

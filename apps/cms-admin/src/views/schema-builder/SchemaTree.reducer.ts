@@ -1,4 +1,4 @@
-import { COMPONENT_FIELD_TYPE, type FieldTypeName } from './FieldTypes.registry';
+import { COMPONENT_FIELD_TYPE, findVariant, type FieldTypeName } from './FieldTypes.registry';
 
 /** Components nest at most this deep (canonical-values "Component depth"). */
 export const MAX_COMPONENT_DEPTH = 3;
@@ -14,11 +14,35 @@ const COPY_SUFFIX = '_copy';
 
 /** Keys of a field that may be absent; `heldKeys` lists the ones present. */
 export type OptionalFieldKey =
-  'displayName' | 'required' | 'sensitive' | 'width' | 'component' | 'repeatable';
+  | 'displayName'
+  | 'required'
+  | 'sensitive'
+  | 'width'
+  | 'component'
+  | 'repeatable'
+  | 'unsigned'
+  | 'options'
+  | 'default';
 
-/** Optional keys only a component may hold / only a non-component may hold (SB-8). */
-const COMPONENT_ONLY_KEYS: readonly OptionalFieldKey[] = ['component', 'repeatable'];
-const NON_COMPONENT_ONLY_KEYS: readonly OptionalFieldKey[] = ['width'];
+const ENUMERATION_FIELD_TYPE = 'enumeration' satisfies FieldTypeName;
+
+/** Types with no inputable fixed value (CM-11). */
+const TYPES_WITHOUT_DEFAULT: readonly string[] = ['media', COMPONENT_FIELD_TYPE];
+
+/** A default survives a type change only inside this pair: both hold the same kind of text. */
+const TEXT_TYPES: readonly string[] = ['text', 'string'];
+
+/** The types that may hold each key that is not free for every type (SB-8). A new typed key is one entry here. */
+const KEY_TYPE_RULES: Partial<Record<OptionalFieldKey, (type: string) => boolean>> = {
+  component: (type) => type === COMPONENT_FIELD_TYPE,
+  repeatable: (type) => type === COMPONENT_FIELD_TYPE,
+  width: (type) => type !== COMPONENT_FIELD_TYPE,
+  unsigned: (type) => type === 'integer',
+  options: (type) => type === ENUMERATION_FIELD_TYPE,
+  default: (type) => !TYPES_WITHOUT_DEFAULT.includes(type),
+};
+
+const isKeyAllowed = (key: OptionalFieldKey, type: string) => KEY_TYPE_RULES[key]?.(type) ?? true;
 
 export interface SchemaField {
   /** Stable client id; never exported. */
@@ -31,6 +55,10 @@ export interface SchemaField {
   width?: string;
   component?: string;
   repeatable?: boolean;
+  unsigned?: boolean;
+  options?: readonly string[];
+  /** Fixed starting value in API value form; kept as typed so the validator can report a wrong one (SB-9). */
+  default?: unknown;
   /** Optional keys present on the field (an import's `required: false` stays exported). */
   heldKeys: readonly OptionalFieldKey[];
   /** Keys the builder has no control for, kept and exported unchanged (SB-3). */
@@ -71,6 +99,8 @@ export interface ImportedTree extends Omit<
 /** `null` is the root list; otherwise the id of the component that owns the list. */
 export type ListOwnerId = string | null;
 
+export type FieldKeyValue = unknown;
+
 export type SchemaTreeAction =
   | { type: 'startNew' }
   | { type: 'load'; tree: ImportedTree }
@@ -88,9 +118,10 @@ export type SchemaTreeAction =
       type: 'setFieldKey';
       fieldId: string;
       key: 'name' | OptionalFieldKey;
-      value: string | boolean | undefined;
+      value: FieldKeyValue;
     }
-  | { type: 'changeFieldType'; fieldId: string; fieldType: string };
+  | { type: 'changeFieldType'; fieldId: string; fieldType: string }
+  | { type: 'changeFieldVariant'; fieldId: string; variant: string };
 
 /** SB-2 defaults. */
 export function createNewSchemaTree(): SchemaTree {
@@ -229,9 +260,9 @@ function freeCopyName(name: string, siblings: readonly SchemaField[]): string {
 
 function newField(id: string, name: string, type: string): SchemaField {
   const base = { id, name, type, unknownKeys: {}, fields: [] as readonly SchemaField[] };
-  return type === COMPONENT_FIELD_TYPE
-    ? { ...base, component: name, heldKeys: ['component'] }
-    : { ...base, heldKeys: [] };
+  if (type === COMPONENT_FIELD_TYPE) return { ...base, component: name, heldKeys: ['component'] };
+  if (type === ENUMERATION_FIELD_TYPE) return { ...base, options: [], heldKeys: ['options'] };
+  return { ...base, heldKeys: [] };
 }
 
 function withoutKeys(field: SchemaField, keys: readonly OptionalFieldKey[]): SchemaField {
@@ -340,12 +371,11 @@ function setFieldKey(
   tree: SchemaTree,
   fieldId: string,
   key: 'name' | OptionalFieldKey,
-  value: string | boolean | undefined,
+  value: FieldKeyValue,
 ): SchemaTree {
   const field = findField(tree.fields, fieldId);
   if (!field) return tree;
-  const forbidden = isComponent(field) ? NON_COMPONENT_ONLY_KEYS : COMPONENT_ONLY_KEYS;
-  if (key !== 'name' && forbidden.includes(key)) return tree;
+  if (key !== 'name' && !isKeyAllowed(key, field.type)) return tree;
   if (key === 'name' && typeof value !== 'string') return tree;
   return edited(tree, {
     fields: updateField(tree.fields, fieldId, (current) => {
@@ -383,15 +413,38 @@ function changeFieldType(tree: SchemaTree, fieldId: string, fieldType: string): 
   const field = findField(tree.fields, fieldId);
   if (!field || field.type === fieldType) return tree;
   if (typeChangeRefusal(tree, fieldId, fieldType) !== undefined) return tree;
-  const toComponent = fieldType === COMPONENT_FIELD_TYPE;
+  return edited(tree, {
+    fields: updateField(tree.fields, fieldId, (current) => retyped(current, fieldType)),
+  });
+}
+
+/** The field with a new type: keys the type does not allow are dropped, keys it starts with are added (SB-8). */
+function retyped(field: SchemaField, fieldType: string): SchemaField {
+  const keepsDefault =
+    field.type === fieldType || (TEXT_TYPES.includes(field.type) && TEXT_TYPES.includes(fieldType));
+  const dropped = field.heldKeys.filter(
+    (key) => !isKeyAllowed(key, fieldType) || (key === 'default' && !keepsDefault),
+  );
+  let next = withoutKeys({ ...field, type: fieldType }, dropped);
+  if (fieldType === COMPONENT_FIELD_TYPE) {
+    next = { ...next, component: next.name, heldKeys: [...next.heldKeys, 'component'] };
+  }
+  if (fieldType === ENUMERATION_FIELD_TYPE) {
+    next = { ...next, options: [], heldKeys: [...next.heldKeys, 'options'] };
+  }
+  return next;
+}
+
+/** Moves a field to a variant of its group: its type and the keys the variant presets; `unsigned` goes when the variant does not preset it. */
+function changeFieldVariant(tree: SchemaTree, fieldId: string, variantKey: string): SchemaTree {
+  const variant = findVariant(variantKey);
+  const field = findField(tree.fields, fieldId);
+  if (!variant || !field) return tree;
   return edited(tree, {
     fields: updateField(tree.fields, fieldId, (current) => {
-      const retyped = withoutKeys(
-        { ...current, type: fieldType },
-        toComponent ? NON_COMPONENT_ONLY_KEYS : COMPONENT_ONLY_KEYS,
-      );
-      if (!toComponent) return retyped;
-      return { ...retyped, component: retyped.name, heldKeys: [...retyped.heldKeys, 'component'] };
+      const next = withoutKeys(retyped(current, variant.type), ['unsigned']);
+      if (!('unsigned' in variant)) return next;
+      return { ...next, unsigned: true, heldKeys: [...next.heldKeys, 'unsigned'] };
     }),
   });
 }
@@ -458,5 +511,7 @@ export function schemaTreeReducer(tree: SchemaTree, action: SchemaTreeAction): S
       return setFieldKey(tree, action.fieldId, action.key, action.value);
     case 'changeFieldType':
       return changeFieldType(tree, action.fieldId, action.fieldType);
+    case 'changeFieldVariant':
+      return changeFieldVariant(tree, action.fieldId, action.variant);
   }
 }

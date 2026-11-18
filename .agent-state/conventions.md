@@ -24,6 +24,7 @@ App-specific facts: `conventions-backend.md` (apps/cms-api), `conventions-fronte
 - CI has no e2e job (user decision, T37g): e2e runs locally only (`pnpm smoke`, `pnpm e2e:spec`). CI checks and publish run from `.github/`. Static cms-api env is `scripts/stack/cms-api.env` (add new static cms-api settings there, not in the compose file). Lint workflows: `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`.
 
 ## User decisions in force
+- picomatch GHSA-fc5q-39xc-vjpf (user 2026-11-18): the manager re-checks `npm view picomatch dist-tags` at each feature close and before each release tag; on 4.0.8+ refresh the lockfile and drop the ignore.
 - Prettier defaults + singleQuote. cms-admin look D23 (premium theme; web keeps palette A), system font stack, no dark mode in v1, Button default variant secondary, dialog/form buttons secondary left, primary right, end-aligned, destructive apart at the left end (ADM-6).
 - Env names are approved per task; names only in `.env.example`, values always from the user. Production secrets/keys (Cloudinary, Turnstile, SMTP) come from the user.
 - Smoke-only overrides (rate limits, Turnstile test keys, Cloudinary dummies) live only in docker-compose.smoke.yml / the smoke build, never in production config.

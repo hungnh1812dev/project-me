@@ -30,7 +30,7 @@ NestJS 11, Kysely 0.28, PostgreSQL 17, zod, sanitize-html, Node.js `crypto`.
 
 ## Where to change what
 
-A new field type: one spec in `domain/field-types/FieldTypeRegistry.rules.ts` (and its constant in `ContentEngine.constants.ts`); the documents and graphql modules pick it up. A new content type: a definition file plus `content:generate`. The migration CLIs are a tier 3 area.
+A new field type: one spec in `domain/field-types/FieldTypeRegistry.rules.ts` (and its constant in `ContentEngine.constants.ts`); a type an editor gives a value sets `acceptsDefault: true`, and a field's `default` is then checked with the type's `coerceValue` (`DefinitionSchema.rules.ts`); the documents and graphql modules pick it up. A new content type: a definition file plus `content:generate`. The migration CLIs are a tier 3 area.
 
 ## Files
 
@@ -70,16 +70,16 @@ Tests: 11 files (not listed).
 | `domain/ContentRowMapping.rules.ts` | `toColumnValues`, `toDocument`: values <-> rows |
 | `domain/ContentTree.entity.ts` | `ContentRow`, `ComponentNode`, `ComponentTrees` |
 | `domain/ContentTypeRegistry.entity.ts` | `ContentTypeRegistry` (`definitions()` lists the registered ones), table nodes, `UnknownContentTypeError` |
-| `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`) |
+| `domain/DefinitionSchema.rules.ts` | `contentTypeDefinitionSchema`: zod shape of a definition (`component`, `displayName`, `width`, `unsigned`, `options`, `default`) and `normalizedDefaultOf` |
 | `domain/DefinitionValidator.rules.ts` | `validateDefinition(s)`: rules beyond the schema (names, `component` values, field `displayName`, depth, relations); `validateCandidateDefinition`: one candidate against the registered types, only its own errors, a clash names the other type by slug |
 | `domain/Naming.rules.ts` | `planTables` (tables named by `component`, with `apiPath`), `toSqlIdentifier`, table and relation names |
 | `domain/SqlGenerator.rules.ts` | `planMigration` (renames first, then create and column diff, then drops), `pairRenamedTables`, `renderMigrationSql`, snapshots and column types |
 | `domain/TreeInput.rules.ts` | `assertTreeInput`: checks a submitted document tree |
-| `domain/field-types/FieldType.entity.ts` | `FieldTypeSpec`, `FieldValueKind`, `CoerceContext` |
+| `domain/field-types/FieldType.entity.ts` | `FieldTypeSpec` (incl. `acceptsDefault`), `FieldValueKind`, `CoerceContext` |
 | `domain/field-types/FieldTypeRegistry.rules.ts` | `FIELD_TYPE_SPECS`, `fieldTypeOf`: one spec per field type |
 | `domain/field-types/MediaColumns.rules.ts` | `mediaColumnsOf`, `richtextColumnsOf`: media and richtext columns per table |
 | `domain/field-types/RichtextSanitizer.rules.ts` | `sanitizeRichtext`: allowed tags, styles and image sources (D13) |
-| `domain/field-types/ValueParsers.rules.ts` | `parseDate`, `parseDatetime`, `parseUuid`, value patterns |
+| `domain/field-types/ValueParsers.rules.ts` | `parseBigInteger`, `parseDate`, `parseDatetime`, `parseTime`, `parseUuid`, value patterns |
 | `domain/field-types/index.ts` | Re-exports of the field-type rules |
 
 <!-- prettier-ignore-end -->

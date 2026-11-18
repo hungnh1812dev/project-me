@@ -190,6 +190,14 @@ describe('error paths', () => {
     expect(fieldIdOfErrorPath(tree, [])).toEqual({ fieldId: null, key: undefined });
   });
 
+  it('keeps the list position an error path ends on', () => {
+    expect(fieldIdOfErrorPath(tree, ['fields', 0, 'options', 1])).toEqual({
+      fieldId: first.id,
+      key: 'options',
+      itemIndex: 1,
+    });
+  });
+
   it('maps a field and a nested field with their key', () => {
     expect(fieldIdOfErrorPath(tree, ['fields', 0, 'name'])).toEqual({
       fieldId: first.id,
@@ -253,5 +261,85 @@ describe('error paths', () => {
       refusal: 'tooDeep',
     });
     expect(parseSchemaJson(withLevels(400))).toEqual({ ok: false, refusal: 'tooDeep' });
+  });
+});
+
+describe('new field types and keys', () => {
+  const definition = {
+    slug: 'sample',
+    fields: [
+      { name: 'a', type: 'integer', unsigned: true, required: true },
+      { name: 'b', type: 'biginteger' },
+      { name: 'c', type: 'float' },
+      { name: 'd', type: 'double' },
+      { name: 'e', type: 'time', displayName: 'Opens at' },
+      { name: 'f', type: 'enumeration', options: ['draft', 'live'], required: false },
+      { name: 'g', type: 'integer', unsigned: false },
+    ],
+  };
+
+  it('exports an imported file with the new types and keys as the same JSON value', () => {
+    const result = parseSchemaJson(JSON.stringify(definition));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const tree = schemaTreeReducer(createNewSchemaTree(), { type: 'load', tree: result.tree });
+    expect(JSON.parse(serializeSchemaTree(tree).json)).toEqual(definition);
+  });
+
+  it('writes unsigned and options after type and before the other keys', () => {
+    const result = parseSchemaJson(
+      JSON.stringify({
+        slug: 's',
+        fields: [{ required: true, options: ['x'], unsigned: true, type: 'integer', name: 'n' }],
+      }),
+    );
+    if (!result.ok) throw new Error('import refused');
+    const tree = schemaTreeReducer(createNewSchemaTree(), { type: 'load', tree: result.tree });
+    expect(Object.keys(exportedOf(tree).fields[0]!)).toEqual([
+      'name',
+      'type',
+      'unsigned',
+      'options',
+      'required',
+    ]);
+  });
+
+  it('keeps options that are not a list of text as an unknown key', () => {
+    const result = parseSchemaJson(
+      JSON.stringify({ slug: 's', fields: [{ name: 'n', type: 'enumeration', options: [1] }] }),
+    );
+    if (!result.ok) throw new Error('import refused');
+    const field = result.tree.fields[0]!;
+    expect(field.options).toBeUndefined();
+    expect(field.unknownKeys).toEqual({ options: [1] });
+  });
+
+  it('writes default after options and round trips a file with defaults', () => {
+    const file = {
+      slug: 's',
+      fields: [
+        { name: 'a', type: 'integer', unsigned: true, default: 7, required: true },
+        { name: 'b', type: 'enumeration', options: ['x', 'y'], default: 'y' },
+        { name: 'c', type: 'boolean', default: false },
+        { name: 'd', type: 'json', default: { k: [1] } },
+      ],
+    };
+    const result = parseSchemaJson(JSON.stringify(file));
+    if (!result.ok) throw new Error('import refused');
+    const tree = schemaTreeReducer(createNewSchemaTree(), { type: 'load', tree: result.tree });
+    expect(JSON.parse(serializeSchemaTree(tree).json)).toEqual(file);
+    expect(Object.keys(exportedOf(tree).fields[0]!)).toEqual([
+      'name',
+      'type',
+      'unsigned',
+      'default',
+      'required',
+    ]);
+    expect(Object.keys(exportedOf(tree).fields[1]!)).toEqual([
+      'name',
+      'type',
+      'options',
+      'default',
+    ]);
   });
 });

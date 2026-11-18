@@ -7,9 +7,9 @@ import {
   IconButton,
 } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
-import { ArrowDown, ArrowUp, CircleAlert, Copy, FolderInput, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, CircleAlert, Copy, FolderInput, Pencil, Trash2 } from 'lucide-react';
 
-import { findFieldType } from './FieldTypes.registry';
+import { findFieldType, variantOf } from './FieldTypes.registry';
 import type { ListOwnerId, SchemaField } from './SchemaTree.reducer';
 
 export interface MoveTarget {
@@ -27,6 +27,7 @@ interface FieldRowProps {
   moveTargets: readonly MoveTarget[];
   /** The drag handle of this row, built by the canvas (SB-5). */
   dragHandle?: ReactNode;
+  /** Opens the field's properties. */
   onSelect: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -53,7 +54,16 @@ export function FieldRow({
 }: FieldRowProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   const type = findFieldType(field.type);
-  const typeLabel = type === undefined ? field.type : copy.fieldTypes[type.copyKey];
+  const grouped = variantOf(field);
+  const typeLabel =
+    grouped !== undefined
+      ? copy.row.groupedType(
+          copy.fieldGroups[grouped.group.key],
+          copy.fieldVariants[grouped.variant.key],
+        )
+      : type === undefined
+        ? field.type
+        : copy.fieldTypes[type.copyKey];
   const TypeIcon = type?.icon;
   const markers = [
     field.required === true ? copy.row.markers.required : null,
@@ -99,6 +109,14 @@ export function FieldRow({
         ) : null}
       </button>
       <div className="flex items-center">
+        <IconButton
+          type="button"
+          variant="ghost"
+          label={copy.row.edit(field.name)}
+          onClick={onSelect}
+        >
+          <Pencil aria-hidden="true" />
+        </IconButton>
         <IconButton
           type="button"
           variant="ghost"

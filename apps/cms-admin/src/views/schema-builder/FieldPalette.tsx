@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import {
   Button,
   DropdownMenu,
@@ -10,7 +11,13 @@ import { useScreenText } from '@configs/locales';
 import { useDraggable } from '@dnd-kit/core';
 import { GripVertical, Plus, type LucideIcon } from 'lucide-react';
 
-import { COMPONENT_FIELD_TYPE, FIELD_TYPES, type FieldTypeName } from './FieldTypes.registry';
+import {
+  COMPONENT_FIELD_TYPE,
+  paletteItemLabel,
+  paletteItems,
+  type FieldTypeName,
+  type PaletteItem,
+} from './FieldTypes.registry';
 
 interface FieldPaletteProps {
   /** Component is left out where a new component would pass the depth limit (SB-7). */
@@ -21,10 +28,10 @@ interface FieldPaletteProps {
 /** Draggable ids of palette items are this prefix plus the field type; field ids never start with it. */
 export const PALETTE_ID_PREFIX = 'palette:';
 
-const isOffered = (type: string, canAddComponent: boolean) =>
-  canAddComponent || type !== COMPONENT_FIELD_TYPE;
+const offeredItems = (canAddComponent: boolean): PaletteItem[] =>
+  paletteItems().filter((item) => canAddComponent || item.defaultType !== COMPONENT_FIELD_TYPE);
 
-/** One item per field type; picking one adds a field at the end of the top level (SB-4). */
+/** One item per field type or group; picking one adds a field at the end of the top level (SB-4). */
 export function FieldPalette({ canAddComponent, onPick }: FieldPaletteProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   return (
@@ -35,18 +42,16 @@ export function FieldPalette({ canAddComponent, onPick }: FieldPaletteProps) {
         </h2>
         <p className="m-0 text-sm text-muted-foreground">{copy.fields.paletteHint}</p>
       </div>
-      <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
-        {FIELD_TYPES.filter(({ type }) => isOffered(type, canAddComponent)).map(
-          ({ type, icon, copyKey }) => (
-            <PaletteItem
-              key={type}
-              type={type}
-              icon={icon}
-              label={copy.fieldTypes[copyKey]}
-              onPick={onPick}
-            />
-          ),
-        )}
+      <ul className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-2 p-0">
+        {offeredItems(canAddComponent).map((item) => (
+          <PaletteItemRow
+            key={item.defaultType}
+            type={item.defaultType}
+            icon={item.icon}
+            label={paletteItemLabel(item, copy)}
+            onPick={onPick}
+          />
+        ))}
       </ul>
     </section>
   );
@@ -60,7 +65,7 @@ interface PaletteItemProps {
 }
 
 /** The pick button plus a drag handle: the button keeps its plain click, the handle starts a drag. */
-function PaletteItem({ type, icon: Icon, label, onPick }: PaletteItemProps) {
+function PaletteItemRow({ type, icon: Icon, label, onPick }: PaletteItemProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: `${PALETTE_ID_PREFIX}${type}`,
@@ -81,7 +86,7 @@ function PaletteItem({ type, icon: Icon, label, onPick }: PaletteItemProps) {
       <Button
         type="button"
         size="sm"
-        className="flex-1 justify-start whitespace-nowrap"
+        className="min-w-0 flex-1 justify-start"
         onClick={() => onPick(type)}
       >
         <Icon aria-hidden="true" />
@@ -99,6 +104,7 @@ interface AddFieldMenuProps extends FieldPaletteProps {
 /** The palette as the "Add field" menu of one list. */
 export function AddFieldMenu({ ownerName, canAddComponent, onPick }: AddFieldMenuProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
+  const isPicked = useRef(false);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -111,15 +117,27 @@ export function AddFieldMenu({ ownerName, canAddComponent, onPick }: AddFieldMen
           {copy.fields.addField}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        {FIELD_TYPES.filter(({ type }) => isOffered(type, canAddComponent)).map(
-          ({ type, icon: Icon, copyKey }) => (
-            <DropdownMenuItem key={type} onSelect={() => onPick(type)}>
-              <Icon aria-hidden="true" />
-              {copy.fieldTypes[copyKey]}
-            </DropdownMenuItem>
-          ),
-        )}
+      <DropdownMenuContent
+        align="start"
+        onCloseAutoFocus={(event) => {
+          // A pick opens the properties popup, which owns focus; Escape returns it to the trigger.
+          // Focus the user already moved elsewhere during the close tick is kept.
+          if (isPicked.current || document.activeElement !== document.body) event.preventDefault();
+          isPicked.current = false;
+        }}
+      >
+        {offeredItems(canAddComponent).map((item) => (
+          <DropdownMenuItem
+            key={item.defaultType}
+            onSelect={() => {
+              isPicked.current = true;
+              onPick(item.defaultType);
+            }}
+          >
+            <item.icon aria-hidden="true" />
+            {paletteItemLabel(item, copy)}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

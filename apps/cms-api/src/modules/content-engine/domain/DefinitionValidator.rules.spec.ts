@@ -6,7 +6,11 @@ import {
   DISPLAY_NAME_MAX_LENGTH,
   MAX_IDENTIFIER_BYTES,
 } from './ContentEngine.constants';
-import type { ContentTypeDefinition } from './DefinitionSchema.rules';
+import {
+  normalizedDefaultOf,
+  type ContentTypeDefinition,
+  type FieldDefinition,
+} from './DefinitionSchema.rules';
 import {
   formatDefinitionPath,
   validateCandidateDefinition,
@@ -190,6 +194,135 @@ describe('validateDefinition', () => {
     it('points at the offending key', () => {
       const [error] = errorsOf(definition([component('a', [{ name: 'b', type: 'uuid' }])]));
       expect(error?.path).toEqual(['fields', 0, 'fields', 0, 'type']);
+    });
+  });
+
+  describe('unsigned and options keys', () => {
+    const enumeration = (options: unknown): Field => ({ name: 'a', type: 'enumeration', options });
+
+    it('accepts unsigned on integer and options on enumeration', () => {
+      expect(isValid(definition([{ name: 'a', type: 'integer', unsigned: true }]))).toBe(true);
+      expect(isValid(definition([enumeration(['one', 'two'])]))).toBe(true);
+    });
+
+    it.each([
+      ['unsigned on a string', { name: 'a', type: 'string', unsigned: true }, 'unsigned'],
+      ['unsigned on a biginteger', { name: 'a', type: 'biginteger', unsigned: true }, 'unsigned'],
+      ['a non-boolean unsigned', { name: 'a', type: 'integer', unsigned: 'yes' }, 'unsigned'],
+      ['options on a string', { name: 'a', type: 'string', options: ['x'] }, 'options'],
+      ['an enumeration without options', { name: 'a', type: 'enumeration' }, 'options'],
+      ['empty options', enumeration([]), 'options'],
+      ['51 options', enumeration(Array.from({ length: 51 }, (_, i) => `v${i}`)), 'options'],
+      ['duplicate options', enumeration(['a', 'a']), 'options'],
+      ['a blank option', enumeration(['a', '']), 'options'],
+      ['an option with a leading space', enumeration([' a']), 'options'],
+      ['an option with a trailing space', enumeration(['a ']), 'options'],
+      ['an option over 100 characters', enumeration(['x'.repeat(101)]), 'options'],
+      ['a non-string option', enumeration([1]), 'options'],
+    ])('rejects %s on fields[0].%s', (_label, field, key) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path.slice(0, 3)).toEqual(['fields', 0, key]);
+    });
+
+    it('accepts 50 options of 100 characters', () => {
+      const options = Array.from({ length: 50 }, (_, i) => String(i).padEnd(100, 'x'));
+      expect(isValid(definition([enumeration(options)]))).toBe(true);
+    });
+
+    it('names the entry that fails', () => {
+      const [error] = errorsOf(definition([enumeration(['a', ' b'])]));
+      expect(error?.path).toEqual(['fields', 0, 'options', 1]);
+    });
+  });
+
+  describe('default key', () => {
+    it.each([
+      ['text', 'hello'],
+      ['string', 'a\nb'],
+      ['richtext', '<p>Hi</p>'],
+      ['integer', 5],
+      ['biginteger', '9007199254740993'],
+      ['biginteger', 12],
+      ['decimal', '1.50'],
+      ['float', 1.5],
+      ['double', 2.5],
+      ['boolean', false],
+      ['date', '2026-01-31'],
+      ['datetime', '2026-01-31T10:00:00Z'],
+      ['time', '08:30'],
+      ['json', { a: [1] }],
+      ['json', false],
+    ])('accepts a default on %s: %j', (type, value) => {
+      expect(isValid(definition([{ name: 'a', type, default: value }]))).toBe(true);
+    });
+
+    it('accepts an enumeration default from its options and a default on an unsigned integer', () => {
+      const enumeration = { name: 'a', type: 'enumeration', options: ['x', 'y'], default: 'y' };
+      expect(isValid(definition([enumeration]))).toBe(true);
+      expect(
+        isValid(definition([{ name: 'a', type: 'integer', unsigned: true, default: 0 }])),
+      ).toBe(true);
+    });
+
+    it.each([
+      ['media', { name: 'a', type: 'media', default: 'x' }],
+      ['a component', { ...component('a', [{ name: 'b', type: 'text' }]), default: 'x' }],
+      ['null on text', { name: 'a', type: 'text', default: null }],
+      ['null on json', { name: 'a', type: 'json', default: null }],
+      ['a number on text', { name: 'a', type: 'text', default: 1 }],
+      ['a fraction on integer', { name: 'a', type: 'integer', default: 1.5 }],
+      ['a negative on unsigned', { name: 'a', type: 'integer', unsigned: true, default: -1 }],
+      ['a text on boolean', { name: 'a', type: 'boolean', default: 'true' }],
+      ['a bad time', { name: 'a', type: 'time', default: '25:00' }],
+      ['a bad date', { name: 'a', type: 'date', default: 'tomorrow' }],
+      ['a non-digit biginteger', { name: 'a', type: 'biginteger', default: '1.5' }],
+      [
+        'a value outside the options',
+        { name: 'a', type: 'enumeration', options: ['x'], default: 'z' },
+      ],
+      [
+        'richtext with an image',
+        { name: 'a', type: 'richtext', default: '<img src="https://x.test/a.png">' },
+      ],
+      [
+        'richtext with a script',
+        { name: 'a', type: 'richtext', default: '<script>alert(1)</script>' },
+      ],
+    ])('rejects a default on %s at fields[0].default', (_label, field) => {
+      const errors = errorsOf(definition([field]));
+      expect(errors.every((e) => e.rule === DEFINITION_RULES.SCHEMA_INVALID)).toBe(true);
+      expect(errors[0]?.path).toEqual(['fields', 0, 'default']);
+    });
+
+    it('names the field type in the message', () => {
+      const [error] = errorsOf(definition([{ name: 'a', type: 'media', default: 'x' }]));
+      expect(error?.message).toContain('media');
+    });
+
+    it('reports a nested field with its full path', () => {
+      const errors = errorsOf(
+        definition([component('c', [{ name: 'a', type: 'boolean', default: 1 }])]),
+      );
+      expect(errors[0]?.path).toEqual(['fields', 0, 'fields', 0, 'default']);
+    });
+
+    describe('normalizedDefaultOf', () => {
+      const normalized = (field: Record<string, unknown>) =>
+        normalizedDefaultOf(field as unknown as FieldDefinition);
+
+      it('gives the API value form', () => {
+        expect(normalized({ name: 'a', type: 'time', default: '08:30' })).toBe('08:30:00');
+        expect(normalized({ name: 'a', type: 'biginteger', default: 12 })).toBe('12');
+        expect(normalized({ name: 'a', type: 'biginteger', default: '12' })).toBe('12');
+      });
+
+      it('gives undefined when unset, on a component and on an invalid value', () => {
+        expect(normalized({ name: 'a', type: 'text' })).toBeUndefined();
+        expect(normalized({ name: 'a', type: 'media', default: 'x' })).toBeUndefined();
+        expect(normalized({ ...component('a', []), default: 'x' })).toBeUndefined();
+        expect(normalized({ name: 'a', type: 'integer', default: 'x' })).toBeUndefined();
+      });
     });
   });
 

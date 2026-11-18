@@ -77,10 +77,20 @@ describe('SchemaCanvas', () => {
     expect(screen.getByRole('button', { name: copy.fields.addField })).toBeVisible();
   });
 
+  it('reports the field of a row name or Edit control as selected', async () => {
+    const { onSelect } = show([[null, 'string']]);
+    await userEvent.click(screen.getByRole('button', { name: copy.row.edit('f1') }));
+    expect(onSelect).toHaveBeenLastCalledWith('f1');
+    await userEvent.click(screen.getByRole('button', { name: copy.row.select('f1') }));
+    expect(onSelect).toHaveBeenCalledTimes(2);
+  });
+
   it('adds a field at the end of the top level and of a component list', async () => {
     show([[null, 'component']]);
     await userEvent.click(screen.getByRole('button', { name: copy.fields.addFieldTo('f1') }));
-    await userEvent.click(await screen.findByRole('menuitem', { name: copy.fieldTypes.string }));
+    await userEvent.click(
+      await screen.findByRole('menuitem', { name: copy.fieldGroups.textInput }),
+    );
     const inner = screen.getByRole('list', { name: copy.fields.listLabel('f1') });
     expect(names(inner)).toEqual([copy.row.select('field1')]);
   });
@@ -125,7 +135,7 @@ describe('SchemaCanvas', () => {
     expect(await screen.findByRole('menuitem', { name: copy.fieldTypes.component })).toBeVisible();
     await userEvent.keyboard('{Escape}');
     await userEvent.click(screen.getByRole('button', { name: copy.fields.addFieldTo('f3') }));
-    expect(await screen.findByRole('menuitem', { name: copy.fieldTypes.string })).toBeVisible();
+    expect(await screen.findByRole('menuitem', { name: copy.fieldGroups.textInput })).toBeVisible();
     expect(screen.queryByRole('menuitem', { name: copy.fieldTypes.component })).toBeNull();
   });
 

@@ -15,6 +15,7 @@
   --abyss-slate-100: oklch(0.968 0.007 247.896);
   --abyss-slate-200: oklch(0.929 0.013 255.508);
   --abyss-slate-300: oklch(0.869 0.022 252.894);
+  --abyss-slate-400: oklch(0.704 0.04 256.788);
   --abyss-slate-450: oklch(0.64 0.04 257);
   --abyss-slate-500: oklch(0.554 0.046 257.417);
   --abyss-slate-600: oklch(0.446 0.043 257.281);
@@ -56,6 +57,9 @@
   --popover-foreground: var(--abyss-slate-900);
   --muted: var(--abyss-slate-100);
   --muted-foreground: var(--abyss-slate-600);
+  --code: var(--abyss-slate-900);
+  --code-foreground: var(--abyss-slate-100);
+  --code-muted-foreground: var(--abyss-slate-400);
   --accent: var(--abyss-slate-100);
   --accent-foreground: var(--abyss-slate-900);
 
@@ -120,6 +124,9 @@
 /* cms-admin: ADM-2, ADM-3, ADM-9 values (D23). */
 [data-theme='premium'] {
   --muted-foreground: var(--abyss-slate-600);
+  --code: var(--abyss-slate-900);
+  --code-foreground: var(--abyss-slate-100);
+  --code-muted-foreground: var(--abyss-slate-400);
   --accent: var(--abyss-slate-100);
   --ring: var(--abyss-indigo-500);
   --focus-edge: var(--abyss-indigo-600);

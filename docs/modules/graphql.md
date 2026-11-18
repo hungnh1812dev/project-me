@@ -329,7 +329,7 @@ apps/cms-api/src/modules/graphql/
 │       ├── SchemaBuilder.rules.ts  # buildGraphqlSchema(definitions): pure, cached by the module; scalar field output types come from the field-type registry (`graphqlOutput`)
 │       ├── SharedTypes.entity.ts   # DocumentStatus, SortDirection, PageMeta, Media
 │       ├── TypeNames.rules.ts      # naming + collision checks
-│       ├── Scalars.rules.ts        # Date, DateTime, Decimal, JSON
+│       ├── Scalars.rules.ts        # Date, DateTime, Time, BigInt, Decimal, JSON
 │       └── FilterInputs.rules.ts   # kind -> filter input, args -> FilterClause/SortKey
 └── cli/PrintSchema.command.ts  # SDL from content/schemas (no DB), --check
 ```
@@ -454,7 +454,7 @@ Tests: 12 files (not listed).
 | `http/rules/Limits.rules.ts` | `MaxDepthRule`, `MaxRootFieldsRule`, `MaxFieldNodesRule`: query size limits |
 | `http/rules/Visibility.rules.ts` | `ContentTypeVisibilityRule`: refuses root fields of unreadable content types |
 | `http/schema/FilterInputs.rules.ts` | `FILTER_INPUTS`, `filterToClauses`, `sortToKeys`: filter and sort inputs |
-| `http/schema/Scalars.rules.ts` | `DateScalar`, `DateTimeScalar`, `DecimalScalar`, `JsonScalar` |
+| `http/schema/Scalars.rules.ts` | `DateScalar`, `DateTimeScalar`, `TimeScalar`, `BigIntScalar`, `DecimalScalar`, `JsonScalar` |
 | `http/schema/SchemaBuilder.rules.ts` | `buildGraphqlSchema`: schema from the content registry and the caller's access |
 | `http/schema/SharedTypes.entity.ts` | Shared types: document status, sort direction, page meta, media |
 | `http/schema/TypeNames.rules.ts` | Type and field names per content type, name clash detection |

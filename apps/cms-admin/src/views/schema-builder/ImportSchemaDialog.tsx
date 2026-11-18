@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Button, FormAlert, Input, Label, Textarea } from '@abyss/form-commons';
+import { Button, CodeTextarea, FormAlert, Input, Label } from '@abyss/form-commons';
 import { Modal, ModalActions } from '@components/Modal';
 import { useScreenText } from '@configs/locales';
 
@@ -67,11 +67,10 @@ export function ImportSchemaDialog({ onLoad, onClose, onCloseAutoFocus }: Import
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="schema-import-text">{copy.textLabel}</Label>
-          <Textarea
+          <CodeTextarea
             id="schema-import-text"
             rows={8}
             spellCheck={false}
-            className="font-mono"
             placeholder={copy.textPlaceholder}
             value={text}
             onChange={(event) => {

@@ -8,6 +8,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### New features
 
+- cms-api: new field types `biginteger`, `float`, `double`, `time`, `enumeration`, keys `unsigned` and `options`, GraphQL scalars `BigInt` and `Time`; document writes check `unsigned` and `options`, and the content type view lists `options`.
+- cms-api: optional field key `default` on every type except `media` and `component`, checked like an API write of the field (richtext unchanged by the sanitizer); a default-only change writes a comment-only migration; `GET /content-types` field views carry it, in the API value form, only when set; the API never applies it (CM-11).
+- cms-admin: schema builder Number, Datetime picker and Enum fields with a properties popup; JSON inputs with line numbers.
+- cms-admin: schema builder groups single-line and multi-line text as one Text input field (Text editor label, Text type select), the properties popup sets a default value for a field, and a new document or component entry starts at the fields' defaults.
 - cms-api: the image runs the nightly backup job, with client tools and script ([backups flow](docs/flows/backups/SPEC.md)).
 - web: `/cv` is built from the main `page-cv-a`, the `profile` and `pageCvText` in `views/cv` (queries `PageCv` and `PageCvVisitor`); the new projects section is shown, no main CV answers 404, and `features/cv` is gone (WPQ-9).
 - web: `/status` page, and the module status on `/`, come from one `ModuleStatus` part (query `ModuleStatus`, field `moduleStatus`) in place of the `StatusPage` query (WPQ-13).
@@ -38,6 +42,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- root: the dependency audit ignores GHSA-fc5q-39xc-vjpf (picomatch, lint-only path, no fixed release) until a fix is published.
 - cms-api: the backup job uploads only with `NODE_ENV=production`, the image default; other clusters set their own value ([backups flow](docs/flows/backups/SPEC.md)).
 - web, cms-admin: spec: the public site serves `/robots.txt` (production: disallow `/api/`; other stacks: disallow `/`), `/sitemap.xml` (a static list of `/` and `/status` on `WEB_ORIGIN`, no `lastmod`) and `/favicon.ico` (a letter mark of the app name in palette A); robots and sitemap are built per request with a one-hour public cache, and none of the three gets the nonce CSP; the cms-admin host serves a `robots.txt` that disallows `/` ; the web `robots.txt` keeps Next.js's `User-Agent:` field-name case (public-site PS-4, Q-PS8..Q-PS15, criterion 28; user 2026-11-16).
 - web: the server fetch layers are simpler (user 2026-11-16): the server RESTful layer is one `request` function plus `get`, `post`, `put`, `patch`, `delete` and `options`, each with `headers`, `body`, `resolveData` and Next.js `next` (`revalidate`, `tags`) options; the server GraphQL layer is one `executeGraphql(query, options)` with a `mock` key, `resolveData`, `next` and a visitor `accessToken`; a failed query is mocked as a whole by its key (`page-cv-a`, `profile`, `cv-common-text`, `site-header`, `sign-in`, `not-found-page`, `module-status`) where `APP_ENV` is not `production`, and no root field is retried alone (WEB-1, WEB-5, Q-WFL1..Q-WFL7).
@@ -88,6 +93,9 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - root: `break-check` blocks a session break while `handoff.md` is behind, snapshots the feature state at each session end, and gates checkpoint pass and feature close.
 - root: a phase checkpoint's tier 3 runs only the e2e specs the feature can affect, and the feature checks run no tier 3 and no final run: passed phase rows are carried as `pass` and a tier 3 only feature row is `n/a` with a note, which `break-check --close` accepts (ADR 0022 and its amendment).
 - root: one full stack per tier 3 run: only qc starts it for a checklist run (kept mode without e2e; the full suite only when the user asks), a running stack on the same `HEAD` is reused and stays up across a session break (`Stack:` line in `handoff.md`), builders never start it, and a re-test round runs only the failed specs plus the scope of the fix commits.
+- root: the manager triages a question about the code, spec or project through `request-validator` instead of answering it or saying it does not know; the validator returns `route: answer` with file:line evidence, and the manager shows it to the user verbatim.
+- root: builders, qc and security-qc ask the user (report `blocked`) before adding, changing or deleting anything that affects a database: schema, migrations, seeds, DB config, or data reset and bulk changes, local included (`local-env` "Database changes").
+- root: `docs/global/reference/env-vars.md` lists every app's environment variables with purpose, required at start, default and scope.
 
 ## 0.1.0 (2026-11-05)
 

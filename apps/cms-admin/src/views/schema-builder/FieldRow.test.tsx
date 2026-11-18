@@ -48,10 +48,28 @@ describe('FieldRow', () => {
     show();
     const row = screen.getByRole('button', { name: copy.row.select('title') });
     expect(row).toHaveTextContent('title');
-    expect(row).toHaveTextContent(copy.fieldTypes.string);
+    expect(row).toHaveTextContent(
+      copy.row.groupedType(copy.fieldGroups.textInput, copy.fieldVariants.multiLine),
+    );
     expect(row).toHaveTextContent(copy.row.markers.required);
     expect(row).toHaveTextContent(copy.row.markers.width('1/2'));
     expect(row).not.toHaveTextContent(copy.row.markers.sensitive);
+  });
+
+  it('shows the text editor by its own label', () => {
+    show({ field: { ...field, type: 'richtext' } });
+    expect(screen.getByRole('button', { name: copy.row.select('title') })).toHaveTextContent(
+      'Text editor',
+    );
+  });
+
+  it('shows a grouped type as its group and variant', () => {
+    show({
+      field: { ...field, type: 'integer', unsigned: true, heldKeys: ['unsigned'] },
+    });
+    expect(screen.getByRole('button', { name: copy.row.select('title') })).toHaveTextContent(
+      copy.row.groupedType(copy.fieldGroups.number, copy.fieldVariants.unsignedInteger),
+    );
   });
 
   it('marks the selected row and the row with errors', () => {
@@ -77,6 +95,8 @@ describe('FieldRow', () => {
     await userEvent.click(screen.getByRole('button', { name: copy.row.moveTo('title') }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Inside hero' }));
     expect(handlers.onSelect).toHaveBeenCalledOnce();
+    await userEvent.click(screen.getByRole('button', { name: copy.row.edit('title') }));
+    expect(handlers.onSelect).toHaveBeenCalledTimes(2);
     expect(handlers.onMoveUp).toHaveBeenCalledOnce();
     expect(handlers.onMoveDown).toHaveBeenCalledOnce();
     expect(handlers.onDuplicate).toHaveBeenCalledOnce();

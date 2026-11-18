@@ -50,6 +50,7 @@ export {
 } from './components/forms/select-input';
 export { CheckboxInput, type CheckboxInputProps } from './components/forms/checkbox-input';
 export { Textarea } from './components/ui/Textarea';
+export { CodeTextarea } from './components/ui/CodeTextarea';
 export { Radio } from './components/ui/Radio';
 export { Switch } from './components/ui/Switch';
 export { TextAreaInput, type TextAreaInputProps } from './components/forms/text-area-input';
@@ -59,7 +60,12 @@ export {
   type NumberMode,
 } from './components/forms/number-input';
 export { SwitchInput, type SwitchInputProps } from './components/forms/switch-input';
-export { DatePicker, DateTimePicker, type DatePickerProps } from './components/forms/date-picker';
+export {
+  DatePicker,
+  DateTimePicker,
+  TimePicker,
+  type DatePickerProps,
+} from './components/forms/date-picker';
 export { JsonInput, isValidJsonText, type JsonInputProps } from './components/forms/json-input';
 export {
   RichtextInput,

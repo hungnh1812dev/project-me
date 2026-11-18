@@ -138,3 +138,71 @@ test.describe(
     });
   },
 );
+
+const NEW_TYPES = ['biginteger', 'float', 'double', 'time'];
+const TOO_MANY_OPTIONS = 51;
+const MAX_OPTION_LENGTH = 100;
+
+test.describe(
+  'content-types validate route for number, time and enumeration fields (owner only)',
+  { tag: ['@cms-api', '@schema-builder'] },
+  () => {
+    test('new types are accepted and each new key rule is reported on its path', async ({
+      request,
+    }) => {
+      const owner = bearer(await ownerApiToken(request));
+      const check = async (fields: unknown[]) => {
+        const answer = await request.post(apiUrl(API_PATHS.CONTENT_TYPES_VALIDATE), {
+          data: { definition: { ...validDefinition, fields }, mode: 'create' },
+          headers: owner,
+        });
+        expect(answer.status()).toBe(HTTP.OK);
+        return (await answer.json()) as ValidateAnswer;
+      };
+      const pathsOf = (answer: ValidateAnswer) =>
+        answer.errors.map((error) => error.path.join('.'));
+
+      const accepted = await check([
+        ...NEW_TYPES.map((type) => ({ name: `f${type}`, type })),
+        { name: 'level', type: 'enumeration', options: ['low', 'high'] },
+        { name: 'count', type: 'integer', unsigned: true },
+      ]);
+      expect(accepted).toEqual({ valid: true, errors: [] });
+
+      const noOptions = await check([{ name: 'level', type: 'enumeration' }]);
+      expect(noOptions.valid).toBe(false);
+      expect(pathsOf(noOptions)).toContain('fields.0.options');
+
+      const emptyOptions = await check([{ name: 'level', type: 'enumeration', options: [] }]);
+      expect(pathsOf(emptyOptions)).toContain('fields.0.options');
+
+      const duplicated = await check([{ name: 'level', type: 'enumeration', options: ['a', 'a'] }]);
+      expect(duplicated.valid).toBe(false);
+      expect(pathsOf(duplicated).some((path) => path.startsWith('fields.0.options'))).toBe(true);
+
+      const tooLong = await check([
+        { name: 'level', type: 'enumeration', options: ['x'.repeat(MAX_OPTION_LENGTH + 1)] },
+      ]);
+      expect(pathsOf(tooLong)).toContain('fields.0.options.0');
+
+      const spaced = await check([{ name: 'level', type: 'enumeration', options: [' a'] }]);
+      expect(pathsOf(spaced)).toContain('fields.0.options.0');
+
+      const tooMany = await check([
+        {
+          name: 'level',
+          type: 'enumeration',
+          options: Array.from({ length: TOO_MANY_OPTIONS }, (_, index) => `o${index}`),
+        },
+      ]);
+      expect(pathsOf(tooMany)).toContain('fields.0.options');
+
+      const unsignedDecimal = await check([{ name: 'price', type: 'decimal', unsigned: true }]);
+      expect(unsignedDecimal.valid).toBe(false);
+      expect(pathsOf(unsignedDecimal)).toContain('fields.0.unsigned');
+
+      const optionsOnText = await check([{ name: 'title', type: 'text', options: ['a'] }]);
+      expect(pathsOf(optionsOnText)).toContain('fields.0.options');
+    });
+  },
+);

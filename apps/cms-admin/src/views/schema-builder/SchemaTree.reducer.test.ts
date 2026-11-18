@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { FIELD_TYPES } from './FieldTypes.registry';
+import { FIELD_TYPES, paletteItemOfType, paletteItems, variantOf } from './FieldTypes.registry';
 import {
   canPlaceComponentIn,
   createNewSchemaTree,
@@ -37,21 +37,54 @@ function nested(levels: number) {
 
 const names = (tree: SchemaTree) => tree.fields.map((field) => field.name);
 
-describe('FIELD_TYPES', () => {
-  it('lists the eleven field types in palette order', () => {
+describe('field type registry', () => {
+  it('lists the sixteen field types', () => {
     expect(FIELD_TYPES.map((entry) => entry.type)).toEqual([
       'text',
       'string',
       'richtext',
       'integer',
+      'biginteger',
+      'float',
+      'double',
       'decimal',
       'boolean',
       'date',
       'datetime',
+      'time',
+      'enumeration',
       'json',
       'media',
       'component',
     ]);
+  });
+
+  it('gives the palette one item per group in place of its members', () => {
+    expect(paletteItems().map((item) => item.group ?? item.defaultType)).toEqual([
+      'textInput',
+      'richtext',
+      'number',
+      'boolean',
+      'datetimePicker',
+      'enumeration',
+      'json',
+      'media',
+      'component',
+    ]);
+    expect(paletteItemOfType('integer')?.group).toBe('number');
+    expect(paletteItemOfType('datetime')?.group).toBe('datetimePicker');
+  });
+
+  it('finds the group and variant of a field from its type and unsigned', () => {
+    const keyOf = (field: { type: string; unsigned?: boolean }) => variantOf(field)?.variant.key;
+    expect(keyOf({ type: 'integer' })).toBe('integer');
+    expect(keyOf({ type: 'integer', unsigned: true })).toBe('unsignedInteger');
+    expect(keyOf({ type: 'integer', unsigned: false })).toBe('integer');
+    expect(keyOf({ type: 'biginteger', unsigned: true })).toBe('biginteger');
+    expect(keyOf({ type: 'time' })).toBe('time');
+    expect(keyOf({ type: 'text' })).toBe('singleLine');
+    expect(keyOf({ type: 'string' })).toBe('multiLine');
+    expect(variantOf({ type: 'richtext' })).toBeUndefined();
   });
 });
 
@@ -346,5 +379,179 @@ describe('refusal helpers', () => {
     expect(canPlaceComponentIn(deep, null)).toBe(true);
     expect(canPlaceComponentIn(deep, 'f2')).toBe(true);
     expect(canPlaceComponentIn(deep, 'f3')).toBe(false);
+  });
+});
+
+describe('number, datetime and enumeration fields', () => {
+  const fieldOf = (tree: SchemaTree) => tree.fields[0]!;
+  const withField = (type: string) => {
+    const tree = add(createNewSchemaTree(), type);
+    return { tree, id: fieldOf(tree).id };
+  };
+
+  it('starts an enumeration field with an empty options list', () => {
+    const { tree } = withField('enumeration');
+    expect(fieldOf(tree)).toMatchObject({ options: [], heldKeys: ['options'] });
+  });
+
+  it('keeps unsigned only on integer and options only on enumeration', () => {
+    const { tree, id } = withField('integer');
+    const unsigned = run(tree, { type: 'setFieldKey', fieldId: id, key: 'unsigned', value: true });
+    expect(fieldOf(unsigned).unsigned).toBe(true);
+    const options = run(unsigned, {
+      type: 'setFieldKey',
+      fieldId: id,
+      key: 'options',
+      value: ['a'],
+    });
+    expect(fieldOf(options).options).toBeUndefined();
+    const big = withField('biginteger');
+    const refused = run(big.tree, {
+      type: 'setFieldKey',
+      fieldId: big.id,
+      key: 'unsigned',
+      value: true,
+    });
+    expect(fieldOf(refused).unsigned).toBeUndefined();
+    const enumeration = withField('enumeration');
+    const set = run(enumeration.tree, {
+      type: 'setFieldKey',
+      fieldId: enumeration.id,
+      key: 'options',
+      value: ['a', 'b'],
+    });
+    expect(fieldOf(set).options).toEqual(['a', 'b']);
+  });
+
+  it('drops the keys a new type does not allow when retyping', () => {
+    const { tree, id } = withField('enumeration');
+    const set = run(
+      tree,
+      { type: 'setFieldKey', fieldId: id, key: 'options', value: ['a'] },
+      { type: 'changeFieldType', fieldId: id, fieldType: 'text' },
+    );
+    expect(fieldOf(set).options).toBeUndefined();
+    expect(fieldOf(set).heldKeys).not.toContain('options');
+    const back = run(set, { type: 'changeFieldType', fieldId: id, fieldType: 'enumeration' });
+    expect(fieldOf(back)).toMatchObject({ options: [], heldKeys: ['options'] });
+    const unsigned = withField('integer');
+    const retyped = run(
+      unsigned.tree,
+      { type: 'setFieldKey', fieldId: unsigned.id, key: 'unsigned', value: true },
+      { type: 'changeFieldType', fieldId: unsigned.id, fieldType: 'float' },
+    );
+    expect(fieldOf(retyped).unsigned).toBeUndefined();
+    expect(fieldOf(retyped).heldKeys).toEqual([]);
+  });
+
+  it('changes the variant: sets the type and presets, drops unsigned when leaving', () => {
+    const { tree, id } = withField('integer');
+    const unsigned = run(tree, {
+      type: 'changeFieldVariant',
+      fieldId: id,
+      variant: 'unsignedInteger',
+    });
+    expect(fieldOf(unsigned)).toMatchObject({
+      type: 'integer',
+      unsigned: true,
+      heldKeys: ['unsigned'],
+    });
+    const big = run(unsigned, { type: 'changeFieldVariant', fieldId: id, variant: 'biginteger' });
+    expect(fieldOf(big)).toMatchObject({ type: 'biginteger', heldKeys: [] });
+    expect(fieldOf(big).unsigned).toBeUndefined();
+    const plain = run(unsigned, { type: 'changeFieldVariant', fieldId: id, variant: 'integer' });
+    expect(fieldOf(plain).unsigned).toBeUndefined();
+    const date = run(plain, { type: 'changeFieldVariant', fieldId: id, variant: 'time' });
+    expect(fieldOf(date).type).toBe('time');
+  });
+
+  it('changes between single and multi-line text and keeps the other keys', () => {
+    const { tree, id } = withField('text');
+    const required = run(
+      tree,
+      { type: 'setFieldKey', fieldId: id, key: 'required', value: true },
+      { type: 'changeFieldVariant', fieldId: id, variant: 'multiLine' },
+    );
+    expect(fieldOf(required)).toMatchObject({ type: 'string', required: true });
+    const back = run(required, { type: 'changeFieldVariant', fieldId: id, variant: 'singleLine' });
+    expect(fieldOf(back)).toMatchObject({ type: 'text', required: true, heldKeys: ['required'] });
+  });
+
+  it('ignores an unknown variant', () => {
+    const { tree, id } = withField('integer');
+    expect(run(tree, { type: 'changeFieldVariant', fieldId: id, variant: 'nope' })).toBe(tree);
+  });
+
+  it('copies options when duplicating', () => {
+    const { tree, id } = withField('enumeration');
+    const copied = run(
+      tree,
+      { type: 'setFieldKey', fieldId: id, key: 'options', value: ['a', 'b'] },
+      { type: 'duplicateField', fieldId: id },
+    );
+    expect(copied.fields[1]).toMatchObject({ options: ['a', 'b'], heldKeys: ['options'] });
+  });
+
+  describe('default key', () => {
+    const setDefault = (id: string, value: unknown) =>
+      ({ type: 'setFieldKey', fieldId: id, key: 'default', value }) as const;
+
+    it('sets the key on a type that takes it and refuses media and component', () => {
+      const { tree, id } = withField('integer');
+      const set = run(tree, setDefault(id, 5));
+      expect(fieldOf(set)).toMatchObject({ default: 5, heldKeys: ['default'] });
+      expect(run(set, setDefault(id, undefined)).fields[0]).not.toHaveProperty('default');
+      for (const type of ['media', 'component']) {
+        const other = withField(type);
+        expect(run(other.tree, setDefault(other.id, 'x'))).toBe(other.tree);
+      }
+    });
+
+    it('drops the default on a type change, except between text and multi-line text', () => {
+      const text = withField('text');
+      const typed = run(text.tree, setDefault(text.id, 'hi'));
+      const multi = run(typed, {
+        type: 'changeFieldVariant',
+        fieldId: text.id,
+        variant: 'multiLine',
+      });
+      expect(fieldOf(multi)).toMatchObject({ type: 'string', default: 'hi' });
+      const rich = run(typed, { type: 'changeFieldType', fieldId: text.id, fieldType: 'richtext' });
+      expect(fieldOf(rich).default).toBeUndefined();
+      expect(fieldOf(rich).heldKeys).not.toContain('default');
+
+      const number = withField('integer');
+      const numbered = run(number.tree, setDefault(number.id, 3));
+      const asEnum = run(numbered, {
+        type: 'changeFieldType',
+        fieldId: number.id,
+        fieldType: 'enumeration',
+      });
+      expect(fieldOf(asEnum).default).toBeUndefined();
+    });
+
+    it('keeps the default when the same type takes another variant', () => {
+      const { tree, id } = withField('integer');
+      const unsigned = run(tree, setDefault(id, 3), {
+        type: 'changeFieldVariant',
+        fieldId: id,
+        variant: 'unsignedInteger',
+      });
+      expect(fieldOf(unsigned)).toMatchObject({ default: 3, unsigned: true });
+    });
+
+    it('keeps a default the options no longer hold, and copies it when duplicating', () => {
+      const { tree, id } = withField('enumeration');
+      const kept = run(
+        tree,
+        { type: 'setFieldKey', fieldId: id, key: 'options', value: ['a', 'b'] },
+        setDefault(id, 'b'),
+        { type: 'setFieldKey', fieldId: id, key: 'options', value: ['a'] },
+        { type: 'duplicateField', fieldId: id },
+      );
+      expect(kept.fields[0]).toMatchObject({ options: ['a'], default: 'b' });
+      expect(kept.fields[1]).toMatchObject({ default: 'b' });
+      expect(kept.fields[1]!.heldKeys).toContain('default');
+    });
   });
 });

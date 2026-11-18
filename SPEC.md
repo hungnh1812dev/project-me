@@ -83,6 +83,7 @@ Every global doc, app and flow, with what it holds and the parts of the old sing
 | [`reference/canonical-values.md`](docs/global/reference/canonical-values.md) | Canonical values: paths, ranks, TTLs, limits, cookies, origins | §6 |
 | [`reference/capability-map.md`](docs/global/reference/capability-map.md) | Every module with its responsibility and the modules it may depend on, and the dependency order | §2 Capability map |
 | [`reference/data-model.md`](docs/global/reference/data-model.md) | Core tables, generated content tables, conditions DSL | §8, §8.1, §8.2, §8.3 |
+| [`reference/env-vars.md`](docs/global/reference/env-vars.md) | Environment variables of every app: purpose, required at start, default, scope | - |
 | [`reference/project-structure.md`](docs/global/reference/project-structure.md) | Project tree and the file-name word vocabulary | §5 tree, §5 Words in use |
 | [`reference/stack-and-commands.md`](docs/global/reference/stack-and-commands.md) | Tech stack per area and the main commands | §3, §4 |
 
