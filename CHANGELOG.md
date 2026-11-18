@@ -11,6 +11,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - cms-api: new field types `biginteger`, `float`, `double`, `time`, `enumeration`, keys `unsigned` and `options`, GraphQL scalars `BigInt` and `Time`; document writes check `unsigned` and `options`, and the content type view lists `options`.
 - cms-api: optional field key `default` on every type except `media` and `component`, checked like an API write of the field (richtext unchanged by the sanitizer); a default-only change writes a comment-only migration; `GET /content-types` field views carry it, in the API value form, only when set; the API never applies it (CM-11).
 - cms-admin: schema builder Number, Datetime picker and Enum fields with a properties popup; JSON inputs with line numbers.
+- cms-admin: schema builder groups single-line and multi-line text as one Text input field (Text editor label, Text type select), the properties popup sets a default value for a field, and a new document or component entry starts at the fields' defaults.
 - cms-api: the image runs the nightly backup job, with client tools and script ([backups flow](docs/flows/backups/SPEC.md)).
 - web: `/cv` is built from the main `page-cv-a`, the `profile` and `pageCvText` in `views/cv` (queries `PageCv` and `PageCvVisitor`); the new projects section is shown, no main CV answers 404, and `features/cv` is gone (WPQ-9).
 - web: `/status` page, and the module status on `/`, come from one `ModuleStatus` part (query `ModuleStatus`, field `moduleStatus`) in place of the `StatusPage` query (WPQ-13).
