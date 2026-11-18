@@ -27,7 +27,12 @@ import {
 } from '@dnd-kit/core';
 
 import { PALETTE_ID_PREFIX } from './FieldPalette';
-import { COMPONENT_FIELD_TYPE, findFieldType, type FieldTypeName } from './FieldTypes.registry';
+import {
+  COMPONENT_FIELD_TYPE,
+  paletteItemLabel,
+  paletteItemOfType,
+  type FieldTypeName,
+} from './FieldTypes.registry';
 import {
   canPlaceComponentIn,
   findField,
@@ -205,8 +210,8 @@ export function SchemaDragContext({
 
   const labelOf = (id: UniqueIdentifier) => {
     if (isPaletteId(id)) {
-      const entry = findFieldType(String(id).slice(PALETTE_ID_PREFIX.length));
-      return entry === undefined ? String(id) : copy.fieldTypes[entry.copyKey];
+      const item = paletteItemOfType(String(id).slice(PALETTE_ID_PREFIX.length));
+      return item === undefined ? String(id) : paletteItemLabel(item, copy);
     }
     return findField(tree.fields, String(id))?.name ?? String(id);
   };

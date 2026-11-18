@@ -54,6 +54,15 @@ describe('FieldRow', () => {
     expect(row).not.toHaveTextContent(copy.row.markers.sensitive);
   });
 
+  it('shows a grouped type as its group and variant', () => {
+    show({
+      field: { ...field, type: 'integer', unsigned: true, heldKeys: ['unsigned'] },
+    });
+    expect(screen.getByRole('button', { name: copy.row.select('title') })).toHaveTextContent(
+      copy.row.groupedType(copy.fieldGroups.number, copy.fieldVariants.unsignedInteger),
+    );
+  });
+
   it('marks the selected row and the row with errors', () => {
     show({ isSelected: true, hasErrors: true });
     const row = screen.getByRole('button', { name: copy.row.select('title') });

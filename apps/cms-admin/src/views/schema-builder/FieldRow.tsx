@@ -9,7 +9,7 @@ import {
 import { useScreenText } from '@configs/locales';
 import { ArrowDown, ArrowUp, CircleAlert, Copy, FolderInput, Trash2 } from 'lucide-react';
 
-import { findFieldType } from './FieldTypes.registry';
+import { findFieldType, variantOf } from './FieldTypes.registry';
 import type { ListOwnerId, SchemaField } from './SchemaTree.reducer';
 
 export interface MoveTarget {
@@ -53,7 +53,16 @@ export function FieldRow({
 }: FieldRowProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   const type = findFieldType(field.type);
-  const typeLabel = type === undefined ? field.type : copy.fieldTypes[type.copyKey];
+  const grouped = variantOf(field);
+  const typeLabel =
+    grouped !== undefined
+      ? copy.row.groupedType(
+          copy.fieldGroups[grouped.group.key],
+          copy.fieldVariants[grouped.variant.key],
+        )
+      : type === undefined
+        ? field.type
+        : copy.fieldTypes[type.copyKey];
   const TypeIcon = type?.icon;
   const markers = [
     field.required === true ? copy.row.markers.required : null,

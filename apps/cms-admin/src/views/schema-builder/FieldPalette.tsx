@@ -10,7 +10,13 @@ import { useScreenText } from '@configs/locales';
 import { useDraggable } from '@dnd-kit/core';
 import { GripVertical, Plus, type LucideIcon } from 'lucide-react';
 
-import { COMPONENT_FIELD_TYPE, FIELD_TYPES, type FieldTypeName } from './FieldTypes.registry';
+import {
+  COMPONENT_FIELD_TYPE,
+  paletteItemLabel,
+  paletteItems,
+  type FieldTypeName,
+  type PaletteItem,
+} from './FieldTypes.registry';
 
 interface FieldPaletteProps {
   /** Component is left out where a new component would pass the depth limit (SB-7). */
@@ -21,10 +27,10 @@ interface FieldPaletteProps {
 /** Draggable ids of palette items are this prefix plus the field type; field ids never start with it. */
 export const PALETTE_ID_PREFIX = 'palette:';
 
-const isOffered = (type: string, canAddComponent: boolean) =>
-  canAddComponent || type !== COMPONENT_FIELD_TYPE;
+const offeredItems = (canAddComponent: boolean): PaletteItem[] =>
+  paletteItems().filter((item) => canAddComponent || item.defaultType !== COMPONENT_FIELD_TYPE);
 
-/** One item per field type; picking one adds a field at the end of the top level (SB-4). */
+/** One item per field type or group; picking one adds a field at the end of the top level (SB-4). */
 export function FieldPalette({ canAddComponent, onPick }: FieldPaletteProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   return (
@@ -36,17 +42,15 @@ export function FieldPalette({ canAddComponent, onPick }: FieldPaletteProps) {
         <p className="m-0 text-sm text-muted-foreground">{copy.fields.paletteHint}</p>
       </div>
       <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
-        {FIELD_TYPES.filter(({ type }) => isOffered(type, canAddComponent)).map(
-          ({ type, icon, copyKey }) => (
-            <PaletteItem
-              key={type}
-              type={type}
-              icon={icon}
-              label={copy.fieldTypes[copyKey]}
-              onPick={onPick}
-            />
-          ),
-        )}
+        {offeredItems(canAddComponent).map((item) => (
+          <PaletteItemRow
+            key={item.defaultType}
+            type={item.defaultType}
+            icon={item.icon}
+            label={paletteItemLabel(item, copy)}
+            onPick={onPick}
+          />
+        ))}
       </ul>
     </section>
   );
@@ -60,7 +64,7 @@ interface PaletteItemProps {
 }
 
 /** The pick button plus a drag handle: the button keeps its plain click, the handle starts a drag. */
-function PaletteItem({ type, icon: Icon, label, onPick }: PaletteItemProps) {
+function PaletteItemRow({ type, icon: Icon, label, onPick }: PaletteItemProps) {
   const copy = useScreenText('schemaBuilder').schemaBuilder;
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
     id: `${PALETTE_ID_PREFIX}${type}`,
@@ -112,14 +116,12 @@ export function AddFieldMenu({ ownerName, canAddComponent, onPick }: AddFieldMen
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {FIELD_TYPES.filter(({ type }) => isOffered(type, canAddComponent)).map(
-          ({ type, icon: Icon, copyKey }) => (
-            <DropdownMenuItem key={type} onSelect={() => onPick(type)}>
-              <Icon aria-hidden="true" />
-              {copy.fieldTypes[copyKey]}
-            </DropdownMenuItem>
-          ),
-        )}
+        {offeredItems(canAddComponent).map((item) => (
+          <DropdownMenuItem key={item.defaultType} onSelect={() => onPick(item.defaultType)}>
+            <item.icon aria-hidden="true" />
+            {paletteItemLabel(item, copy)}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1085,6 +1085,7 @@
       "duplicate": "Duplicate SAMPLE",
       "remove": "Delete SAMPLE",
       "hasErrors": "Has validation errors",
+      "groupedType": "SAMPLE · undefined",
       "markers": {
         "required": "Required",
         "sensitive": "Sensitive",
@@ -1116,6 +1117,8 @@
       "name": "Name",
       "displayName": "Display name",
       "type": "Type",
+      "numberType": "Number type",
+      "dateType": "Date type",
       "required": "Required",
       "sensitive": "Sensitive",
       "sensitiveHint": "Hidden from public and reviewer roles unless they are granted the field.",
@@ -1134,15 +1137,35 @@
         "tooDeep": "A component here would nest deeper than 3 levels."
       }
     },
+    "fieldGroups": {
+      "number": "Number",
+      "datetimePicker": "Datetime picker"
+    },
+    "fieldVariants": {
+      "unsignedInteger": "Unsigned integer",
+      "integer": "Integer",
+      "biginteger": "Big integer",
+      "float": "Float",
+      "double": "Double",
+      "decimal": "Decimal",
+      "date": "Date",
+      "datetime": "Date and time",
+      "time": "Time"
+    },
     "fieldTypes": {
       "text": "Short text",
       "string": "Long text",
       "richtext": "Rich text",
       "integer": "Whole number",
+      "biginteger": "Big integer",
+      "float": "Float",
+      "double": "Double",
       "decimal": "Decimal number",
       "boolean": "Yes / no",
       "date": "Date",
       "datetime": "Date and time",
+      "time": "Time",
+      "enumeration": "Enum",
       "json": "JSON",
       "media": "Media",
       "component": "Component"
