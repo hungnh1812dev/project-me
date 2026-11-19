@@ -308,6 +308,62 @@ describe('migration 0017 header_restructure carries the header data (Postgres 17
     expect(oldColumns).toEqual([]);
   });
 
+  it('migrates a header that has only a published copy, with no row lost', async () => {
+    const ws = await workspaceAt0016();
+    const publishedAt = new Date('2026-02-01T00:00:00Z');
+    await seedFullHeader(ws, randomUUID(), publishedAt);
+
+    await addHeaderMigration(ws);
+    expect((await migrate(ws)).applied).toEqual([HEADER_MIGRATION_FILE]);
+
+    const headers = await query<{ id: number; app_name: string; published_at: Date | null }>(
+      ws.databaseUrl,
+      'SELECT id, app_name, published_at FROM content.header',
+    );
+    expect(headers).toHaveLength(1);
+    expect(headers[0]).toMatchObject({ app_name: 'Abyss', published_at: publishedAt });
+
+    const nav = await query<{ title: string; link: string }>(
+      ws.databaseUrl,
+      'SELECT title, link FROM content.header__nav WHERE parent_id = $1 ORDER BY order_index',
+      [headers[0]!.id],
+    );
+    expect(nav.map((row) => [row.title, row.link])).toEqual([
+      ['CV', '/cv'],
+      ['Home', '/x'],
+      ['Docs', '/x'],
+    ]);
+
+    const notFound = await query<{ published_at: Date | null; title: string }>(
+      ws.databaseUrl,
+      'SELECT published_at, title FROM content.module_not_found',
+    );
+    expect(notFound).toEqual([{ published_at: publishedAt, title: 'Not found' }]);
+  });
+
+  it('turns an empty skill level into null and keeps the row', async () => {
+    const ws = await workspaceAt0016();
+    const [page] = await query<{ id: number }>(
+      ws.databaseUrl,
+      `INSERT INTO content.page_cv_a (document_id) VALUES ($1) RETURNING id`,
+      [randomUUID()],
+    );
+    await query(
+      ws.databaseUrl,
+      `INSERT INTO content.page_cv_a__skill (component_uid, parent_id, skill, level) VALUES ($1, $2, 'TS', '')`,
+      [randomUUID(), page!.id],
+    );
+
+    await addHeaderMigration(ws);
+    expect((await migrate(ws)).applied).toEqual([HEADER_MIGRATION_FILE]);
+
+    const skills = await query<{ skill: string; level: string | null }>(
+      ws.databaseUrl,
+      'SELECT skill, level FROM content.page_cv_a__skill',
+    );
+    expect(skills).toEqual([{ skill: 'TS', level: null }]);
+  });
+
   async function migrateRefusedState(ws: Workspace, expectedMessage: RegExp) {
     await addHeaderMigration(ws);
     await expect(migrate(ws)).rejects.toThrow(expectedMessage);

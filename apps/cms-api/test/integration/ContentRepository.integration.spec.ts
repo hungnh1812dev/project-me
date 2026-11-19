@@ -179,6 +179,7 @@ describe('KyselyContentRepository on page-cv-a (Postgres 17 via Testcontainers)'
         'cv-common-text',
         'header',
         'module-auth',
+        'module-not-found',
         'module-status',
         SLUG,
         'profile',
