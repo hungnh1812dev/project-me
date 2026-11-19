@@ -61,14 +61,16 @@ test.describe('cv educations', { tag: ['@web', '@cms-api', '@public-site'] }, ()
       await page.goto(cvUrl);
       await expect(page.getByRole('heading', { level: 2, name: EDUCATION_HEADING })).toBeVisible();
       const entries = page.getByRole('heading', { level: 3, name: /^E2E Degree/ });
-      await expect(entries).toHaveText(degrees);
+      await expect(entries).toHaveText(degrees.map((degree) => `${degree} Institute`));
     });
   });
 
   test('lists a single education', async ({ page, request }) => {
     await withMainCv(request, ['E2E Degree Solo'], async () => {
       await page.goto(cvUrl);
-      await expect(page.getByRole('heading', { level: 3, name: 'E2E Degree Solo' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 3, name: 'E2E Degree Solo Institute' }),
+      ).toBeVisible();
       await expect(page.getByRole('heading', { level: 3, name: /^E2E Degree/ })).toHaveCount(1);
     });
   });
