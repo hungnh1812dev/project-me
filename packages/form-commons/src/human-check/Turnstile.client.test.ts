@@ -87,6 +87,33 @@ describe('Turnstile registry', () => {
     expect(getTurnstileState('login').status).toBe('failed');
   });
 
+  it('removes the failed script, then adds one new one on the next mount and renders the widget', () => {
+    configureTurnstile({ siteKey: 'key' });
+    registerTurnstileForm('login', undefined);
+    fireScriptEvent('error');
+    expect(turnstileScripts()).toHaveLength(0);
+    registerTurnstileForm('two-factor', undefined);
+    attachTurnstileContainer('login', document.createElement('div'));
+    expect(turnstileScripts()).toHaveLength(1);
+    expect(getTurnstileState('login').status).toBe('loading');
+    const { widgets } = installFakeTurnstile();
+    fireScriptEvent('load');
+    expect(widgets).toHaveLength(1);
+  });
+
+  it('adds one new script element when resetTurnstile follows a load error', () => {
+    registerTurnstileForm('login', undefined);
+    fireScriptEvent('error');
+    resetTurnstile('login');
+    resetTurnstile('login');
+    expect(turnstileScripts()).toHaveLength(1);
+  });
+
+  it('rejects a form id outside HUMAN_CHECK_FORMS at type level', () => {
+    // @ts-expect-error not a HumanCheckForm
+    expect(() => resetTurnstile('unknown-form')).not.toThrow();
+  });
+
   it('renders the widget once the script finishes loading and removes it on detach', () => {
     configureTurnstile({ siteKey: 'key' });
     registerTurnstileForm('login', undefined);

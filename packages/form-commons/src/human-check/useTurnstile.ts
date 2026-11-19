@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 
+import type { HumanCheckForm } from '../constants/Security.constants';
 import {
   getServerTurnstileState,
   getTurnstileState,
@@ -13,7 +14,7 @@ import {
  * expired. `siteKey` wins over the one set by `configureTurnstile`. The first
  * mount on a page loads Cloudflare's script; later forms reuse it.
  */
-export function useTurnstile(formId: string, siteKey?: string): string {
+export function useTurnstile(formId: HumanCheckForm, siteKey?: string): string {
   resolveTurnstileSiteKey(siteKey);
   useEffect(() => registerTurnstileForm(formId, siteKey), [formId, siteKey]);
   return useSyncExternalStore(

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react';
 
+import type { HumanCheckForm } from '../constants/Security.constants';
 import {
   attachTurnstileContainer,
   getServerTurnstileState,
@@ -15,7 +16,7 @@ export interface TurnstileSlotText {
 
 export interface TurnstileSlotProps {
   /** One of `HUMAN_CHECK_FORMS`; also the widget's `action`. */
-  formId: string;
+  formId: HumanCheckForm;
   text: TurnstileSlotText;
 }
 

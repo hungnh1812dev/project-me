@@ -1,13 +1,14 @@
 import { act, render, screen } from '@testing-library/react';
 
 import { finishScriptLoad, turnstileScripts } from '../../test/TurnstileApi.fixture';
+import type { HumanCheckForm } from '../constants/Security.constants';
 import { configureTurnstile, resetTurnstileRegistryForTests } from './Turnstile.client';
 import { TurnstileSlot } from './TurnstileSlot';
 import { useTurnstile } from './useTurnstile';
 
 const TEXT = { loading: 'Loading check', failed: 'Check failed', expired: 'Check expired' };
 
-function Form({ formId, siteKey }: { formId: string; siteKey?: string }) {
+function Form({ formId, siteKey }: { formId: HumanCheckForm; siteKey?: string }) {
   const token = useTurnstile(formId, siteKey);
   return (
     <div>

@@ -232,6 +232,9 @@ function LoginForm() {
 - The script is added once per page on the first `useTurnstile` or
   `TurnstileSlot` mount, never at import; the kit is safe to render on the
   server. A missing site key throws an error naming `configureTurnstile`.
+  After a script load error the forms show the failed text; the next mount or
+  `resetTurnstile` call adds one new script element (no timer retry).
+  `formId` is typed `HumanCheckForm`.
 - `useTurnstile` returns the token, or `''` while none is ready or after it
   expired. Mount it together with `TurnstileSlot` of the same form id (the
   widget renders only then); `action` is the form id, `appearance` is

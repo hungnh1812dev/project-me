@@ -18,7 +18,7 @@ The browser side of the human check (D25, ADR 0027): loads Cloudflare's Turnstil
 
 ## Techniques
 
-One module-level registry (`Turnstile.client.ts`) read through `useSyncExternalStore`; immutable state per form id (`token`, `status`). The script element is added on the first `useTurnstile` or `TurnstileSlot` mount, never at import, and no `window` access happens at module top level (web renders on the server). A widget renders only when both the hook and the slot of a form are mounted.
+One module-level registry (`Turnstile.client.ts`) read through `useSyncExternalStore`; immutable state per form id (`token`, `status`). The script element is added on the first `useTurnstile` or `TurnstileSlot` mount, never at import; after a load error the failed element is removed and the next mount or `resetTurnstile` adds one new element (no timer). `formId` is typed `HumanCheckForm`. No `window` access happens at module top level (web renders on the server). A widget renders only when both the hook and the slot of a form are mounted.
 
 ## Technologies
 

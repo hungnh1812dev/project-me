@@ -1,4 +1,4 @@
-import { TURNSTILE_SCRIPT_URL } from '../constants/Security.constants';
+import { TURNSTILE_SCRIPT_URL, type HumanCheckForm } from '../constants/Security.constants';
 
 /** The slice of Cloudflare's explicit-render API the kit uses. */
 export interface TurnstileApi {
@@ -43,7 +43,7 @@ interface FormEntry {
 const INITIAL_STATE: TurnstileState = { token: '', status: 'loading' };
 
 /** One registry per page: forms by id, the configured site key and the script. */
-const forms = new Map<string, FormEntry>();
+const forms = new Map<HumanCheckForm, FormEntry>();
 let configuredSiteKey: string | undefined;
 let scriptStatus: 'idle' | 'loading' | 'ready' | 'failed' = 'idle';
 
@@ -60,7 +60,7 @@ export function resolveTurnstileSiteKey(override?: string): string {
   return siteKey;
 }
 
-function entryOf(formId: string): FormEntry {
+function entryOf(formId: HumanCheckForm): FormEntry {
   let entry = forms.get(formId);
   if (entry === undefined) {
     entry = {
@@ -81,7 +81,7 @@ function setState(entry: FormEntry, state: TurnstileState): void {
   entry.listeners.forEach((listener) => listener());
 }
 
-function renderWidget(formId: string, entry: FormEntry): void {
+function renderWidget(formId: HumanCheckForm, entry: FormEntry): void {
   const api = window.turnstile;
   const isRenderable = entry.isRegistered && entry.container !== null && entry.widgetId === null;
   if (api === undefined || !isRenderable || entry.container === null) return;
@@ -104,13 +104,19 @@ function failAllForms(): void {
   forms.forEach((entry) => setState(entry, { token: '', status: 'failed' }));
 }
 
-/** Adds the script element at most once per page; never at import. */
+/**
+ * Adds the script element at most once per page; never at import. After a
+ * load error the failed element is gone and the next call adds one new element.
+ */
 function loadScript(): void {
-  if (scriptStatus !== 'idle' || typeof document === 'undefined') return;
+  if ((scriptStatus !== 'idle' && scriptStatus !== 'failed') || typeof document === 'undefined') {
+    return;
+  }
   if (window.turnstile !== undefined) {
     scriptStatus = 'ready';
     return;
   }
+  if (scriptStatus === 'failed') forms.forEach((entry) => setState(entry, INITIAL_STATE));
   scriptStatus = 'loading';
   const script = document.createElement('script');
   script.src = TURNSTILE_SCRIPT_URL;
@@ -120,6 +126,7 @@ function loadScript(): void {
     renderAllWidgets();
   });
   script.addEventListener('error', () => {
+    script.remove();
     scriptStatus = 'failed';
     failAllForms();
   });
@@ -127,7 +134,10 @@ function loadScript(): void {
 }
 
 /** Called by `useTurnstile`: loads the script and records the form's site key. */
-export function registerTurnstileForm(formId: string, siteKey: string | undefined): () => void {
+export function registerTurnstileForm(
+  formId: HumanCheckForm,
+  siteKey: string | undefined,
+): () => void {
   const entry = entryOf(formId);
   entry.siteKey = siteKey;
   entry.isRegistered = true;
@@ -141,7 +151,10 @@ export function registerTurnstileForm(formId: string, siteKey: string | undefine
 }
 
 /** Called by `TurnstileSlot`: renders the form's widget into the container; the returned function removes it. */
-export function attachTurnstileContainer(formId: string, container: HTMLElement): () => void {
+export function attachTurnstileContainer(
+  formId: HumanCheckForm,
+  container: HTMLElement,
+): () => void {
   const entry = entryOf(formId);
   entry.container = container;
   loadScript();
@@ -156,14 +169,15 @@ export function attachTurnstileContainer(formId: string, container: HTMLElement)
 }
 
 /** Starts a fresh challenge; a token works once, so call it after every request that sent one. */
-export function resetTurnstile(formId: string): void {
+export function resetTurnstile(formId: HumanCheckForm): void {
   const entry = forms.get(formId);
   if (entry === undefined) return;
+  loadScript();
   if (entry.widgetId !== null) window.turnstile?.reset(entry.widgetId);
   setState(entry, scriptStatus === 'failed' ? entry.state : { token: '', status: 'ready' });
 }
 
-export function subscribeTurnstile(formId: string, listener: () => void): () => void {
+export function subscribeTurnstile(formId: HumanCheckForm, listener: () => void): () => void {
   const { listeners } = entryOf(formId);
   listeners.add(listener);
   return () => {
@@ -171,7 +185,7 @@ export function subscribeTurnstile(formId: string, listener: () => void): () => 
   };
 }
 
-export function getTurnstileState(formId: string): TurnstileState {
+export function getTurnstileState(formId: HumanCheckForm): TurnstileState {
   return forms.get(formId)?.state ?? INITIAL_STATE;
 }
 
