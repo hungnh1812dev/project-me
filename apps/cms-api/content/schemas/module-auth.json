@@ -213,10 +213,6 @@
       ]
     },
     {
-      "name": "openCms",
-      "type": "text"
-    },
-    {
       "name": "signedInAs",
       "type": "text"
     },
