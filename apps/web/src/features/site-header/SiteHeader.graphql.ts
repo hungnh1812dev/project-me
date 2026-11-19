@@ -1,7 +1,6 @@
 export interface HeaderNavLink {
   title: string | null;
   link: string | null;
-  requiresRole: string | null;
 }
 
 export interface HeaderNav extends HeaderNavLink {
@@ -25,11 +24,9 @@ header {
     navs {
       title
       link
-      requiresRole
       subNavs {
         title
         link
-        requiresRole
       }
     }
     author {

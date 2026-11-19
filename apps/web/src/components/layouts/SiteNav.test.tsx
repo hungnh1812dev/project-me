@@ -1,67 +1,70 @@
-import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 
-import { WebSessionProvider } from '../../features/session';
-import type { AuthApi } from '../../features/session/Auth.api';
-import { fakeApi, TEST_USER } from '../../features/session/Session.fixture';
 import { SiteNav } from './SiteNav';
 
 const NAV = [
-  { title: 'CV', link: '/cv', requiresRole: 'public', subNavs: null },
-  { title: 'Blog', link: '/blog', requiresRole: null, subNavs: null },
+  { title: 'CV', link: '/cv', subNavs: null },
+  { title: 'Blog', link: '/blog', subNavs: null },
   {
     title: 'Library',
     link: '/library',
-    requiresRole: 'reader',
     subNavs: [
-      { title: 'Notes', link: '/library/notes', requiresRole: null },
-      { title: 'Vault', link: '/library/vault', requiresRole: 'editor' },
+      { title: 'Notes', link: '/library/notes' },
+      { title: 'Vault', link: '/library/vault' },
+      { title: 'Bad sub', link: 'javascript:alert(1)' },
     ],
   },
-  { title: 'Bad', link: 'javascript:alert(1)', requiresRole: null, subNavs: null },
-  { title: null, link: '/untitled', requiresRole: null, subNavs: null },
+  {
+    title: 'Group',
+    link: 'javascript:alert(1)',
+    subNavs: [{ title: 'Inner', link: '/inner' }],
+  },
+  { title: 'Bad', link: 'javascript:alert(1)', subNavs: null },
+  { title: null, link: '/untitled', subNavs: null },
+  {
+    title: 'Dead group',
+    link: null,
+    subNavs: [{ title: 'Nope', link: 'javascript:alert(1)' }],
+  },
 ];
 
-function renderNav(user: typeof TEST_USER | null, navs = NAV) {
-  const api = fakeApi({ readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(user) });
-  const Providers = ({ children }: { children: ReactNode }) => (
-    <WebSessionProvider api={api}>{children}</WebSessionProvider>
-  );
-  return render(<SiteNav navs={navs} />, {
-    wrapper: Providers,
-  });
-}
-
 describe('SiteNav', () => {
-  it('shows nothing when navs is empty', async () => {
-    renderNav(null, []);
-    expect(await screen.findByRole('list')).toBeInTheDocument();
+  it('shows nothing when navs is empty', () => {
+    render(<SiteNav navs={[]} />);
+    expect(screen.getByRole('list')).toBeInTheDocument();
     expect(screen.queryAllByRole('link')).toHaveLength(0);
   });
 
-  it('shows public items to a signed-out viewer, hides role items and drops unsafe or untitled items', async () => {
-    renderNav(null);
-    await screen.findByRole('link', { name: 'Blog' });
+  it('renders every titled entry with a safe link, without a session provider', () => {
+    render(<SiteNav navs={NAV} />);
     const names = screen.getAllByRole('link').map((link) => link.textContent);
-    expect(names).toEqual(['CV', 'Blog']);
+    expect(names).toEqual(['CV', 'Blog', 'Library', 'Notes', 'Vault', 'Inner']);
   });
 
-  it('shows an item to a signed-in viewer with its role, and only the sub items they may see', async () => {
-    renderNav({ ...TEST_USER, role: 'reader' });
-    await screen.findByRole('link', { name: 'Library' });
-    expect(screen.getByRole('link', { name: 'Notes' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Vault' })).not.toBeInTheDocument();
+  it('never renders an unsafe link', () => {
+    render(<SiteNav navs={NAV} />);
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.getAttribute('href')).not.toMatch(/^javascript:/);
+    }
+    expect(screen.queryByText('Bad')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bad sub')).not.toBeInTheDocument();
   });
 
-  it('hides a role item from a viewer with another role', async () => {
-    renderNav({ ...TEST_USER, role: 'viewer' });
-    await screen.findByRole('link', { name: 'Blog' });
-    expect(screen.queryByRole('link', { name: 'Library' })).not.toBeInTheDocument();
+  it('drops the link of an entry with a shown sub entry and keeps it as a label', () => {
+    render(<SiteNav navs={NAV} />);
+    expect(screen.getByText('Group').closest('a')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Inner' })).toBeInTheDocument();
   });
 
-  it('marks the sub menu dismissed on Escape and clears it when focus leaves', async () => {
-    renderNav({ ...TEST_USER, role: 'reader' });
-    const parent = await screen.findByRole('link', { name: 'Library' });
+  it('leaves out an untitled entry and an entry with no shown sub entry and no link', () => {
+    render(<SiteNav navs={NAV} />);
+    expect(screen.queryByText('/untitled')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dead group')).not.toBeInTheDocument();
+  });
+
+  it('marks the sub menu dismissed on Escape and clears it when focus leaves', () => {
+    render(<SiteNav navs={NAV} />);
+    const parent = screen.getByRole('link', { name: 'Library' });
     const item = parent.closest('li')!;
     parent.focus();
     fireEvent.keyDown(parent, { key: 'Escape' });

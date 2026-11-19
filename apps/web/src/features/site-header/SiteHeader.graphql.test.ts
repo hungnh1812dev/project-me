@@ -12,8 +12,9 @@ describeContentQueryContract({
 
 describe('SiteHeader selection', () => {
   it('selects the nav and sub nav fields the header reads', () => {
-    for (const field of ['title', 'link', 'requiresRole', 'subNavs']) {
+    for (const field of ['title', 'link', 'subNavs']) {
       expect(SITE_HEADER_QUERY).toContain(field);
     }
+    expect(SITE_HEADER_QUERY).not.toMatch(/requires/i);
   });
 });

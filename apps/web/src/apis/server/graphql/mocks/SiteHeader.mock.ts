@@ -2,7 +2,7 @@
 export const SITE_HEADER_MOCK = {
   header: {
     appName: 'Abyss',
-    navs: [{ title: 'CV', link: '/cv', requiresRole: 'public', subNavs: [] }],
+    navs: [{ title: 'CV', link: '/cv', subNavs: [] }],
     author: { btnLoginText: 'Sign in', btnLogoutText: 'Sign out' },
   },
 } as const;

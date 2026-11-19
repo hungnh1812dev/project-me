@@ -3,14 +3,13 @@
 import { useState, type FocusEvent, type KeyboardEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 
-import { useCanSee } from '../../features/session';
 import type { HeaderNav } from '../../features/site-header/SiteHeader.graphql';
 import { isSafeLinkTarget } from '../../utils/SafeLinkTarget.rules';
 
 interface NavEntry {
   title: string | null;
   link: string | null;
-  requiresRole: string | null;
+  subNavs?: NavEntry[] | null;
 }
 
 const NAV_LINK_CLASS = 'text-muted-foreground hover:text-foreground text-sm font-medium';
@@ -30,17 +29,24 @@ function NavLink({ title, link }: { title: string; link: string }) {
   );
 }
 
-/** One header.navs item (or sub item): shown when the viewer may see it and its link is safe. Display only (D3). */
+/** A nav entry shows with a title and a safe link, or (top level) with a title and a shown sub entry. Display only (D3). */
+export function isNavEntryShown(entry: NavEntry): boolean {
+  if (!entry.title) return false;
+  if (entry.link && isSafeLinkTarget(entry.link)) return true;
+  return (entry.subNavs ?? []).some(isNavEntryShown);
+}
+
+/** One header.navs item (or sub item). An entry without a safe link but with a shown sub entry is a label. */
 function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode }) {
-  const canSee = useCanSee(entry.requiresRole);
   const [isSubNavDismissed, setIsSubNavDismissed] = useState(false);
-  if (!canSee || !entry.title || !entry.link || !isSafeLinkTarget(entry.link)) return null;
+  if (!isNavEntryShown(entry) || !entry.title) return null;
   const dismissSubNav = (event: KeyboardEvent) => {
     if (event.key === 'Escape') setIsSubNavDismissed(true);
   };
   const reopenSubNavWhenFocusLeaves = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget)) setIsSubNavDismissed(false);
   };
+  const hasSafeLink = entry.link !== null && isSafeLinkTarget(entry.link);
   return (
     <li className="group relative" data-subnav-dismissed={isSubNavDismissed ? '' : undefined}>
       <div
@@ -49,7 +55,11 @@ function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode })
         onBlur={reopenSubNavWhenFocusLeaves}
         onMouseLeave={() => setIsSubNavDismissed(false)}
       >
-        <NavLink title={entry.title} link={entry.link} />
+        {hasSafeLink && entry.link ? (
+          <NavLink title={entry.title} link={entry.link} />
+        ) : (
+          <span className={NAV_LINK_CLASS}>{entry.title}</span>
+        )}
         {children}
       </div>
     </li>
@@ -66,13 +76,15 @@ function SubNav({ entries }: { entries: NavEntry[] }) {
   );
 }
 
-/** Header links: the `header.navs` items the viewer may see, each with its `subNavs`. */
+/** Header links: the shown `header.navs` items, each with its `subNavs`. */
 export function SiteNav({ navs }: { navs: HeaderNav[] | null }) {
   return (
     <ul className="flex items-center gap-4">
       {(navs ?? []).map((entry, index) => (
         <NavItem key={`${entry.link}-${index}`} entry={entry}>
-          {entry.subNavs && entry.subNavs.length > 0 ? <SubNav entries={entry.subNavs} /> : null}
+          {entry.subNavs && entry.subNavs.some(isNavEntryShown) ? (
+            <SubNav entries={entry.subNavs} />
+          ) : null}
         </NavItem>
       ))}
     </ul>
