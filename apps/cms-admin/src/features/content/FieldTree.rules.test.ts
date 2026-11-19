@@ -27,6 +27,8 @@ describe('buildFieldTree (page-cv-a)', () => {
       'experiences',
       'projects',
       'educations',
+      'languages',
+      'references',
     ]);
   });
 
