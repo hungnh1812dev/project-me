@@ -4,6 +4,7 @@
 - Date: 2026-11-05 (planner `PLAN web-bff-hardening`; replaces the ADR 0017 that D21 named on 2026-10-31, which was never committed; the number 0017 now belongs to the cms-admin locale loader)
 - Spec: D21 in [docs/apps/web/SPEC.md](../apps/web/SPEC.md); rules in [docs/apps/web/RULES.md](../apps/web/RULES.md) "BFF (D21)"; pipeline in [docs/apps/web/FLOW.md](../apps/web/FLOW.md); endpoints in [api-contract.md](../global/reference/api-contract.md) "Web BFF"; acceptance criteria 21-25 in [ACCEPTANCE.md](../global/ACCEPTANCE.md); D7, D14, D17 amendments in [DECISIONS.md](../global/DECISIONS.md).
 - Amended 2026-11-06 (feature web-api-path, user answers of 2026-11-06): the BFF path moved from `/bff/v1/*` to `/api/v1/*` and its route files from `app/bff/v1/` to `app/api/v1/`. (1) Pure rename: response shapes, status codes, error codes, cookies and headers unchanged. (2) Every reference follows: code, unit and e2e tests, docs, README, SPEC index, CHANGELOG. (3) Internal names keep the word `bff` (`apis/server/bff/`, `defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `BFF_BASE_PATH`, `BFF_ENDPOINTS`, the e2e `BFF_PATHS`, the `[bff]` log tag, the `BFF_*` codes). (4) `/bff/v1/*` is removed outright: web's 404, no alias, no redirect. Since cms-api also serves `/api/v1/*` on the admin origin, the two are told apart by origin (D21 "Topology"). The §8 file map is kept as built.
+- Amended 2026-11-19 (public-site PS-5): section 3 gains `BFF_NOT_FOUND` (404, generic message). `BffContext` carries the awaited route `params` (`{}` without one); the refused-request log names the route pattern (`/api/v1/cv/[documentId]`), never a param value.
 - Rules for every task of this design: `code-standards` §4 (one owner, small interface, names, few files, §4.5 file names with `docs/global/RULES.md` "Naming"), the graphify rules of `CLAUDE.md`, `docs/global/RULES.md`, `docs/apps/web/RULES.md`, the sign-in and public-site flow rules.
 
 ## 1. Context (checked on the repo, 2026-11-05)
@@ -54,6 +55,7 @@ Every refusal is `{ statusCode, errorCode, message }` with `Cache-Control: no-st
 | 401 | `BFF_SESSION_REQUIRED` | `GET /api/v1/cv` without a session |
 | 403 | `BFF_ORIGIN_NOT_ALLOWED` | state-changing route with a missing or foreign `Origin`, or `Sec-Fetch-Site` other than `same-origin` |
 | 403 | `BFF_PRIVILEGED_ACCOUNT` | the account holds a permission whose action is not `read` |
+| 404 | `BFF_NOT_FOUND` | a route answers that the object does not exist, whatever the reason (public-site PS-5); the message names no id or type |
 | 405 | `BFF_METHOD_NOT_ALLOWED` | method not bound (with `Allow`) |
 | 413 | `BFF_BODY_TOO_LARGE` | body over 8 KiB (declared or read) |
 | 415 | `BFF_UNSUPPORTED_MEDIA_TYPE` | POST body not `application/json` |

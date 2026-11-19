@@ -35,7 +35,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 
 ## Entry points
 
-`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorOf`, `bffErrorResponse` (`bff/`); `serverApi` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `executeGraphql` (API token or the visitor's `accessToken`, `next` cache options, optional `mock` key and `resolveData`; an `accessToken` call is never cached or mocked) and `requireRootField` (a `resolveData` that fails with `NO_DATA` on a null root field) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
+`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorOf`, `bffErrorResponse` (`bff/`); `serverApi` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `executeGraphql` (API token or the visitor's `accessToken`, `next` cache options, optional `mock` key, `resolveData` and `variables` (string values, sent as the body's `variables`, never logged or used in a mock lookup); an `accessToken` call is never cached or mocked) and `requireRootField` (a `resolveData` that fails with `NO_DATA` on a null root field) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
 
 ## Where to change what
 

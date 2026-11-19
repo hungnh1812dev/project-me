@@ -44,6 +44,10 @@ export const BFF_ERROR_CODES = {
     statusCode: HTTP_STATUS.FORBIDDEN,
     message: 'This account cannot sign in on the public site.',
   },
+  BFF_NOT_FOUND: {
+    statusCode: HTTP_STATUS.NOT_FOUND,
+    message: 'Not found.',
+  },
   BFF_METHOD_NOT_ALLOWED: {
     statusCode: HTTP_STATUS.METHOD_NOT_ALLOWED,
     message: 'The method is not allowed.',

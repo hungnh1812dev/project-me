@@ -126,6 +126,7 @@ describe('answerCvRead', () => {
     request: new Request('https://site.test/api/v1/cv'),
     body: {},
     visitorIp: undefined,
+    params: {},
   };
 
   it('reads the CV with the visitor token, uncached, and passes a rotated cookie on', async () => {

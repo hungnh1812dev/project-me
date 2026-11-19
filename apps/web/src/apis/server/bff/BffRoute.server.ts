@@ -37,6 +37,8 @@ export interface BffContext<TBody> {
   body: TBody;
   /** Undefined when no trusted address was found. */
   visitorIp: string | undefined;
+  /** The awaited route params (`[documentId]` and the like); `{}` for a route without one. */
+  params: Record<string, string>;
 }
 
 export interface BffRouteOptions<TSchema extends z.ZodObject> {
@@ -49,7 +51,12 @@ export interface BffRouteOptions<TSchema extends z.ZodObject> {
   handle: (context: BffContext<z.output<TSchema>>) => Promise<Response>;
 }
 
-type BffHandler = (request: Request) => Promise<Response>;
+/** The second argument Next passes to a route handler. */
+interface NextRouteContext {
+  params?: Promise<Record<string, string>>;
+}
+
+type BffHandler = (request: Request, routeContext?: NextRouteContext) => Promise<Response>;
 export type BffRouteHandlers = Record<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', BffHandler>;
 
 const HANDLED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
@@ -134,6 +141,7 @@ function withoutHumanCheckToken(body: Record<string, unknown>): Record<string, u
 async function runPipeline<TSchema extends z.ZodObject>(
   options: BffRouteOptions<TSchema>,
   request: Request,
+  params: Record<string, string>,
 ): Promise<Response> {
   const env = getServerEnv();
   if (!options.methods.includes(request.method as BffMethod)) {
@@ -159,18 +167,39 @@ async function runPipeline<TSchema extends z.ZodObject>(
     request,
     body: withoutHumanCheckToken(body) as z.output<TSchema>,
     visitorIp,
+    params,
   });
 }
 
-/** Logs a failure once, with the method and path as its operation: codes only, never a body, token or cookie. */
-function logFailure(request: Request, error: unknown): void {
+/** The request path with each route param value replaced by `[name]`, so a log line never holds a param value. */
+function routePatternOf(pathname: string, params: Record<string, string>): string {
+  const nameByValue = new Map(Object.entries(params).map(([name, value]) => [value, name]));
+  return pathname
+    .split('/')
+    .map((segment) => {
+      const name = nameByValue.get(safeDecode(segment));
+      return name === undefined ? segment : `[${name}]`;
+    })
+    .join('/');
+}
+
+function safeDecode(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+/** Logs a failure once, with the method and route pattern as its operation: codes only, never a body, token, cookie or param value. */
+function logFailure(request: Request, params: Record<string, string>, error: unknown): void {
   const failure = error instanceof WebApiError ? error : bffErrorOf(error);
   logApiError(
     new WebApiError({
       source: failure.source,
       errorCode: failure.errorCode,
       statusCode: failure.statusCode,
-      operation: `${request.method} ${new URL(request.url).pathname}`,
+      operation: `${request.method} ${routePatternOf(new URL(request.url).pathname, params)}`,
       retryAfterSeconds: failure.retryAfterSeconds,
       upstreamErrorCode: failure.upstreamErrorCode,
     }),
@@ -185,12 +214,14 @@ function logFailure(request: Request, error: unknown): void {
 export function defineBffRoute<TSchema extends z.ZodObject = z.ZodObject<Record<string, never>>>(
   options: BffRouteOptions<TSchema>,
 ): BffRouteHandlers {
-  const handler: BffHandler = async (request) => {
+  const handler: BffHandler = async (request, routeContext) => {
     let response: Response;
+    let params: Record<string, string> = {};
     try {
-      response = await runPipeline(options, request);
+      params = (await routeContext?.params) ?? {};
+      response = await runPipeline(options, request, params);
     } catch (error) {
-      logFailure(request, error);
+      logFailure(request, params, error);
       response = bffErrorResponse(bffErrorOf(error));
     }
     response.headers.set(CACHE_CONTROL_HEADER, CACHE_CONTROL_NO_STORE);
