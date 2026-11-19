@@ -12,6 +12,7 @@ import {
   type UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import { REVIEWER_SETTINGS_SUBJECT, VersionCache, type AccountActor } from '../../access';
+import { TURNSTILE_VERIFIER, type TurnstileVerifier } from '../../human-check';
 import { AccessTokenService, USER_AGENT_MAX_LENGTH } from '../../identity';
 import { AUDIT_ACTIONS, auditActorOf, SecurityAuditService, selfActor } from '../../security-audit';
 import { REVIEWER_ACCOUNT, REVIEWER_SESSION_TTL_MS } from '../domain/Reviewer.constants';
@@ -35,10 +36,8 @@ import {
   REVIEWER_ACCOUNT_GATEWAY,
   REVIEWER_IP_KEY,
   REVIEWER_REPOSITORY,
-  TURNSTILE_VERIFIER,
   type ReviewerAccountGateway,
   type ReviewerRepository,
-  type TurnstileVerifier,
 } from './Reviewer.port';
 
 /** What a visitor sends to start a session (the http layer validates it). */

@@ -68,6 +68,17 @@ describe('public constants snapshot', () => {
     expect(constants.totp).toEqual({ digits: 6, periodSeconds: 30 });
     expect(constants.refreshCookieName).toBe('__Secure-abyss_rt');
     expect(constants.reviewerInputLimits.NOTES_MAX_LENGTH).toBe(500);
+    expect(constants.humanCheckForms).toEqual({
+      LOGIN: 'login',
+      TWO_FACTOR: 'two-factor',
+      OWNER_SETUP: 'owner-setup',
+      PASSWORD_RESET: 'password-reset',
+    });
+    expect(constants.humanCheckTokenField).toBe('turnstileToken');
+    expect(constants.errorCodes.humanCheck).toEqual({
+      FAILED: 'HUMAN_CHECK_FAILED',
+      UNAVAILABLE: 'HUMAN_CHECK_UNAVAILABLE',
+    });
     expect(constants.permissionActions).toEqual(
       expect.arrayContaining(['read', 'create', 'update', 'delete']),
     );

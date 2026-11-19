@@ -14,6 +14,13 @@
     "periodSeconds": 30
   },
   "refreshCookieName": "__Secure-abyss_rt",
+  "humanCheckForms": {
+    "LOGIN": "login",
+    "TWO_FACTOR": "two-factor",
+    "OWNER_SETUP": "owner-setup",
+    "PASSWORD_RESET": "password-reset"
+  },
+  "humanCheckTokenField": "turnstileToken",
   "reviewerInputLimits": {
     "VISITOR_ROLE_MAX_LENGTH": 64,
     "PURPOSE_TAG_MAX_LENGTH": 40,
@@ -69,6 +76,10 @@
     "ownerSetup": {
       "TOKEN_INVALID": "SETUP_TOKEN_INVALID",
       "EMAIL_TAKEN": "OWNER_EMAIL_TAKEN"
+    },
+    "humanCheck": {
+      "FAILED": "HUMAN_CHECK_FAILED",
+      "UNAVAILABLE": "HUMAN_CHECK_UNAVAILABLE"
     },
     "reviewer": {
       "DISABLED": "REVIEWER_DISABLED",

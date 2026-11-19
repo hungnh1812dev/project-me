@@ -4,14 +4,10 @@ import type {
   UnitOfWork,
 } from '../../../infrastructure/database/TransactionRunner.port';
 import type { AccountActor, VersionCache } from '../../access';
+import type { TurnstileVerifier } from '../../human-check';
 import type { AccessTokenService } from '../../identity';
 import type { SecurityAuditService } from '../../security-audit';
-import { UnconfiguredTurnstileVerifier } from '../adapters/Turnstile.client';
-import type {
-  ReviewerAccountGateway,
-  ReviewerRepository,
-  TurnstileVerifier,
-} from './Reviewer.port';
+import type { ReviewerAccountGateway, ReviewerRepository } from './Reviewer.port';
 import { deriveReviewerIpKey, ReviewerAccessService } from './ReviewerAccess.service';
 
 const SESSION_REQUEST = {
@@ -19,6 +15,10 @@ const SESSION_REQUEST = {
   purposeTags: ['hiring'],
   notes: 'hello',
   turnstileToken: 'token',
+};
+const UNCONFIGURED_TURNSTILE: TurnstileVerifier = {
+  isConfigured: false,
+  verify: () => Promise.resolve('unavailable'),
 };
 const IP_KEY = deriveReviewerIpKey('p'.repeat(32));
 const NOW_MS = 1_000_000;
@@ -51,7 +51,7 @@ function serviceWith(
     } as ReviewerRepository,
     { ...overrides.accounts } as ReviewerAccountGateway,
     inlineRunner,
-    overrides.turnstile ?? new UnconfiguredTurnstileVerifier(),
+    overrides.turnstile ?? UNCONFIGURED_TURNSTILE,
     IP_KEY,
     { now: () => NOW_MS },
     { ...overrides.versions } as VersionCache,
@@ -68,8 +68,8 @@ async function kindOf(promise: Promise<unknown>): Promise<unknown> {
 
 describe('ReviewerAccessService.createSession', () => {
   it('answers unavailable and never calls verify when Turnstile is not configured', async () => {
-    const turnstile = new UnconfiguredTurnstileVerifier();
-    const verify = jest.spyOn(turnstile, 'verify');
+    const verify = jest.fn();
+    const turnstile = { isConfigured: false, verify } satisfies TurnstileVerifier;
     const isEnabled = jest.fn();
     const service = serviceWith({ turnstile, reviewers: { isEnabled } });
 

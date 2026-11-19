@@ -72,8 +72,12 @@ export interface IAppConfig {
      * tokens are refused, the cleanup job does not start (ADR 0014).
      */
     readonly isFeatureEnabled: boolean;
-    /** Hostname Turnstile replies must name; undefined = not checked. */
-    readonly turnstileExpectedHostname: string | undefined;
+  };
+  readonly humanCheck: {
+    /** Hostnames a passing Turnstile reply may name; empty = not checked. */
+    readonly expectedHostnames: string[];
+    /** ALLOW_TURNSTILE_TEST_SECRET=smoke: the Turnstile test secret may run in production. */
+    readonly isTestSecretAllowed: boolean;
   };
   readonly secrets: {
     readonly jwtAccessSecret: string | undefined;
@@ -82,8 +86,8 @@ export interface IAppConfig {
     /** Previous TOTP_ENC_KEY, kept to decrypt secrets during a rotation. */
     readonly totpEncPreviousKey: string | undefined;
     /**
-     * Cloudflare Turnstile secret key. Optional: unset, reviewer
-     * sessions are refused (503), never skipped.
+     * Cloudflare Turnstile secret key. Optional outside production: unset,
+     * every human-checked route and reviewer sessions answer 503, never skipped.
      */
     readonly turnstileSecretKey: string | undefined;
     /**
@@ -254,7 +258,10 @@ export function loadAppConfig(rawEnv: RawEnv): IAppConfig {
     backups: backupStorageConfigOf(env),
     reviewer: {
       isFeatureEnabled: env.REVIEWER_FEATURE_ENABLED,
-      turnstileExpectedHostname: env.TURNSTILE_EXPECTED_HOSTNAME,
+    },
+    humanCheck: {
+      expectedHostnames: env.TURNSTILE_EXPECTED_HOSTNAME ?? [],
+      isTestSecretAllowed: env.ALLOW_TURNSTILE_TEST_SECRET !== undefined,
     },
     secrets: {
       jwtAccessSecret: env.JWT_ACCESS_SECRET,
