@@ -14,8 +14,8 @@ SETUP_STATUS_CLOSED='"open":false'
 
 # setup_body <token>: the owner setup request body (the owner credentials of this run).
 setup_body() {
-  printf '{"setupToken":"%s","email":"%s","displayName":"Owner","password":"%s"}' \
-    "$1" "$STACK_OWNER_EMAIL" "$STACK_OWNER_PASSWORD"
+  printf '{"setupToken":"%s","email":"%s","displayName":"Owner","password":"%s","turnstileToken":"%s"}' \
+    "$1" "$STACK_OWNER_EMAIL" "$STACK_OWNER_PASSWORD" "$STACK_TURNSTILE_DUMMY_TOKEN"
 }
 
 # setup_status_is <fragment> <label>

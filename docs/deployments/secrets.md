@@ -28,7 +28,7 @@ The database credentials are split by consumer (D19). A pod gets only the login 
 Notes:
 
 - `DB_USERNAME` is the full login name the database server expects (some managed services add a suffix to the role name). It lives only in these Secrets, never in `cms-api-config`.
-- `SMTP_USER` and `SMTP_PASSWORD` are set both or neither. `CLOUDINARY_API_SECRET` is required with `MEDIA_PROVIDER=cloudinary`. `TURNSTILE_SECRET_KEY` unset makes `POST /reviewer/sessions` answer 503. `JWT_ACCESS_SECRET`, `OTP_PEPPER` and `TOTP_ENC_KEY` must each be at least 32 bytes (`openssl rand -base64 48`).
+- `SMTP_USER` and `SMTP_PASSWORD` are set both or neither. `CLOUDINARY_API_SECRET` is required with `MEDIA_PROVIDER=cloudinary`. `TURNSTILE_SECRET_KEY` is required in production for the human check of the public auth forms and reviewer sessions (D25); cms-api stops at start without it. Set it to the real Cloudflare key, never Cloudflare's test secret: `ALLOW_TURNSTILE_TEST_SECRET` is never set in deploy config (smoke stack only). `JWT_ACCESS_SECRET`, `OTP_PEPPER` and `TOTP_ENC_KEY` must each be at least 32 bytes (`openssl rand -base64 48`).
 - `OWNER_SETUP_TOKEN` is optional and temporary: it opens the one-time owner setup page ([devops-runbook.md](devops-runbook.md), "First owner").
 - The key ids (`JWT_ACCESS_KID`, `TOTP_ENC_KID`, `TOTP_ENC_PREVIOUS_KID`) are labels, not secrets: they go in the ConfigMap. The Turnstile **site** key is public and is a web build arg.
 - Secrets outside the cluster: `DEPLOYMENT_REPO_TOKEN` and the registry login of CI live in GitHub Environments ([ci-cd.md](ci-cd.md)).

@@ -5,10 +5,10 @@ MAIL_POLL_ATTEMPTS="15"
 check_mail() {
   echo "Password reset mail through SMTP to Mailpit"
   request POST "$ADMIN_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
-    --data "$(printf '{"email":"%s"}' "$STACK_OWNER_EMAIL")"
+    --data "$(printf '{"email":"%s","turnstileToken":"%s"}' "$STACK_OWNER_EMAIL" "$STACK_TURNSTILE_DUMMY_TOKEN")"
   expect_status "request-otp answers 202" 202
   request POST "$ADMIN_ORIGIN$API_PREFIX/auth/password/request-otp" -H 'Content-Type: application/json' \
-    --data "$(printf '{"email":"nobody@%s"}' "$SMOKE_DOMAIN")"
+    --data "$(printf '{"email":"nobody@%s","turnstileToken":"%s"}' "$SMOKE_DOMAIN" "$STACK_TURNSTILE_DUMMY_TOKEN")"
   expect_status "request-otp answers 202 for an unknown email too" 202
   local mail_seen=0
   for _ in $(seq "$MAIL_POLL_ATTEMPTS"); do

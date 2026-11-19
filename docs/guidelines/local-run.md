@@ -100,6 +100,8 @@ With `local`, also set `MEDIA_LOCAL_DIR` (an absolute directory) and `MEDIA_LOCA
 
 Every other key is optional locally. `apps/cms-api/.env.example` is the list: it names each key, says when it applies and what the default is, and marks the CLI-only ones (`OWNER_EMAIL`, `OWNER_DISPLAY_NAME`). A spec (`config/EnvExample.contract.spec.ts`) fails when that file and the config schema drift apart. Do not set the `*_RATE_LIMIT_*` keys; they are for the smoke stack.
 
+Direct calls to cms-api (`curl`, scripts) on login, 2FA verify and email challenge, owner setup and password request-otp and reset need the human check (D25): send `turnstileToken` in the JSON body. A stack that runs Cloudflare's always-pass test secret (`pnpm dev:stack`, the smoke stack) accepts the published dummy token `XXXX.DUMMY.TOKEN.XXXX`; without a token the route answers `400 HUMAN_CHECK_FAILED`. A cms-api with no `TURNSTILE_SECRET_KEY` answers `503 HUMAN_CHECK_UNAVAILABLE` on those routes.
+
 Tests: `pnpm --filter @abyss/cms-api test:unit`, and `test:integration` (Testcontainers; Docker must be running).
 
 ## 4. cms-admin (port 5173)
