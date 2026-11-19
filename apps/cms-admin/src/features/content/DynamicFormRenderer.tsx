@@ -30,7 +30,7 @@ export function DynamicFormRenderer({
 }: DynamicFormRendererProps) {
   const copy = useScreenText('content').content;
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-6">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
       {fields.map((node) => {
         const name = prefix === '' ? node.name : `${prefix}.${node.name}`;
         if (masked.has(node.path)) {

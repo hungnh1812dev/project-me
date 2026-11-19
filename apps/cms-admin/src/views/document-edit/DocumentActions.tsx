@@ -108,7 +108,7 @@ export function DocumentActions({
     holds('update') && access.canWriteEveryField(slug, rootFieldNames) && hasLifecycle;
 
   return (
-    <fieldset className="m-0 flex min-w-0 flex-wrap justify-end gap-2 border-0 p-0">
+    <fieldset className="m-0 flex min-w-0 flex-wrap items-center justify-end gap-3 border-0 p-0">
       <legend className="sr-only">{copy.group}</legend>
       {canDiscard ? (
         <Button

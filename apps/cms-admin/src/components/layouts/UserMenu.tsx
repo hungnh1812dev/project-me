@@ -61,15 +61,19 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={COMMON_TEXT.session.accountMenu(user.displayName)}
-        className={`duration-fast flex size-9 items-center justify-center rounded-full bg-nav-active text-sm font-medium text-nav-active-foreground transition-colors hover:bg-muted ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+        className={`duration-fast flex size-9 items-center justify-center rounded-full bg-nav-active text-sm font-semibold text-nav-active-foreground shadow-xs ring-1 ring-border transition-colors hover:bg-muted ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
       >
         <span aria-hidden="true">{initialsOf(user.displayName, user.email)}</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuLabel className="grid gap-0.5">
-          <span className="font-medium">{user.displayName}</span>
+      <DropdownMenuContent className="w-56 p-1.5">
+        <DropdownMenuLabel className="grid gap-1 px-3 py-2">
+          <span className="text-sm font-semibold text-foreground">{user.displayName}</span>
           <span className="text-xs font-normal text-muted-foreground">{user.email}</span>
-          <span className="text-xs font-normal text-muted-foreground">{user.role}</span>
+          <div className="mt-0.5">
+            <span className="inline-flex items-center rounded-control bg-muted px-2 py-0.5 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              {user.role}
+            </span>
+          </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {links.map((link) => (

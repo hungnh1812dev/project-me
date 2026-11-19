@@ -19,18 +19,20 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="grid gap-2">
+    <div className="flex flex-col gap-4 pb-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid gap-1.5">
         <div className="flex flex-wrap items-center gap-3">
           <h1
             tabIndex={-1}
-            className="m-0 text-2xl font-semibold tracking-tight break-words outline-none"
+            className="m-0 text-2xl font-bold tracking-tight break-words text-foreground outline-none sm:text-3xl"
           >
             {title}
           </h1>
           {badge}
         </div>
-        <p className="m-0 max-w-prose text-sm text-muted-foreground">{description}</p>
+        <p className="m-0 max-w-prose text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       </div>
       {action === undefined ? null : <div className="shrink-0">{action}</div>}
     </div>
@@ -54,12 +56,15 @@ export function TableSkeleton({ label }: { label: string }) {
       padding="flush"
       aria-busy="true"
       aria-live="polite"
-      className="grid gap-px overflow-hidden"
+      className="grid gap-px overflow-hidden shadow-card"
     >
       <span className="sr-only">{label}</span>
-      <div className="h-10 bg-muted" />
+      <div className="h-11 border-b border-border bg-muted/60" />
       {Array.from({ length: TABLE_SKELETON_ROWS }, (_, index) => (
-        <div key={index} className="flex items-center gap-4 bg-card px-3 py-3">
+        <div
+          key={index}
+          className="flex items-center gap-4 border-b border-border/50 bg-card px-4 py-3.5 last:border-b-0"
+        >
           <div className="h-4 w-1/3 animate-pulse rounded-item bg-muted" />
           <div className="h-4 w-1/6 animate-pulse rounded-item bg-muted" />
           <div className="h-4 w-1/6 animate-pulse rounded-item bg-muted" />
@@ -81,10 +86,12 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <Card className="grid justify-items-start gap-1">
-      {icon}
-      <p className="m-0 text-sm font-medium">{title}</p>
-      {hint === undefined ? null : <p className="m-0 text-sm text-muted-foreground">{hint}</p>}
+    <Card className="flex flex-col items-center justify-center gap-2 py-12 text-center shadow-card">
+      {icon ? <div className="text-muted-foreground/60">{icon}</div> : null}
+      <p className="m-0 text-sm font-semibold text-foreground">{title}</p>
+      {hint === undefined ? null : (
+        <p className="m-0 max-w-sm text-xs text-muted-foreground">{hint}</p>
+      )}
     </Card>
   );
 }

@@ -75,8 +75,8 @@ export function FieldRow({
   return (
     <div
       data-selected={isSelected ? 'true' : undefined}
-      className={`flex flex-wrap items-center gap-1 rounded-control border px-1 py-1 ${
-        isSelected ? 'border-primary bg-nav-active' : 'border-border bg-card'
+      className={`flex flex-wrap items-center gap-1.5 rounded-control border px-2 py-1.5 shadow-xs transition-colors ${
+        isSelected ? 'border-primary bg-nav-active' : 'border-border bg-card hover:border-border/80'
       }`}
     >
       {dragHandle}
@@ -96,7 +96,7 @@ export function FieldRow({
         {markers.map((marker) => (
           <span
             key={marker}
-            className="rounded-control border border-border bg-muted px-1.5 text-xs text-muted-foreground"
+            className="rounded-control border border-border/70 bg-muted/70 px-2 py-0.5 text-xs font-medium text-muted-foreground shadow-2xs"
           >
             {marker}
           </span>

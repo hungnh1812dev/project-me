@@ -142,7 +142,7 @@ export function ApiTokensPage() {
           </p>
         </div>
       ) : (
-        <Card padding="flush" className="relative overflow-x-auto">
+        <Card padding="flush" className="relative overflow-x-auto shadow-card">
           <SortableSheet
             className="rounded-none border-0"
             caption={copy.tableLabel}

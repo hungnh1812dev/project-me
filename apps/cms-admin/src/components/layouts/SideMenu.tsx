@@ -60,13 +60,20 @@ function useMenuState(nav: NavSource): MenuState {
 
 export function AppNameLink() {
   const handleClick = useGuardedLinkClick();
+  const mark = COMMON_TEXT.app.name.charAt(0).toUpperCase() || 'A';
   return (
     <Link
       to={APP_ROUTES.HOME}
       onClick={(event) => handleClick(event, APP_ROUTES.HOME)}
-      className={`rounded-item text-sm font-semibold ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
+      className={`group duration-fast flex items-center gap-2.5 rounded-item py-1 text-sm font-semibold tracking-tight transition-opacity hover:opacity-90 ${CONTROL_FOCUS_RING_ONLY_CLASSES}`}
     >
-      {COMMON_TEXT.app.name}
+      <span
+        aria-hidden="true"
+        className="flex size-7 items-center justify-center rounded-control bg-primary text-xs font-bold text-primary-foreground shadow-xs"
+      >
+        {mark}
+      </span>
+      <span className="text-foreground">{COMMON_TEXT.app.name}</span>
     </Link>
   );
 }
