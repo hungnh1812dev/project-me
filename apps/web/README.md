@@ -139,9 +139,6 @@ tokens only (`bg-card`, `text-muted-foreground`).
   owner) is privileged: the token is dropped, the web stays anonymous and the
   dialog points to the admin console. A missing list counts as privileged.
   A failed sign-out keeps the session and shows an error to retry.
-- "Open CMS" links to `NEXT_PUBLIC_ADMIN_URL` (build-time, optional, http(s)
-  URL or path); the admin signs in silently from the same cookie. Unset hides
-  the link.
 - The CV page (`useCvContent`) refetches its GraphQL document with the
   account's Bearer token after sign-in; a reviewer session does the same.
 
@@ -178,7 +175,7 @@ docker run -e APP_API_URL=http://cms-api:3000/api/v1 -e APP_API_TOKEN=<token> -p
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and without a valid `APP_ENV` build arg; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
+the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and without a valid `APP_ENV` build arg.
 Runtime env: `APP_ENV` (must equal the build value), `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
 `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
 (smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)

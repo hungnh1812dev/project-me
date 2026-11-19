@@ -30,7 +30,7 @@ Facade `index.ts`: `WebLoginDialog` (opened from the account menu).
 
 ## Where to change what
 
-Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. The sign-in text comes from the `SignIn` query (`SignIn.graphql.ts`, `loadSignInText`; the `signInText` alias of the cms-api root field `moduleAuth`, which also holds `openCms`, `signedInAs` and `signOutFailed` for the account menu), never from `Copy.constants`. `components/layouts/SiteHeader.tsx` loads it and `AccountMenu` reads those three texts from it and passes it down as the `text` prop of `WebLoginDialog`, and `TwoFactorStep`; no component reads text from a context. With no sign-in text the account menu renders no sign-in button, no dialog, no signed-in line, no CMS link and no sign-out failure text, and a signed-in visitor keeps the sign-out button (Q-PS1b, Q-PS4). The calls: `features/session` (`Auth.api.ts`).
+Alert mapping: `LoginAlerts.rules.ts`, which takes the sign-in error text as a parameter. The sign-in text comes from the `SignIn` query (`SignIn.graphql.ts`, `loadSignInText`; the `signInText` alias of the cms-api root field `moduleAuth`, which also holds `signedInAs` and `signOutFailed` for the account menu), never from `Copy.constants`. `components/layouts/SiteHeader.tsx` loads it and `AccountMenu` reads those two texts from it and passes it down as the `text` prop of `WebLoginDialog`, and `TwoFactorStep`; no component reads text from a context. With no sign-in text the account menu renders no sign-in button, no dialog, no signed-in line and no sign-out failure text, and a signed-in visitor keeps the sign-out button (Q-PS1b, Q-PS4). The calls: `features/session` (`Auth.api.ts`).
 
 ## Files
 
