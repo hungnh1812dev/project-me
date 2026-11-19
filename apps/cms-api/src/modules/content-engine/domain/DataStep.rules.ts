@@ -28,16 +28,7 @@ export class DataStepError extends ContentEngineError {
   }
 }
 
-const FORBIDDEN_FIRST_WORDS = new Set([
-  'BEGIN',
-  'COMMIT',
-  'ROLLBACK',
-  'SAVEPOINT',
-  'TRUNCATE',
-  'DROP',
-  'ALTER',
-  'CREATE',
-]);
+const ALLOWED_FIRST_WORDS = new Set(['INSERT', 'UPDATE', 'DELETE', 'SELECT', 'WITH', 'DO']);
 const DECLARATION_PATTERN = /^--\s*(carries|discards)\s+(\S+?)(?:\s*:\s*(.*))?$/i;
 const TARGET_PATTERN = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)?$/;
 const DOLLAR_QUOTE_PATTERN = /^\$([A-Za-z_][A-Za-z0-9_]*)?\$/;
@@ -51,9 +42,9 @@ export function parseDataStep(sql: string): DataStep {
   }
   for (const statement of statements) {
     const firstWord = /^[A-Za-z]+/.exec(statement)?.[0].toUpperCase() ?? '';
-    if (FORBIDDEN_FIRST_WORDS.has(firstWord)) {
+    if (!ALLOWED_FIRST_WORDS.has(firstWord)) {
       throw new DataStepError(
-        `a statement starts with ${firstWord}; the runner owns the transaction and the DDL (only INSERT, UPDATE, DELETE, SELECT and DO blocks)`,
+        `a statement starts with ${firstWord || 'a non-keyword'}; the runner owns the transaction and the DDL (only INSERT, UPDATE, DELETE, SELECT and DO blocks)`,
       );
     }
   }

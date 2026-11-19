@@ -44,6 +44,18 @@ describe('data-step', () => {
       'DROP TABLE t',
       'ALTER TABLE t ADD a int',
       'CREATE TABLE t (a int)',
+      'END',
+      'ABORT',
+      'START TRANSACTION',
+      'RELEASE x',
+      'SET search_path = x',
+      'RESET ALL',
+      'LOCK t',
+      'COPY t FROM STDIN',
+      'GRANT ALL ON t TO u',
+      'REVOKE ALL ON t FROM u',
+      'PREPARE p AS SELECT 1',
+      'EXECUTE p',
     ])('refuses %s, in any case and after the first statement', (statement) => {
       expect(() => parseDataStep(statement)).toThrow(DataStepError);
       expect(() => parseDataStep(`${UPDATE}\n${statement.toLowerCase()};`)).toThrow(DataStepError);
