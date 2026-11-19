@@ -19,7 +19,7 @@ import { usePathname } from 'next/navigation';
 import type { HeaderNav } from '../../features/site-header/SiteHeader.graphql';
 import { isSafeLinkTarget } from '../../utils/SafeLinkTarget.rules';
 
-interface NavEntry {
+export interface NavEntry {
   title: string | null;
   link: string | null;
   subNavs?: NavEntry[] | null;
@@ -32,22 +32,24 @@ const NAV_LINK_CLASS =
 
 interface TriggerProps {
   title: string;
-  ref: Ref<HTMLAnchorElement & HTMLButtonElement>;
+  ref?: Ref<HTMLAnchorElement & HTMLButtonElement>;
   onClick?: MouseEventHandler<HTMLAnchorElement & HTMLButtonElement> | undefined;
   'aria-expanded'?: boolean;
   'aria-controls'?: string;
 }
 
-function NavLink({ title, link, ref, onClick, ...aria }: TriggerProps & { link: string }) {
+/** A link of the bar; `className` replaces the bar's link style (the mobile drawer sets its own row style). */
+export function NavLink({
+  title,
+  link,
+  className = NAV_LINK_CLASS,
+  ref,
+  onClick,
+  ...aria
+}: TriggerProps & { link: string; className?: string }) {
   if (link.startsWith('/')) {
     return (
-      <Link
-        href={link}
-        className={NAV_LINK_CLASS}
-        ref={ref}
-        {...(onClick ? { onClick } : {})}
-        {...aria}
-      >
+      <Link href={link} className={className} ref={ref} {...(onClick ? { onClick } : {})} {...aria}>
         {title}
       </Link>
     );
@@ -55,7 +57,7 @@ function NavLink({ title, link, ref, onClick, ...aria }: TriggerProps & { link: 
   return (
     <a
       href={link}
-      className={NAV_LINK_CLASS}
+      className={className}
       rel="noopener noreferrer"
       ref={ref}
       onClick={onClick}
