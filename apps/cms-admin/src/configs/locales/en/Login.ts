@@ -41,6 +41,17 @@ export const LOGIN_COPY = {
     network: 'Could not reach the server. Check your connection and try again.',
     unexpected: 'Something went wrong on our side. Try again in a moment.',
   },
+  /** Shared by the four human-checked pages (sign in, 2FA, setup, password reset). */
+  humanCheck: {
+    loading: 'Checking that you are not a robot...',
+    failed: 'The check could not load. Reload the page and try again.',
+    expired: 'The check expired. Wait for it to renew, then try again.',
+    required: 'Wait for the check to finish, then try again.',
+    errors: {
+      failed: 'The check did not pass. Try again.',
+      unavailable: 'The check is unavailable right now. Try again in a moment.',
+    },
+  },
   twoFactor: {
     title: 'Enter your verification code',
     totpDescription: 'Open your authenticator app and enter the current code for Abyss CMS.',

@@ -2,8 +2,9 @@ import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
 import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
+import { humanCheckFake } from '@test/HumanCheck.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const { LOGIN, REFRESH, ME } = API_ENDPOINTS.AUTH;
@@ -49,7 +50,7 @@ describe('TwoFactorModal (login second step)', () => {
     ).toBeInTheDocument();
     expect(services.store.getState().auth.accessToken).toBe('t9');
     expect(api.callsTo(`POST ${VERIFY}`)[0]?.data).toBe(
-      JSON.stringify({ tempToken: TEMP, code: '123456' }),
+      JSON.stringify({ tempToken: TEMP, code: '123456', turnstileToken: 'two-factor-token-3' }),
     );
   });
 
@@ -117,11 +118,69 @@ describe('TwoFactorModal (login second step)', () => {
     expect(within(dialog).getByRole('alert')).toHaveTextContent(copy.emailWarning);
     await waitFor(() => expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)).toHaveLength(1));
     expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)[0]?.data).toBe(
-      JSON.stringify({ tempToken: TEMP }),
+      JSON.stringify({ tempToken: TEMP, turnstileToken: 'two-factor-token-3' }),
     );
     await userEvent.click(within(dialog).getByRole('button', { name: copy.resend }));
     expect(await within(dialog).findByText(copy.resent)).toBeInTheDocument();
     expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)).toHaveLength(2);
+  });
+
+  describe('human check', () => {
+    it('renders its own slot, with a token of its own form id for each request', async () => {
+      const { api, dialog } = await openChallenge('email', {
+        [`POST ${EMAIL_CHALLENGE}`]: () => ({ status: 202 }),
+        [`POST ${VERIFY}`]: () => ({ status: 200, data: { accessToken: 't9' } }),
+      });
+      expect(within(dialog).getByTestId('turnstile-two-factor')).toBeInTheDocument();
+      await waitFor(() => expect(api.callsTo(`POST ${EMAIL_CHALLENGE}`)).toHaveLength(1));
+      await waitFor(() => expect(humanCheckFake.resetFormIds).toEqual(['login', 'two-factor']));
+
+      await userEvent.type(codeInput(dialog, copy.emailLabel), '123456{Enter}');
+      await waitFor(() => expect(api.callsTo(`POST ${VERIFY}`)).toHaveLength(1));
+      const sent = (call: number, path: string) =>
+        JSON.parse(api.callsTo(path)[call]?.data as string) as { turnstileToken: string };
+      expect(sent(0, `POST ${EMAIL_CHALLENGE}`).turnstileToken).toBe('two-factor-token-3');
+      expect(sent(0, `POST ${VERIFY}`).turnstileToken).toBe('two-factor-token-4');
+    });
+
+    it('sends no verify call and shows the required text while no token is ready', async () => {
+      const { api, dialog } = await openChallenge('totp');
+      humanCheckFake.solves = false;
+      humanCheckFake.resetFormIds = [];
+      act(() => {
+        humanCheckFake.tokens.set('two-factor', '');
+        humanCheckFake.listeners.forEach((listener) => listener());
+      });
+      await userEvent.type(codeInput(dialog, copy.totpLabel), '123456');
+      await userEvent.click(within(dialog).getByRole('button', { name: copy.submit }));
+
+      expect(await within(dialog).findByText(EN_TEXT.login.humanCheck.required)).toBeVisible();
+      expect(api.callsTo(`POST ${VERIFY}`)).toHaveLength(0);
+      expect(humanCheckFake.resetFormIds).toContain('two-factor');
+    });
+
+    it.each([
+      ['HUMAN_CHECK_FAILED', EN_TEXT.login.humanCheck.errors.failed],
+      ['HUMAN_CHECK_UNAVAILABLE', EN_TEXT.login.humanCheck.errors.unavailable],
+    ])('shows its own text when verify answers %s', async (errorCode, message) => {
+      const { dialog } = await openChallenge('totp', {
+        [`POST ${VERIFY}`]: () => ({ status: 403, data: { errorCode } }),
+      });
+      await userEvent.type(codeInput(dialog, copy.totpLabel), '123456{Enter}');
+      expect(await within(dialog).findByText(message)).toBeInTheDocument();
+    });
+
+    it('shows its own text when the email code request is refused by the check', async () => {
+      const { dialog } = await openChallenge('email', {
+        [`POST ${EMAIL_CHALLENGE}`]: () => ({
+          status: 403,
+          data: { errorCode: 'HUMAN_CHECK_FAILED' },
+        }),
+      });
+      expect(
+        await within(dialog).findByText(EN_TEXT.login.humanCheck.errors.failed),
+      ).toBeInTheDocument();
+    });
   });
 
   it('blocks resend while rate-limited and says how long to wait', async () => {

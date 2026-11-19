@@ -45,7 +45,7 @@ Tests: 10 files (not listed).
 
 | File | Description |
 |---|---|
-| `Auth.api.ts` | Login, 2FA, refresh and logout calls |
+| `Auth.api.ts` | Login, 2FA, refresh and logout calls; login, verify and email challenge bodies carry `turnstileToken` |
 | `Auth.feature.ts` | Feature registration (reducer and wiring) |
 | `Auth.interceptor.ts` | Bearer header, 401 refresh-and-retry, fresh token before flagged uploads |
 | `Auth.slice.ts` | Session state and current user |
@@ -53,7 +53,7 @@ Tests: 10 files (not listed).
 | `AuthWiring.setup.ts` | Builds the auth API, reducer and cross-tab options |
 | `BackToSignIn.tsx` | Link back to sign-in |
 | `CrossTabRefresh.ts` | Cross-tab single refresh via locks and channel |
-| `Login.errors.ts` | Maps login failures to kinds; takes the `login` screen text as its last parameter |
+| `Login.errors.ts` | Maps login failures to kinds (human check refusals have their own); takes the `login` screen text as its last parameter |
 | `LoginNotice.rules.ts` | Notice shown on the login screen |
 | `Password.api.ts` | Reset and set-password calls |
 | `Password.errors.ts` | Maps password failures to kinds |

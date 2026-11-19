@@ -7,6 +7,7 @@ export interface LoginCredentials {
   email: string;
   password: string;
   rememberMe: boolean;
+  turnstileToken: string;
 }
 
 interface AccessTokenResponse {
@@ -29,6 +30,12 @@ export interface TwoFactorChallenge {
 export interface TwoFactorVerification {
   tempToken: string;
   code: string;
+  turnstileToken: string;
+}
+
+export interface EmailChallengeRequest {
+  tempToken: string;
+  turnstileToken: string;
 }
 
 /** What a login attempt led to. */
@@ -69,12 +76,10 @@ export function createAuthApi(client: AxiosInstance) {
     },
 
     /** Emails the login code of an email-2FA account (202). */
-    async sendLoginEmailCode(tempToken: string): Promise<void> {
-      await client.post(
-        API_ENDPOINTS.TWO_FACTOR.EMAIL_CHALLENGE,
-        { tempToken },
-        { shouldSkipAuthRefresh: true },
-      );
+    async sendLoginEmailCode(input: EmailChallengeRequest): Promise<void> {
+      await client.post(API_ENDPOINTS.TWO_FACTOR.EMAIL_CHALLENGE, input, {
+        shouldSkipAuthRefresh: true,
+      });
     },
 
     /** Rotates the refresh cookie and returns a new access token. */

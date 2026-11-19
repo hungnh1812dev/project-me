@@ -1,6 +1,12 @@
 import type { Dispatch } from '@reduxjs/toolkit';
 
-import type { AuthApi, LoginCredentials, LoginOutcome, TwoFactorVerification } from './Auth.api';
+import type {
+  AuthApi,
+  EmailChallengeRequest,
+  LoginCredentials,
+  LoginOutcome,
+  TwoFactorVerification,
+} from './Auth.api';
 import { accessTokenReceived, signedIn, signedOut } from './Auth.slice';
 import { createCrossTabRefresh, type CrossTabRefreshOptions } from './CrossTabRefresh';
 import type { LoginNotice } from './LoginNotice.rules';
@@ -82,7 +88,8 @@ export function createSession({ dispatch, authApi, onSessionEnded, crossTab }: S
       await startWith(await authApi.verifyTwoFactor(input));
     },
 
-    sendLoginEmailCode: (tempToken: string): Promise<void> => authApi.sendLoginEmailCode(tempToken),
+    sendLoginEmailCode: (input: EmailChallengeRequest): Promise<void> =>
+      authApi.sendLoginEmailCode(input),
 
     /** Re-reads /me after a settings change (e.g. 2FA turned on). */
     reloadUser: loadUser,

@@ -18,7 +18,7 @@ Signs a user in with email and password, then runs the two-factor step (TOTP or 
 
 ## Techniques
 
-Auth state from `Auth.slice` and `Session.context`; mutations through `Auth.api`; login errors mapped by `Login.errors`, notices by `LoginNotice.rules`. The two-factor modal holds a short-lived temp token; a dead token ends the step.
+Auth state from `Auth.slice` and `Session.context`; mutations through `Auth.api`; login errors mapped by `Login.errors`, notices by `LoginNotice.rules`. The two-factor modal holds a short-lived temp token; a dead token ends the step. Each form mounts `useTurnstile` and its slot (`HumanCheckField`) for its own form id (`login`, `two-factor`): an empty token on submit sends nothing and shows the "required" text, and `resetTurnstile` runs after every request that sent a token (D25).
 
 ## Technologies
 
@@ -45,8 +45,8 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `LoginPage.tsx` | `LoginPage`: email/password form, notices, setup link, starts the two-factor step |
-| `TwoFactorModal.tsx` | `TwoFactorModal`: TOTP or email-code step with resend, temp-token expiry handling |
+| `LoginPage.tsx` | `LoginPage`: email/password form, notices, setup link, starts the two-factor step; sends the human check token |
+| `TwoFactorModal.tsx` | `TwoFactorModal`: TOTP or email-code step with resend, temp-token expiry handling; its own token for the email code and for verify |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->
