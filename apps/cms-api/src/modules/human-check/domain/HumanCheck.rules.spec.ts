@@ -7,6 +7,7 @@ import {
   judgeSiteverifyAnswer,
   TURNSTILE_TOKEN_MAX_LENGTH,
   turnstileTokenSchema,
+  withoutTurnstileToken,
   type SiteverifyAnswer,
 } from './HumanCheck.rules';
 
@@ -93,5 +94,13 @@ describe('human check refusals', () => {
     expect(error.kind).toBe(DOMAIN_ERROR_KINDS.UNAVAILABLE);
     expect(error.errorCode).toBe(HUMAN_CHECK_ERROR_CODES.UNAVAILABLE);
     expect(error.hasMessage).toBe(true);
+  });
+});
+
+describe('withoutTurnstileToken', () => {
+  it('drops the token field and keeps the rest', () => {
+    expect(withoutTurnstileToken({ email: 'a@b.c', turnstileToken: 't' })).toEqual({
+      email: 'a@b.c',
+    });
   });
 });

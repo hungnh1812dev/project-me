@@ -5,6 +5,7 @@ export {
   HUMAN_CHECK_FORMS,
   TURNSTILE_TOKEN_FIELD,
   turnstileTokenSchema,
+  withoutTurnstileToken,
   type HumanCheckForm,
   type HumanCheckOutcome,
 } from './domain/HumanCheck.rules';

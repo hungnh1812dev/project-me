@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { turnstileTokenSchema } from '../../human-check';
 import {
   PASSWORD_MAX_LENGTH,
   TOTP,
@@ -25,9 +26,16 @@ export const enableTwoFactorSchema = z.object({
 
 export const disableTwoFactorSchema = z.object({ password, code });
 
-export const verifyTwoFactorSchema = z.object({ tempToken, code });
+export const verifyTwoFactorSchema = z.object({
+  tempToken,
+  code,
+  turnstileToken: turnstileTokenSchema.optional(),
+});
 
-export const emailChallengeSchema = z.object({ tempToken });
+export const emailChallengeSchema = z.object({
+  tempToken,
+  turnstileToken: turnstileTokenSchema.optional(),
+});
 
 export type EnableTwoFactorRequest = z.infer<typeof enableTwoFactorSchema>;
 export type DisableTwoFactorRequest = z.infer<typeof disableTwoFactorSchema>;

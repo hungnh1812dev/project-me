@@ -26,7 +26,7 @@ NestJS 11, Passport (`passport-jwt`), Prisma 7, argon2, otplib, zod, Node.js `cr
 
 ## Entry points
 
-`/api/v1/auth/{login,refresh,logout,me}`, `/api/v1/auth/password/{request-otp,reset,set,change}`, `/api/v1/auth/2fa/{totp/setup,enable,disable,verify,email-challenge,email/send-code}`, `/api/v1/setup/{status,owner}`; `JwtAuthGuard`; CLIs `owner:bootstrap`, `owner:reset-2fa`, `db:seed`, seed account.
+`/api/v1/auth/{login,refresh,logout,me}`, `/api/v1/auth/password/{request-otp,reset,set,change}`, `/api/v1/auth/2fa/{totp/setup,enable,disable,verify,email-challenge,email/send-code}`, `/api/v1/setup/{status,owner}`. Six of these routes require the human check (`@RequireHumanCheck`, D25, `human-check` module): `login` (form `login`), `2fa/verify` and `2fa/email-challenge` (`two-factor`), `setup/owner` (`owner-setup`), `password/request-otp` and `password/reset` (`password-reset`); each body carries `turnstileToken` and the use cases never receive it. The guard runs after the IP rate-limit rules and before the email-keyed rules (`@ThrottleIp` / `@ThrottleAccount`), so a refused request charges no email key and writes no audit row; `JwtAuthGuard`; CLIs `owner:bootstrap`, `owner:reset-2fa`, `db:seed`, seed account.
 
 ## Where to change what
 
@@ -86,7 +86,7 @@ Tests: 25 files (not listed).
 | `domain/Identity.errors.ts` | Identity domain errors (invalid credentials, weak password, invalid OTP, ...) |
 | `domain/SetupToken.rules.ts` | `isSetupTokenValid`: constant-time setup token check |
 | `http/AllowedOrigin.guard.ts` | `AllowedOriginGuard`: refuses cookie requests from other origins |
-| `http/Auth.controller.ts` | `AuthController`: login, refresh, logout, me; sets the refresh cookie (persistent 30-day `Max-Age` when remembered, browser-session cookie otherwise) |
+| `http/Auth.controller.ts` | `AuthController` (login behind the human check): login, refresh, logout, me; sets the refresh cookie (persistent 30-day `Max-Age` when remembered, browser-session cookie otherwise) |
 | `http/IdentityHttp.constants.ts` | Routes, refresh cookie name and flags, rate-limit policies |
 | `http/Jwt.strategy.ts` | `JwtStrategy`, `JwtAuthGuard`: bearer access token authentication |
 | `http/OwnerSetup.controller.ts` | `OwnerSetupController`: setup status and owner creation |

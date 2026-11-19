@@ -25,6 +25,14 @@ export const TURNSTILE_TOKEN_MAX_LENGTH = 2_048;
 /** Request-schema field of a protected route: unknown keys stay refused, the guard reads this one. */
 export const turnstileTokenSchema = z.string().min(1).max(TURNSTILE_TOKEN_MAX_LENGTH);
 
+/** The body without the token: the guard consumed it, the use case never receives it. */
+export function withoutTurnstileToken<T extends { [TURNSTILE_TOKEN_FIELD]?: string | undefined }>(
+  body: T,
+): Omit<T, typeof TURNSTILE_TOKEN_FIELD> {
+  const { [TURNSTILE_TOKEN_FIELD]: _token, ...rest } = body;
+  return rest;
+}
+
 export const HUMAN_CHECK_ERROR_CODES = {
   FAILED: 'HUMAN_CHECK_FAILED',
   UNAVAILABLE: 'HUMAN_CHECK_UNAVAILABLE',

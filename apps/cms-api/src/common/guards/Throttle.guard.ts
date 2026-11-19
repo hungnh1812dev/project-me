@@ -47,6 +47,32 @@ export function Throttle(policy: RateLimitPolicy): MethodDecorator {
 }
 
 /**
+ * First half of a policy split around another guard (the human check): only
+ * the IP-keyed rules. Pair it with `@ThrottleAccount(<same policy>)` placed
+ * above that guard, so an account key is never charged by a request the
+ * guard refuses.
+ */
+export function ThrottleIp(policy: RateLimitPolicy): MethodDecorator {
+  return applyDecorators(
+    SetMetadata(RATE_LIMIT_POLICY_METADATA, policy),
+    UseGuards(IpThrottleGuard),
+  );
+}
+
+/** Second half of a split policy: the email- and account-keyed rules. */
+export function ThrottleAccount(policy: RateLimitPolicy): MethodDecorator {
+  return applyDecorators(
+    SetMetadata(RATE_LIMIT_POLICY_METADATA, policy),
+    UseGuards(AccountThrottleGuard),
+  );
+}
+
+const IP_KEY_SOURCES: readonly string[] = [
+  RATE_LIMIT_KEY_SOURCES.IP,
+  RATE_LIMIT_KEY_SOURCES.ANONYMOUS_IP,
+];
+
+/**
  * Email key: trimmed + lower-cased (same as account emails, which are
  * citext), then hashed so the key size is bounded and no plain email sits in
  * memory. It never touches the database, so known and unknown emails are
@@ -108,6 +134,7 @@ export class ThrottleGuard implements CanActivate {
     const http = context.switchToHttp();
     const req = http.getRequest<Request>();
     for (const rule of rules) {
+      if (!this.isCounted(rule)) continue;
       const counterKey = counterKeyOf(rule, req, this.clientIp, this.subjectResolver);
       if (counterKey === undefined) continue;
 
@@ -117,6 +144,11 @@ export class ThrottleGuard implements CanActivate {
         this.reject(http.getResponse<Response>(), hit.resetAt);
       }
     }
+    return true;
+  }
+
+  /** Whether this guard counts the rule; the split guards below narrow it. */
+  protected isCounted(_rule: RateLimitRule): boolean {
     return true;
   }
 
@@ -136,5 +168,21 @@ export class ThrottleGuard implements CanActivate {
       { errorCode: ERROR_CODES.TOO_MANY_REQUESTS, message: RATE_LIMIT_MESSAGE },
       HttpStatus.TOO_MANY_REQUESTS,
     );
+  }
+}
+
+/** Counts only the IP-keyed rules of the policy. */
+@Injectable()
+export class IpThrottleGuard extends ThrottleGuard {
+  protected override isCounted(rule: RateLimitRule): boolean {
+    return IP_KEY_SOURCES.includes(rule.keySource);
+  }
+}
+
+/** Counts only the rules not keyed by IP. */
+@Injectable()
+export class AccountThrottleGuard extends ThrottleGuard {
+  protected override isCounted(rule: RateLimitRule): boolean {
+    return !IP_KEY_SOURCES.includes(rule.keySource);
   }
 }

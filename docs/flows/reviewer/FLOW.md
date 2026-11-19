@@ -1,6 +1,6 @@
 ---
 flow: reviewer
-modules: apps/cms-api/src/modules/reviewer, apps/cms-api/src/modules/access, apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/reviewer, apps/cms-admin/src/views/reviewer-sessions
+modules: apps/cms-api/src/modules/reviewer, apps/cms-api/src/modules/access, apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/reviewer, apps/cms-admin/src/views/reviewer-sessions, apps/cms-api/src/modules/human-check
 ---
 
 # Reviewer: flow
@@ -56,6 +56,7 @@ sequenceDiagram
 | `apps/cms-api/src/modules/security-audit` | Audit row for the reviewer toggle (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
 | `apps/cms-admin/src/features/reviewer` | Reviewer switch and session log client | [reviewer.md](../../modules/cms-admin/reviewer.md) |
 | `apps/cms-admin/src/views/reviewer-sessions` | Reviewer switch and reviewer session log page (`/reviewer`) | [reviewer-sessions.md](../../modules/cms-admin/reviewer-sessions.md) |
+| `apps/cms-api/src/modules/human-check` | The Turnstile verifier the reviewer session check uses (D2); the D25 check itself is not on its route | [human-check.md](../../modules/cms-api/human-check.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->
