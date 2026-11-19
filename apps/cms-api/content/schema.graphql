@@ -113,6 +113,7 @@ type Query {
   cvCommonText(status: DocumentStatus = PUBLISHED): CvCommonText
   header(status: DocumentStatus = PUBLISHED): Header
   moduleAuth(status: DocumentStatus = PUBLISHED): ModuleAuth
+  moduleNotFound(status: DocumentStatus = PUBLISHED): ModuleNotFound
   moduleStatus(status: DocumentStatus = PUBLISHED): ModuleStatus
   pageCvA(documentId: ID!, status: DocumentStatus = PUBLISHED): PageCvA
   pageCvAList(status: DocumentStatus = PUBLISHED, page: Int = 1, pageSize: Int = 20, sort: [PageCvASort!], filter: PageCvAFilter): PageCvAPage
@@ -175,12 +176,9 @@ type Header {
   updatedAt: DateTime!
   createdBy: Int
   updatedBy: Int
-  name: String
-  navLabel: String
-  navCvLink: String
-  notFoundTitle: String
-  notFoundDescription: String
-  nav: [Header_Nav!]
+  appName: String
+  appIcon: Media
+  navs: [Header_Nav!]
   author: Header_Author
 
   """
@@ -192,16 +190,16 @@ type Header {
 type Header_Nav {
   componentUid: ID!
   title: String
-  requiresRole: String
   link: String
-  subNavigations: [Header_Nav_SubNavigation!]
+  requiresRole: String
+  subNavs: [Header_Nav_SubNav!]
 }
 
-type Header_Nav_SubNavigation {
+type Header_Nav_SubNav {
   componentUid: ID!
   title: String
-  requiresRole: String
   link: String
+  requiresRole: String
 }
 
 type Header_Author {
@@ -290,6 +288,24 @@ type ModuleAuth_SignInTwoFactor {
   expired: String
   invalidCode: String
   unsupportedMethod: String
+}
+
+type ModuleNotFound {
+  documentId: ID!
+  version: Int!
+  publishedAt: DateTime
+  locale: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  createdBy: Int
+  updatedBy: Int
+  title: String
+  description: String
+
+  """
+  Paths of the fields the caller may not read; their values are masked or null.
+  """
+  _maskedFields: [String!]!
 }
 
 type ModuleStatus {

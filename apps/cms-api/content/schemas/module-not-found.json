@@ -1,0 +1,18 @@
+{
+  "slug": "module-not-found",
+  "displayName": "Not Found Page",
+  "kind": "single",
+  "draftAndPublish": true,
+  "fields": [
+    {
+      "name": "title",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "width": "full"
+    }
+  ]
+}

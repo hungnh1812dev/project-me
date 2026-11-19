@@ -83,7 +83,7 @@ describe('validateDefinition', () => {
     it('flags only experiences.company as sensitive', () => {
       expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(1);
       expect(JSON.stringify(pageCvA)).toContain(
-        '"name":"company","type":"text","width":"1/2","sensitive":true',
+        '"name":"company","type":"text","sensitive":true,"width":"1/2"',
       );
     });
   });

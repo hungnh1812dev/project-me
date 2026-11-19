@@ -306,6 +306,27 @@ migration and what it carries.
   empty. No data is carried over; enter the texts again in cms-admin. The SDL
   has `cvCommonText`, no `pageCvText`.
 
+### `0017_header_restructure.sql` (header restructure, ADR 0026, Q-HR1..Q-HR6)
+
+- Written with a data step (`--data-step`, no `--allow-destructive`); the step
+  is the file's only copy, between `-- Data step (begin)` and `(end)`.
+- Carried: `header.name` into `app_name` (draft and published rows);
+  `header__nav__sub_navigation` rows into `header__nav__sub_nav` (same
+  `component_uid`, `parent_id`, `order_index`, `title`, `link`, `requires_role`);
+  a non-empty `header.nav_cv_link` into a first `header__nav` row (`link`
+  `/cv`, `requires_role` `public`, one `component_uid` per document, the other
+  rows move down by one); `not_found_title` and `not_found_description` into
+  the new single type `module-not-found` (one new `document_id` per header
+  document).
+- Discarded: `header.nav_label` (user, 2026-11-19; the header has one nav
+  landmark). `header.app_icon` is added empty.
+- Value check: empty `requires_role` and `level` strings become null; a stored
+  `requires_role` (nav, sub navigation) outside `public`, `owner`, `admin`,
+  `editor`, or a `page-cv-a` skill `level` outside its options, stops the
+  migration with the table, document id and value. Fix those in cms-admin
+  before deploying.
+- Release note: back up the database first; release cms-api before web.
+
 ## Migrations
 
 Content tables are never created at runtime. Changes go through two
