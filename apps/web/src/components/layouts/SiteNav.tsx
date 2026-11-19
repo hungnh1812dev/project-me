@@ -14,6 +14,7 @@ import {
   type Ref,
 } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import type { HeaderNav } from '../../features/site-header/SiteHeader.graphql';
 import { isSafeLinkTarget } from '../../utils/SafeLinkTarget.rules';
@@ -26,7 +27,8 @@ interface NavEntry {
 
 const TOUCH_POINTER = 'touch';
 
-const NAV_LINK_CLASS = 'text-muted-foreground hover:text-foreground text-sm font-medium';
+const NAV_LINK_CLASS =
+  'text-muted-foreground hover:text-foreground pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center text-sm font-medium';
 
 interface TriggerProps {
   title: string;
@@ -89,6 +91,12 @@ function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode })
   const isFirstTouchTapRef = useRef(false);
   const subNavId = useId();
   const hasSubNav = Boolean(children);
+  const pathname = usePathname();
+  const [openedAtPathname, setOpenedAtPathname] = useState(pathname);
+  if (openedAtPathname !== pathname) {
+    setOpenedAtPathname(pathname);
+    setIsSubNavOpen(false);
+  }
 
   useEffect(() => {
     if (!isSubNavOpen) return;
@@ -164,9 +172,12 @@ function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode })
   );
 }
 
-function SubNav({ entries }: { entries: NavEntry[] }) {
+function SubNav({ entries, isAlignedToEnd }: { entries: NavEntry[]; isAlignedToEnd: boolean }) {
+  const sideClass = isAlignedToEnd ? 'right-0' : 'left-0';
   return (
-    <ul className="border-border bg-card absolute top-full left-0 z-10 hidden min-w-40 flex-col gap-2 rounded-md border p-3 shadow-sm group-data-subnav-open:flex">
+    <ul
+      className={`border-border bg-card absolute top-full ${sideClass} z-10 hidden max-w-[calc(100vw-2rem)] min-w-40 flex-col gap-2 rounded-md border p-3 shadow-sm group-data-subnav-open:flex`}
+    >
       {entries.map((entry, index) => (
         <NavItem key={`${entry.link}-${index}`} entry={entry} />
       ))}
@@ -181,7 +192,7 @@ export function SiteNav({ navs }: { navs: HeaderNav[] | null }) {
       {(navs ?? []).map((entry, index) => (
         <NavItem key={`${entry.link}-${index}`} entry={entry}>
           {entry.subNavs && entry.subNavs.some(isNavEntryShown) ? (
-            <SubNav entries={entry.subNavs} />
+            <SubNav entries={entry.subNavs} isAlignedToEnd={index >= (navs ?? []).length / 2} />
           ) : null}
         </NavItem>
       ))}

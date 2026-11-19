@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { SiteNav } from './SiteNav';
 
@@ -27,6 +28,9 @@ const NAV = [
     subNavs: [{ title: 'Nope', link: 'javascript:alert(1)' }],
   },
 ];
+
+let mockPathname = '/';
+vi.mock('next/navigation', () => ({ usePathname: () => mockPathname }));
 
 describe('SiteNav', () => {
   it('shows nothing when navs is empty', () => {
@@ -132,6 +136,17 @@ describe('SiteNav', () => {
     fireEvent.focus(parent);
     expect(parent).toHaveAttribute('aria-expanded', 'true');
     fireEvent.pointerDown(document.body);
+    expect(parent).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('closes the list when the route changes', () => {
+    mockPathname = '/';
+    const { rerender } = render(<SiteNav navs={NAV} />);
+    const parent = screen.getByRole('link', { name: 'Library' });
+    fireEvent.focus(parent);
+    expect(parent).toHaveAttribute('aria-expanded', 'true');
+    mockPathname = '/library';
+    rerender(<SiteNav navs={NAV} />);
     expect(parent).toHaveAttribute('aria-expanded', 'false');
   });
 });
