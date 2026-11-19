@@ -13,7 +13,9 @@ import { stripTrailingSlashes } from '@/configs/StripTrailingSlashes.rules';
 import { retryAfterSecondsOf, webApiErrorOf } from './ClientApi.errors';
 
 /** A route of this site's BFF, relative to `BFF_BASE_PATH`. */
-export type BffPath = (typeof BFF_ENDPOINTS)[keyof typeof BFF_ENDPOINTS];
+export type BffPath =
+  | Extract<(typeof BFF_ENDPOINTS)[keyof typeof BFF_ENDPOINTS], string>
+  | ReturnType<typeof BFF_ENDPOINTS.CV>;
 
 /** Per-call options; the base URL and the verb are fixed by the client. */
 export type ClientApiOptions = Omit<AxiosRequestConfig, 'baseURL' | 'url' | 'method' | 'data'>;

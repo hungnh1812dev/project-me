@@ -27,14 +27,14 @@ function actorKeyOf({ status, user }: WebSession): string {
  * visitor refetches through the BFF, and signing out falls back to the server
  * data. Both arrive sanitized by the server.
  */
-function usePageCvData(serverData: PageCvData) {
+function usePageCvData(documentId: string, serverData: PageCvData) {
   const actor = actorKeyOf(useWebSession());
   const isAnonymous = actor === ANONYMOUS_ACTOR;
 
   return useQuery({
-    queryKey: ['cv', actor],
+    queryKey: ['cv', documentId, actor],
     queryFn: async () => {
-      const { data } = await clientApi.get<PageCvData>(BFF_ENDPOINTS.CV);
+      const { data } = await clientApi.get<PageCvData>(BFF_ENDPOINTS.CV(documentId));
       return data;
     },
     retry: false,
@@ -46,14 +46,16 @@ function usePageCvData(serverData: PageCvData) {
 }
 
 interface PageCvClientProps {
+  /** The id of the CV on this page, the one the signed-in refetch asks for. */
+  documentId: string;
   /** What the server rendered for the public role. */
   initialData: PageCvData;
   /** The CV labels; `null` leaves every label out. */
   text: CvCommonText | null;
 }
 
-export function PageCvClient({ initialData, text }: PageCvClientProps) {
-  const { data: fetchedData, isPending, isError } = usePageCvData(initialData);
+export function PageCvClient({ documentId, initialData, text }: PageCvClientProps) {
+  const { data: fetchedData, isPending, isError } = usePageCvData(documentId, initialData);
 
   if (isPending) {
     return <output aria-busy="true" className="block" />;

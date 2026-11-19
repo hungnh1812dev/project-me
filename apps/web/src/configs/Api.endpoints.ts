@@ -28,7 +28,8 @@ export const BFF_BASE_PATH = '/api/v1';
 export const BFF_ENDPOINTS = {
   HEALTH: '/health',
   SESSION: '/session',
-  CV: '/cv',
+  /** One CV by its `documentId`; the segment is encoded. */
+  CV: (documentId: string) => `/cv/${encodeURIComponent(documentId)}` as const,
   LOGIN: '/auth/login',
   EMAIL_CODE: '/auth/two-factor/email-code',
   VERIFY_TWO_FACTOR: '/auth/two-factor/verify',

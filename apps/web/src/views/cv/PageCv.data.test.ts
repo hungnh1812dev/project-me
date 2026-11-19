@@ -182,4 +182,42 @@ describe('answerCvRead', () => {
     });
     expect(executeGraphql).not.toHaveBeenCalled();
   });
+
+  it('answers 401 before parsing the id, for a malformed id too', async () => {
+    vi.mocked(readWebSession).mockResolvedValue({ status: 'signed-out', setCookies: [] });
+
+    await expect(
+      answerCvRead({ ...context, params: { documentId: 'not-a-uuid' } }),
+    ).rejects.toMatchObject({ errorCode: 'BFF_SESSION_REQUIRED' });
+  });
+
+  it('answers BFF_NOT_FOUND for a malformed id without asking cms-api', async () => {
+    vi.mocked(executeGraphql).mockClear();
+    vi.mocked(readWebSession).mockResolvedValue({
+      status: 'signed-in',
+      account: {} as never,
+      accessToken: 'tok-1',
+      setCookies: [],
+    });
+
+    await expect(
+      answerCvRead({ ...context, params: { documentId: '../graphql' } }),
+    ).rejects.toMatchObject({ errorCode: 'BFF_NOT_FOUND' });
+    expect(executeGraphql).not.toHaveBeenCalled();
+  });
+
+  it('answers the same BFF_NOT_FOUND when no published CV has the id', async () => {
+    vi.mocked(readWebSession).mockResolvedValue({
+      status: 'signed-in',
+      account: {} as never,
+      accessToken: 'tok-1',
+      setCookies: ['web_session=new; Path=/'],
+    });
+    vi.mocked(executeGraphql).mockResolvedValue({ pageCvA: null, profile: null });
+
+    await expect(answerCvRead(context)).rejects.toMatchObject({
+      errorCode: 'BFF_NOT_FOUND',
+      statusCode: 404,
+    });
+  });
 });

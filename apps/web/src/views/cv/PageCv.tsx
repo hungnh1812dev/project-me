@@ -31,5 +31,11 @@ export default async function PageCv({ params }: PageCvProps) {
     const { noCvText } = content.text ?? {};
     return noCvText ? <Richtext html={noCvText} /> : <p>{LAST_RESORT_TEXT.noCvLive}</p>;
   }
-  return <PageCvClient initialData={content.data} text={content.text} />;
+  return (
+    <PageCvClient
+      documentId={(await params).documentId}
+      initialData={content.data}
+      text={content.text}
+    />
+  );
 }

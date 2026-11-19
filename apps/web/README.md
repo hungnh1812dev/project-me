@@ -11,7 +11,7 @@ Routes:
   `PageCv.data.ts` (`loadPageCv`, public role: the main `page-cv-a`, the
   `profile` and `cvCommonText`) and hands it to the client `PageCvClient`. No
   main CV answers 404. Anonymous visitors see the server data; a signed-in
-  account refetches the `PageCvVisitor` selections through `GET /api/v1/cv`
+  account refetches the `PageCvVisitor` selections through `GET /api/v1/cv/{documentId}`
   (BFF, keyed by actor), and sign-out returns to the server data. `PageCvClient`
   renders `ContactCard` (the profile) and the sections `CvSection` (summary,
   skills), `ExperiencesSection`, `ProjectsSection` and `EducationsSection`; an

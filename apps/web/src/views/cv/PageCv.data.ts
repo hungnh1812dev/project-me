@@ -94,29 +94,30 @@ function sanitizeCommonText(text: CvCommonText): CvCommonText {
   };
 }
 
-/** The CV data as the signed-in visitor: sent with their token and never cached. */
+/** The CV data as the signed-in visitor: sent with their token and never cached; `null` when no published CV has the id. */
 export async function loadPageCvForSession(
   accessToken: string,
   documentId: string,
-): Promise<PageCvData> {
+): Promise<PageCvData | null> {
+  const data = await executeGraphql<Pick<PageCvData, 'pageCvA'> & { profile: Profile | null }>(
+    PAGE_CV_VISITOR_QUERY,
+    { accessToken, variables: { documentId } },
+  );
+  if (data.pageCvA === null || data.pageCvA === undefined) return null;
   return sanitizeCvRichtext(
-    await executeGraphql<PageCvData>(PAGE_CV_VISITOR_QUERY, {
-      accessToken,
-      variables: { documentId },
-      resolveData: requireRootField('pageCvA'),
-    }),
+    { pageCvA: data.pageCvA, profile: data.profile ?? null },
     sanitizeRichtextOnServer,
   );
 }
 
-/** `GET /api/v1/cv`: the CV page data for the signed-in visitor, `BFF_SESSION_REQUIRED` otherwise. */
+/** `GET /api/v1/cv/{documentId}`: the CV page data for the signed-in visitor; `BFF_SESSION_REQUIRED` first for any id, then `BFF_NOT_FOUND` alike for a malformed, unknown or unpublished id. */
 export async function answerCvRead({ request, params }: BffContext<unknown>): Promise<Response> {
-  const documentId = parseCvDocumentId(params['documentId']);
-  if (documentId === null) throw new BffError('BFF_NOT_FOUND');
   const read = await readWebSession(request);
   if (read.status === 'signed-out') throw new BffError('BFF_SESSION_REQUIRED', {}, read.setCookies);
-  return withSetCookies(
-    Response.json(await loadPageCvForSession(read.accessToken, documentId)),
-    read.setCookies,
-  );
+  const documentId = parseCvDocumentId(params['documentId']);
+  if (documentId === null) throw new BffError('BFF_NOT_FOUND');
+  const data = await loadPageCvForSession(read.accessToken, documentId);
+  // An unknown or unpublished id answers exactly like a malformed one.
+  if (data === null) throw new BffError('BFF_NOT_FOUND', {}, read.setCookies);
+  return withSetCookies(Response.json(data), read.setCookies);
 }

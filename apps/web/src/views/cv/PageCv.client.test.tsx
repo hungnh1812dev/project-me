@@ -13,6 +13,7 @@ import { PageCvClient } from './PageCv.client';
 import type { PageCvA, PageCvData } from './PageCv.graphql';
 
 const TEXT = PAGE_CV_MOCK.cvCommonText;
+const DOCUMENT_ID = '3f6c1a52-9d4e-4b7a-8c21-5e0a7d9b1f34';
 
 const cvOf = (name: string | null, overrides: Partial<PageCvA> = {}): PageCvA => ({
   documentId: 'c1',
@@ -47,7 +48,7 @@ describe('PageCvClient', () => {
     const get = vi.spyOn(clientApi, 'get');
     render(
       <Wrapper api={fakeApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
 
@@ -61,7 +62,11 @@ describe('PageCvClient', () => {
   it('renders no h1 when the CV has no name', async () => {
     render(
       <Wrapper api={fakeApi()}>
-        <PageCvClient initialData={{ pageCvA: cvOf(null), profile: null }} text={TEXT} />
+        <PageCvClient
+          documentId={DOCUMENT_ID}
+          initialData={{ pageCvA: cvOf(null), profile: null }}
+          text={TEXT}
+        />
       </Wrapper>,
     );
     expect(await screen.findByText('Platform engineer')).toBeInTheDocument();
@@ -72,6 +77,7 @@ describe('PageCvClient', () => {
     render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
+          documentId={DOCUMENT_ID}
           initialData={{
             pageCvA: cvOf('Mai Server', {
               summary: '<p>Hi there</p>',
@@ -110,6 +116,7 @@ describe('PageCvClient', () => {
     render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
+          documentId={DOCUMENT_ID}
           initialData={{
             pageCvA: cvOf('Mai Server', { summary: '<p>Hi there</p>' }),
             profile: PAGE_CV_MOCK.profile,
@@ -127,7 +134,7 @@ describe('PageCvClient', () => {
     vi.spyOn(clientApi, 'get').mockReturnValue(new Promise(() => undefined));
     render(
       <Wrapper api={signedInApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     const output = await screen.findByRole('status');
@@ -141,21 +148,22 @@ describe('PageCvClient', () => {
       .mockResolvedValue({ status: 200, data: OWNER_DATA } as AxiosResponse);
     render(
       <Wrapper api={signedInApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Mai Private' }),
     ).toBeInTheDocument();
-    expect(get).toHaveBeenCalledWith(BFF_ENDPOINTS.CV);
+    expect(get).toHaveBeenCalledWith(BFF_ENDPOINTS.CV(DOCUMENT_ID));
+    expect(get).toHaveBeenCalledWith('/cv/3f6c1a52-9d4e-4b7a-8c21-5e0a7d9b1f34');
   });
 
   it('keeps the server CV with no alert text when the refetch fails', async () => {
     const get = vi.spyOn(clientApi, 'get').mockRejectedValue(new Error('401'));
     render(
       <Wrapper api={signedInApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     await waitFor(() => expect(get).toHaveBeenCalled());
@@ -172,7 +180,7 @@ describe('PageCvClient', () => {
     render(
       <Wrapper api={signedInApi()}>
         <SignOutButton />
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     await screen.findByRole('heading', { name: 'Mai Private' });
@@ -186,6 +194,7 @@ describe('PageCvClient', () => {
     const { container } = render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
+          documentId={DOCUMENT_ID}
           initialData={{
             pageCvA: cvOf('Mai Server', { summary: '***', _maskedFields: ['summary'] }),
             profile: null,
