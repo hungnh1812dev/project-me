@@ -11,7 +11,7 @@ import { SiteNav } from './SiteNav';
 export async function SiteHeader() {
   const [siteHeader, signInText] = await Promise.all([loadSiteHeader(), loadSignInText()]);
   return (
-    <header className="border-border bg-card border-b">
+    <header className="border-border bg-card border-b print:hidden">
       <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="text-sm font-semibold">
           {siteHeader?.header.appName ?? LAST_RESORT_TEXT.appName}

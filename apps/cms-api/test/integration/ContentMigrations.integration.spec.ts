@@ -132,7 +132,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await writeFile(file, JSON.stringify(definition));
   }
 
-  it('page-cv-a produces exactly its 6 tables (criterion 16)', async () => {
+  it('page-cv-a produces exactly its 8 tables (criterion 16)', async () => {
     const ws = await workspace();
     expect(await generate(ws)).toMatchObject({
       status: 'written',
@@ -149,7 +149,9 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       'page_cv_a__education',
       'page_cv_a__experience',
       'page_cv_a__experience__role',
+      'page_cv_a__language',
       'page_cv_a__project',
+      'page_cv_a__reference',
       'page_cv_a__skill',
     ]);
 
@@ -500,7 +502,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const results = await Promise.all([migrate(ws), migrate(ws), migrate(ws)]);
     const applied = results.flatMap((result) => result.applied);
     expect(applied).toEqual(['0001_test.sql']);
-    expect(await contentTables(ws)).toHaveLength(6);
+    expect(await contentTables(ws)).toHaveLength(8);
     const rows = await query(ws.databaseUrl, 'SELECT name FROM content._migrations');
     expect(rows).toHaveLength(1);
   });

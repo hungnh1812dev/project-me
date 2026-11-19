@@ -76,14 +76,17 @@ describe('validateDefinition', () => {
       expect(validateDefinition(pageCvA)).toMatchObject({
         ok: true,
         definition: { slug: 'page-cv-a' },
-        tables: { length: 6 },
+        tables: { length: 8 },
       });
     });
 
-    it('flags only experiences.company as sensitive', () => {
-      expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(1);
+    it('flags only experiences.company and references.phone as sensitive', () => {
+      expect(JSON.stringify(pageCvA).match(/"sensitive":true/g)).toHaveLength(2);
       expect(JSON.stringify(pageCvA)).toContain(
         '"name":"company","type":"text","sensitive":true,"width":"1/2"',
+      );
+      expect(JSON.stringify(pageCvA)).toContain(
+        '"name":"phone","type":"text","sensitive":true,"width":"1/2"',
       );
     });
   });

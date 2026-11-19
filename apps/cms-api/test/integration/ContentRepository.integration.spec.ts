@@ -30,8 +30,8 @@ import { startPostgres, type TestPostgres } from '../fixtures/Postgres.fixture';
 const SLUG = 'page-cv-a';
 /** Reads run inside a transaction (the repository takes a unit); only data queries are counted. */
 const TRANSACTION_CONTROL = /^(begin|commit|rollback)$/i;
-/** page-cv-a: 1 root + 5 component tables (role is depth 2). */
-const PAGE_CV_A_TABLE_COUNT = 6;
+/** page-cv-a: 1 root + 7 component tables (role is depth 2). */
+const PAGE_CV_A_TABLE_COUNT = 8;
 
 class RollbackSignal extends Error {}
 
@@ -251,7 +251,7 @@ describe('KyselyContentRepository on page-cv-a (Postgres 17 via Testcontainers)'
     expect(documents.flatMap((document) => document.components.experiences ?? [])).toHaveLength(
       full.length * 2,
     );
-    // 1 root query + 5 component tables, whatever N is.
+    // 1 root query + 7 component tables, whatever N is.
     expect(queries).toHaveLength(PAGE_CV_A_TABLE_COUNT);
     expect(queries.slice(1).every((text) => /= any\(\$1::int\[\]\)/.test(text))).toBe(true);
 

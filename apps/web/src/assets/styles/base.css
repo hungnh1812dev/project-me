@@ -1,5 +1,5 @@
 @layer base {
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased print:bg-transparent;
   }
 }

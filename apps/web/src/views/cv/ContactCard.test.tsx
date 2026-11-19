@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import { ContactCard } from './ContactCard';
+import { ContactCard, ProfileAvatar } from './ContactCard';
 import { MaskedTextContext } from './CvSection';
 import type { Profile } from './PageCv.graphql';
 
@@ -54,23 +54,6 @@ describe('ContactCard', () => {
     expect(screen.getByText('12 Example Street, Hanoi')).toBeInTheDocument();
   });
 
-  it('shows initials when there is no avatar', () => {
-    render(<Card profile={profileOf()} />);
-    expect(screen.getByText('MT')).toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
-  });
-
-  it('shows the avatar image with its alt text when present', () => {
-    render(
-      <Card
-        profile={profileOf({
-          avatar: { url: 'https://res.cloudinary.com/x/a.png', alt: 'Mai' },
-        })}
-      />,
-    );
-    expect(screen.getByRole('img', { name: 'Mai' })).toBeInTheDocument();
-  });
-
   it('shows the placeholder and none of the masked values', () => {
     const { container } = render(
       <Card
@@ -96,12 +79,6 @@ describe('ContactCard', () => {
     );
     expect(container).not.toHaveTextContent('***');
     expect(screen.queryByRole('link', { name: /\+84/ })).toBeNull();
-    expect(screen.getByRole('link', { name: 'mai@example.com' })).toBeInTheDocument();
-  });
-
-  it('shows no initials without a name and an avatar', () => {
-    render(<Card profile={profileOf({ name: null })} />);
-    expect(screen.queryByText('MT')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'mai@example.com' })).toBeInTheDocument();
   });
 
@@ -134,5 +111,35 @@ describe('ContactCard', () => {
       />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe('ProfileAvatar', () => {
+  it('shows initials when there is no avatar', () => {
+    render(<ProfileAvatar profile={profileOf()} />);
+    expect(screen.getByText('MT')).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('shows the avatar image with its alt text when present', () => {
+    render(
+      <ProfileAvatar
+        profile={profileOf({ avatar: { url: 'https://res.cloudinary.com/x/a.png', alt: 'Mai' } })}
+      />,
+    );
+    expect(screen.getByRole('img', { name: 'Mai' })).toBeInTheDocument();
+  });
+
+  it('shows nothing without a name and an avatar', () => {
+    const { container } = render(<ProfileAvatar profile={profileOf({ name: null })} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('refuses an avatar URL that is not a safe target', () => {
+    render(
+      <ProfileAvatar profile={profileOf({ avatar: { url: 'javascript:alert(1)', alt: 'x' } })} />,
+    );
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+    expect(screen.getByText('MT')).toBeInTheDocument();
   });
 });

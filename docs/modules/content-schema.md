@@ -230,7 +230,7 @@ its table; `width` is `1/3`, `1/2` or `full`:
 ```
 
 (Shortened: the real file also has `skills`, `projects` and, as a single
-component, `educations`.) It produces 6 tables (acceptance criterion 16):
+component, `educations`, plus `languages` and `references` since 0018.) It produces 8 tables (acceptance criterion 16):
 
 ```
 page_cv_a                      root: name, position, is_main, summary
@@ -239,12 +239,14 @@ page_cv_a__experience          company, location, period
 page_cv_a__experience__role    position, period, team_size, projects, tech_stacks, responsibilities
 page_cv_a__project             name, team_size, role, live_link, repository_link, tech_stack, responsibilities
 page_cv_a__education           degree, institution, period, location
+page_cv_a__language            language, level
+page_cv_a__reference           name, role, phone
 ```
 
 `header` uses the same table naming (`header__nav__sub_navigation`).
 
 Sensitive fields: `profile` `address`, `phone`, `email`, `github`, and
-`page-cv-a` `experiences.company`. Integration specs that need a type deeper
+`page-cv-a` `experiences.company` and `references.phone`. Integration specs that need a type deeper
 than depth 2 use a fixture definition inside the spec, never a repo schema.
 
 ## Data-migration notes
@@ -326,6 +328,11 @@ migration and what it carries.
   migration with the table, document id and value. Fix those in cms-admin
   before deploying.
 - Release note: back up the database first; release cms-api before web.
+
+### `0018_page_cv_languages_references.sql` (`page-cv-a` languages and references)
+
+- Additive only: tables `page_cv_a__language` and `page_cv_a__reference`, and
+  column `cv_common_text.phone`. No data step; existing rows are untouched.
 
 ## Migrations
 

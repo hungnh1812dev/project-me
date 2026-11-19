@@ -33,6 +33,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
   const CV_POSITION = 'E2E Position';
   const SECRET_COMPANY = `E2E Secret Co ${Date.now()}`;
   const PROFILE_NAME = `E2E Profile ${Date.now()}`;
+  const PROFILE_LINKEDIN = 'https://www.linkedin.com/in/e2e-profile';
   const SECRET_PHONE = '+1 555 0142';
   const SECRET_EMAIL = 'e2e-secret@example.com';
 
@@ -87,7 +88,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
           name: PROFILE_NAME,
           phone: SECRET_PHONE,
           email: SECRET_EMAIL,
-          linkedin: 'https://www.linkedin.com/in/e2e-profile',
+          linkedin: PROFILE_LINKEDIN,
         },
       },
     });
@@ -144,7 +145,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     await expect(page.getByRole('heading', { level: 1, name: CV_NAME })).toBeVisible();
     await expect(page.getByText(SECRET_COMPANY)).toHaveCount(0);
     await expect(page.getByText('***', { exact: false })).toHaveCount(0);
-    await expect(page.getByText(PROFILE_NAME)).toBeVisible();
+    await expect(page.getByRole('link', { name: PROFILE_LINKEDIN })).toBeVisible();
     expect(await page.evaluate(() => (window as { e2ePwned?: number }).e2ePwned)).toBeUndefined();
   });
 

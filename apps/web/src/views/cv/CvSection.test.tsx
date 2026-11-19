@@ -5,6 +5,8 @@ import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
 import {
   CvSection,
   ExternalLink,
+  groupSkillsByLevel,
+  LanguagesSection,
   MaskedPlaceholder,
   MaskedTextContext,
   SkillsSection,
@@ -25,6 +27,8 @@ function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
     experiences: null,
     projects: null,
     educations: null,
+    languages: null,
+    references: null,
     _maskedFields: [],
     ...overrides,
   };
@@ -68,7 +72,42 @@ describe('SummarySection', () => {
   });
 });
 
+describe('groupSkillsByLevel', () => {
+  it('groups the skills by level in the order each level first appears', () => {
+    expect(
+      groupSkillsByLevel([
+        { skill: 'React', level: 'Proficient' },
+        { skill: 'Vite', level: 'Intermediate' },
+        { skill: 'Next.js', level: 'Proficient' },
+        { skill: null, level: 'Others' },
+        { skill: 'Jira', level: null },
+      ]),
+    ).toEqual([
+      { level: 'Proficient', skills: ['React', 'Next.js'] },
+      { level: 'Intermediate', skills: ['Vite'] },
+      { level: '', skills: ['Jira'] },
+    ]);
+  });
+});
+
 describe('SkillsSection', () => {
+  it('shows each level once with its skills', () => {
+    render(
+      <SkillsSection
+        cv={cvOf({
+          skills: [
+            { skill: 'React', level: 'Proficient' },
+            { skill: 'Next.js', level: 'Proficient' },
+          ],
+        })}
+        text={TEXT}
+      />,
+    );
+    expect(screen.getAllByText('Proficient')).toHaveLength(1);
+    expect(screen.getByText('React')).toBeInTheDocument();
+    expect(screen.getByText('Next.js')).toBeInTheDocument();
+  });
+
   it('lists each skill with its level', () => {
     renderWithMask(<SkillsSection cv={cvOf()} text={TEXT} />);
     expect(screen.getByRole('heading', { level: 2, name: TEXT.skills })).toBeInTheDocument();
@@ -126,5 +165,29 @@ describe('MaskedPlaceholder', () => {
   it('shows the masked text when it is provided', () => {
     renderWithMask(<MaskedPlaceholder />);
     expect(screen.getByText(MASKED_TEXT)).toBeInTheDocument();
+  });
+});
+
+describe('LanguagesSection', () => {
+  it('lists each language with its level under the title', () => {
+    render(
+      <LanguagesSection
+        cv={cvOf({ languages: [{ language: 'Vietnamese', level: 'Native' }] })}
+        text={TEXT}
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2, name: TEXT.languages })).toBeInTheDocument();
+    expect(screen.getByText('Vietnamese')).toBeInTheDocument();
+    expect(screen.getByText('Native')).toBeInTheDocument();
+  });
+
+  it('renders nothing when no language has a name', () => {
+    const { container } = render(
+      <LanguagesSection
+        cv={cvOf({ languages: [{ language: ' ', level: 'Native' }] })}
+        text={TEXT}
+      />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 });

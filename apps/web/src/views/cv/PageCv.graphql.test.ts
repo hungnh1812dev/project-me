@@ -79,6 +79,8 @@ describe('sanitizeCvRichtext', () => {
             },
           ],
           educations: null,
+          languages: null,
+          references: null,
           _maskedFields: [],
         },
       ],

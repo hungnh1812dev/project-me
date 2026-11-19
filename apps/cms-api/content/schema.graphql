@@ -153,6 +153,7 @@ type CvCommonText {
   educations: String
   languages: String
   reference: String
+  phone: String
   technologies: String
   teamSize: String
   projects: String
@@ -353,6 +354,8 @@ type PageCvA {
   experiences: [PageCvA_Experience!]
   projects: [PageCvA_Project!]
   educations: [PageCvA_Education!]
+  languages: [PageCvA_Language!]
+  references: [PageCvA_Reference!]
 
   """
   Paths of the fields the caller may not read; their values are masked or null.
@@ -401,6 +404,19 @@ type PageCvA_Education {
   institution: String
   period: String
   location: String
+}
+
+type PageCvA_Language {
+  componentUid: ID!
+  language: String
+  level: String
+}
+
+type PageCvA_Reference {
+  componentUid: ID!
+  name: String
+  role: String
+  phone: String
 }
 
 type PageCvAPage {

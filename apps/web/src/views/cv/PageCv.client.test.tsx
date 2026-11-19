@@ -23,6 +23,8 @@ const cvOf = (name: string | null, overrides: Partial<PageCvA> = {}): PageCvA =>
   experiences: null,
   projects: null,
   educations: null,
+  languages: null,
+  references: null,
   _maskedFields: [],
   ...overrides,
 });
@@ -89,6 +91,9 @@ describe('PageCvClient', () => {
                       responsibilities: null,
                     },
                   ],
+                  skills: [{ skill: 'TypeScript', level: 'Proficient' }],
+                  languages: [{ language: 'English', level: 'Fluent' }],
+                  references: [{ name: 'Mr. Ref', role: 'Lead', phone: '0900' }],
                 }),
               ],
             },
@@ -98,9 +103,14 @@ describe('PageCvClient', () => {
         />
       </Wrapper>,
     );
-    expect(await screen.findByRole('link', { name: 'mai@example.com' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: TEXT.summary })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: TEXT.projects })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: PAGE_CV_MOCK.profile.email }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual([TEXT.summary, TEXT.projects, TEXT.skills, TEXT.languages, TEXT.reference]);
+    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(screen.getByText('0900')).toBeInTheDocument();
   });
 
   it('renders the CV with no section title when the labels are null', async () => {

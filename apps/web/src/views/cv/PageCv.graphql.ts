@@ -37,6 +37,17 @@ export interface PageCvEducation {
   location: string | null;
 }
 
+export interface PageCvLanguage {
+  language: string | null;
+  level: string | null;
+}
+
+export interface PageCvReference {
+  name: string | null;
+  role: string | null;
+  phone: string | null;
+}
+
 export interface PageCvA {
   documentId: string;
   name: string | null;
@@ -46,6 +57,8 @@ export interface PageCvA {
   experiences: PageCvExperience[] | null;
   projects: PageCvProject[] | null;
   educations: PageCvEducation[] | null;
+  languages: PageCvLanguage[] | null;
+  references: PageCvReference[] | null;
   _maskedFields: string[];
 }
 
@@ -66,9 +79,15 @@ export interface CvCommonText {
   skills: string | null;
   experiences: string | null;
   projects: string | null;
+  achievements: string | null;
   educations: string | null;
+  languages: string | null;
+  reference: string | null;
+  phone: string | null;
   technologies: string | null;
   teamSize: string | null;
+  webLink: string | null;
+  projectLink: string | null;
   noCvText: string | null;
 }
 
@@ -120,6 +139,15 @@ const PAGE_CV_A_FIELD = `pageCvAList(
         period
         location
       }
+      languages {
+        language
+        level
+      }
+      references {
+        name
+        role
+        phone
+      }
       _maskedFields
     }
   }`;
@@ -143,9 +171,15 @@ const CV_COMMON_TEXT_FIELD = `cvCommonText {
     skills
     experiences
     projects
+    achievements
     educations
+    languages
+    reference
+    phone
     technologies
     teamSize
+    webLink
+    projectLink
     noCvText
   }`;
 

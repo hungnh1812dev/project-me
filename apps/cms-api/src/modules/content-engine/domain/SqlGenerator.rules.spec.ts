@@ -56,7 +56,7 @@ describe('sql-generator', () => {
       expect(plan.statements[0]).toBe('CREATE SCHEMA IF NOT EXISTS "content";');
     });
 
-    it('creates exactly the 6 tables of the page-cv-a component paths', () => {
+    it('creates exactly the 8 tables of the page-cv-a component paths', () => {
       const created = plan.statements
         .map((statement) => /^CREATE TABLE "content"\."(\w+)"/.exec(statement))
         .filter((match) => match !== null)
@@ -68,6 +68,8 @@ describe('sql-generator', () => {
         'page_cv_a__experience__role',
         'page_cv_a__project',
         'page_cv_a__education',
+        'page_cv_a__language',
+        'page_cv_a__reference',
       ]);
     });
 

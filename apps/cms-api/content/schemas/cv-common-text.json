@@ -40,6 +40,11 @@
       "width": "1/2"
     },
     {
+      "name": "phone",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
       "name": "technologies",
       "type": "text",
       "width": "1/2"

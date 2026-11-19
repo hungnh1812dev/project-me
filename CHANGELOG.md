@@ -14,7 +14,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 - cms-api: `header` restructured and new `module-not-found` type; migration 0017 carries the data. Take a database backup before deploying.
 - web: header and not-found page read the new fields; `public` nav entries show to everyone.
-- docs: content-modeling CM-12; public-site PS-1, PS-3, Q-PS4.
+- cms-api: `page-cv-a` gets `languages` and `references` (`references.phone` sensitive), `cv-common-text` gets `phone`; migration 0018 only adds tables and a column.
+- web: Next.js 16.4.2 → 16.4.6 (and `@next/eslint-plugin-next`): security patch.
+- web: `/cv` redesigned after the CV print layout (header band, company bars, project panels, skills by level, languages, references) and prints on A4, readable in black and white.
+- docs: content-modeling CM-12; public-site PS-1, PS-3, Q-PS4, Q-PS6, Q-PS2d.
 
 ## 0.2.0 (2026-11-18)
 
