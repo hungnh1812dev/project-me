@@ -113,11 +113,12 @@ pnpm --filter @abyss/cms-admin dev
 
 Open `http://admin.domain.localhost:5173` (Chromium resolves `*.localhost` to loopback), so the origin matches cms-api `ADMIN_ORIGIN`.
 
-| Key                    | Meaning                                                                                                                                                                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_API_BASE_URL`    | cms-api base on the admin origin: `https://admin.<domain>/api/v1` in production; in dev `/api/v1` with `DEV_API_PROXY_TARGET=http://localhost:3000`, or the absolute `http://localhost:3000/api/v1`. Bundled at build |
-| `DEV_SERVER_PORT`      | dev only, default 5173                                                                                                                                                                                                |
-| `DEV_API_PROXY_TARGET` | dev only, `http://localhost:3000`; the dev server forwards `/api` to it; empty = no proxy                                                                                                                             |
+| Key                       | Meaning                                                                                                                                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_TURNSTILE_SITE_KEY` | public Turnstile site key (required, same as web's; Cloudflare publishes test keys). Bundled at build                                                                                                                 |
+| `VITE_API_BASE_URL`       | cms-api base on the admin origin: `https://admin.<domain>/api/v1` in production; in dev `/api/v1` with `DEV_API_PROXY_TARGET=http://localhost:3000`, or the absolute `http://localhost:3000/api/v1`. Bundled at build |
+| `DEV_SERVER_PORT`         | dev only, default 5173                                                                                                                                                                                                |
+| `DEV_API_PROXY_TARGET`    | dev only, `http://localhost:3000`; the dev server forwards `/api` to it; empty = no proxy                                                                                                                             |
 
 ## 5. web (port 5174)
 
@@ -130,21 +131,18 @@ Open `http://domain.localhost:5174`. The browser calls only web's own routes; th
 
 | Key                                    | Kind                | Meaning                                                                                             |
 | -------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_ADMIN_URL`                | browser, build time | optional; empty hides the "Open CMS" link                                                           |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required). Cloudflare publishes test keys                                          |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | browser, build time | public site key (required); only cms-api holds the secret. Cloudflare publishes test keys           |
 | `APP_API_URL`                          | server, runtime     | cms-api as the Next server reaches it: `http://localhost:3000/api/v1`                               |
 | `APP_API_TOKEN`                        | server, runtime     | cms-api API token for page content (required in production; optional here)                          |
 | `WEB_ORIGIN`                           | server, runtime     | exact origin of the site (required), `http://domain.localhost:5174` in dev                          |
 | `WEB_SESSION_SECRET`                   | server, runtime     | session cookie key (required; 32+ bytes in production)                                              |
-| `TURNSTILE_SECRET_KEY`                 | server, runtime     | Turnstile secret (required); Cloudflare publishes test secrets                                      |
-| `TURNSTILE_EXPECTED_HOSTNAME`          | server, runtime     | bare host a Turnstile answer must carry; required in production                                     |
 | `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER` | server, runtime     | visitor IP source, see `apps/web/.env.example`                                                      |
 | `WEB_REVALIDATE_SECONDS`               | server, runtime     | optional override of every call's cache (default 180 s); `0` in dev                                 |
 | `APP_ENV`                              | server, build + run | `development`, `staging` or `production`; required, equal at build and run; mocks off in production |
 | `WEB_PORT`                             | server, runtime     | port of `pnpm start` (production server), default 8080                                              |
 | `DEV_SERVER_PORT`                      | dev only            | read from the shell, not `.env.local`; default 5174                                                 |
 
-`NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web holds its secrets (`WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`) as server-only env; admin has none.
+`NEXT_PUBLIC_*` values are baked into the browser bundle: never put a secret in them. Web holds its secrets (`WEB_SESSION_SECRET`, `APP_API_TOKEN`) as server-only env; admin has none; the Turnstile secret lives only in cms-api.
 
 ## 6. Smoke stack (everything behind Traefik, Docker only)
 

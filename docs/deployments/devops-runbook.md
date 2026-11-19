@@ -29,15 +29,15 @@ Status marks:
 
 ## 1. Who owns what
 
-| Concern                                                                  | Owner                       | Where                                                               |
-| ------------------------------------------------------------------------ | --------------------------- | ------------------------------------------------------------------- |
-| Source code, Dockerfiles, tests                                          | this repo                   | `apps/*`                                                            |
-| CI: checks, image build, push to GHCR, image tag bump in the deploy repo | this repo                   | `.github/workflows/`, `.github/scripts/` ([ci-cd.md](ci-cd.md))     |
-| Database roles script                                                    | this repo                   | `scripts/db/database-roles.sql` (**ready**)                         |
-| GitOps objects, Kubernetes manifests, encrypted Secrets, Traefik config  | deploy repo `<deploy-repo>` | its own layout (**deploy repo**)                                    |
-| Nightly backup job image and script                                      | this repo                   | the cms-api image, `apps/cms-api/backup/` (ADR 0025)                |
-| Nightly backup CronJob manifest                                          | deploy repo                 | contract in [backups.md](backups.md)                                |
-| Database service, backup bucket, DNS and Turnstile, Cloudinary, SMTP     | the owner (dashboards)      | [database.md](database.md) DB-1, [backups.md](backups.md) section 2 |
+| Concern                                                                                       | Owner                       | Where                                                               |
+| --------------------------------------------------------------------------------------------- | --------------------------- | ------------------------------------------------------------------- |
+| Source code, Dockerfiles, tests                                                               | this repo                   | `apps/*`                                                            |
+| CI: checks, image build, push to GHCR, image tag bump in the deploy repo                      | this repo                   | `.github/workflows/`, `.github/scripts/` ([ci-cd.md](ci-cd.md))     |
+| Database roles script                                                                         | this repo                   | `scripts/db/database-roles.sql` (**ready**)                         |
+| GitOps objects, Kubernetes manifests, encrypted Secrets, Traefik config                       | deploy repo `<deploy-repo>` | its own layout (**deploy repo**)                                    |
+| Nightly backup job image and script                                                           | this repo                   | the cms-api image, `apps/cms-api/backup/` (ADR 0025)                |
+| Nightly backup CronJob manifest                                                               | deploy repo                 | contract in [backups.md](backups.md)                                |
+| Database service, backup bucket, DNS and Turnstile (one widget, both hosts), Cloudinary, SMTP | the owner (dashboards)      | [database.md](database.md) DB-1, [backups.md](backups.md) section 2 |
 
 `<deploy-repo>` is the same deploy repo as the owner's earlier deployment. It stays a placeholder until its `owner/name` is written down (Q-OPS1); the same value goes into the GitHub variable `DEPLOYMENT_REPO`.
 

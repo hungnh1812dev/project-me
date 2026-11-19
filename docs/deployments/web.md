@@ -12,7 +12,6 @@ A Next.js server (standalone output) run by Node, as uid 1000, with no nginx in 
 - Build args, baked into the browser bundle, so a change needs a new release image, never a restart ([ci-cd.md](ci-cd.md) section 3, [configmaps.md](configmaps.md) section 4):
   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: required, public Cloudflare Turnstile site key; the build fails without it.
   - `APP_ENV`: required, `production` for every CI image (`staging` only for a locally built image: smoke stack, local registry); the build fails without it and in the `production` Environment with any other value; the same value goes in `web-secrets` and web refuses to start when the two differ.
-  - `NEXT_PUBLIC_ADMIN_URL`: optional; where the "Open CMS" header link points; empty hides the link.
 - Both come from GitHub Environment variables ([ci-cd.md](ci-cd.md) section 5). The images set no secret.
 
 ## 3. Runtime
@@ -26,20 +25,18 @@ A Next.js server (standalone output) run by Node, as uid 1000, with no nginx in 
 
 Names and meaning only. Values for production: [configmaps.md](configmaps.md) section 4. Secrets: [secrets.md](secrets.md). Source of truth: `apps/web/.env.example`.
 
-| Key                           | Where                       | Meaning                                                                                                                                                                         |
-| ----------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APP_API_URL`                 | env, required               | cms-api base URL as the web pod reaches it inside the cluster (server only); replaces `API_INTERNAL_URL`                                                                        |
-| `WEB_ORIGIN`                  | env, required               | exact origin of the site, no path; the BFF accepts state-changing requests only from this `Origin`                                                                              |
-| `WEB_SESSION_SECRET`          | `web-secrets`, required     | key material sealing the session cookies; at least 32 bytes in production, else start fails                                                                                     |
-| `TURNSTILE_SECRET_KEY`        | `web-secrets`, required     | Cloudflare Turnstile secret key; the BFF verifies every human check with it                                                                                                     |
-| `TURNSTILE_EXPECTED_HOSTNAME` | env, required in production | bare lower-case hostname a Turnstile answer must carry                                                                                                                          |
-| `TRUST_PROXY_HOPS`            | env, default 1              | proxies in front of web; the visitor IP is the Nth address from the right of `X-Forwarded-For` ([traefik.md](traefik.md) section 3)                                             |
-| `CLIENT_IP_HEADER`            | env, optional               | header a trusted CDN sets to the visitor IP; wins over `X-Forwarded-For` when set                                                                                               |
-| `APP_API_TOKEN`               | `web-secrets`, required     | cms-api API token (`ak_live_...`) that web sends as Bearer for page content; create it with a read-only account so its reads are the `public` profile                           |
-| `APP_ENV`                     | `web-secrets`, required     | `production` for every CI image (`staging` only for a locally built image); must equal the build value (GitHub variable `APP_ENV`); not `production` turns the mock fallback on |
-| `WEB_PORT`                    | env, default 8080           | port the server listens on                                                                                                                                                      |
+| Key                  | Where                   | Meaning                                                                                                                                                                         |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_API_URL`        | env, required           | cms-api base URL as the web pod reaches it inside the cluster (server only); replaces `API_INTERNAL_URL`                                                                        |
+| `WEB_ORIGIN`         | env, required           | exact origin of the site, no path; the BFF accepts state-changing requests only from this `Origin`                                                                              |
+| `WEB_SESSION_SECRET` | `web-secrets`, required | key material sealing the session cookies; at least 32 bytes in production, else start fails                                                                                     |
+| `TRUST_PROXY_HOPS`   | env, default 1          | proxies in front of web; the visitor IP is the Nth address from the right of `X-Forwarded-For` ([traefik.md](traefik.md) section 3)                                             |
+| `CLIENT_IP_HEADER`   | env, optional           | header a trusted CDN sets to the visitor IP; wins over `X-Forwarded-For` when set                                                                                               |
+| `APP_API_TOKEN`      | `web-secrets`, required | cms-api API token (`ak_live_...`) that web sends as Bearer for page content; create it with a read-only account so its reads are the `public` profile                           |
+| `APP_ENV`            | `web-secrets`, required | `production` for every CI image (`staging` only for a locally built image); must equal the build value (GitHub variable `APP_ENV`); not `production` turns the mock fallback on |
+| `WEB_PORT`           | env, default 8080       | port the server listens on                                                                                                                                                      |
 
-Never set in deploy config (smoke and dev stacks only; production web refuses or ignores them): `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `WEB_REVALIDATE_SECONDS` (the cache is 180 s per call without it). Removed keys to delete from the deploy repo: `NEXT_PUBLIC_API_BASE_URL`, `WEB_STATUS_PAGE_ENABLED`, `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS` ([configmaps.md](configmaps.md) section 4).
+Never set in deploy config (smoke and dev stacks only; production web refuses or ignores them): `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`, `WEB_REVALIDATE_SECONDS` (the cache is 180 s per call without it). Removed keys to delete from the deploy repo: `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `ALLOW_TURNSTILE_TEST_SECRET` (cms-api verifies the human check, D25), the admin-URL build variable ([patch-web-0.3.0.md](../apps/web/patch-web-0.3.0.md)), `NEXT_PUBLIC_API_BASE_URL`, `WEB_STATUS_PAGE_ENABLED`, `API_INTERNAL_URL`, `WEB_REVALIDATE_SECONDS` ([configmaps.md](configmaps.md) section 4).
 
 ## 5. Routing (Traefik)
 
@@ -55,14 +52,14 @@ The whole `<domain>` host goes to the web Service on 8080; there is no cms-api r
 - Release: [release.md](release.md) section 3. A web release is a new `<app version>` image, tagged by CI, with `APP_IMAGE_TAG` bumped in `web-sync-overlay.yaml` of the deploy repo ([ci-cd.md](ci-cd.md) section 4). Rolling update, `maxUnavailable: 0`.
 - A change to a build arg or to `web-secrets`/env: build args need a new release; env and Secret changes need a pod restart ([release.md](release.md) section 2, step 3).
 - Rollback: set `APP_IMAGE_TAG` for web back to the previous version in the deploy repo, or `git revert` the bump commit; do not use `kubectl rollout undo` ([release.md](release.md) section 5). Web holds no data, so a rollback has no schema effect.
-- Rotating `WEB_SESSION_SECRET` or `TURNSTILE_SECRET_KEY`: [secrets.md](secrets.md) section 7.
+- Rotating `WEB_SESSION_SECRET`: [secrets.md](secrets.md) section 7.
 
 ## 8. Checks after a deploy
 
 1. `kubectl -n <ns> rollout status deploy/web` finishes; the pod is `Running`, `READY 1/1`, restarts not climbing; the log has no env error naming a key.
 2. `https://<domain>/` loads over HTTPS (HTTP redirects to HTTPS) and the browser console shows no CSP violations.
-3. The "Open CMS" link points to `https://admin.<domain>`, or is hidden when `NEXT_PUBLIC_ADMIN_URL` is empty.
-4. The sign-in dialog shows the Turnstile widget (site key baked in) and sign-in succeeds (BFF, `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_*` all work).
+3. The header has no link to the admin site.
+4. The sign-in dialog shows the Turnstile widget (site key baked in) and sign-in succeeds (BFF, `WEB_ORIGIN`, `WEB_SESSION_SECRET` work; cms-api checks the token).
 5. `https://<domain>/api/unknown` answers 404 from web (no cms-api route on the public host).
 6. The response carries no `X-Powered-By` header.
 7. The Traefik access log shows real client IPs ([traefik.md](traefik.md) section 3).
@@ -74,7 +71,7 @@ This repo gives the image, the contract and example manifests; the deploy repo o
 
 - `web-sync-overlay.yaml` in `DEPLOYMENT_CLUSTER_PATH` with an `APP_IMAGE_TAG:` line ([ci-cd.md](ci-cd.md) section 4).
 - The web Deployment and Service: env, probes, resources, `securityContext` ([kubernetes.md](kubernetes.md) section 4).
-- Secret `web-secrets` with `WEB_SESSION_SECRET` and `TURNSTILE_SECRET_KEY` ([secrets.md](secrets.md)).
+- Secret `web-secrets` with `WEB_SESSION_SECRET` ([secrets.md](secrets.md)).
 - The Traefik IngressRoute for `<domain>` to web:8080 and the HTTPS redirect ([traefik.md](traefik.md)).
 - The cms-api NetworkPolicy that admits the web pods.
-- GitHub Environment variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `NEXT_PUBLIC_ADMIN_URL` live in this repo's GitHub settings, not the deploy repo.
+- GitHub Environment variable `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (the same site key as cms-admin's `VITE_TURNSTILE_SITE_KEY`) lives in this repo's GitHub settings, not the deploy repo.

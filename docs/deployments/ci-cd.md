@@ -111,14 +111,14 @@ Do the steps in order. Paths are GitHub web UI paths in this repo (`Settings > .
 
 **3. Environment variables** (`Settings > Environments > production > Environment variables`):
 
-| Variable                         | Required | Value                                                                                                                        | Read by                      |
-| -------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                                                                      | deploy job                   |
-| `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory of the `<app>-sync-overlay.yaml` files (step 6)                                                                    | deploy job; fails when unset |
-| `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin on the admin host: `https://admin.<domain>/api/v1`                                           | cms-admin image build arg    |
-| `VITE_TURNSTILE_SITE_KEY`        | yes      | real Cloudflare Turnstile site key (public) for the cms-admin sign-in forms; the build refuses a missing or multi-line value | cms-admin image build arg    |
-| `APP_ENV`                        | yes      | `production` (the image job refuses any other value in the `production` Environment); must equal `APP_ENV` in the web Secret | web image build arg          |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes      | real Cloudflare Turnstile site key (public); the web Dockerfile fails without it                                             | web image build arg          |
+| Variable                         | Required | Value                                                                                                                              | Read by                      |
+| -------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `DEPLOYMENT_REPO`                | yes      | `<owner>/<deploy-repo>`                                                                                                            | deploy job                   |
+| `DEPLOYMENT_CLUSTER_PATH`        | yes      | directory of the `<app>-sync-overlay.yaml` files (step 6)                                                                          | deploy job; fails when unset |
+| `VITE_API_BASE_URL`              | yes      | full API base URL for cms-admin on the admin host: `https://admin.<domain>/api/v1`                                                 | cms-admin image build arg    |
+| `VITE_TURNSTILE_SITE_KEY`        | yes      | same real Cloudflare Turnstile site key (public) as web, for the cms-admin forms; the build refuses a missing or multi-line value  | cms-admin image build arg    |
+| `APP_ENV`                        | yes      | `production` (the image job refuses any other value in the `production` Environment); must equal `APP_ENV` in the web Secret       | web image build arg          |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes      | real Cloudflare Turnstile site key (public); the widget lists `<domain>` and `admin.<domain>`; the web Dockerfile fails without it | web image build arg          |
 
 These are baked into public bundles, so they are variables, never secrets. A missing required variable fails the image job before the build starts.
 

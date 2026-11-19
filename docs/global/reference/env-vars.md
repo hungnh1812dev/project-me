@@ -38,9 +38,6 @@ Part of the [project spec](../../../SPEC.md). Reference: definitions and values 
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`                                                 | Cloudinary account                                                                    | if `MEDIA_PROVIDER=cloudinary`         | -                        | runtime      |
 | `CLOUDINARY_FOLDER`                                                                                                    | Folder every upload is stored under                                                   | no                                     | -                        | runtime      |
 | `REVIEWER_FEATURE_ENABLED`                                                                                             | Reviewer features switch                                                              | no                                     | `false`                  | runtime      |
-| `TURNSTILE_SECRET_KEY`                                                                                                 | Turnstile secret of the human check (D25)                                             | prod                                   | -                        | runtime      |
-| `TURNSTILE_EXPECTED_HOSTNAME`                                                                                          | Comma-separated hosts a Turnstile answer must report (web and admin)                  | prod (with a real secret)              | -                        | runtime      |
-| `ALLOW_TURNSTILE_TEST_SECRET`                                                                                          | Allows Cloudflare's test secret in production; only `smoke`                           | no                                     | -                        | test (smoke) |
 | `JWT_ACCESS_SECRET`                                                                                                    | Signs access tokens                                                                   | prod (≥ 32 bytes)                      | -                        | runtime      |
 | `JWT_ACCESS_KID`                                                                                                       | Key id of `JWT_ACCESS_SECRET`                                                         | prod                                   | `dev` outside production | runtime      |
 | `OTP_PEPPER`                                                                                                           | HMAC key of one-time codes                                                            | prod (≥ 32 bytes)                      | -                        | runtime      |
@@ -67,17 +64,17 @@ Part of the [project spec](../../../SPEC.md). Reference: definitions and values 
 
 ## cms-admin
 
-| Name                   | Purpose                              | Required | Default              | Scope |
-| ---------------------- | ------------------------------------ | -------- | -------------------- | ----- |
-| `VITE_API_BASE_URL`    | cms-api URL the bundle calls         | yes      | -                    | build |
-| `DEV_SERVER_PORT`      | Dev server port                      | no       | `5173`               | dev   |
-| `DEV_API_PROXY_TARGET` | Where the dev server forwards `/api` | no       | - (empty = no proxy) | dev   |
+| Name                      | Purpose                                                                          | Required          | Default              | Scope |
+| ------------------------- | -------------------------------------------------------------------------------- | ----------------- | -------------------- | ----- |
+| `VITE_API_BASE_URL`       | cms-api URL the bundle calls                                                     | yes               | -                    | build |
+| `VITE_TURNSTILE_SITE_KEY` | Turnstile site key of the human check (same key as web, widget lists both hosts) | yes (build fails) | -                    | build |
+| `DEV_SERVER_PORT`         | Dev server port                                                                  | no                | `5173`               | dev   |
+| `DEV_API_PROXY_TARGET`    | Where the dev server forwards `/api`                                             | no                | - (empty = no proxy) | dev   |
 
 ## web
 
 | Name                             | Purpose                                                                       | Required                     | Default              | Scope                     |
 | -------------------------------- | ----------------------------------------------------------------------------- | ---------------------------- | -------------------- | ------------------------- |
-| `NEXT_PUBLIC_ADMIN_URL`          | Target of the header "Open CMS" link                                          | no (empty hides it)          | -                    | build                     |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile site key                                                            | yes (build fails)            | -                    | build                     |
 | `APP_ENV`                        | `development` / `staging` / `production`; build and runtime values must match | yes                          | -                    | build, runtime            |
 | `APP_API_URL`                    | cms-api URL from the Next server                                              | yes                          | -                    | runtime                   |
@@ -85,9 +82,6 @@ Part of the [project spec](../../../SPEC.md). Reference: definitions and values 
 | `WEB_REVALIDATE_SECONDS`         | Overrides every server call's cache lifetime (integer ≥ 0)                    | no                           | - (each call: 180 s) | test (dev, smoke set `0`) |
 | `WEB_ORIGIN`                     | Site origin the BFF accepts state-changing requests from                      | yes                          | -                    | runtime                   |
 | `WEB_SESSION_SECRET`             | Key of the sealed session cookies                                             | yes (production: ≥ 32 bytes) | -                    | runtime                   |
-| `TURNSTILE_SECRET_KEY`           | Turnstile secret the BFF verifies with                                        | yes                          | -                    | runtime                   |
-| `TURNSTILE_EXPECTED_HOSTNAME`    | Hostname a Turnstile answer must carry                                        | prod (with a real secret)    | -                    | runtime                   |
-| `ALLOW_TURNSTILE_TEST_SECRET`    | Allows Cloudflare's test secret in production; only `smoke`                   | no                           | -                    | test (smoke)              |
 | `BFF_AUTH_RATE_LIMIT_IP`         | Sign-in limit per visitor IP per 60 s                                         | no                           | `20`                 | test                      |
 | `ALLOW_BFF_RATE_LIMIT_OVERRIDE`  | Allows `BFF_AUTH_RATE_LIMIT_IP` in production; only `smoke`                   | no                           | -                    | test (smoke)              |
 | `TRUST_PROXY_HOPS`               | Proxies in front of the server                                                | no                           | `1`                  | runtime                   |
