@@ -35,7 +35,8 @@ test.describe(
     const LAST_PUBLIC_TITLE = 'E2E Last';
     const LABEL_TITLE = 'E2E Label';
     const LABEL_SUB_TITLE = 'E2E Label Sub';
-    const TOUCH_VIEWPORT = { width: 390, height: 844 };
+    /** A tablet: from md up the bar shows the entries (below it the drawer does, MobileNavDrawer spec). */
+    const TOUCH_VIEWPORT = { width: 1024, height: 768 };
 
     let ownerToken = '';
     const created: [string, string][] = [];
