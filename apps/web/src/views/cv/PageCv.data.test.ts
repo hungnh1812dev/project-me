@@ -6,6 +6,20 @@ import { readWebSession } from '@/features/session/WebSession.server';
 import { answerCvRead, loadPageCv, parseCvDocumentId } from './PageCv.data';
 import { CV_COMMON_TEXT_QUERY, PAGE_CV_A_QUERY, PROFILE_QUERY } from './PageCv.graphql';
 
+// React's `cache` only memoizes inside a server request; this stand-in memoizes by first argument
+// until `renderScope.clear()`, so a test can play one render.
+const renderScope = vi.hoisted(() => new Map<unknown, unknown>());
+
+vi.mock('react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react')>()),
+  cache:
+    <Args extends unknown[], Result>(load: (...args: Args) => Result) =>
+    (...args: Args): Result => {
+      if (!renderScope.has(args[0])) renderScope.set(args[0], load(...args));
+      return renderScope.get(args[0]) as Result;
+    },
+}));
+
 vi.mock('@/apis/server/graphql/Graphql.server', () => ({
   executeGraphql: vi.fn<typeof executeGraphql>(),
   requireRootField: () => (data: unknown) => data,
@@ -48,6 +62,7 @@ function answerWith({ list, profile, text }: Answers = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  renderScope.clear();
 });
 
 describe('loadPageCv', () => {
@@ -125,6 +140,14 @@ describe('loadPageCv', () => {
     answerWith({ list: noData(), text: noData() });
     await expect(loadPageCv(DOCUMENT_ID)).resolves.toEqual({ state: 'no-cv-live', text: null });
     expect(logApiError).not.toHaveBeenCalled();
+  });
+
+  it('reads the CV once when generateMetadata and the page both ask in one render', async () => {
+    answerWith();
+    await Promise.all([loadPageCv(DOCUMENT_ID), loadPageCv(DOCUMENT_ID)]);
+    expect(executeGraphql).toHaveBeenCalledTimes(3);
+    const pageCvReads = vi.mocked(executeGraphql).mock.calls.filter(([q]) => q === PAGE_CV_A_QUERY);
+    expect(pageCvReads).toHaveLength(1);
   });
 
   it('starts the three queries together', async () => {
