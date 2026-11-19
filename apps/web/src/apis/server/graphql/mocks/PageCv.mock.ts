@@ -1,193 +1,174 @@
-/** Mock answer of the `PageCv` operation: the main CV, the profile and the CV labels. */
+/** Mock answer of the `PageCv` operation: one CV, the profile and the CV labels. */
 export const PAGE_CV_MOCK = {
-  pageCvAList: {
-    data: [
+  pageCvA: {
+    documentId: '00000000-0000-4000-8000-000000000001',
+    name: 'Tran Minh Anh',
+    position: 'Senior Frontend Developer',
+    summary:
+      '<p><strong>6 years</strong> building production frontend at Northwind Studio — <strong>React</strong>/<strong>Next.js</strong>/<strong>TypeScript</strong>, apps handling <strong>3M+ users</strong>. Picked the right rendering strategy (<strong>SSR</strong>/<strong>ISR</strong>/<strong>CSR</strong>) per use case, set up <strong>Strapi CMS</strong> with custom plugins, and handled <strong>GitLab CI/CD</strong> and <strong>Kubernetes</strong> from scratch. Also dealt a lot with <strong>WebView</strong> and in-app browser quirks, and helped junior developers grow through code review. Backed by 4 years of game dev (C/C++, OpenGL, WebGL) — makes browser performance issues like slow renders, layout shifts, and heavy animations familiar territory.</p>',
+    skills: [
+      ...[
+        'React',
+        'Next.js',
+        'TypeScript',
+        'JavaScript (ES6+)',
+        'HTML5',
+        'CSS3',
+        'SCSS',
+        'Tailwind CSS',
+        'SWR',
+        'Context API',
+        'Jotai',
+        'Git',
+      ].map((skill) => ({ skill, level: 'Proficient' })),
+      ...[
+        'Material UI',
+        'Shadcn UI',
+        'React Query (TanStack)',
+        'Webpack',
+        'Vite',
+        'Vitest',
+        'React Testing Library',
+      ].map((skill) => ({ skill, level: 'Intermediate' })),
+      ...[
+        'Core Web Vitals',
+        'GitLab CI/CD',
+        'Github Action',
+        'Docker',
+        'Kubernetes',
+        'Jira',
+        'Scrum/Agile',
+        'Sentry',
+        'AWS RUM',
+      ].map((skill) => ({ skill, level: 'Working Knowledge' })),
+      ...['Redux', 'Zustand', 'Node.js', 'Nest.js', 'MySQL'].map((skill) => ({
+        skill,
+        level: 'Others',
+      })),
+    ],
+    experiences: [
       {
-        documentId: 'mock-page-cv',
-        name: 'Tran Minh Anh',
-        position: 'Senior Frontend Developer',
-        summary:
-          '<p><strong>6 years</strong> building production frontend at Northwind Studio — <strong>React</strong>/<strong>Next.js</strong>/<strong>TypeScript</strong>, apps handling <strong>3M+ users</strong>. Picked the right rendering strategy (<strong>SSR</strong>/<strong>ISR</strong>/<strong>CSR</strong>) per use case, set up <strong>Strapi CMS</strong> with custom plugins, and handled <strong>GitLab CI/CD</strong> and <strong>Kubernetes</strong> from scratch. Also dealt a lot with <strong>WebView</strong> and in-app browser quirks, and helped junior developers grow through code review. Backed by 4 years of game dev (C/C++, OpenGL, WebGL) — makes browser performance issues like slow renders, layout shifts, and heavy animations familiar territory.</p>',
-        skills: [
-          ...[
-            'React',
-            'Next.js',
-            'TypeScript',
-            'JavaScript (ES6+)',
-            'HTML5',
-            'CSS3',
-            'SCSS',
-            'Tailwind CSS',
-            'SWR',
-            'Context API',
-            'Jotai',
-            'Git',
-          ].map((skill) => ({ skill, level: 'Proficient' })),
-          ...[
-            'Material UI',
-            'Shadcn UI',
-            'React Query (TanStack)',
-            'Webpack',
-            'Vite',
-            'Vitest',
-            'React Testing Library',
-          ].map((skill) => ({ skill, level: 'Intermediate' })),
-          ...[
-            'Core Web Vitals',
-            'GitLab CI/CD',
-            'Github Action',
-            'Docker',
-            'Kubernetes',
-            'Jira',
-            'Scrum/Agile',
-            'Sentry',
-            'AWS RUM',
-          ].map((skill) => ({ skill, level: 'Working Knowledge' })),
-          ...['Redux', 'Zustand', 'Node.js', 'Nest.js', 'MySQL'].map((skill) => ({
-            skill,
-            level: 'Others',
-          })),
-        ],
-        experiences: [
+        company: 'Northwind Studio',
+        location: 'Da Nang',
+        period: 'Jan 2016 – 2026',
+        roles: [
           {
-            company: 'Northwind Studio',
-            location: 'Da Nang',
-            period: 'Jan 2016 – 2026',
-            roles: [
-              {
-                position: 'Senior Frontend Developer',
-                period: 'Mar 2022 – 2026',
-                teamSize: null,
-                projects: null,
-                techStacks: [
-                  'React',
-                  'Next.js',
-                  'TypeScript',
-                  'Tailwind CSS',
-                  'GraphQL',
-                  'Kubernetes',
-                  'Strapi',
-                ],
-                responsibilities:
-                  "<ul><li>Owned the full frontend from project setup through deployment on multiple campaigns; <strong>mentored 4 developers</strong> mainly through <strong>code reviews</strong> — less about formal pair programming, more about catching patterns that cause problems at scale before they get merged.</li><li>Picked <strong>SSR</strong> for user data, <strong>ISR</strong> for game content, <strong>CSR</strong> only where needed — then tuned <strong>CDN caching</strong> and cut non-critical JS from first paint. <strong>LCP dropped 43%</strong> on the main Starfall site.</li><li><strong>Edge 18</strong> and in-app browsers have bugs that don't show up in Chrome DevTools. Built a checklist of known issues (CSS gaps, fetch fallbacks, viewport units) the team reused across projects.</li><li>Designed the <strong>Strapi CMS</strong> setup for both major projects, including 3 custom plugins: time-locked scheduled publishing (for marketing campaign launches), one-click localization cloning, and live page previews before publish.</li><li>Set up <strong>GitLab CI/CD</strong> and wrote <strong>Kubernetes</strong> configs (<strong>Deployments + HPA</strong>) for frontend and CMS</li></ul>",
-              },
-              {
-                position: 'Frontend Developer',
-                period: 'Mar 2020 – Feb 2022',
-                teamSize: null,
-                projects: null,
-                techStacks: [
-                  'React',
-                  'Next.js',
-                  'JavaScript',
-                  'TypeScript',
-                  'Strapi',
-                  'Kubernetes',
-                ],
-                responsibilities:
-                  '<ul><li>Built and maintained web applications from Figma designs using <strong>React.js, Next.js</strong>, and <strong>TypeScript</strong> — this role is where I moved from game dev into frontend properly.</li><li>Handled a major <strong>React version upgrade</strong> mid-project and debugged several production rendering issues that only showed up under real traffic conditions.</li><li>Introduced <strong>Strapi CMS</strong> to two projects, which removed the need for code deploys every time the content team needed to update copy or assets.</li><li>Took on <strong>Starfall Harbor</strong> as main frontend developer from day one — built the Next.js + Strapi CMS foundation with <strong>SSG/ISR</strong> rendering that later scaled to support multiple high-traffic expansion launches and <strong>70,000+ Day-1 peak sessions</strong>.</li></ul>',
-              },
-              {
-                position: 'Game Developer',
-                period: 'Jan 2016 – Feb 2020',
-                teamSize: null,
-                projects: null,
-                techStacks: [
-                  'C/C++',
-                  'Java',
-                  'JavaScript',
-                  'TypeScript',
-                  'OpenGL',
-                  'GLSL',
-                  'WebGL',
-                  'Android NDK',
-                  'Android SDK',
-                ],
-                responsibilities:
-                  '<ul><li>Developed and ported mobile/web games across platforms; a big part of the job was squeezing performance out of low-end Android hardware, which meant profiling GPU workload and understanding how the render pipeline actually worked — not just "avoid re-renders".</li><li>That background is why browser rendering — paint, composite, layout thrash — feels natural rather than just theory.</li></ul>',
-              },
-            ],
-          },
-        ],
-        projects: [
-          {
-            name: 'Starfall Harbor: Yearly Wrap-up Website',
-            teamSize: 3,
-            role: 'Senior Frontend Developer & Reviewer',
-            liveLink: 'https://starfall.example.com/wrap-up',
-            repositoryLink: null,
-            techStack: [
-              'React',
-              'Next.js',
-              'TypeScript',
-              'Tailwind CSS',
-              'GSAP',
-              'K6',
-              'Kubernetes',
-            ],
-            responsibilities:
-              '<ul><li>Joined early frontend design discussions for the <strong>wrap-up flow</strong> (multi-page user achievement summary) — shaped the core component structure and made key frontend architecture calls that the rest of the build followed.</li><li>Built the profile system used by <strong>3M+ users</strong> — SSR for user data, <strong>Strapi CMS</strong> for static content with ISR, CDN and browser caching to absorb traffic spikes at launch.</li><li>Found and fixed <strong>GSAP</strong> animation bottlenecks — render time dropped <strong>45%</strong>.</li><li>Set up <strong>Kubernetes HPA</strong> to add pods when traffic spiked.</li></ul>',
-          },
-          {
-            name: 'Starfall Harbor',
-            teamSize: 6,
-            role: 'Frontend Developer & Reviewer',
-            liveLink: 'https://starfall.example.com/',
-            repositoryLink: null,
-            techStack: [
+            position: 'Senior Frontend Developer',
+            period: 'Mar 2022 – 2026',
+            teamSize: null,
+            projects: null,
+            techStacks: [
               'React',
               'Next.js',
               'TypeScript',
               'Tailwind CSS',
               'GraphQL',
-              'GSAP',
               'Kubernetes',
-              'Sentry',
+              'Strapi',
             ],
             responsibilities:
-              '<ul><li>Built the full <strong>Strapi CMS</strong> from scratch with <strong>SSG/ISR</strong> rendering — the content team could push localized updates without touching code, and the <strong>GitLab CI/CD + Kubernetes</strong> setup kept deploys smooth across both frontend and CMS.</li><li>Built UI and animations for Expansion 3 — Day-1 sessions hit <strong>70,851</strong> vs <strong>12,671</strong> on Expansion 2 (<strong>+559%</strong>). Campaign had more marketing behind it, but the site held the traffic.</li><li>Set up <strong>Sentry</strong> to track JS errors and <strong>Web Vitals</strong> in production — data from the Expansion 3 launch helped find and fix several performance issues.</li></ul>',
+              "<ul><li>Owned the full frontend from project setup through deployment on multiple campaigns; <strong>mentored 4 developers</strong> mainly through <strong>code reviews</strong> — less about formal pair programming, more about catching patterns that cause problems at scale before they get merged.</li><li>Picked <strong>SSR</strong> for user data, <strong>ISR</strong> for game content, <strong>CSR</strong> only where needed — then tuned <strong>CDN caching</strong> and cut non-critical JS from first paint. <strong>LCP dropped 43%</strong> on the main Starfall site.</li><li><strong>Edge 18</strong> and in-app browsers have bugs that don't show up in Chrome DevTools. Built a checklist of known issues (CSS gaps, fetch fallbacks, viewport units) the team reused across projects.</li><li>Designed the <strong>Strapi CMS</strong> setup for both major projects, including 3 custom plugins: time-locked scheduled publishing (for marketing campaign launches), one-click localization cloning, and live page previews before publish.</li><li>Set up <strong>GitLab CI/CD</strong> and wrote <strong>Kubernetes</strong> configs (<strong>Deployments + HPA</strong>) for frontend and CMS</li></ul>",
           },
           {
-            name: 'Velocity Rush',
-            teamSize: 4,
-            role: 'Frontend Developer',
-            liveLink: 'https://velocity.example.com',
-            repositoryLink: null,
-            techStack: ['React.js', 'Next.js', 'TypeScript', 'Tailwind CSS', 'GSAP', 'Sentry'],
+            position: 'Frontend Developer',
+            period: 'Mar 2020 – Feb 2022',
+            teamSize: null,
+            projects: null,
+            techStacks: ['React', 'Next.js', 'JavaScript', 'TypeScript', 'Strapi', 'Kubernetes'],
             responsibilities:
-              "<ul><li>Moved from <strong>React.js</strong> to <strong>Next.js App Router</strong> for a rebrand — Lighthouse went from 40 to 60, first load down 25%. GTM showed <strong>+22.5% users</strong> and <strong>+34.4% interactions</strong> post-launch, though new content and marketing also played a part.</li><li>Rebuilt all animations to match the new brand design and added <strong>Strapi CMS</strong> for the download store — before this, updating a platform link required a code deploy.</li><li>Added <strong>Sentry</strong> after the migration to catch bugs that tests missed and didn't show up until production.</li></ul>",
-          },
-        ],
-        educations: [
-          {
-            degree: 'Bachelor of Science in Information Technology',
-            institution: 'Example University of Science',
-            period: '2011 – 2016',
-            location: null,
-          },
-        ],
-        languages: [
-          { language: 'Vietnamese', level: 'Native' },
-          {
-            language: 'English',
-            level: 'Read/Written: Intermediate · Spoken: Conversational',
-          },
-        ],
-        references: [
-          {
-            name: 'Mrs. Pham Thu Ha',
-            role: 'Project Manager / Northwind Studio',
-            phone: '+84 555 0101',
+              '<ul><li>Built and maintained web applications from Figma designs using <strong>React.js, Next.js</strong>, and <strong>TypeScript</strong> — this role is where I moved from game dev into frontend properly.</li><li>Handled a major <strong>React version upgrade</strong> mid-project and debugged several production rendering issues that only showed up under real traffic conditions.</li><li>Introduced <strong>Strapi CMS</strong> to two projects, which removed the need for code deploys every time the content team needed to update copy or assets.</li><li>Took on <strong>Starfall Harbor</strong> as main frontend developer from day one — built the Next.js + Strapi CMS foundation with <strong>SSG/ISR</strong> rendering that later scaled to support multiple high-traffic expansion launches and <strong>70,000+ Day-1 peak sessions</strong>.</li></ul>',
           },
           {
-            name: 'Mr. Le Quang Huy',
-            role: 'Technical Lead / Northwind Studio',
-            phone: '+84 555 0102',
+            position: 'Game Developer',
+            period: 'Jan 2016 – Feb 2020',
+            teamSize: null,
+            projects: null,
+            techStacks: [
+              'C/C++',
+              'Java',
+              'JavaScript',
+              'TypeScript',
+              'OpenGL',
+              'GLSL',
+              'WebGL',
+              'Android NDK',
+              'Android SDK',
+            ],
+            responsibilities:
+              '<ul><li>Developed and ported mobile/web games across platforms; a big part of the job was squeezing performance out of low-end Android hardware, which meant profiling GPU workload and understanding how the render pipeline actually worked — not just "avoid re-renders".</li><li>That background is why browser rendering — paint, composite, layout thrash — feels natural rather than just theory.</li></ul>',
           },
         ],
-        _maskedFields: ['experiences.company'],
       },
     ],
+    projects: [
+      {
+        name: 'Starfall Harbor: Yearly Wrap-up Website',
+        teamSize: 3,
+        role: 'Senior Frontend Developer & Reviewer',
+        liveLink: 'https://starfall.example.com/wrap-up',
+        repositoryLink: null,
+        techStack: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'GSAP', 'K6', 'Kubernetes'],
+        responsibilities:
+          '<ul><li>Joined early frontend design discussions for the <strong>wrap-up flow</strong> (multi-page user achievement summary) — shaped the core component structure and made key frontend architecture calls that the rest of the build followed.</li><li>Built the profile system used by <strong>3M+ users</strong> — SSR for user data, <strong>Strapi CMS</strong> for static content with ISR, CDN and browser caching to absorb traffic spikes at launch.</li><li>Found and fixed <strong>GSAP</strong> animation bottlenecks — render time dropped <strong>45%</strong>.</li><li>Set up <strong>Kubernetes HPA</strong> to add pods when traffic spiked.</li></ul>',
+      },
+      {
+        name: 'Starfall Harbor',
+        teamSize: 6,
+        role: 'Frontend Developer & Reviewer',
+        liveLink: 'https://starfall.example.com/',
+        repositoryLink: null,
+        techStack: [
+          'React',
+          'Next.js',
+          'TypeScript',
+          'Tailwind CSS',
+          'GraphQL',
+          'GSAP',
+          'Kubernetes',
+          'Sentry',
+        ],
+        responsibilities:
+          '<ul><li>Built the full <strong>Strapi CMS</strong> from scratch with <strong>SSG/ISR</strong> rendering — the content team could push localized updates without touching code, and the <strong>GitLab CI/CD + Kubernetes</strong> setup kept deploys smooth across both frontend and CMS.</li><li>Built UI and animations for Expansion 3 — Day-1 sessions hit <strong>70,851</strong> vs <strong>12,671</strong> on Expansion 2 (<strong>+559%</strong>). Campaign had more marketing behind it, but the site held the traffic.</li><li>Set up <strong>Sentry</strong> to track JS errors and <strong>Web Vitals</strong> in production — data from the Expansion 3 launch helped find and fix several performance issues.</li></ul>',
+      },
+      {
+        name: 'Velocity Rush',
+        teamSize: 4,
+        role: 'Frontend Developer',
+        liveLink: 'https://velocity.example.com',
+        repositoryLink: null,
+        techStack: ['React.js', 'Next.js', 'TypeScript', 'Tailwind CSS', 'GSAP', 'Sentry'],
+        responsibilities:
+          "<ul><li>Moved from <strong>React.js</strong> to <strong>Next.js App Router</strong> for a rebrand — Lighthouse went from 40 to 60, first load down 25%. GTM showed <strong>+22.5% users</strong> and <strong>+34.4% interactions</strong> post-launch, though new content and marketing also played a part.</li><li>Rebuilt all animations to match the new brand design and added <strong>Strapi CMS</strong> for the download store — before this, updating a platform link required a code deploy.</li><li>Added <strong>Sentry</strong> after the migration to catch bugs that tests missed and didn't show up until production.</li></ul>",
+      },
+    ],
+    educations: [
+      {
+        degree: 'Bachelor of Science in Information Technology',
+        institution: 'Example University of Science',
+        period: '2011 – 2016',
+        location: null,
+      },
+    ],
+    languages: [
+      { language: 'Vietnamese', level: 'Native' },
+      {
+        language: 'English',
+        level: 'Read/Written: Intermediate · Spoken: Conversational',
+      },
+    ],
+    references: [
+      {
+        name: 'Mrs. Pham Thu Ha',
+        role: 'Project Manager / Northwind Studio',
+        phone: '+84 555 0101',
+      },
+      {
+        name: 'Mr. Le Quang Huy',
+        role: 'Technical Lead / Northwind Studio',
+        phone: '+84 555 0102',
+      },
+    ],
+    _maskedFields: ['experiences.company'],
   },
   profile: {
     name: 'Tran Minh Anh',

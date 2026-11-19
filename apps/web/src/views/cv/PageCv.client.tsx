@@ -10,7 +10,7 @@ import { ContactCard, ProfileAvatar } from './ContactCard';
 import { LanguagesSection, SkillsSection, SummarySection } from './CvSection';
 import { EducationsSection } from './EducationsSection';
 import { ExperiencesSection } from './ExperiencesSection';
-import { mainCvOf, type CvCommonText, type PageCvData } from './PageCv.graphql';
+import type { CvCommonText, PageCvData } from './PageCv.graphql';
 import { ProjectsSection } from './ProjectsSection';
 import { ReferencesSection } from './ReferencesSection';
 
@@ -60,8 +60,7 @@ export function PageCvClient({ initialData, text }: PageCvClientProps) {
   }
   // A failed signed-in refetch keeps the anonymous CV the server rendered, with no message.
   const data = isError ? initialData : fetchedData;
-  const cv = mainCvOf(data);
-  if (cv === undefined) return null;
+  const { pageCvA: cv } = data;
 
   return (
     // Prints as the on-screen sheet: tints kept, the band edge to edge, the text inside the page margin.

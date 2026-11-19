@@ -29,8 +29,8 @@ const cvOf = (name: string | null, overrides: Partial<PageCvA> = {}): PageCvA =>
   ...overrides,
 });
 
-const SERVER_DATA: PageCvData = { pageCvAList: { data: [cvOf('Mai Server')] }, profile: null };
-const OWNER_DATA: PageCvData = { pageCvAList: { data: [cvOf('Mai Private')] }, profile: null };
+const SERVER_DATA: PageCvData = { pageCvA: cvOf('Mai Server'), profile: null };
+const OWNER_DATA: PageCvData = { pageCvA: cvOf('Mai Private'), profile: null };
 
 const signedInApi = () =>
   fakeApi({ readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER) });
@@ -61,10 +61,7 @@ describe('PageCvClient', () => {
   it('renders no h1 when the CV has no name', async () => {
     render(
       <Wrapper api={fakeApi()}>
-        <PageCvClient
-          initialData={{ pageCvAList: { data: [cvOf(null)] }, profile: null }}
-          text={TEXT}
-        />
+        <PageCvClient initialData={{ pageCvA: cvOf(null), profile: null }} text={TEXT} />
       </Wrapper>,
     );
     expect(await screen.findByText('Platform engineer')).toBeInTheDocument();
@@ -76,27 +73,23 @@ describe('PageCvClient', () => {
       <Wrapper api={fakeApi()}>
         <PageCvClient
           initialData={{
-            pageCvAList: {
-              data: [
-                cvOf('Mai Server', {
-                  summary: '<p>Hi there</p>',
-                  projects: [
-                    {
-                      name: 'Billing core',
-                      teamSize: null,
-                      role: null,
-                      liveLink: null,
-                      repositoryLink: null,
-                      techStack: null,
-                      responsibilities: null,
-                    },
-                  ],
-                  skills: [{ skill: 'TypeScript', level: 'Proficient' }],
-                  languages: [{ language: 'English', level: 'Fluent' }],
-                  references: [{ name: 'Mr. Ref', role: 'Lead', phone: '0900' }],
-                }),
+            pageCvA: cvOf('Mai Server', {
+              summary: '<p>Hi there</p>',
+              projects: [
+                {
+                  name: 'Billing core',
+                  teamSize: null,
+                  role: null,
+                  liveLink: null,
+                  repositoryLink: null,
+                  techStack: null,
+                  responsibilities: null,
+                },
               ],
-            },
+              skills: [{ skill: 'TypeScript', level: 'Proficient' }],
+              languages: [{ language: 'English', level: 'Fluent' }],
+              references: [{ name: 'Mr. Ref', role: 'Lead', phone: '0900' }],
+            }),
             profile: PAGE_CV_MOCK.profile,
           }}
           text={TEXT}
@@ -118,7 +111,7 @@ describe('PageCvClient', () => {
       <Wrapper api={fakeApi()}>
         <PageCvClient
           initialData={{
-            pageCvAList: { data: [cvOf('Mai Server', { summary: '<p>Hi there</p>' })] },
+            pageCvA: cvOf('Mai Server', { summary: '<p>Hi there</p>' }),
             profile: PAGE_CV_MOCK.profile,
           }}
           text={null}
@@ -194,9 +187,7 @@ describe('PageCvClient', () => {
       <Wrapper api={fakeApi()}>
         <PageCvClient
           initialData={{
-            pageCvAList: {
-              data: [cvOf('Mai Server', { summary: '***', _maskedFields: ['summary'] })],
-            },
+            pageCvA: cvOf('Mai Server', { summary: '***', _maskedFields: ['summary'] }),
             profile: null,
           }}
           text={null}
@@ -205,14 +196,5 @@ describe('PageCvClient', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Mai Server' })).toBeInTheDocument();
     expect(container).not.toHaveTextContent('***');
-  });
-
-  it('renders nothing when the data holds no CV', () => {
-    const { container } = render(
-      <Wrapper api={fakeApi()}>
-        <PageCvClient initialData={{ pageCvAList: { data: [] }, profile: null }} text={TEXT} />
-      </Wrapper>,
-    );
-    expect(container).toBeEmptyDOMElement();
   });
 });

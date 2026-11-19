@@ -2,6 +2,7 @@ import { describeContentQueryContract } from '@/apis/server/graphql/ContentQuery
 import { MOCK_VIEW } from '@/apis/server/graphql/mocks/MockView';
 import { PAGE_CV_MOCK } from '@/apis/server/graphql/mocks/PageCv.mock';
 
+import { parseCvDocumentId } from './PageCv.data';
 import {
   CV_COMMON_TEXT_QUERY,
   PAGE_CV_A_QUERY,
@@ -21,88 +22,88 @@ describeContentQueryContract({
 describeContentQueryContract({ query: PAGE_CV_VISITOR_QUERY, mockView: MOCK_VIEW });
 
 describe('the PageCv operations', () => {
-  it('asks the main CV by isMain, newest first, one entry', () => {
-    expect(PAGE_CV_A_QUERY).toContain('filter: { isMain: { eq: true } }');
-    expect(PAGE_CV_A_QUERY).toContain('sort: [{ field: updatedAt, direction: DESC }]');
-    expect(PAGE_CV_A_QUERY).toContain('pageSize: 1');
+  it('asks one CV by the documentId variable, with no main filter or list', () => {
+    expect(PAGE_CV_A_QUERY).toContain('query PageCvA($documentId: ID!)');
+    expect(PAGE_CV_A_QUERY).toContain('pageCvA(documentId: $documentId)');
+    expect(PAGE_CV_A_QUERY).not.toMatch(/is[M]ain|pageCvA[L]ist/);
   });
 
-  it('gives the visitor the main CV and the profile selections, without the text', () => {
-    expect(PAGE_CV_VISITOR_QUERY).toContain('query PageCvVisitor');
-    expect(PAGE_CV_VISITOR_QUERY).toContain('pageCvAList(');
+  it('gives the visitor the CV and the profile selections, without the text', () => {
+    expect(PAGE_CV_VISITOR_QUERY).toContain('query PageCvVisitor($documentId: ID!)');
+    expect(PAGE_CV_VISITOR_QUERY).toContain('pageCvA(documentId: $documentId)');
     expect(PAGE_CV_VISITOR_QUERY).toContain('profile {');
     expect(PAGE_CV_VISITOR_QUERY).not.toContain('cvCommonText');
   });
 
+  it('gives the mock a fixed made-up UUID', () => {
+    expect(parseCvDocumentId(PAGE_CV_MOCK.pageCvA.documentId)).not.toBeNull();
+  });
+
   it('masks the company in the mock so the masked rendering shows', () => {
-    expect(PAGE_CV_MOCK.pageCvAList.data[0]?.['_maskedFields']).toContain('experiences.company');
+    expect(PAGE_CV_MOCK.pageCvA['_maskedFields']).toContain('experiences.company');
   });
 });
 
 describe('sanitizeCvRichtext', () => {
   const upper = (html: string) => html.toUpperCase();
   const data: PageCvData = {
-    pageCvAList: {
-      data: [
+    pageCvA: {
+      documentId: 'c1',
+      name: null,
+      position: null,
+      summary: 'summary',
+      skills: null,
+      experiences: [
         {
-          documentId: 'c1',
-          name: null,
-          position: null,
-          summary: 'summary',
-          skills: null,
-          experiences: [
+          company: 'kept',
+          location: null,
+          period: null,
+          roles: [
             {
-              company: 'kept',
-              location: null,
+              position: null,
               period: null,
-              roles: [
-                {
-                  position: null,
-                  period: null,
-                  teamSize: null,
-                  projects: 'plain',
-                  techStacks: null,
-                  responsibilities: 'role',
-                },
-              ],
-            },
-          ],
-          projects: [
-            {
-              name: 'kept',
               teamSize: null,
-              role: null,
-              liveLink: null,
-              repositoryLink: null,
-              techStack: null,
-              responsibilities: 'project',
+              projects: 'plain',
+              techStacks: null,
+              responsibilities: 'role',
             },
           ],
-          educations: null,
-          languages: null,
-          references: null,
-          _maskedFields: [],
         },
       ],
+      projects: [
+        {
+          name: 'kept',
+          teamSize: null,
+          role: null,
+          liveLink: null,
+          repositoryLink: null,
+          techStack: null,
+          responsibilities: 'project',
+        },
+      ],
+      educations: null,
+      languages: null,
+      references: null,
+      _maskedFields: [],
     },
     profile: null,
   };
 
   it('sanitizes the summary, role responsibilities and project responsibilities only', () => {
-    const [cv] = sanitizeCvRichtext(data, upper).pageCvAList.data;
-    expect(cv?.summary).toBe('SUMMARY');
-    expect(cv?.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('ROLE');
-    expect(cv?.experiences?.[0]?.roles?.[0]?.projects).toBe('plain');
-    expect(cv?.experiences?.[0]?.company).toBe('kept');
-    expect(cv?.projects?.[0]?.responsibilities).toBe('PROJECT');
-    expect(cv?.projects?.[0]?.name).toBe('kept');
+    const { pageCvA: cv } = sanitizeCvRichtext(data, upper);
+    expect(cv.summary).toBe('SUMMARY');
+    expect(cv.experiences?.[0]?.roles?.[0]?.responsibilities).toBe('ROLE');
+    expect(cv.experiences?.[0]?.roles?.[0]?.projects).toBe('plain');
+    expect(cv.experiences?.[0]?.company).toBe('kept');
+    expect(cv.projects?.[0]?.responsibilities).toBe('PROJECT');
+    expect(cv.projects?.[0]?.name).toBe('kept');
   });
 
   it('turns a non-string richtext into null', () => {
-    const [cv] = sanitizeCvRichtext(
-      { ...data, pageCvAList: { data: [{ ...data.pageCvAList.data[0]!, summary: null }] } },
+    const { pageCvA: cv } = sanitizeCvRichtext(
+      { ...data, pageCvA: { ...data.pageCvA, summary: null } },
       upper,
-    ).pageCvAList.data;
-    expect(cv?.summary).toBeNull();
+    );
+    expect(cv.summary).toBeNull();
   });
 });
