@@ -1,6 +1,5 @@
-import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
-import { NotFoundMessage } from '@/features/not-found/NotFoundMessage';
+import { LAST_RESORT_NOT_FOUND_TEXT, NotFoundMessage } from '@/features/not-found/NotFoundMessage';
 
 export default function NotFound() {
-  return <NotFoundMessage text={LAST_RESORT_TEXT} />;
+  return <NotFoundMessage text={LAST_RESORT_NOT_FOUND_TEXT} />;
 }
