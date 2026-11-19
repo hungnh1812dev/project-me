@@ -250,7 +250,10 @@ than depth 2 use a fixture definition inside the spec, never a repo schema.
 ## Data-migration notes
 
 Generated migration files are never edited; what a migration does not carry
-over is written here.
+over is written here. A data step (`content:generate --data-step <file>`, see
+"content:generate") is the way to keep data across a restructure: it moves the
+data before the destructive statements run, and the entry here names the
+migration and what it carries.
 
 ### `0006_content.sql` (cv-page schema format)
 
@@ -312,6 +315,7 @@ commands (run from `apps/cms-api`):
 pnpm content:generate                     # build, diff, write content/migrations/NNNN_content.sql
 pnpm content:generate -- --dry-run        # print the SQL and destructive changes, write nothing
 pnpm content:generate -- --name add_github --allow-destructive
+pnpm content:generate -- --name restructure --data-step step.sql   # keep data across a destructive change
 pnpm build && pnpm content:migrate        # apply pending migrations (needs the DB_* connection variables)
 ```
 
@@ -328,17 +332,37 @@ pnpm build && pnpm content:migrate        # apply pending migrations (needs the 
    `richtext`, `kind`, `unsigned`, `options`, `default`) still writes a comment-only migration so the
    `_content_types` row gets updated.
 
-| Change                                  | SQL                                  | Destructive? |
-| --------------------------------------- | ------------------------------------ | ------------ |
-| New content type / component            | `CREATE TABLE` + indexes             | no           |
-| New field                               | `ADD COLUMN` (nullable)              | no           |
-| Field type with a different column type | `ALTER COLUMN … TYPE … USING col::t` | yes          |
-| Removed field                           | `DROP COLUMN`                        | yes          |
-| Removed component / content type        | `DROP TABLE` (children first)        | yes          |
-| Renamed field                           | drop + add (data is not moved)       | yes          |
+| Change                                  | SQL                                            | Destructive? |
+| --------------------------------------- | ---------------------------------------------- | ------------ |
+| New content type / component            | `CREATE TABLE` + indexes                       | no           |
+| New field                               | `ADD COLUMN` (nullable)                        | no           |
+| Field type with a different column type | `ALTER COLUMN … TYPE … USING col::t`           | yes          |
+| Removed field                           | `DROP COLUMN`                                  | yes          |
+| Removed component / content type        | `DROP TABLE` (children first)                  | yes          |
+| Renamed field                           | drop + add; data kept only through a data step | yes          |
 
-Destructive changes fail with the list of changes unless `--allow-destructive`
-is passed. Review the SQL with `--dry-run` first.
+Statement order in a migration: renames, creates and added columns; the data
+step; then the destructive statements (type changes, dropped columns, dropped
+tables children first).
+
+`--data-step <file>` is a SQL file the developer writes: top comment lines
+`-- carries <target>` (data moved elsewhere in this migration) or
+`-- discards <target>: <who decided, date>`, then `INSERT`, `UPDATE`, `DELETE`,
+`SELECT` and `DO` blocks. `<target>` is `<table>.<column>` or `<table>`, as in
+the destructive change list. The file is refused when it has no statement,
+holds `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`, `TRUNCATE`, `DROP`, `ALTER` or
+`CREATE`, has a `discards` without a reason, declares a target that is not a
+destructive change of the plan, or the content types have no change. It is
+written verbatim between `-- Data step (begin)` and `-- Data step (end)`, after
+`-- Carries` / `-- Discards` header lines; the input file is not committed. It
+runs in the runner's one transaction: a raising statement rolls back the whole
+`content:migrate` run. A field that becomes an enumeration or whose `options`
+shrink gets a `DO` block that raises on a stored value outside the options.
+
+Destructive changes fail with the list of changes unless the data step declares
+each of them (the error lists only the undeclared ones) or `--allow-destructive`
+is passed (test data only). Review the SQL with `--dry-run` first; `--dry-run`
+and `--check` print the full file with the data step.
 
 ### Column types
 

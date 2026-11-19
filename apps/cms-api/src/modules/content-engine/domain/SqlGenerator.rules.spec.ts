@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { DataStep } from './DataStep.rules';
 import type { ContentTypeDefinition, FieldDefinition } from './DefinitionSchema.rules';
 import { planTables } from './Naming.rules';
 import {
@@ -107,10 +108,49 @@ describe('sql-generator', () => {
     });
   });
 
+  describe('renderMigrationSql with a data step', () => {
+    const plan = diff(
+      [post([TITLE, { name: 'body', type: 'string' }])],
+      [post([TITLE, { name: 'summary', type: 'string' }])],
+    );
+    const dataStep: DataStep = {
+      body: '-- carries post.body\nUPDATE "content"."post" SET "summary" = "body";',
+      declarations: [{ target: 'post.body', kind: 'carries' }],
+    };
+
+    it('writes additive statements, the data step, then the destructive statements', () => {
+      const sql = renderMigrationSql(plan, dataStep);
+      const added = sql.indexOf('ADD COLUMN "summary"');
+      const begin = sql.indexOf('-- Data step (begin)');
+      const end = sql.indexOf('-- Data step (end)');
+      const dropped = sql.indexOf('DROP COLUMN "body"');
+      expect(added).toBeGreaterThan(-1);
+      expect(added).toBeLessThan(begin);
+      expect(begin).toBeLessThan(sql.indexOf('UPDATE "content"."post"'));
+      expect(end).toBeLessThan(dropped);
+      expect(sql).toContain('-- Carries post.body\n');
+    });
+
+    it('records a discard with its reason in the header', () => {
+      const sql = renderMigrationSql(plan, {
+        body: 'SELECT 1;',
+        declarations: [{ target: 'post.body', kind: 'discards', reason: 'user 2026-11-19' }],
+      });
+      expect(sql).toContain('-- Discards post.body: user 2026-11-19');
+    });
+
+    it('puts destructive statements last and no data step block when none is given', () => {
+      const sql = renderMigrationSql(plan);
+      expect(sql).not.toContain('Data step');
+      expect(sql.indexOf('ADD COLUMN "summary"')).toBeLessThan(sql.indexOf('DROP COLUMN "body"'));
+    });
+  });
+
   it('plans nothing when definitions are unchanged', () => {
     const plan = diff([PAGE_CV_A], [PAGE_CV_A]);
     expect(plan).toMatchObject({
       statements: [],
+      destructiveStatements: [],
       destructiveChanges: [],
       changedSlugs: [],
     });
@@ -126,8 +166,13 @@ describe('sql-generator', () => {
 
   it('flags a dropped field as destructive', () => {
     const plan = diff([post([TITLE, { name: 'body', type: 'richtext' }])], [post([TITLE])]);
-    expect(plan.statements).toEqual(['ALTER TABLE "content"."post" DROP COLUMN "body";']);
-    expect(plan.destructiveChanges).toEqual(['Drop column post.body']);
+    expect(plan.statements).toEqual([]);
+    expect(plan.destructiveStatements).toEqual([
+      'ALTER TABLE "content"."post" DROP COLUMN "body";',
+    ]);
+    expect(plan.destructiveChanges).toEqual([
+      { target: 'post.body', description: 'Drop column post.body' },
+    ]);
   });
 
   it('flags a column type change as destructive and casts in place', () => {
@@ -135,10 +180,15 @@ describe('sql-generator', () => {
       [post([{ name: 'rank', type: 'string' }])],
       [post([{ name: 'rank', type: 'integer' }])],
     );
-    expect(plan.statements).toEqual([
+    expect(plan.destructiveStatements).toEqual([
       'ALTER TABLE "content"."post" ALTER COLUMN "rank" TYPE integer USING "rank"::integer;',
     ]);
-    expect(plan.destructiveChanges).toEqual(['Change type of post.rank from text to integer']);
+    expect(plan.destructiveChanges).toEqual([
+      {
+        target: 'post.rank',
+        description: 'Change type of post.rank from text to integer',
+      },
+    ]);
   });
 
   it('needs no DDL when the column type stays the same', () => {
@@ -171,19 +221,19 @@ describe('sql-generator', () => {
 
   it('drops removed component tables children first, as destructive', () => {
     const plan = diff([post([TITLE, TAGS])], [post([TITLE])]);
-    expect(plan.statements).toEqual([
+    expect(plan.destructiveStatements).toEqual([
       'DROP TABLE "content"."post__tags__links";',
       'DROP TABLE "content"."post__tags";',
     ]);
-    expect(plan.destructiveChanges).toEqual([
-      'Drop table post__tags__links',
-      'Drop table post__tags',
+    expect(plan.destructiveChanges.map(({ target }) => target)).toEqual([
+      'post__tags__links',
+      'post__tags',
     ]);
   });
 
   it('drops every table of a removed content type', () => {
     const plan = diff([post([TITLE, TAGS]), PAGE_CV_A], [PAGE_CV_A]);
-    expect(plan.statements).toEqual([
+    expect(plan.destructiveStatements).toEqual([
       'DROP TABLE "content"."post__tags__links";',
       'DROP TABLE "content"."post__tags";',
       'DROP TABLE "content"."post";',
@@ -362,7 +412,10 @@ describe('sql-generator', () => {
       };
       const plan = diff([before], [changed]);
       expect(plan.statements.some((s) => s.includes('RENAME TO'))).toBe(false);
-      expect(plan.destructiveChanges).toContain('Drop table post__tags');
+      expect(plan.destructiveChanges).toContainEqual({
+        target: 'post__tags',
+        description: 'Drop table post__tags',
+      });
     });
 
     it('pairs nothing when table names are unchanged', () => {

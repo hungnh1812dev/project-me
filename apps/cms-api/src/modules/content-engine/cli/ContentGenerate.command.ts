@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 
 import {
@@ -14,8 +15,15 @@ import {
 } from '../adapters/MigrationFiles.adapter';
 import { ContentEngineError } from '../domain/ContentDocument.entity';
 import {
+  assertDeclarationsMatchPlan,
+  parseDataStep,
+  undeclaredDestructiveChanges,
+  type DataStep,
+} from '../domain/DataStep.rules';
+import {
   planMigration,
   renderMigrationSql,
+  type DestructiveChange,
   type MigrationPlan,
 } from '../domain/SqlGenerator.rules';
 
@@ -27,6 +35,8 @@ export interface GenerateOptions {
   allowDestructive: boolean;
   /** Print the SQL and the destructive changes; write nothing. */
   dryRun: boolean;
+  /** SQL file moving data before the destructive statements (`--data-step`). */
+  dataStepFile?: string;
 }
 
 export type GenerateResult =
@@ -35,9 +45,9 @@ export type GenerateResult =
   | { status: 'written'; fileName: string; sql: string; plan: MigrationPlan };
 
 export class DestructiveChangeError extends ContentEngineError {
-  constructor(readonly changes: readonly string[]) {
+  constructor(readonly changes: readonly DestructiveChange[]) {
     super(
-      `Refusing to generate a destructive migration (data can be lost):\n- ${changes.join('\n- ')}\nReview the change, then re-run with --allow-destructive.`,
+      `Refusing to generate a destructive migration (data can be lost):\n- ${describe(changes)}\nCarry or discard each change in a data step (--data-step <file>), or for test data only re-run with --allow-destructive.`,
     );
     this.name = 'DestructiveChangeError';
   }
@@ -54,20 +64,43 @@ export async function generateContentMigration(options: GenerateOptions): Promis
   const definitions = await loadDefinitions(options.schemasDir);
   const previous = await readSnapshot(options.migrationsDir);
   const plan = planMigration(previous, definitions);
-  if (plan.changedSlugs.length === 0) return { status: 'no-changes' };
+  if (plan.changedSlugs.length === 0) {
+    if (options.dataStepFile !== undefined) {
+      throw new ContentEngineError('--data-step given, but the content types have no change.');
+    }
+    return { status: 'no-changes' };
+  }
 
   const existing = await listMigrations(options.migrationsDir);
   const sequence = (existing.at(-1)?.sequence ?? 0) + 1;
   const fileName = migrationFileName(sequence, options.label);
-  const sql = renderMigrationSql(plan);
+  const dataStep = await readDataStep(options.dataStepFile, plan);
+  const sql = renderMigrationSql(plan, dataStep);
 
   if (options.dryRun) return { status: 'dry-run', fileName, sql, plan };
-  if (plan.destructiveChanges.length > 0 && !options.allowDestructive) {
-    throw new DestructiveChangeError(plan.destructiveChanges);
+  const undeclared = dataStep
+    ? undeclaredDestructiveChanges(plan, dataStep)
+    : plan.destructiveChanges;
+  if (undeclared.length > 0 && !options.allowDestructive) {
+    throw new DestructiveChangeError(undeclared);
   }
 
   await writeMigration(options.migrationsDir, fileName, sql, plan.nextSnapshot);
   return { status: 'written', fileName, sql, plan };
+}
+
+async function readDataStep(
+  dataStepFile: string | undefined,
+  plan: MigrationPlan,
+): Promise<DataStep | undefined> {
+  if (dataStepFile === undefined) return undefined;
+  const dataStep = parseDataStep(await readFile(dataStepFile, 'utf8'));
+  assertDeclarationsMatchPlan(plan, dataStep);
+  return dataStep;
+}
+
+function describe(changes: readonly DestructiveChange[]): string {
+  return changes.map(({ description }) => description).join('\n- ');
 }
 
 /**
@@ -91,12 +124,12 @@ function report(result: GenerateResult): string {
     case 'dry-run': {
       const warning =
         result.plan.destructiveChanges.length > 0
-          ? `\nDestructive changes (need --allow-destructive):\n- ${result.plan.destructiveChanges.join('\n- ')}\n`
+          ? `\nDestructive changes (declare each in a data step, or --allow-destructive for test data):\n- ${describe(result.plan.destructiveChanges)}\n`
           : '';
       return `Dry run, would write ${result.fileName}:\n\n${result.sql}${warning}`;
     }
     case 'written':
-      return `Wrote ${result.fileName} (${result.plan.statements.length} statements).`;
+      return `Wrote ${result.fileName} (${result.plan.statements.length + result.plan.destructiveStatements.length} statements).`;
   }
 }
 
@@ -110,6 +143,7 @@ async function main(): Promise<void> {
       'allow-destructive': { type: 'boolean', default: false },
       'dry-run': { type: 'boolean', default: false },
       check: { type: 'boolean', default: false },
+      'data-step': { type: 'string' },
     },
   });
   const options: GenerateOptions = {
@@ -117,6 +151,7 @@ async function main(): Promise<void> {
     label: values.name,
     allowDestructive: values['allow-destructive'],
     dryRun: values['dry-run'],
+    ...(values['data-step'] === undefined ? {} : { dataStepFile: values['data-step'] }),
   };
   const result = values.check
     ? await checkContentMigrations(options)
