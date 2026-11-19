@@ -84,6 +84,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 |---|---|---|---|---|---|
 | forms | `packages/form-commons/src/components/forms` | `docs/modules/form-commons/forms.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`media`](../flows/media/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | react-hook-form inputs (text, number, select, switch, json, date, media, richtext) and table helpers |
 | ui | `packages/form-commons/src/components/ui` | `docs/modules/form-commons/ui.md` | complete | - | Base controls on Radix: button, icon button, inputs, dialog, dropdown, popover, tooltip, switch |
+| human-check | `packages/form-commons/src/human-check` | `docs/modules/form-commons/human-check.md` | complete | - | Cloudflare Turnstile for public forms: one script per page, one widget per form id, its token, reset and state texts |
 
 ## base-config
 
