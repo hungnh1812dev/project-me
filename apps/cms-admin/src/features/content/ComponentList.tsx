@@ -24,9 +24,16 @@ const ITEM_CLASSES = 'grid gap-4';
 
 /** A top-level item is a Card; an item inside another item is a muted section (no card in a card). */
 function Item({ isNested, children }: { isNested: boolean; children: ReactNode }) {
-  if (isNested) return <li className={`${ITEM_CLASSES} rounded-item bg-muted p-4`}>{children}</li>;
+  if (isNested)
+    return (
+      <li
+        className={`${ITEM_CLASSES} rounded-control border border-border/50 bg-muted/40 p-4 shadow-xs`}
+      >
+        {children}
+      </li>
+    );
   return (
-    <Card asChild padding="compact">
+    <Card asChild padding="compact" className="border border-border shadow-xs">
       <li className={ITEM_CLASSES}>{children}</li>
     </Card>
   );
