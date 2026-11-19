@@ -26,7 +26,7 @@ const SEEDS = [
   { slug: 'module-status', data: MODULE_STATUS_MOCK.statusText },
   { slug: 'cv-common-text', data: PAGE_CV_MOCK.cvCommonText },
   { slug: 'profile', data: PAGE_CV_MOCK.profile },
-  { slug: 'page-cv-a', data: { ...PAGE_CV_MOCK.pageCvAList.data[0], isMain: true } },
+  { slug: 'page-cv-a', data: { ...PAGE_CV_MOCK.pageCvA, isMain: true } },
 ];
 
 function toTree(fields, data, where) {
