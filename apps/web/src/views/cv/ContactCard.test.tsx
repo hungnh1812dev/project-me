@@ -54,6 +54,16 @@ describe('ContactCard', () => {
     expect(screen.getByText('12 Example Street, Hanoi')).toBeInTheDocument();
   });
 
+  it('opens LinkedIn and GitHub without an opener or a referrer', () => {
+    render(<Card profile={profileOf()} />);
+    for (const name of [
+      'https://github.com/mai-example',
+      'https://www.linkedin.com/in/mai-example',
+    ]) {
+      expect(screen.getByRole('link', { name })).toHaveAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
   it('shows the placeholder and none of the masked values', () => {
     const { container } = render(
       <Card

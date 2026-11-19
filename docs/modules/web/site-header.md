@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Owns the `SiteHeader` query (`SITE_HEADER_QUERY`, the one root field `header`, with `appName`, `navs` and their `subNavs`, no `requiresRole`: every entry shows to every visitor; the CV link is a `navs` entry, not built in) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
+Owns the `SiteHeader` query (`SITE_HEADER_QUERY`, the one root field `header`, with `appName`, `navs` and their `subNavs`, no `requiresRole`: every entry shows to every visitor; the CV link is not built in, and the mock has no `/cv` entry because the CV is reached only by its private link, PS-5; it holds a `/status` entry so the nav stays visible in dev) and its loader for `components/layouts/SiteHeader.tsx` and the layout metadata ([public-site flow](../../flows/public-site/FLOW.md), PS-1). It fails on its own: `null` never affects the sign-in or page queries.
 
 ## Techniques
 

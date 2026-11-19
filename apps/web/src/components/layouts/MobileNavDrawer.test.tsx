@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { MobileNavDrawer } from './MobileNavDrawer';
 
 const NAV = [
-  { title: 'CV', link: '/cv', subNavs: null },
+  { title: 'CV', link: '/status', subNavs: null },
   {
     title: 'Library',
     link: '/library',
@@ -102,7 +102,7 @@ describe('MobileNavDrawer', () => {
   it('closes when the pathname changes', () => {
     const { rerender } = render(<MobileNavDrawer navs={NAV} appName="Abyss" />);
     openDrawer();
-    mockPathname = '/cv';
+    mockPathname = '/status';
     rerender(<MobileNavDrawer navs={NAV} appName="Abyss" />);
     expect(screen.queryByRole('dialog')).toBeNull();
   });

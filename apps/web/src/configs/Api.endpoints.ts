@@ -42,5 +42,8 @@ export const CRAWLER_FILE_PATHS = {
   SITEMAP: '/sitemap.xml',
 } as const;
 
+/** The CV pages (private link, PS-5): never in the sitemap, disallowed in robots.txt, sent with no-index and private cache headers. */
+export const CV_PAGE_PATH = '/cv';
+
 /** Public pages the sitemap lists (PS-4); a new public page is one entry. */
 export const SITEMAP_PAGE_PATHS = ['/', '/status'] as const;

@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { SiteNav } from './SiteNav';
 
 const NAV = [
-  { title: 'CV', link: '/cv', subNavs: null },
+  { title: 'CV', link: '/status', subNavs: null },
   { title: 'Blog', link: '/blog', subNavs: null },
   {
     title: 'Library',

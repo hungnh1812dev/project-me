@@ -33,7 +33,7 @@ beforeEach(() => {
   vi.mocked(loadSiteHeader).mockResolvedValue({
     header: {
       appName: SITE_HEADER_MOCK.header.appName,
-      navs: [{ title: 'CV', link: '/cv', subNavs: [] }],
+      navs: [{ title: 'CV', link: '/status', subNavs: [] }],
       author: SITE_HEADER_MOCK.header.author,
     },
   });
