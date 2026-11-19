@@ -40,6 +40,12 @@ beforeEach(() => {
   vi.mocked(loadSignInText).mockResolvedValue(SIGN_IN_MOCK.signInText);
 });
 
+vi.mock('./MobileNavDrawer', () => ({
+  MobileNavDrawer: ({ navs, appName }: { navs: { title: string | null }[]; appName: string }) => (
+    <button type="button">{`drawer ${appName}: ${navs.map((nav) => nav.title).join(',')}`}</button>
+  ),
+}));
+
 describe('SiteHeader', () => {
   it('shows the brand, the nav and the account menu from the loaded text', async () => {
     await renderHeader();
@@ -73,5 +79,20 @@ describe('SiteHeader', () => {
     vi.mocked(loadSiteHeader).mockResolvedValue(null);
     await renderHeader();
     expect(loadSignInText).toHaveBeenCalled();
+  });
+
+  it('gives the drawer the same entries and app name, one wrapper per width', async () => {
+    await renderHeader();
+    const drawer = screen.getByRole('button', {
+      name: `drawer ${SITE_HEADER_MOCK.header.appName}: CV`,
+    });
+    expect(drawer.parentElement).toHaveClass('md:hidden');
+    expect(screen.getByText('CV').parentElement).toHaveClass('hidden', 'md:flex');
+  });
+
+  it('has no menu button when the header did not load', async () => {
+    vi.mocked(loadSiteHeader).mockResolvedValue(null);
+    await renderHeader();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 });

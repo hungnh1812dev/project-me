@@ -22,7 +22,7 @@ Owns the `SiteHeader` query (`SITE_HEADER_QUERY`, the one root field `header`, w
 
 A sub list is state-driven in `SiteNav` `NavItem` (`aria-expanded`, `aria-controls` on the entry): it opens on hover, on focus entering the entry and on a click or tap, and closes on Escape (focus returns to the entry), on focus or the pointer leaving, and on a pointer-down outside. An entry with sub entries and no safe link is `NavLabel`, a `button`. On a touch pointer the first tap on a linked entry opens its list without following the link; the second follows it; a mouse or keyboard click follows at once.
 
-`MobileNavDrawer` (`components/layouts`, PS-6) is the menu button and the right side panel (form-commons `Dialog`) with the same entries: one list through `isNavEntryShown` and `NavLink` (both exported by `SiteNav`), sub entries always listed and indented, a link-less parent a plain heading. It closes on a link click, a `usePathname` change and the `DESKTOP_NAV_MEDIA_QUERY` (equal to Tailwind `md`) matching; the button and close names are `MOBILE_NAV_TEXT` (built-in, WEB-3). `SiteHeader` does not mount it yet (HMD-2).
+`MobileNavDrawer` (`components/layouts`, PS-6) is the menu button and the right side panel (form-commons `Dialog`) with the same entries: one list through `isNavEntryShown` and `NavLink` (both exported by `SiteNav`), sub entries always listed and indented, a link-less parent a plain heading. It closes on a link click, a `usePathname` change and the `DESKTOP_NAV_MEDIA_QUERY` (equal to Tailwind `md`) matching; the button and close names are `MOBILE_NAV_TEXT` (built-in, WEB-3). `SiteHeader` mounts it below `md` (wrapper `md:hidden`) and `SiteNav` from `md` up (wrapper `hidden md:flex`), so exactly one is in the accessibility tree at every width; both take the `SiteHeader` answer already loaded, and with no header text neither is mounted. The brand truncates (`min-w-0 truncate`) so the bar does not overflow at 320 px.
 
 ## Technologies
 
@@ -34,7 +34,7 @@ React (`cache`); `next/headers`; `graphql` (dev, in specs).
 
 ## Where to change what
 
-A new header text: add it to `SITE_HEADER_QUERY`, the type and `SiteHeader.mock.ts` together; `SiteHeader.graphql.test.ts` fails when they differ. Keep the D18 limits. The header has no role filter (`SiteNav` `isNavEntryShown` decides by title and safe link); the WEB-7 role rule (`useCanSee`) comes back in `NavItem` with the later role feature.
+A new entry kind: change `SiteNav.tsx` once (`isNavEntryShown`, `NavLink`); the drawer follows. A new header text: add it to `SITE_HEADER_QUERY`, the type and `SiteHeader.mock.ts` together; `SiteHeader.graphql.test.ts` fails when they differ. Keep the D18 limits. The header has no role filter (`SiteNav` `isNavEntryShown` decides by title and safe link); the WEB-7 role rule (`useCanSee`) comes back in `NavItem` with the later role feature.
 
 ## Files
 
