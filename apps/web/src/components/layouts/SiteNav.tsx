@@ -30,7 +30,7 @@ function NavLink({ title, link }: { title: string; link: string }) {
   );
 }
 
-/** One header.nav item (or sub item): shown when the viewer may see it and its link is safe. Display only (D3). */
+/** One header.navs item (or sub item): shown when the viewer may see it and its link is safe. Display only (D3). */
 function NavItem({ entry, children }: { entry: NavEntry; children?: ReactNode }) {
   const canSee = useCanSee(entry.requiresRole);
   const [isSubNavDismissed, setIsSubNavDismissed] = useState(false);
@@ -66,29 +66,13 @@ function SubNav({ entries }: { entries: NavEntry[] }) {
   );
 }
 
-/** Header links: the CV link first, then the `header.nav` items the viewer may see. */
-export function SiteNav({
-  nav,
-  cvLinkText,
-}: {
-  nav: HeaderNav[] | null;
-  /** The CV link is left out while the text is empty. */
-  cvLinkText: string | null;
-}) {
+/** Header links: the `header.navs` items the viewer may see, each with its `subNavs`. */
+export function SiteNav({ navs }: { navs: HeaderNav[] | null }) {
   return (
     <ul className="flex items-center gap-4">
-      {cvLinkText ? (
-        <li>
-          <Link href="/cv" className={NAV_LINK_CLASS}>
-            {cvLinkText}
-          </Link>
-        </li>
-      ) : null}
-      {(nav ?? []).map((entry, index) => (
+      {(navs ?? []).map((entry, index) => (
         <NavItem key={`${entry.link}-${index}`} entry={entry}>
-          {entry.subNavigations && entry.subNavigations.length > 0 ? (
-            <SubNav entries={entry.subNavigations} />
-          ) : null}
+          {entry.subNavs && entry.subNavs.length > 0 ? <SubNav entries={entry.subNavs} /> : null}
         </NavItem>
       ))}
     </ul>

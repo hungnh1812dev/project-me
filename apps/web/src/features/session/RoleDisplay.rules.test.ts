@@ -11,6 +11,12 @@ describe('isVisibleTo', () => {
     expect(isVisibleTo(requiresRole, READER)).toBe(true);
   });
 
+  it('shows a public item to a signed-out, unknown and signed-in viewer', () => {
+    expect(isVisibleTo('public', SIGNED_OUT)).toBe(true);
+    expect(isVisibleTo('public', UNKNOWN)).toBe(true);
+    expect(isVisibleTo('public', READER)).toBe(true);
+  });
+
   it('hides a role item from a signed-out viewer', () => {
     expect(isVisibleTo('reader', SIGNED_OUT)).toBe(false);
   });

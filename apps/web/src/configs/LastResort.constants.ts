@@ -1,7 +1,6 @@
 /** Shown when a part's own text cannot load (error and not-found pages, the header brand, `global-error`). */
 export const LAST_RESORT_TEXT = {
   appName: 'Abyss',
-  navCvLink: 'CV',
   signIn: 'Sign in',
   signOut: 'Sign out',
   errorTitle: 'Something went wrong',

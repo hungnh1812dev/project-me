@@ -14,14 +14,11 @@ export async function SiteHeader() {
     <header className="border-border bg-card border-b">
       <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="text-sm font-semibold">
-          {siteHeader?.header.name ?? LAST_RESORT_TEXT.appName}
+          {siteHeader?.header.appName ?? LAST_RESORT_TEXT.appName}
         </Link>
         {siteHeader === null ? null : (
-          <nav
-            aria-label={siteHeader.header.navLabel ?? undefined}
-            className="flex items-center gap-4"
-          >
-            <SiteNav nav={siteHeader.header.nav} cvLinkText={siteHeader.header.navCvLink} />
+          <nav className="flex items-center gap-4">
+            <SiteNav navs={siteHeader.header.navs} />
             <AccountMenu author={siteHeader.header.author} signInText={signInText} />
           </nav>
         )}

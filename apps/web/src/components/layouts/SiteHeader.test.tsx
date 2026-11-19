@@ -19,7 +19,9 @@ vi.mock('./AccountMenu', () => ({
   ),
 }));
 vi.mock('./SiteNav', () => ({
-  SiteNav: ({ cvLinkText }: { cvLinkText: string | null }) => <span>{cvLinkText}</span>,
+  SiteNav: ({ navs }: { navs: { title: string | null }[] | null }) => (
+    <span>{navs?.map((nav) => nav.title).join(',')}</span>
+  ),
 }));
 
 /** `SiteHeader` is an async server component: its function is awaited, then its result rendered. */
@@ -29,22 +31,24 @@ async function renderHeader() {
 
 beforeEach(() => {
   vi.mocked(loadSiteHeader).mockResolvedValue({
-    header: { ...SITE_HEADER_MOCK.header, nav: [] },
+    header: {
+      appName: SITE_HEADER_MOCK.header.appName,
+      navs: [{ title: 'CV', link: '/cv', requiresRole: 'public', subNavs: [] }],
+      author: SITE_HEADER_MOCK.header.author,
+    },
   });
   vi.mocked(loadSignInText).mockResolvedValue(SIGN_IN_MOCK.signInText);
 });
 
 describe('SiteHeader', () => {
-  it('shows the brand, the nav label and the account menu from the loaded text', async () => {
+  it('shows the brand, the nav and the account menu from the loaded text', async () => {
     await renderHeader();
-    expect(screen.getByRole('link', { name: SITE_HEADER_MOCK.header.name })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: SITE_HEADER_MOCK.header.appName })).toHaveAttribute(
       'href',
       '/',
     );
-    expect(
-      screen.getByRole('navigation', { name: SITE_HEADER_MOCK.header.navLabel }),
-    ).toBeVisible();
-    expect(screen.getByText(SITE_HEADER_MOCK.header.navCvLink)).toBeVisible();
+    expect(screen.getByRole('navigation')).not.toHaveAttribute('aria-label');
+    expect(screen.getByText('CV')).toBeVisible();
     expect(screen.getByText('menu')).toBeVisible();
   });
 

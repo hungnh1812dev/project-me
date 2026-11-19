@@ -14,7 +14,7 @@ import { loadSiteHeader } from '@/features/site-header/SiteHeader.server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteHeader = await loadSiteHeader();
-  return { title: siteHeader?.header.name ?? LAST_RESORT_TEXT.appName };
+  return { title: siteHeader?.header.appName ?? LAST_RESORT_TEXT.appName };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

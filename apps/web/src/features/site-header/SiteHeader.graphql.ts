@@ -5,14 +5,12 @@ export interface HeaderNavLink {
 }
 
 export interface HeaderNav extends HeaderNavLink {
-  subNavigations: HeaderNavLink[] | null;
+  subNavs: HeaderNavLink[] | null;
 }
 
 export interface HeaderContent {
-  name: string | null;
-  nav: HeaderNav[] | null;
-  navLabel: string | null;
-  navCvLink: string | null;
+  appName: string | null;
+  navs: HeaderNav[] | null;
   author: { btnLoginText: string | null; btnLogoutText: string | null } | null;
 }
 
@@ -23,14 +21,12 @@ export interface SiteHeader {
 /** The header with its text. */
 export const SITE_HEADER_QUERY = `query SiteHeader {
 header {
-    name
-    navLabel
-    navCvLink
-    nav {
+    appName
+    navs {
       title
       link
       requiresRole
-      subNavigations {
+      subNavs {
         title
         link
         requiresRole

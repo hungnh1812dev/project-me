@@ -7,12 +7,12 @@ describeContentQueryContract({
   query: SITE_HEADER_QUERY,
   mockKey: 'site-header',
   mockView: MOCK_VIEW,
-  emptyMockPathPrefixes: ['header.nav.'],
+  emptyMockPathPrefixes: ['header.navs.subNavs.'],
 });
 
 describe('SiteHeader selection', () => {
-  it('selects the nav item fields the header reads', () => {
-    for (const field of ['title', 'link', 'requiresRole', 'subNavigations']) {
+  it('selects the nav and sub nav fields the header reads', () => {
+    for (const field of ['title', 'link', 'requiresRole', 'subNavs']) {
       expect(SITE_HEADER_QUERY).toContain(field);
     }
   });
