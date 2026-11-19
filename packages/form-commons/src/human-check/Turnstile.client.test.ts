@@ -125,4 +125,28 @@ describe('Turnstile registry', () => {
     stop();
     expect(api.remove).toHaveBeenCalledWith('widget-1');
   });
+
+  it('renders no widget and leaks nothing when the slot detaches before the script is ready', () => {
+    configureTurnstile({ siteKey: 'key' });
+    registerTurnstileForm('login', undefined);
+    const stop = attachTurnstileContainer('login', document.createElement('div'));
+    stop();
+    const { api, widgets } = installFakeTurnstile();
+    fireScriptEvent('load');
+    expect(widgets).toHaveLength(0);
+    expect(api.remove).not.toHaveBeenCalled();
+    expect(getTurnstileState('login').status).toBe('loading');
+  });
+
+  it('keeps one widget per form id after detach and re-attach', () => {
+    configureTurnstile({ siteKey: 'key' });
+    const { api, widgets } = installFakeTurnstile();
+    registerTurnstileForm('login', undefined);
+    const stopFirst = attachTurnstileContainer('login', document.createElement('div'));
+    stopFirst();
+    attachTurnstileContainer('login', document.createElement('div'));
+    expect(api.render).toHaveBeenCalledTimes(2);
+    expect(api.remove).toHaveBeenCalledTimes(1);
+    expect(widgets.length - api.remove.mock.calls.length).toBe(1);
+  });
 });

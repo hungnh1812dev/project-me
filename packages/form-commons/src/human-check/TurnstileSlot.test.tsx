@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { act, render, screen } from '@testing-library/react';
 
@@ -53,6 +54,28 @@ describe('TurnstileSlot', () => {
     const { widgets } = finishScriptLoad();
     act(() => widgets[0]?.options['expired-callback']());
     expect(screen.getByRole('alert')).toHaveTextContent(TEXT.expired);
+  });
+
+  it('leaves one live widget after a strict-mode mount, unmount and mount', () => {
+    configureTurnstile({ siteKey: 'key' });
+    const { container } = render(
+      <StrictMode>
+        <Form />
+      </StrictMode>,
+    );
+    const { api, widgets } = finishScriptLoad();
+    expect(api.render.mock.calls.length - api.remove.mock.calls.length).toBe(1);
+    const live = widgets.filter((widget) => container.contains(widget.container));
+    expect(live).toHaveLength(1);
+  });
+
+  it('ignores a script load that finishes after the slot unmounted', () => {
+    configureTurnstile({ siteKey: 'key' });
+    const { unmount } = render(<Form />);
+    unmount();
+    const { api, widgets } = finishScriptLoad();
+    expect(widgets).toHaveLength(0);
+    expect(api.remove).not.toHaveBeenCalled();
   });
 
   it('renders on the server without touching window', () => {
