@@ -20,7 +20,8 @@ const { PAGE_CV_MOCK } = await import(path.join(MOCKS_DIR, 'PageCv.mock.ts'));
 
 /** One entry per content type: the schema slug, the mock data and the values the mock lacks. */
 const SEEDS = [
-  { slug: 'header', data: { ...SITE_HEADER_MOCK.header, ...NOT_FOUND_PAGE_MOCK.notFoundText } },
+  { slug: 'header', data: SITE_HEADER_MOCK.header },
+  { slug: 'module-not-found', data: NOT_FOUND_PAGE_MOCK.notFoundText },
   { slug: 'module-auth', data: SIGN_IN_MOCK.signInText },
   { slug: 'module-status', data: MODULE_STATUS_MOCK.statusText },
   { slug: 'cv-common-text', data: PAGE_CV_MOCK.cvCommonText },

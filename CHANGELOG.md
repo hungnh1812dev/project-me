@@ -6,6 +6,16 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### New features
+
+- cms-api: `content:generate --data-step` carries data before destructive statements ([content-modeling](docs/flows/content-modeling/SPEC.md) CM-12).
+
+### Changes
+
+- cms-api: `header` restructured and new `module-not-found` type; migration 0017 carries the data. Take a database backup before deploying.
+- web: header and not-found page read the new fields; `public` nav entries show to everyone.
+- docs: content-modeling CM-12; public-site PS-1, PS-3, Q-PS4.
+
 ## 0.2.0 (2026-11-18)
 
 Repo 0.2.0, cms-api, cms-admin and web 0.2.0, e2e 0.0.3: schema builder field types and defaults, the premium admin look with toasts, the CV page on the web BFF path with new content types, remember-me sign-in and the fixes since 0.1.0.
