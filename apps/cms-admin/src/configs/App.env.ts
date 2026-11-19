@@ -12,6 +12,8 @@ export const appEnv = Object.freeze({
   apiBaseUrl: stripTrailingSlashes(
     requireEnv('VITE_API_BASE_URL', import.meta.env.VITE_API_BASE_URL),
   ),
+  /** Cloudflare Turnstile site key (public by design); read once by `configureTurnstile` in `main.tsx`. */
+  turnstileSiteKey: requireEnv('VITE_TURNSTILE_SITE_KEY', import.meta.env.VITE_TURNSTILE_SITE_KEY),
   /** Vite dev server or test run; enables the Redux DevTools hook. */
   isDev: import.meta.env.DEV,
 });
