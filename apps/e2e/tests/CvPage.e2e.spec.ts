@@ -21,7 +21,7 @@ import { e2eEnv } from '../src/E2e.env';
 const NEXT_ROUTE_ANNOUNCER_SELECTOR = '#__next-route-announcer__';
 
 /**
- * apps/web `/cv` (CV page) and `/` and `/status` (module status). The server renders the
+ * apps/web `/cv/<documentId>` (CV page) and `/` and `/status` (module status). The server renders the
  * main page-cv-a and the profile as the public role; a reader session refetches once through
  * the BFF and falls back to the server data on sign-out. The spec publishes its own main
  * page-cv-a and profile (newest wins) and removes both afterwards.
@@ -37,7 +37,8 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
   const SECRET_PHONE = '+1 555 0142';
   const SECRET_EMAIL = 'e2e-secret@example.com';
 
-  const cvUrl = `${e2eEnv.webUrl}/cv`;
+  let cvUrl = '';
+  let bffCvPath = '';
 
   const isGraphqlRequest = (url: string): boolean =>
     new URL(url).pathname.endsWith(API_PATHS.GRAPHQL);
@@ -81,6 +82,8 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
       },
     });
     cvId = await publishDraft(request, PAGE_CV_A_SLUG, created);
+    cvUrl = `${e2eEnv.webUrl}/cv/${cvId}`;
+    bffCvPath = `${BFF_PATHS.CV}/${cvId}`;
     const profile = await request.post(apiUrl(API_PATHS.documents(PROFILE_SLUG)), {
       headers: ownerHeaders(),
       data: {
@@ -153,13 +156,13 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     page,
     request,
   }) => {
-    expect((await request.get(`${e2eEnv.webUrl}${BFF_PATHS.CV}`)).status()).toBe(HTTP.UNAUTHORIZED);
+    expect((await request.get(`${e2eEnv.webUrl}${bffCvPath}`)).status()).toBe(HTTP.UNAUTHORIZED);
 
     const cvCalls: string[] = [];
     const apiCalls: string[] = [];
     page.on('request', (req) => {
       const { pathname } = new URL(req.url());
-      if (pathname === BFF_PATHS.CV) cvCalls.push(req.headers()['authorization'] ?? '');
+      if (pathname === bffCvPath) cvCalls.push(req.headers()['authorization'] ?? '');
       if (isCmsApiRequest(req.url()) || isGraphqlRequest(req.url())) apiCalls.push(pathname);
     });
     await page.goto(cvUrl);
@@ -186,7 +189,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
   test('a failed signed-in refetch keeps the anonymous CV visible with no message and the shell intact', async ({
     page,
   }) => {
-    await page.route(`**${BFF_PATHS.CV}`, (route) =>
+    await page.route(`**${bffCvPath}`, (route) =>
       route.fulfill({ status: HTTP.BAD_GATEWAY, body: '' }),
     );
     await page.goto(cvUrl);
