@@ -25,7 +25,7 @@ The script checks that the registry answers (`http://<registry>/v2/`) before it 
 | `LOCAL_REGISTRY`                 | all       | no                | Registry `host:port`; default `k3d-registry.localhost:5001`                           |
 | `LOCAL_IMAGE_TAG`                | all       | no                | Image tag; default a UTC timestamp (`YYYYmmdd-HHMMSS`), so every build gets a new tag |
 | `VITE_API_BASE_URL`              | cms-admin | yes for cms-admin | API base URL baked into the admin build                                               |
-| `NEXT_PUBLIC_ADMIN_URL`          | web       | no                | Admin URL baked into the web build                                                    |
+| `VITE_TURNSTILE_SITE_KEY`        | cms-admin | yes for cms-admin | Turnstile site key baked into the admin build (value from you, never a file)          |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | web       | yes for web       | Turnstile site key baked into the web build (value from you, never a file)            |
 | `TURBO_VERSION`                  | all       | no                | Turbo version for the image build; the Dockerfile default applies when empty          |
 

@@ -242,7 +242,7 @@ prepare_data() {
 start_apps() {
   echo "Starting cms-api, cms-admin and web in dev mode..."
   start_app cms-api pnpm --dir "$ROOT_DIR" --filter @abyss/cms-api start:dev
-  VITE_API_BASE_URL="$API_BASE_URL" DEV_SERVER_PORT="$ADMIN_PORT" \
+  VITE_API_BASE_URL="$API_BASE_URL" VITE_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" DEV_SERVER_PORT="$ADMIN_PORT" \
     DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
   wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
@@ -250,12 +250,10 @@ start_apps() {
   STACK_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX"
   stack_mint_content_token "$COMPOSE_PROJECT" "$LOCAL_ENV_FILE"
   # web reads APP_API_URL and WEB_REVALIDATE_SECONDS=0 (no data cache); APP_ENV=development keeps the mock fallback on.
-  # Turnstile keys pinned (blank hostname and opt-in) so apps/web/.env cannot override them and fail the always-pass check.
   DEV_SERVER_PORT="$WEB_PORT_DEV" APP_API_TOKEN="$STACK_APP_API_TOKEN" \
-    TURNSTILE_SECRET_KEY="$TURNSTILE_SECRET_KEY" TURNSTILE_EXPECTED_HOSTNAME="" ALLOW_TURNSTILE_TEST_SECRET="" \
     APP_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX" WEB_REVALIDATE_SECONDS=0 APP_ENV=development \
     BFF_AUTH_RATE_LIMIT_IP="$RATE_LIMIT_OVERRIDE" ALLOW_BFF_RATE_LIMIT_OVERRIDE="$RATE_LIMIT_OVERRIDE_OPT_IN" \
-    NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" NEXT_PUBLIC_ADMIN_URL="" \
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" \
     start_app web pnpm --dir "$ROOT_DIR" --filter @abyss/web dev
   wait_until "cms-admin ($ADMIN_ORIGIN)" cms-admin admin_is_up
   wait_until "web ($WEB_ORIGIN)" web web_is_up

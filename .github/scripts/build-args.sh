@@ -2,8 +2,8 @@
 # Resolves the Docker build args of one app for _publish.yml.
 # Usage: build-args.sh <app>        (cms-api | cms-admin | web)
 # Reads ENVIRONMENT, TURBO_VERSION, VITE_API_BASE_URL (the admin-host API base,
-# https://admin.<domain>/api/v1), NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-# APP_ENV (web: development | staging | production) from the environment.
+# https://admin.<domain>/api/v1), VITE_TURNSTILE_SITE_KEY (cms-admin, required),
+# NEXT_PUBLIC_TURNSTILE_SITE_KEY, APP_ENV (web: development | staging | production) from the environment.
 # The production Environment builds web only with APP_ENV=production; staging and
 # local accept all three values.
 # Appends `api_url` (cms-admin only) and a `build_args` block to $GITHUB_OUTPUT
@@ -21,7 +21,7 @@ app="${1}"
 environment="${ENVIRONMENT:-}"
 turbo_version="${TURBO_VERSION:-}"
 vite_api_base_url="${VITE_API_BASE_URL:-}"
-web_admin_url="${NEXT_PUBLIC_ADMIN_URL:-}"
+vite_turnstile_site_key="${VITE_TURNSTILE_SITE_KEY:-}"
 web_turnstile_site_key="${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}"
 web_app_env="${APP_ENV:-}"
 
@@ -61,11 +61,11 @@ validate() {
     cms-api) ;;
     cms-admin)
       require_value VITE_API_BASE_URL "${vite_api_base_url}"
+      require_value VITE_TURNSTILE_SITE_KEY "${vite_turnstile_site_key}"
       ;;
     web)
       require_app_env "${web_app_env}"
       require_production_app_env "${web_app_env}"
-      require_single_line NEXT_PUBLIC_ADMIN_URL "${web_admin_url}"
       require_single_line NEXT_PUBLIC_TURNSTILE_SITE_KEY "${web_turnstile_site_key}"
       ;;
     *) fail "unknown app '${app}' for ${environment}" ;;
@@ -81,10 +81,10 @@ emit() {
   case "${app}" in
     cms-admin)
       echo "VITE_API_BASE_URL=${vite_api_base_url}"
+      echo "VITE_TURNSTILE_SITE_KEY=${vite_turnstile_site_key}"
       ;;
     web)
       echo "APP_ENV=${web_app_env}"
-      echo "NEXT_PUBLIC_ADMIN_URL=${web_admin_url}"
       echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY=${web_turnstile_site_key}"
       ;;
   esac
