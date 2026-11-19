@@ -32,7 +32,7 @@ export interface WebSession {
   user: CurrentUser | null;
   signIn: (credentials: LoginCredentials) => Promise<LoginOutcome>;
   completeTwoFactor: (input: TwoFactorVerification) => Promise<void>;
-  sendLoginEmailCode: (input?: HumanCheckInput) => Promise<void>;
+  sendLoginEmailCode: (input: HumanCheckInput) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -89,7 +89,7 @@ export function WebSessionProvider({
   );
 
   const sendLoginEmailCode = useCallback(
-    (input?: HumanCheckInput) => api.sendLoginEmailCode(input),
+    (input: HumanCheckInput) => api.sendLoginEmailCode(input),
     [api],
   );
 
