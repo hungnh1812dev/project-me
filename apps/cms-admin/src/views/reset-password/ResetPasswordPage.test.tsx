@@ -3,6 +3,7 @@ import { APP_ROUTES } from '@configs/App.routes';
 import { API_ERROR_CODES } from '@configs/Http.constants';
 import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
+import { humanCheckFake } from '@test/HumanCheck.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -12,6 +13,7 @@ const { REQUEST_OTP, RESET } = API_ENDPOINTS.PASSWORD;
 const EMAIL = 'editor@domain.localhost';
 const CODE = '042137';
 const NEW_PASSWORD = 'a brand new passphrase 42';
+const TOKEN_PATTERN = /^password-reset-token-\d+$/;
 
 async function openReset(handlers: Record<string, FakeHandler>) {
   const { api, services } = createTestServices({
@@ -60,6 +62,7 @@ describe('ResetPasswordPage', () => {
     expect(screen.getByText(EN_TEXT.password.reset.codeSent(EMAIL))).toBeVisible();
     expect(bodyOf(api.callsTo(`POST ${REQUEST_OTP}`)[0])).toEqual({
       email: EMAIL,
+      turnstileToken: expect.stringMatching(TOKEN_PATTERN) as string,
     });
   });
 
@@ -98,7 +101,11 @@ describe('ResetPasswordPage', () => {
       email: EMAIL,
       code: CODE,
       newPassword: NEW_PASSWORD,
+      turnstileToken: expect.stringMatching(TOKEN_PATTERN) as string,
     });
+    const requestBody = bodyOf(api.callsTo(`POST ${REQUEST_OTP}`)[0]) as { turnstileToken: string };
+    const resetBody = bodyOf(api.callsTo(`POST ${RESET}`)[0]) as { turnstileToken: string };
+    expect(resetBody.turnstileToken).not.toBe(requestBody.turnstileToken);
   });
 
   it('explains a wrong or expired code and keeps what was typed', async () => {
@@ -150,7 +157,13 @@ describe('ResetPasswordPage', () => {
       code: CODE,
       newPassword: NEW_PASSWORD,
       totpCode: '654321',
+      turnstileToken: expect.stringMatching(TOKEN_PATTERN) as string,
     });
+    const tokens = [0, 1].map(
+      (index) =>
+        (bodyOf(api.callsTo(`POST ${RESET}`)[index]) as { turnstileToken: string }).turnstileToken,
+    );
+    expect(tokens[1]).not.toBe(tokens[0]);
   });
 
   it('sends a new code on request', async () => {
@@ -159,6 +172,58 @@ describe('ResetPasswordPage', () => {
     await userEvent.click(screen.getByRole('button', { name: EN_TEXT.password.resendCode }));
     expect(await screen.findByText(EN_TEXT.password.codeResent(EMAIL))).toBeVisible();
     expect(api.callsTo(`POST ${REQUEST_OTP}`)).toHaveLength(2);
+    expect(bodyOf(api.callsTo(`POST ${REQUEST_OTP}`)[1])).toEqual({
+      email: EMAIL,
+      turnstileToken: expect.stringMatching(TOKEN_PATTERN) as string,
+    });
+  });
+
+  describe('human check', () => {
+    it('sends nothing from the email step and says the check is required while no token is ready', async () => {
+      humanCheckFake.solves = false;
+      const { api } = await openReset({});
+      await userEvent.type(field(EN_TEXT.password.emailLabel), EMAIL);
+      await userEvent.click(screen.getByRole('button', { name: EN_TEXT.password.reset.sendCode }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        EN_TEXT.password.humanCheck.required,
+      );
+      expect(api.callsTo(`POST ${REQUEST_OTP}`)).toHaveLength(0);
+      expect(humanCheckFake.resetFormIds).toEqual(['password-reset']);
+    });
+
+    it('sends nothing from the new password step while no token is ready', async () => {
+      const { api } = await openReset({});
+      await requestCodeFor();
+      // A resend spends the step's token; the next check never solves.
+      humanCheckFake.solves = false;
+      await userEvent.click(screen.getByRole('button', { name: EN_TEXT.password.resendCode }));
+      await screen.findByText(EN_TEXT.password.codeResent(EMAIL));
+      humanCheckFake.resetFormIds = [];
+      await fillNewPassword();
+      expect(await screen.findByText(EN_TEXT.password.humanCheck.required)).toBeVisible();
+      expect(api.callsTo(`POST ${RESET}`)).toHaveLength(0);
+      expect(humanCheckFake.resetFormIds).toEqual(['password-reset']);
+    });
+
+    it.each([
+      [API_ERROR_CODES.HUMAN_CHECK_FAILED, EN_TEXT.password.humanCheck.errors.failed],
+      [API_ERROR_CODES.HUMAN_CHECK_UNAVAILABLE, EN_TEXT.password.humanCheck.errors.unavailable],
+    ])('shows its own text for %s on the code request', async (errorCode, message) => {
+      await openReset({ [`POST ${REQUEST_OTP}`]: () => ({ status: 400, data: { errorCode } }) });
+      await userEvent.type(field(EN_TEXT.password.emailLabel), EMAIL);
+      await userEvent.click(screen.getByRole('button', { name: EN_TEXT.password.reset.sendCode }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+      expect(humanCheckFake.resetFormIds).toEqual(['password-reset']);
+    });
+
+    it('starts a fresh check after the reset request', async () => {
+      await openReset({ [`POST ${RESET}`]: () => ({ status: 500 }) });
+      await requestCodeFor();
+      humanCheckFake.resetFormIds = [];
+      await fillNewPassword();
+      await screen.findByRole('alert');
+      expect(humanCheckFake.resetFormIds).toEqual(['password-reset']);
+    });
   });
 
   it('tells a rate-limited user how long to wait', async () => {

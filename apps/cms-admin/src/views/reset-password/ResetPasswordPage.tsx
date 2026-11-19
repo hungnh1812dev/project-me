@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, CONTROL_FOCUS_RING_ONLY_CLASSES, FormAlert, TextInput } from '@abyss/form-commons';
+import { HUMAN_CHECK_FORMS, resetTurnstile, useTurnstile } from '@abyss/form-commons/human-check';
+import { HumanCheckField } from '@components/HumanCheckField';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
@@ -52,6 +54,8 @@ export function ResetPasswordPage() {
 function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
   const passwords = usePasswordApi();
   const [error, setError] = useState<PasswordError | null>(null);
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
   const form = useForm<RequestValues>({
     resolver: zodResolver(requestSchema),
     defaultValues: { email: '' },
@@ -59,13 +63,20 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
   });
   const requestCode = useMutation({
     mutationFn: passwords.requestCode,
-    onSuccess: (_data, email) => onSent(email),
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET),
+    onSuccess: (_data, { email }) => onSent(email),
     onError: (cause) => setError(toPasswordError(cause)),
   });
 
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
-    requestCode.mutate(values.email.trim());
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+      return;
+    }
+    setIsTokenMissing(false);
+    requestCode.mutate({ email: values.email.trim(), turnstileToken });
   });
 
   return (
@@ -89,6 +100,11 @@ function RequestCodeStep({ onSent }: { onSent: (email: string) => void }) {
             inputMode="email"
             spellCheck={false}
             required
+          />
+          <HumanCheckField
+            formId={HUMAN_CHECK_FORMS.PASSWORD_RESET}
+            text={COMMON_TEXT.password.humanCheck}
+            isTokenMissing={isTokenMissing && turnstileToken === ''}
           />
           <Button
             type="submit"
@@ -118,6 +134,8 @@ function ChoosePasswordStep({
   const [error, setError] = useState<PasswordError | null>(null);
   const [resent, setResent] = useState(false);
   const [totpRequired, setTotpRequired] = useState(false);
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
 
   const form = useForm<ResetValues>({
     resolver: zodResolver(resetSchema),
@@ -141,6 +159,7 @@ function ChoosePasswordStep({
 
   const reset = useMutation({
     mutationFn: passwords.reset,
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET),
     onSuccess: () => {
       const state: LoginNoticeState = { notice: 'password-reset' };
       void navigate(APP_ROUTES.LOGIN, { replace: true, state });
@@ -156,6 +175,7 @@ function ChoosePasswordStep({
 
   const resend = useMutation({
     mutationFn: passwords.requestCode,
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET),
     onSuccess: () => {
       setError(null);
       setResent(true);
@@ -168,6 +188,16 @@ function ChoosePasswordStep({
     },
   });
 
+  const sendNewCode = () => {
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+      return;
+    }
+    setIsTokenMissing(false);
+    resend.mutate({ email, turnstileToken });
+  };
+
   const onSubmit = form.handleSubmit((values) => {
     const totpCode = values.totpCode.trim();
     if (totpRequired && totpCode === '') {
@@ -179,11 +209,18 @@ function ChoosePasswordStep({
       return;
     }
     setError(null);
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+      return;
+    }
+    setIsTokenMissing(false);
     reset.mutate({
       email,
       code: values.code.trim(),
       newPassword: values.newPassword,
       ...(totpRequired ? { totpCode } : {}),
+      turnstileToken,
     });
   });
 
@@ -254,6 +291,11 @@ function ChoosePasswordStep({
               required
             />
           ) : null}
+          <HumanCheckField
+            formId={HUMAN_CHECK_FORMS.PASSWORD_RESET}
+            text={COMMON_TEXT.password.humanCheck}
+            isTokenMissing={isTokenMissing && turnstileToken === ''}
+          />
           <Button type="submit" variant="primary" className="mt-2 w-full" loading={reset.isPending}>
             {COMMON_TEXT.password.reset.submit}
           </Button>
@@ -264,7 +306,7 @@ function ChoosePasswordStep({
           variant="link"
           className="h-auto px-0"
           loading={resend.isPending}
-          onClick={() => resend.mutate(email)}
+          onClick={() => sendNewCode()}
         >
           {COMMON_TEXT.password.resendCode}
         </Button>

@@ -3,6 +3,7 @@ import { APP_ROUTES } from '@configs/App.routes';
 import { API_ERROR_CODES } from '@configs/Http.constants';
 import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
+import { humanCheckFake } from '@test/HumanCheck.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -78,5 +79,20 @@ describe('SetPasswordPage', () => {
     await userEvent.click(resend);
     expect(await screen.findByText(EN_TEXT.password.codeResent(EMAIL))).toBeVisible();
     expect(field(EN_TEXT.password.codeLabel)).toHaveFocus();
+    expect(JSON.parse(String(api.callsTo(`POST ${REQUEST_OTP}`)[0]?.data))).toEqual({
+      email: EMAIL,
+      turnstileToken: expect.stringMatching(/^password-reset-token-\d+$/) as string,
+    });
+  });
+
+  it('sends no new code request while the human check has no token', async () => {
+    humanCheckFake.solves = false;
+    const { api } = await openSet({});
+    await userEvent.type(field(EN_TEXT.password.emailLabel), EMAIL);
+    await userEvent.click(screen.getByRole('button', { name: EN_TEXT.password.resendCode }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      EN_TEXT.password.humanCheck.required,
+    );
+    expect(api.callsTo(`POST ${REQUEST_OTP}`)).toHaveLength(0);
   });
 });

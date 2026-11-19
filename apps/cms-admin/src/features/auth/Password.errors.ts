@@ -6,7 +6,14 @@ import { isAxiosError } from 'axios';
 const SECONDS_PER_MINUTE = 60;
 
 export type PasswordErrorKind =
-  'invalid-code' | 'weak-password' | 'totp-required' | 'rate-limited' | 'network' | 'unexpected';
+  | 'invalid-code'
+  | 'weak-password'
+  | 'totp-required'
+  | 'human-check-failed'
+  | 'human-check-unavailable'
+  | 'rate-limited'
+  | 'network'
+  | 'unexpected';
 
 export interface PasswordError {
   kind: PasswordErrorKind;
@@ -25,6 +32,14 @@ const MESSAGE_BY_CODE: Readonly<Record<string, Pick<PasswordError, 'kind' | 'mes
   [API_ERROR_CODES.TOTP_REQUIRED]: {
     kind: 'totp-required',
     message: COMMON_TEXT.password.errors.totpRequired,
+  },
+  [API_ERROR_CODES.HUMAN_CHECK_FAILED]: {
+    kind: 'human-check-failed',
+    message: COMMON_TEXT.password.humanCheck.errors.failed,
+  },
+  [API_ERROR_CODES.HUMAN_CHECK_UNAVAILABLE]: {
+    kind: 'human-check-unavailable',
+    message: COMMON_TEXT.password.humanCheck.errors.unavailable,
   },
 };
 

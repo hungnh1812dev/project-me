@@ -49,6 +49,8 @@ export const ALERT_TONE_BY_ERROR: Record<PasswordErrorKind, FormAlertTone> = {
   'invalid-code': 'error',
   'weak-password': 'error',
   'totp-required': 'info',
+  'human-check-failed': 'error',
+  'human-check-unavailable': 'warning',
   'rate-limited': 'warning',
   network: 'warning',
   unexpected: 'error',

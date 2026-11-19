@@ -22,7 +22,7 @@ A view (page) folder registered in `views/Views.registry.ts`; it reads data only
 
 ## Technologies
 
-React, react-hook-form with Zod.
+React, react-hook-form with Zod. Both steps and the resend send `turnstileToken` from the `password-reset` human check (`useTurnstile`, `HumanCheckField`; D25): one token per request, the widget resets after each, an empty token sends nothing.
 
 ## Entry points
 
@@ -45,7 +45,7 @@ Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
-| `ResetPasswordPage.tsx` | Both steps of the reset (exports `ResetPasswordPage`) |
+| `ResetPasswordPage.tsx` | Both steps of the reset, each with its human check slot (exports `ResetPasswordPage`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

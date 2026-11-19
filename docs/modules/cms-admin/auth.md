@@ -55,16 +55,16 @@ Tests: 10 files (not listed).
 | `CrossTabRefresh.ts` | Cross-tab single refresh via locks and channel |
 | `Login.errors.ts` | Maps login failures to kinds (human check refusals have their own); takes the `login` screen text as its last parameter |
 | `LoginNotice.rules.ts` | Notice shown on the login screen |
-| `Password.api.ts` | Reset and set-password calls |
-| `Password.errors.ts` | Maps password failures to kinds |
+| `Password.api.ts` | Code request, reset and set-password calls; the code request and reset bodies carry `turnstileToken` |
+| `Password.errors.ts` | Maps password failures to kinds (human check refusals have their own) |
 | `Password.form.ts` | Password form field shapes |
 | `PasswordApi.context.tsx` | Context for the password API |
 | `ProtectedRoute.tsx` | Route guard |
 | `Session.context.tsx` | Session provider and hook |
 | `Session.ts` | Session lifecycle (restore, refresh, logout) |
 | `SessionLoading.tsx` | Loading state while the session restores |
-| `Setup.api.ts` | First-owner setup calls |
-| `Setup.errors.ts` | Maps setup failures; takes the `setup` screen text as its last parameter |
+| `Setup.api.ts` | First-owner setup calls; the owner body carries `turnstileToken` |
+| `Setup.errors.ts` | Maps setup failures (human check refusals become alerts); takes the `setup` screen text as its last parameter |
 | `SetupApi.context.tsx` | Context for the setup API |
 | `SingleFlight.rules.ts` | Shares one in-flight promise between callers |
 | `index.ts` | Public exports |

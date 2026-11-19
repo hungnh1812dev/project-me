@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import { HUMAN_CHECK_FORMS, resetTurnstile, useTurnstile } from '@abyss/form-commons/human-check';
+import { HumanCheckField } from '@components/HumanCheckField';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import {
@@ -77,6 +79,8 @@ export function OwnerSetupPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [formAlert, setFormAlert] = useState<string | null>(null);
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.OWNER_SETUP);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
 
   const form = useForm<SetupValues>({
     resolver: zodResolver(setupSchemaOf(copy.validation)),
@@ -86,6 +90,7 @@ export function OwnerSetupPage() {
 
   const createOwner = useMutation({
     mutationFn: setup.createOwner,
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.OWNER_SETUP),
     onSuccess: (_data, input) => {
       form.reset(EMPTY_VALUES);
       const state: LoginNoticeState = {
@@ -158,12 +163,19 @@ export function OwnerSetupPage() {
 
   const onSubmit = form.handleSubmit((values) => {
     setFormAlert(null);
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.OWNER_SETUP);
+      return;
+    }
+    setIsTokenMissing(false);
     const displayName = values.displayName.trim();
     createOwner.mutate({
       setupToken: values.setupToken,
       email: values.email.trim(),
       ...(displayName === '' ? {} : { displayName }),
       password: values.password,
+      turnstileToken,
     });
   });
 
@@ -213,6 +225,11 @@ export function OwnerSetupPage() {
             type="password"
             autoComplete="new-password"
             required
+          />
+          <HumanCheckField
+            formId={HUMAN_CHECK_FORMS.OWNER_SETUP}
+            text={copy.humanCheck}
+            isTokenMissing={isTokenMissing && turnstileToken === ''}
           />
           <Button
             type="submit"

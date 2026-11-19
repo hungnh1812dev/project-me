@@ -22,7 +22,7 @@ A view (page) folder registered in `views/Views.registry.ts`; it reads data only
 
 ## Technologies
 
-React, react-hook-form with Zod, TanStack Query.
+React, react-hook-form with Zod, TanStack Query. The submit sends `turnstileToken` from the `owner-setup` human check (`useTurnstile`, `HumanCheckField`; D25); an empty token sends nothing and every request resets the widget.
 
 ## Entry points
 
@@ -45,7 +45,7 @@ Tests: 1 file (not listed).
 
 | File | Description |
 |---|---|
-| `OwnerSetupPage.tsx` | The setup form and its error mapping (exports `OwnerSetupPage`) |
+| `OwnerSetupPage.tsx` | The setup form, its human check slot and its error mapping (exports `OwnerSetupPage`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->
