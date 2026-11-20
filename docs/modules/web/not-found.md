@@ -18,7 +18,7 @@ Owns the `NotFoundPage` content query (`notFoundText`) and its loader, used only
 
 ## Techniques
 
-`NotFoundPage.graphql.ts` is client-safe; `NotFoundPage.server.ts` is `server-only`. `notFoundText` is a GraphQL alias of the cms-api root field `header` (`notFoundTitle`, `notFoundDescription`). `loadNotFoundText` is in React `cache` and returns `null` when the read failed or the root field answered null (`executeGraphql` logged it; mock key `not-found-page`); the page then shows `LAST_RESORT_TEXT`.
+`NotFoundPage.graphql.ts` is client-safe; `NotFoundPage.server.ts` is `server-only`. `notFoundText` is a GraphQL alias of the cms-api root field `moduleNotFound` (`title`, `description`). `loadNotFoundText` is in React `cache` and returns `null` when the read failed or the root field answered null (`executeGraphql` logged it; mock key `not-found-page`); the page then shows `LAST_RESORT_TEXT`.
 
 ## Technologies
 
@@ -45,7 +45,7 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `NotFoundMessage.tsx` | The not-found markup (heading and description) both not-found routes render, from a `NotFoundText` |
+| `NotFoundMessage.tsx` | The not-found markup (heading and description) both not-found routes render, from a `NotFoundText`; also the last-resort `NotFoundText` the root route shows |
 | `NotFoundPage.graphql.ts` | Client-safe `NotFoundPage` query: text type and the query string (exports `NotFoundText`, `NotFoundPage`, `NOT_FOUND_PAGE_QUERY`) |
 | `NotFoundPage.server.ts` | `server-only` cached `loadNotFoundText`: `executeGraphql` with the mock key `not-found-page`, `null` when the read fails (exports `loadNotFoundText`) |
 

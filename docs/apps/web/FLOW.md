@@ -18,9 +18,8 @@ Every BFF route, in this order (D21):
 3. POST bodies are `application/json` only, at most 8 KiB.
 4. Per-IP fixed-window rate limit (`auth` 20 / 60 s, `read` 120 / 60 s).
 5. Zod schema per body: unknown keys refused, lengths capped.
-6. Turnstile check where the route needs one.
-7. The one upstream cms-api call, with `API_TIMEOUT_MS`, the forwarded client IP (D7) and only the headers that call needs.
-8. The answer holds allowlisted fields only; errors are `{ statusCode, errorCode, message }`; `Cache-Control: no-store`.
+6. The one upstream cms-api call (a sign-in route forwards the body's `turnstileToken`; cms-api checks it, D25), with `API_TIMEOUT_MS`, the forwarded client IP (D7) and only the headers that call needs.
+7. The answer holds allowlisted fields only; errors are `{ statusCode, errorCode, message }`; `Cache-Control: no-store`.
 
 ```mermaid
 flowchart LR
@@ -29,8 +28,7 @@ flowchart LR
   o --> b{"JSON, at most 8 KiB?"}
   b --> rl{"rate limit"}
   rl --> z{"Zod schema"}
-  z --> t{"Turnstile (where needed)"}
-  t --> up["one cms-api call on APP_API_URL"]
+  z --> up["one cms-api call on APP_API_URL (cms-api checks the Turnstile token, D25)"]
   up --> ans["allowlisted answer, no-store"]
 ```
 

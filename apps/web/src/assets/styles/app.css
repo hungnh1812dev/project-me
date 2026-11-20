@@ -1,1 +1,33 @@
 /* web component and utility styles; imported by global.css. */
+
+/*
+ * CV sheet tokens (/cv): the navy-on-slate look of the CV print layout. Every text tone stays
+ * dark enough to read when printed in black and white; tints only fill, borders carry the structure.
+ */
+@theme {
+  --color-cv-ink: #1f3b57;
+  --color-cv-text: #2f3640;
+  --color-cv-muted: #5f6b7a;
+  --color-cv-band: #eef3f8;
+  --color-cv-rule: #c6d0dc;
+  --color-cv-chip: #f1f4f8;
+  --color-cv-chip-edge: #d5dde7;
+  --color-cv-panel: #f5f8fb;
+  --color-cv-panel-edge: #8a9bb0;
+
+  --tracking-cv-heading: 0.12em;
+  --tracking-cv-title: 0.3em;
+
+  --spacing-cv-page: 10mm;
+  --spacing-cv-label: 10.5rem;
+}
+
+/* A4 paper; the first page has no top margin so the header band starts at the paper edge. */
+@page {
+  size: A4;
+  margin: 12mm 0;
+}
+
+@page :first {
+  margin-top: 0;
+}

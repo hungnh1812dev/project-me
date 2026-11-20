@@ -132,7 +132,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     await writeFile(file, JSON.stringify(definition));
   }
 
-  it('page-cv-a produces exactly its 6 tables (criterion 16)', async () => {
+  it('page-cv-a produces exactly its 8 tables (criterion 16)', async () => {
     const ws = await workspace();
     expect(await generate(ws)).toMatchObject({
       status: 'written',
@@ -149,7 +149,9 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
       'page_cv_a__education',
       'page_cv_a__experience',
       'page_cv_a__experience__role',
+      'page_cv_a__language',
       'page_cv_a__project',
+      'page_cv_a__reference',
       'page_cv_a__skill',
     ]);
 
@@ -296,6 +298,76 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     expect(names).not.toContain('summary');
   });
 
+  describe('data step', () => {
+    async function renamePositionToJobTitle(ws: Workspace): Promise<void> {
+      await generate(ws);
+      await migrate(ws);
+      await query(
+        ws.databaseUrl,
+        `INSERT INTO content.page_cv_a (document_id, position) VALUES ($1, 'Staff Engineer'), ($2, 'Lead')`,
+        [randomUUID(), randomUUID()],
+      );
+      await editPageCvA(ws, (definition) => {
+        const position = definition.fields.find((field) => field.name === 'position');
+        if (position) position.name = 'jobTitle';
+      });
+    }
+
+    async function appliedMigrations(ws: Workspace): Promise<string[]> {
+      const rows = await query<{ name: string }>(
+        ws.databaseUrl,
+        'SELECT name FROM content._migrations ORDER BY name',
+      );
+      return rows.map((row) => row.name);
+    }
+
+    it('keeps the values of a renamed field without --allow-destructive', async () => {
+      const ws = await workspace();
+      await renamePositionToJobTitle(ws);
+      const dataStepFile = join(ws.migrationsDir, '..', 'step.sql');
+      await writeFile(
+        dataStepFile,
+        [
+          '-- carries page_cv_a.position',
+          'UPDATE content.page_cv_a SET job_title = position;',
+        ].join('\n'),
+      );
+
+      await expect(generate(ws)).rejects.toBeInstanceOf(DestructiveChangeError);
+      expect(await generate(ws, { dataStepFile })).toMatchObject({ status: 'written' });
+      await migrate(ws);
+
+      const rows = await query<{ job_title: string }>(
+        ws.databaseUrl,
+        'SELECT job_title FROM content.page_cv_a ORDER BY job_title',
+      );
+      expect(rows.map((row) => row.job_title)).toEqual(['Lead', 'Staff Engineer']);
+      const names = (await columns(ws, 'page_cv_a')).map((c) => c.column_name);
+      expect(names).not.toContain('position');
+    });
+
+    it('rolls back the whole run when the data step raises', async () => {
+      const ws = await workspace();
+      await renamePositionToJobTitle(ws);
+      const dataStepFile = join(ws.migrationsDir, '..', 'step.sql');
+      await writeFile(
+        dataStepFile,
+        [
+          '-- carries page_cv_a.position',
+          "DO $$ BEGIN RAISE EXCEPTION 'data step failed on purpose'; END $$;",
+        ].join('\n'),
+      );
+      await generate(ws, { dataStepFile });
+
+      await expect(migrate(ws)).rejects.toThrow(/data step failed on purpose/);
+
+      const names = (await columns(ws, 'page_cv_a')).map((c) => c.column_name);
+      expect(names).toContain('position');
+      expect(names).not.toContain('job_title');
+      expect(await appliedMigrations(ws)).toEqual(['0001_test.sql']);
+    });
+  });
+
   it('refuses a type change without the flag, casts existing data with it', async () => {
     const ws = await workspace();
     await generate(ws);
@@ -430,7 +502,7 @@ describe('content:generate + content:migrate (Postgres 17 via Testcontainers)', 
     const results = await Promise.all([migrate(ws), migrate(ws), migrate(ws)]);
     const applied = results.flatMap((result) => result.applied);
     expect(applied).toEqual(['0001_test.sql']);
-    expect(await contentTables(ws)).toHaveLength(6);
+    expect(await contentTables(ws)).toHaveLength(8);
     const rows = await query(ws.databaseUrl, 'SELECT name FROM content._migrations');
     expect(rows).toHaveLength(1);
   });

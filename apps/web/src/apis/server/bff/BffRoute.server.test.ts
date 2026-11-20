@@ -205,4 +205,22 @@ describe('defineBffRoute pipeline', () => {
       '[api-error] bff BFF_INVALID_REQUEST 400 POST /api/v1/test',
     );
   });
+
+  it('passes the awaited route params to handle, `{}` for a route without one', async () => {
+    const route = defineBffRoute({ methods: ['GET'], bucket: 'read', handle });
+    await route.GET(requestOf({ method: 'GET' }), { params: Promise.resolve({ id: 'abc' }) });
+    await route.GET(requestOf({ method: 'GET' }));
+    expect(handle).toHaveBeenNthCalledWith(1, expect.objectContaining({ params: { id: 'abc' } }));
+    expect(handle).toHaveBeenNthCalledWith(2, expect.objectContaining({ params: {} }));
+  });
+
+  it('logs the route pattern of a refusal, never a param value', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const route = defineBffRoute({ methods: ['GET'], bucket: 'read', handle });
+    const request = new Request('https://site.test/api/v1/cv/secret-doc-id', { method: 'POST' });
+    await route.POST(request, { params: Promise.resolve({ documentId: 'secret-doc-id' }) });
+    expect(warn.mock.calls[0]?.join(' ')).toBe(
+      '[api-error] bff BFF_METHOD_NOT_ALLOWED 405 POST /api/v1/cv/[documentId]',
+    );
+  });
 });

@@ -6,9 +6,9 @@ const defineBffRoute = vi.hoisted(() =>
   vi.fn<() => Record<string, unknown>>(() => ({ GET: vi.fn<() => void>() })),
 );
 
-vi.mock('../../../../apis/server/bff/BffRoute.server', () => ({ defineBffRoute }));
+vi.mock('../../../../../apis/server/bff/BffRoute.server', () => ({ defineBffRoute }));
 
-describe('/api/v1/cv route', () => {
+describe('/api/v1/cv/[documentId] route', () => {
   it('exports GET wired to answerCvRead with its route options', async () => {
     const route = await import('./route');
 

@@ -187,6 +187,7 @@ describe('answerSessionRead', () => {
       request: new Request('https://site.test/'),
       body: {},
       visitorIp: undefined,
+      params: {},
     });
     expect(await signedOut.json()).toEqual({ user: null });
 
@@ -195,6 +196,7 @@ describe('answerSessionRead', () => {
       request: requestFor(NOW + 600_000),
       body: {},
       visitorIp: undefined,
+      params: {},
     });
     expect(await signedIn.json()).toEqual({
       user: { id: '1', email: 'a@b.c', displayName: 'A', role: 'reader' },

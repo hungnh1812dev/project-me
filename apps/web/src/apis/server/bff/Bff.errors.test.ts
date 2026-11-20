@@ -21,6 +21,17 @@ describe('bffErrorResponse', () => {
     });
   });
 
+  it('answers BFF_NOT_FOUND with 404 and a message that names no id or type', async () => {
+    const response = bffErrorResponse(new BffError('BFF_NOT_FOUND'));
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({
+      statusCode: 404,
+      errorCode: 'BFF_NOT_FOUND',
+      message: 'Not found.',
+    });
+  });
+
   it('adds Allow to a 405 and Retry-After to a 429', () => {
     const notAllowed = bffErrorResponse(BffError.methodNotAllowed(['GET', 'POST']));
     expect(notAllowed.status).toBe(405);
@@ -31,7 +42,7 @@ describe('bffErrorResponse', () => {
   });
 
   it('lists every code with its own error code as the key', () => {
-    expect(Object.keys(BFF_ERROR_CODES)).toHaveLength(15);
+    expect(Object.keys(BFF_ERROR_CODES)).toHaveLength(16);
     expect(Object.keys(BFF_ERROR_CODES).every((code) => code.startsWith('BFF_'))).toBe(true);
   });
 });

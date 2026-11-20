@@ -6,71 +6,76 @@
   "fields": [
     {
       "name": "summary",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "experiences",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "achievements",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "skills",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "educations",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "languages",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "reference",
-      "type": "string",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
+      "name": "phone",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "technologies",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "teamSize",
       "displayName": "Team Size",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "projects",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "projectLink",
       "displayName": "Project Link",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "webLink",
       "displayName": "Web Link",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {
       "name": "adminLink",
       "displayName": "Admin Link",
-      "type": "string",
+      "type": "text",
       "width": "1/2"
     },
     {

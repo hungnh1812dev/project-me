@@ -37,7 +37,16 @@ function load(text: string): SchemaTree {
 
 describe('schema files round trip', () => {
   it('finds the repository schemas', () => {
-    expect(schemaFiles).toHaveLength(7);
+    expect([...schemaFiles].sort()).toEqual([
+      'common-text.json',
+      'cv-common-text.json',
+      'header.json',
+      'module-auth.json',
+      'module-not-found.json',
+      'module-status.json',
+      'page-cv-a.json',
+      'profile.json',
+    ]);
   });
 
   it.each(schemaFiles)('%s keeps the same JSON value', (name) => {

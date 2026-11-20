@@ -5,14 +5,14 @@ import { HTTP, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 
 /**
- * apps/web `/cv` Education section (repeatable `educations`): several entries in order, one
- * entry, none. Each case publishes its own newest main page-cv-a and removes it afterwards.
+ * apps/web `/cv/<documentId>` Education section (repeatable `educations`): several entries in order, one
+ * entry, none. Each case publishes its own page-cv-a and removes it afterwards.
  */
 test.describe('cv educations', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
   test.describe.configure({ mode: 'serial', retries: 0 });
 
   const EDUCATION_HEADING = 'Education';
-  const cvUrl = `${e2eEnv.webUrl}/cv`;
+  let cvUrl = '';
   let ownerToken = '';
   const ownerHeaders = () => ({ authorization: `Bearer ${ownerToken}` });
 
@@ -40,6 +40,7 @@ test.describe('cv educations', { tag: ['@web', '@cms-api', '@public-site'] }, ()
       },
     });
     const draft = (await created.json()) as { documentId: string; version: number };
+    cvUrl = `${e2eEnv.webUrl}/cv/${draft.documentId}`;
     await request.post(apiUrl(`${API_PATHS.document(PAGE_CV_A_SLUG, draft.documentId)}/publish`), {
       headers: ownerHeaders(),
       data: { expectedVersion: draft.version },
@@ -61,14 +62,16 @@ test.describe('cv educations', { tag: ['@web', '@cms-api', '@public-site'] }, ()
       await page.goto(cvUrl);
       await expect(page.getByRole('heading', { level: 2, name: EDUCATION_HEADING })).toBeVisible();
       const entries = page.getByRole('heading', { level: 3, name: /^E2E Degree/ });
-      await expect(entries).toHaveText(degrees);
+      await expect(entries).toHaveText(degrees.map((degree) => `${degree} Institute`));
     });
   });
 
   test('lists a single education', async ({ page, request }) => {
     await withMainCv(request, ['E2E Degree Solo'], async () => {
       await page.goto(cvUrl);
-      await expect(page.getByRole('heading', { level: 3, name: 'E2E Degree Solo' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 3, name: 'E2E Degree Solo Institute' }),
+      ).toBeVisible();
       await expect(page.getByRole('heading', { level: 3, name: /^E2E Degree/ })).toHaveCount(1);
     });
   });

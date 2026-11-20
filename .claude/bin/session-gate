@@ -9,7 +9,7 @@
 Only dispatches in the manager's format are checked (first word TASK, BATCH, REQUEST, CHECKLIST, CHECK,
 RECHECK, FIX, REPLAN, SPEC, ...); any other Agent or SendMessage call passes. Rules, per session:
 - Size: a dispatch is denied once the context is over CONTEXT_LIMIT tokens (Haiku bills prompts over
-  100K at 5x), or over MIN_GROWTH past the baseline (the context at the first checked dispatch that reads a size) when the
+  100K at 5x; 150K halves the breaks for about +5% of the total bill), or over MIN_GROWTH past the baseline (the context at the first checked dispatch that reads a size) when the
   baseline is already near the limit. A fresh session starts at +0, so it never loops.
 - Before a checklist: a qc / security-qc CHECKLIST or CHECK (checklist mode) is denied when the session
   already ran other jobs and its context grew more than CHECKLIST_LIMIT tokens.
@@ -28,7 +28,7 @@ import json, os, re, sys, time
 # The state paths below are relative to the project root, never to the session's cwd (a `cd` into a
 # subfolder would otherwise start a second state file there).
 PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-CONTEXT_LIMIT = 95_000
+CONTEXT_LIMIT = 150_000
 MIN_GROWTH = 20_000
 CHECKLIST_LIMIT = 40_000
 STATE_FILE = ".agent-state/.session-gate.json"

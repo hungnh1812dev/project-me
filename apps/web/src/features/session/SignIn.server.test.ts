@@ -44,7 +44,12 @@ const ISSUED = { accessToken: ACCESS, refreshToken: 'rt-1' };
 
 function context<T>(body: T, cookie?: string): BffContext<T> {
   const headers = cookie === undefined ? {} : { cookie: cookie.split(';')[0]! };
-  return { request: new Request('https://site.test/api/v1', { headers }), body, visitorIp: IP };
+  return {
+    request: new Request('https://site.test/api/v1', { headers }),
+    body,
+    visitorIp: IP,
+    params: {},
+  };
 }
 
 function cookieNames(response: Response): string[] {
@@ -181,7 +186,9 @@ describe('two-factor routes', () => {
       headers: { cookie: '__Host-abyss_web_2fa=garbage' },
     });
     expect(readTwoFactorCookie(request).isPresent).toBe(true);
-    const error = await refusalOf(sendTwoFactorEmailCode({ request, body: {}, visitorIp: IP }));
+    const error = await refusalOf(
+      sendTwoFactorEmailCode({ request, body: {}, visitorIp: IP, params: {} }),
+    );
     expect(error.setCookies).toHaveLength(1);
   });
 

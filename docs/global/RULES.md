@@ -51,6 +51,17 @@ Applies to flows: `sign-in`, `password`, `two-factor-setup`, `owner-setup`, `rev
 2. Rate limits key on the real IP **and** the account or email (D7, criterion 8).
 3. The web BFF derives the visitor IP by the same rules and sends cms-api exactly one `X-Forwarded-For: <ip>`, so limits stay per visitor, never per web pod (D7).
 
+## Human check (D25)
+
+Applies to flows: `sign-in`, `owner-setup`, `password`; `reviewer` for rule 1 only (its route keeps its own check, D2).
+
+1. Only cms-api holds `TURNSTILE_SECRET_KEY` and calls siteverify; no frontend env, build argument, bundle or server holds it (D25, criterion 30).
+2. Each route of the D25 list is marked with `RequireHumanCheck(<form id>)` of the cms-api `human-check` module; the check runs after the rate limit and before the request schema, any credential check or database read, and fails closed (D25, criterion 29).
+3. Form ids, the body field `turnstileToken` and the two error codes are defined once on each side (cms-api `human-check`, `@abyss/form-commons`) and kept equal by the contract tests against `apps/cms-api/content/public-constants.json`; never a literal in a form, a client or a route.
+4. Frontends reach Turnstile only through `@abyss/form-commons/human-check`; a form sends one token per request and calls `resetTurnstile` after each request that sent one; a token is never stored, logged or put in a URL (D25).
+5. Logs of a refused check hold the route and the error code, never the token (D25).
+6. A production cms-api never starts with the always-pass test secret unless `ALLOW_TURNSTILE_TEST_SECRET=smoke` (smoke stack only), nor with a real secret and no `TURNSTILE_EXPECTED_HOSTNAME` (D25, ADR 0027 Decision point 5).
+
 ## Browser tokens and CSRF (D14)
 
 Applies to flows: `sign-in`, and every flow used from cms-admin (each sends the Bearer token).

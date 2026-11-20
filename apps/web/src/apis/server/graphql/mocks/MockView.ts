@@ -13,7 +13,7 @@ export const MOCK_VIEW = {
   'sign-in': SIGN_IN_MOCK,
   'not-found-page': NOT_FOUND_PAGE_MOCK,
   'module-status': MODULE_STATUS_MOCK,
-  'page-cv-a': { pageCvAList: PAGE_CV_MOCK.pageCvAList },
+  'page-cv-a': { pageCvA: PAGE_CV_MOCK.pageCvA },
   profile: { profile: PAGE_CV_MOCK.profile },
   'cv-common-text': { cvCommonText: PAGE_CV_MOCK.cvCommonText },
 };

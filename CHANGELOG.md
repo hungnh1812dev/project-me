@@ -6,6 +6,25 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### New features
+
+- cms-api: `content:generate --data-step` carries data before destructive statements ([content-modeling](docs/flows/content-modeling/SPEC.md) CM-12).
+
+### Changes
+
+- cms-api: `header` restructured and new `module-not-found` type; migration 0017 carries the data. Take a database backup before deploying.
+- web: header and not-found page read the new fields; `public` nav entries show to everyone.
+- cms-api: `page-cv-a` gets `languages` and `references` (`references.phone` sensitive), `cv-common-text` gets `phone`; migration 0018 only adds tables and a column.
+- web: Next.js 16.4.2 → 16.4.6 (and `@next/eslint-plugin-next`): security patch.
+- web: `/cv` redesigned after the CV print layout (header band, company bars, project panels, skills by level, languages, references) and prints on A4, readable in black and white.
+- web: each CV renders on its own link-only page `/cv/<documentId>`, with no-index headers, `robots.txt` and a BFF path by id (public-site PS-5).
+- web: the stored header `/cv` entry now leads to the not-found page; the owner shares `/cv/<documentId>` links instead.
+- web: the header shows every entry to every visitor (`requiresRole` is no longer read by the web header); sub lists open on hover, focus and tap (on touch the first tap opens); an entry with sub entries and no link is a label; the fix round keeps sub lists in view and closes them on navigation (header-nav feature, commits fbba896c..6dc9b361).
+- docs: content-modeling CM-12; public-site PS-1, PS-3, Q-PS4, Q-PS6, Q-PS2d.
+- docs: shared human check D25 and ADR 0027 (cms-api verifies Turnstile for every public auth form), web WEB-12 (no reference to cms-admin), acceptance criteria 29 and 30; D17, D21, criterion 24 and public-site PS-3 amended.
+- docs: public-site PS-5 (each CV on its own link-only page `/cv/<documentId>`, never crawled or indexed), content-modeling CM-13 (`linkOnly` type option), acceptance criterion 31; PS-1 (the web header reads no `requiresRole`), PS-2, PS-4, criterion 25 and web D21 amended.
+- docs: public-site PS-6 (on a phone the header entries move into a side drawer opened by a menu button), Q-HN3; web WEB-3 amended (two built-in button names).
+
 ## 0.2.0 (2026-11-18)
 
 Repo 0.2.0, cms-api, cms-admin and web 0.2.0, e2e 0.0.3: schema builder field types and defaults, the premium admin look with toasts, the CV page on the web BFF path with new content types, remember-me sign-in and the fixes since 0.1.0.

@@ -100,7 +100,7 @@ demo_seed_content() {
 # Used by `dev-stack.sh seed` (an opt-in extra on a running dev stack, so specs that expect
 # an empty library or an empty collection keep working): one media file and one document
 # that is published and then edited, so it holds a draft that differs from the published copy.
-# The document is not the main CV (isMain false), so /cv keeps the seeded main one.
+# The document is a second CV with isMain false, so it differs from the seeded main one.
 DEMO_MEDIA_PATH="/media"
 DEMO_SEED_DOCUMENT_SLUG="page-cv-a"
 DEMO_SEED_DRAFT_VALUES='{"summary":"<p>Edited after publishing, so this document holds a draft.</p>"}'

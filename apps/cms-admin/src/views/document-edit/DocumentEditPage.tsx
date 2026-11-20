@@ -258,7 +258,7 @@ function DocumentForm({
           <DynamicFormRenderer fields={fields} masked={masked} />
         </fieldset>
         {readOnly ? null : (
-          <div className="sticky bottom-0 z-10 rounded-t-surface bg-card px-4 py-3 shadow-bar-top">
+          <div className="sticky bottom-0 z-10 rounded-t-surface border-t border-border bg-card/95 px-6 py-4 shadow-bar-top backdrop-blur-md">
             <DocumentActions
               slug={slug}
               record={record}

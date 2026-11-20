@@ -162,7 +162,7 @@ export function BackupsPage() {
           {backups.data.data.some((backup) => backup.fileName.endsWith(ENCRYPTED_EXTENSION)) ? (
             <FormAlert tone="info">{copy.encryptedNote}</FormAlert>
           ) : null}
-          <Card padding="flush" className="relative overflow-x-auto">
+          <Card padding="flush" className="relative overflow-x-auto shadow-card">
             <SortableSheet
               className="rounded-none border-0"
               caption={copy.tableLabel}

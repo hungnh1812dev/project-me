@@ -28,7 +28,8 @@ export const BFF_BASE_PATH = '/api/v1';
 export const BFF_ENDPOINTS = {
   HEALTH: '/health',
   SESSION: '/session',
-  CV: '/cv',
+  /** One CV by its `documentId`; the segment is encoded. */
+  CV: (documentId: string) => `/cv/${encodeURIComponent(documentId)}` as const,
   LOGIN: '/auth/login',
   EMAIL_CODE: '/auth/two-factor/email-code',
   VERIFY_TWO_FACTOR: '/auth/two-factor/verify',
@@ -40,6 +41,9 @@ export const CRAWLER_FILE_PATHS = {
   ROBOTS: '/robots.txt',
   SITEMAP: '/sitemap.xml',
 } as const;
+
+/** The CV pages (private link, PS-5): never in the sitemap, disallowed in robots.txt, sent with no-index and private cache headers. */
+export const CV_PAGE_PATH = '/cv';
 
 /** Public pages the sitemap lists (PS-4); a new public page is one entry. */
 export const SITEMAP_PAGE_PATHS = ['/', '/status'] as const;

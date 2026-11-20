@@ -15,7 +15,7 @@ const WEB_ORIGIN = 'https://domain.example';
 describe('buildRobots', () => {
   it('allows the site but not the BFF in production', () => {
     expect(buildRobots({ appEnv: 'production', webOrigin: WEB_ORIGIN })).toEqual({
-      rules: { userAgent: '*', allow: '/', disallow: '/api/' },
+      rules: { userAgent: '*', allow: '/', disallow: ['/api/', '/cv'] },
       sitemap: `${WEB_ORIGIN}/sitemap.xml`,
     });
   });
@@ -34,6 +34,16 @@ describe('buildSitemap', () => {
       { url: 'https://domain.example/' },
       { url: 'https://domain.example/status' },
     ]);
+  });
+});
+
+describe('buildSitemap without the CV pages', () => {
+  it('never lists a path under /cv', () => {
+    expect(
+      buildSitemap({ webOrigin: WEB_ORIGIN, pagePaths: ['/', '/cv', '/cv/abc', '/cvx'] }).map(
+        (entry) => entry.url,
+      ),
+    ).toEqual([`${WEB_ORIGIN}/`, `${WEB_ORIGIN}/cvx`]);
   });
 });
 

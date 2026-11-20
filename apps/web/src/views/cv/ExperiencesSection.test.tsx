@@ -35,6 +35,8 @@ function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
     ],
     projects: null,
     educations: null,
+    languages: null,
+    references: null,
     _maskedFields: [],
     ...overrides,
   };
@@ -58,10 +60,18 @@ describe('ExperiencesSection', () => {
     expect(screen.getByRole('heading', { level: 2, name: TEXT.experiences })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Northwind Labs' })).toBeInTheDocument();
     expect(screen.getByText('Tech lead')).toBeInTheDocument();
-    expect(screen.getByText('2022 - 2024 · Team size: 6')).toBeInTheDocument();
-    expect(screen.getByText('Billing core, portal')).toBeInTheDocument();
+    expect(screen.getByText('2022 - 2024')).toBeInTheDocument();
+    expect(screen.getByText(`Billing core, portal · ${TEXT.teamSize} 6`)).toBeInTheDocument();
     expect(screen.getByText('Node.js')).toBeInTheDocument();
     expect(screen.getByText('Led the platform team.')).toBeInTheDocument();
+  });
+
+  it('puts the role one level below the company, or at h3 when the company is hidden', () => {
+    const { unmount } = renderSection(cvOf());
+    expect(screen.getByRole('heading', { level: 4, name: 'Tech lead' })).toBeInTheDocument();
+    unmount();
+    renderSection(cvOf({ _maskedFields: ['experiences.company'] }), TEXT, null);
+    expect(screen.getByRole('heading', { level: 3, name: 'Tech lead' })).toBeInTheDocument();
   });
 
   it('shows the placeholder, never the company, when it is masked', () => {

@@ -23,7 +23,7 @@ export function PublishStateBadge({ state }: { state: PublishState }) {
   const { label, className } = badgeStyleOf(useScreenText('content').content.publishState)[state];
   return (
     <span
-      className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${className}`}
+      className={`inline-flex items-center rounded-control border border-border/40 px-2.5 py-0.5 text-xs font-medium tracking-wide shadow-xs ${className}`}
     >
       {label}
     </span>

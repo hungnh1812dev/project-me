@@ -17,12 +17,14 @@ function cvOf(educations: PageCvA['educations']): PageCvA {
     experiences: null,
     projects: null,
     educations,
+    languages: null,
+    references: null,
     _maskedFields: [],
   };
 }
 
 describe('EducationsSection', () => {
-  it('renders the degree and its details', () => {
+  it('renders the institution and its period and degree', () => {
     render(
       <EducationsSection
         cv={cvOf([
@@ -39,23 +41,24 @@ describe('EducationsSection', () => {
     );
     expect(screen.getByRole('heading', { level: 2, name: TEXT.educations })).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { level: 3, name: 'BSc Computer Science' }),
+      screen.getByRole('heading', { level: 3, name: 'Example University' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Example University · 2016 - 2020')).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { level: 3, name: 'MSc Software Engineering' }),
-    ).toBeInTheDocument();
+    expect(screen.getByText('2016 - 2020')).toBeInTheDocument();
+    expect(screen.getByText('BSc Computer Science')).toBeInTheDocument();
+    expect(screen.getByText('MSc Software Engineering')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
   });
 
-  it('renders the degrees without a title when there is no text', () => {
+  it('renders the educations without a title when there is no text', () => {
     render(
       <EducationsSection
-        cv={cvOf([{ degree: 'BSc', institution: null, period: null, location: null }])}
+        cv={cvOf([{ degree: 'BSc', institution: 'Uni', period: null, location: null }])}
         text={null}
       />,
     );
     expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: 'BSc' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Uni' })).toBeInTheDocument();
+    expect(screen.getByText('BSc')).toBeInTheDocument();
   });
 
   it('renders nothing for a null or empty education', () => {
