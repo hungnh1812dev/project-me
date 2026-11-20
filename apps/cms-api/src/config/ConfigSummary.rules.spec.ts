@@ -58,6 +58,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   BACKUP_STORAGE_ENDPOINT: 'https://sentinel-backup.example.test',
   BACKUP_STORAGE_PREFIX: 'sentinel-backup-prefix/',
   ALLOW_LOGIN_RATE_LIMIT_OVERRIDE: 'smoke',
+  ALLOW_TURNSTILE_TEST_SECRET: 'smoke',
+  TURNSTILE_EXPECTED_HOSTNAME: 'sentinel-web.example.test,sentinel-admin.example.test',
   LOGIN_RATE_LIMIT_IP: '3104',
   LOGIN_RATE_LIMIT_EMAIL: '3105',
   REFRESH_RATE_LIMIT_IP: '3106',
@@ -72,8 +74,8 @@ const FORMATTED_SENTINELS: Readonly<Record<string, string>> = {
   PASSWORD_CHANGE_RATE_LIMIT_IP: '3115',
 };
 
-/** Boolean keys have only two valid values, so they cannot be unique. */
-const BOOLEAN_KEYS = ['SMTP_SECURE', 'REVIEWER_FEATURE_ENABLED'];
+/** Keys with one or two valid values cannot be unique. */
+const BOOLEAN_KEYS = ['SMTP_SECURE', 'REVIEWER_FEATURE_ENABLED', 'ALLOW_TURNSTILE_TEST_SECRET'];
 
 /** One unique, format-valid value per schema key. */
 function sentinelEnv(): Record<string, string> {
@@ -134,6 +136,30 @@ describe('summarizeConfig', () => {
       provider: 'local',
       cloudinary: undefined,
       local: { directory: '/var/media', publicUrl: 'http://localhost:8080/api/v1/media-files' },
+    });
+  });
+
+  it('shows the human check group and keeps the Turnstile secret out of it', () => {
+    const config = loadAppConfig(
+      devEnv({
+        TURNSTILE_SECRET_KEY: 'ts-secret-value',
+        TURNSTILE_EXPECTED_HOSTNAME: 'web.example.test,admin.example.test',
+        ALLOW_TURNSTILE_TEST_SECRET: 'smoke',
+      }),
+    );
+    const summary = summarizeConfig(config);
+    expect(summary.humanCheck).toEqual({
+      expectedHostnames: ['web.example.test', 'admin.example.test'],
+      isTestSecretAllowed: true,
+    });
+    expect(summary.secrets).toMatchObject({ turnstileSecretKey: REDACTED });
+    expect(JSON.stringify(summary)).not.toContain('ts-secret-value');
+  });
+
+  it('shows an empty hostname list and a closed test secret by default', () => {
+    expect(summarizeConfig(loadAppConfig(devEnv())).humanCheck).toEqual({
+      expectedHostnames: [],
+      isTestSecretAllowed: false,
     });
   });
 

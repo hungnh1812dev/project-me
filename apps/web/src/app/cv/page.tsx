@@ -1,5 +1,6 @@
-import PageCv from '@/views/cv/PageCv';
+import { notFound } from 'next/navigation';
 
-export { generateMetadata } from '@/views/cv/PageCv';
-
-export default PageCv;
+/** `/cv` lists nothing: a CV is served on `/cv/<documentId>` only (public-site PS-5). */
+export default function CvIndexPage(): never {
+  notFound();
+}

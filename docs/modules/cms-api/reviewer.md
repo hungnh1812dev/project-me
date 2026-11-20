@@ -18,11 +18,11 @@ Lets a visitor (for example a recruiter) start a 24 h read-only session after a 
 
 ## Techniques
 
-Admission rules are pure (`domain/ReviewerAdmission.rules.ts`: 1 session per IP per 10 min, 200 active at most, `Retry-After`). Session creation runs in one core transaction under an advisory lock, so the cap and the per-IP rule hold under concurrency. The visitor IP is stored only as a keyed HMAC derived from `OTP_PEPPER`. Each session gets an ephemeral `reviewer` account and a 24 h access token with no refresh token; switching the toggle off bumps the reviewer role's `policy_version` and every reviewer account's `token_version`, so live sessions get 401. An in-process interval job deletes accounts whose sessions have all expired. Turnstile fails closed: without a secret, an unconfigured verifier refuses every token.
+Admission rules are pure (`domain/ReviewerAdmission.rules.ts`: 1 session per IP per 10 min, 200 active at most, `Retry-After`). Session creation runs in one core transaction under an advisory lock, so the cap and the per-IP rule hold under concurrency. The visitor IP is stored only as a keyed HMAC derived from `OTP_PEPPER`. Each session gets an ephemeral `reviewer` account and a 24 h access token with no refresh token; switching the toggle off bumps the reviewer role's `policy_version` and every reviewer account's `token_version`, so live sessions get 401. An in-process interval job deletes accounts whose sessions have all expired. Turnstile fails closed: the verifier (`TURNSTILE_VERIFIER`) comes from the `human-check` module, and without a secret its unconfigured form refuses every token. The reviewer route sends no action, so its check compares only the hostname list.
 
 ## Technologies
 
-NestJS; Prisma; Cloudflare Turnstile siteverify over `fetch`; the identity module for access tokens; the shared interval job runner.
+NestJS; Prisma; the `human-check` module (Cloudflare Turnstile verifier); the identity module for access tokens; the shared interval job runner.
 
 ## Entry points
 
@@ -39,26 +39,25 @@ Admission limits: `domain/ReviewerAdmission.rules.ts` and `domain/Reviewer.const
 
 ```
 reviewer/ (2 files)
-  adapters/ (3 files)
+  adapters/ (2 files)
   application/ (3 files)
   domain/ (2 files)
   http/ (2 files)
   jobs/ (1 file)
 ```
 
-Tests: 6 files (not listed).
+Tests: 5 files (not listed).
 
 | File | Description |
 |---|---|
-| `Reviewer.module.ts` | Nest wiring: ports, Turnstile verifier factory, cleanup job (exports `createTurnstileVerifier`, `ReviewerModule`) |
+| `Reviewer.module.ts` | Nest wiring: ports, `HumanCheckModule` import, cleanup job (exports `ReviewerModule`) |
 | `index.ts` | Public exports (exports `ReviewerModule`, `REVIEWER_ERROR_CODES`, `REVIEWER_INPUT_LIMITS`) |
 | `adapters/PrismaReviewer.repository.ts` | Toggle in `app_settings`, sessions, the creation advisory lock (exports `PrismaReviewerRepository`) |
 | `adapters/PrismaReviewerAccount.adapter.ts` | Creates and revokes the ephemeral reviewer accounts (exports `PrismaReviewerAccountAdapter`) |
-| `adapters/Turnstile.client.ts` | Turnstile siteverify client and the fail-closed unconfigured verifier (exports `TURNSTILE_SITEVERIFY_URL`, `HttpFetch`, `UnconfiguredTurnstileVerifier`, `TurnstileClient`) |
-| `application/Reviewer.port.ts` | Ports and DI tokens of the module (exports `REVIEWER_REPOSITORY`, `REVIEWER_ACCOUNT_GATEWAY`, `TURNSTILE_VERIFIER`, `IS_REVIEWER_FEATURE_ENABLED` +9) |
+| `application/Reviewer.port.ts` | Ports and DI tokens of the module (exports `REVIEWER_REPOSITORY`, `REVIEWER_ACCOUNT_GATEWAY`, `IS_REVIEWER_FEATURE_ENABLED` +9) |
 | `application/ReviewerAccess.service.ts` | Status, owner settings, session creation and the session log; IP key derivation (exports `CreateReviewerSessionInput`, `ReviewerSettingsInput`, `deriveReviewerIpKey`, `ReviewerAccessService`) |
 | `application/ReviewerCleanup.service.ts` | Deletes reviewer accounts whose sessions all expired (exports `ReviewerCleanupService`) |
-| `domain/Reviewer.constants.ts` | Session TTL, input limits and the reviewer account values (exports `REVIEWER_SESSION_TTL_MS`, `REVIEWER_INPUT_LIMITS`, `TURNSTILE_TOKEN_MAX_LENGTH`, `REVIEWER_ACCOUNT` +2) |
+| `domain/Reviewer.constants.ts` | Session TTL, input limits and the reviewer account values (exports `REVIEWER_SESSION_TTL_MS`, `REVIEWER_INPUT_LIMITS`, `REVIEWER_ACCOUNT` +2) |
 | `domain/ReviewerAdmission.rules.ts` | Admission rules, the views and the module's errors (exports `REVIEWER_IP_WINDOW_MS`, `REVIEWER_MAX_ACTIVE_SESSIONS`, `ReviewerStatusView`, `CreatedReviewerSessionView` +11) |
 | `http/Reviewer.controller.ts` | The four reviewer routes and their rate limits (exports `REVIEWER_RATE_LIMIT_POLICIES`, `ReviewerController`) |
 | `http/Reviewer.requests.ts` | Zod schemas of the session and settings bodies (exports `createReviewerSessionSchema`, `CreateReviewerSessionRequest`, `reviewerSettingsSchema`, `ReviewerSettingsRequest`) |

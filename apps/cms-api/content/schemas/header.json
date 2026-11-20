@@ -5,60 +5,62 @@
   "draftAndPublish": true,
   "fields": [
     {
-      "name": "name",
-      "type": "text"
+      "name": "appName",
+      "displayName": "App Name",
+      "type": "text",
+      "width": "1/2"
     },
     {
-      "name": "navLabel",
-      "type": "text"
+      "name": "appIcon",
+      "displayName": "App Icon",
+      "type": "media",
+      "width": "1/2"
     },
     {
-      "name": "navCvLink",
-      "type": "text"
-    },
-    {
-      "name": "notFoundTitle",
-      "type": "text"
-    },
-    {
-      "name": "notFoundDescription",
-      "type": "text"
-    },
-    {
-      "name": "nav",
+      "name": "navs",
       "type": "component",
       "component": "nav",
       "repeatable": true,
       "fields": [
         {
           "name": "title",
-          "type": "text"
-        },
-        {
-          "name": "requiresRole",
-          "type": "text"
+          "type": "text",
+          "width": "1/2"
         },
         {
           "name": "link",
-          "type": "text"
+          "type": "text",
+          "width": "1/2"
         },
         {
-          "name": "subNavigations",
+          "name": "requiresRole",
+          "type": "enumeration",
+          "options": ["public", "owner", "admin", "editor"],
+          "default": "public",
+          "width": "1/2"
+        },
+        {
+          "name": "subNavs",
           "type": "component",
-          "component": "subNavigation",
+          "component": "subNav",
           "repeatable": true,
           "fields": [
             {
               "name": "title",
-              "type": "text"
-            },
-            {
-              "name": "requiresRole",
-              "type": "text"
+              "type": "text",
+              "width": "1/2"
             },
             {
               "name": "link",
-              "type": "text"
+              "type": "text",
+              "width": "1/2"
+            },
+            {
+              "name": "requiresRole",
+              "type": "enumeration",
+              "options": ["public", "owner", "admin", "editor"],
+              "default": "public",
+              "width": "1/2"
             }
           ]
         }
@@ -71,11 +73,13 @@
       "fields": [
         {
           "name": "btnLoginText",
-          "type": "text"
+          "type": "text",
+          "width": "1/2"
         },
         {
           "name": "btnLogoutText",
-          "type": "text"
+          "type": "text",
+          "width": "1/2"
         }
       ]
     }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { REVIEWER_INPUT_LIMITS, TURNSTILE_TOKEN_MAX_LENGTH } from '../domain/Reviewer.constants';
+import { turnstileTokenSchema } from '../../human-check';
+import { REVIEWER_INPUT_LIMITS } from '../domain/Reviewer.constants';
 
 const TAB = 9;
 const NEWLINE = 10;
@@ -40,7 +41,7 @@ export const createReviewerSessionSchema = z.strictObject({
     .max(REVIEWER_INPUT_LIMITS.NOTES_MAX_LENGTH)
     .refine(isPlainText, { message: 'must be plain text' })
     .optional(),
-  turnstileToken: z.string().min(1).max(TURNSTILE_TOKEN_MAX_LENGTH),
+  turnstileToken: turnstileTokenSchema,
 });
 
 export type CreateReviewerSessionRequest = z.infer<typeof createReviewerSessionSchema>;

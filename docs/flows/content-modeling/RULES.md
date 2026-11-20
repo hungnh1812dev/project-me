@@ -11,13 +11,14 @@ Rules of this flow only. Rules it shares with other flows are in the files under
 3. Components nest at most 3 levels ([canonical-values.md](../../global/reference/canonical-values.md)).
 4. Commit the printed GraphQL SDL with the schema change (D18).
 5. Name component tables and GraphQL component types from the `component` values of the path, never from field names; a field's `name` is only its API key and column name (CM-2, CM-4, ADR 0019).
-6. To keep a component table's data, change a field's `name` and its `component` value in separate migrations: one of them alone is a rename or a plain column diff, both at once is a drop plus a create (CM-5).
+6. To keep a component table's data, change a field's `name` and its `component` value in separate migrations: one of them alone is a rename or a plain column diff, both at once is a drop plus a create (CM-5). Any other change that must keep data (a renamed field, a field moved to another component or content type) goes through a data step (CM-12).
 
 ## Must never
 
 1. Let Prisma see or migrate the `content` schema (D10).
-2. Make a destructive change (drop or rename a field) without `--allow-destructive` and a written data-migration note (D10).
+2. Make a destructive change (drop or rename a field) unless a data step declares it (`carries` or `discards` with who decided, CM-12) or, for data nobody keeps, `--allow-destructive` is passed; either way with a written data-migration note (D10).
 3. Add `_lnk` tables: components are owned exclusively ([data-model.md](../../global/reference/data-model.md) §8.2).
+4. Edit a generated migration file, or put transaction control or DDL in a data step (CM-12).
 
 ## Also follows
 

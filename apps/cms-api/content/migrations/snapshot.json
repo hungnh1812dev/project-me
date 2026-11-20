@@ -17,7 +17,7 @@
       }
     },
     "cv-common-text": {
-      "hash": "93ee6bfde32989a07455fcf4c7631dda241d2190fc88fb26a8555188378a9a90",
+      "hash": "599540cb902e2474f96bfe9791e31e3363bac9a585d6ca211217a52b46ad43b3",
       "definition": {
         "slug": "cv-common-text",
         "displayName": "CV Common Text",
@@ -26,71 +26,76 @@
         "fields": [
           {
             "name": "summary",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "experiences",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "achievements",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "skills",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "educations",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "languages",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "reference",
-            "type": "string",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "phone",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "technologies",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "teamSize",
             "displayName": "Team Size",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "projects",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "projectLink",
             "displayName": "Project Link",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "webLink",
             "displayName": "Web Link",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
             "name": "adminLink",
             "displayName": "Admin Link",
-            "type": "string",
+            "type": "text",
             "width": "1/2"
           },
           {
@@ -102,7 +107,7 @@
       }
     },
     "header": {
-      "hash": "a26ba0ef4ca149c081fcca96c88b0d9b6106ad138c434332684692c1ddd643b0",
+      "hash": "a6cd2e63bcd9b0f04570b0fad0239952a8f62318adc69c8dfe011c6d76c5acd6",
       "definition": {
         "slug": "header",
         "displayName": "Header",
@@ -110,60 +115,62 @@
         "draftAndPublish": true,
         "fields": [
           {
-            "name": "name",
-            "type": "text"
+            "name": "appName",
+            "displayName": "App Name",
+            "type": "text",
+            "width": "1/2"
           },
           {
-            "name": "navLabel",
-            "type": "text"
+            "name": "appIcon",
+            "displayName": "App Icon",
+            "type": "media",
+            "width": "1/2"
           },
           {
-            "name": "navCvLink",
-            "type": "text"
-          },
-          {
-            "name": "notFoundTitle",
-            "type": "text"
-          },
-          {
-            "name": "notFoundDescription",
-            "type": "text"
-          },
-          {
-            "name": "nav",
+            "name": "navs",
             "type": "component",
             "component": "nav",
             "repeatable": true,
             "fields": [
               {
                 "name": "title",
-                "type": "text"
-              },
-              {
-                "name": "requiresRole",
-                "type": "text"
+                "type": "text",
+                "width": "1/2"
               },
               {
                 "name": "link",
-                "type": "text"
+                "type": "text",
+                "width": "1/2"
               },
               {
-                "name": "subNavigations",
+                "name": "requiresRole",
+                "type": "enumeration",
+                "width": "1/2",
+                "options": ["public", "owner", "admin", "editor"],
+                "default": "public"
+              },
+              {
+                "name": "subNavs",
                 "type": "component",
-                "component": "subNavigation",
+                "component": "subNav",
                 "repeatable": true,
                 "fields": [
                   {
                     "name": "title",
-                    "type": "text"
-                  },
-                  {
-                    "name": "requiresRole",
-                    "type": "text"
+                    "type": "text",
+                    "width": "1/2"
                   },
                   {
                     "name": "link",
-                    "type": "text"
+                    "type": "text",
+                    "width": "1/2"
+                  },
+                  {
+                    "name": "requiresRole",
+                    "type": "enumeration",
+                    "width": "1/2",
+                    "options": ["public", "owner", "admin", "editor"],
+                    "default": "public"
                   }
                 ]
               }
@@ -176,11 +183,13 @@
             "fields": [
               {
                 "name": "btnLoginText",
-                "type": "text"
+                "type": "text",
+                "width": "1/2"
               },
               {
                 "name": "btnLogoutText",
-                "type": "text"
+                "type": "text",
+                "width": "1/2"
               }
             ]
           }
@@ -188,7 +197,7 @@
       }
     },
     "module-auth": {
-      "hash": "d0901c9f6495d2d92df75900510e6c835b83292a21ee5504b92ac0813f64b0b1",
+      "hash": "880240b1d60e2c44bda0777588994ebd74f2bd6d0f1fea87cb6cb33bee99f30b",
       "definition": {
         "slug": "module-auth",
         "displayName": "Module Auth",
@@ -404,16 +413,33 @@
             ]
           },
           {
-            "name": "openCms",
-            "type": "text"
-          },
-          {
             "name": "signedInAs",
             "type": "text"
           },
           {
             "name": "signOutFailed",
             "type": "text"
+          }
+        ]
+      }
+    },
+    "module-not-found": {
+      "hash": "3dbd67402aee1e207f75c140c640539ed75d6f28247279aa91dbc89ae98e3376",
+      "definition": {
+        "slug": "module-not-found",
+        "displayName": "Not Found Page",
+        "kind": "single",
+        "draftAndPublish": true,
+        "fields": [
+          {
+            "name": "title",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "description",
+            "type": "text",
+            "width": "full"
           }
         ]
       }
@@ -490,7 +516,7 @@
       }
     },
     "page-cv-a": {
-      "hash": "8f8383787fad355c06c93a89ca4e36762aad70a26b4a2d165b60c1edb3b825a1",
+      "hash": "8cc4938c542d4540dbcfe8682dbde4bc085c5dc12a10acd9573245d400f4b660",
       "definition": {
         "slug": "page-cv-a",
         "displayName": "Page CV (Type A)",
@@ -530,8 +556,10 @@
               },
               {
                 "name": "level",
-                "type": "text",
-                "width": "1/2"
+                "type": "enumeration",
+                "width": "1/2",
+                "options": ["Proficient", "Intermediate", "Working Knowledge", "Others"],
+                "default": "Others"
               }
             ]
           },
@@ -577,7 +605,8 @@
                     "name": "teamSize",
                     "displayName": "Team Size",
                     "type": "integer",
-                    "width": "1/3"
+                    "width": "1/3",
+                    "unsigned": true
                   },
                   {
                     "name": "projects",
@@ -611,7 +640,8 @@
                 "name": "teamSize",
                 "displayName": "Team Size",
                 "type": "integer",
-                "width": "1/3"
+                "width": "1/3",
+                "unsigned": true
               },
               {
                 "name": "role",
@@ -661,6 +691,47 @@
               },
               {
                 "name": "location",
+                "type": "text",
+                "width": "1/2"
+              }
+            ]
+          },
+          {
+            "name": "languages",
+            "type": "component",
+            "component": "language",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "language",
+                "type": "text",
+                "width": "1/2"
+              },
+              {
+                "name": "level",
+                "type": "text",
+                "width": "1/2"
+              }
+            ]
+          },
+          {
+            "name": "references",
+            "type": "component",
+            "component": "reference",
+            "repeatable": true,
+            "fields": [
+              {
+                "name": "name",
+                "type": "text"
+              },
+              {
+                "name": "role",
+                "type": "text",
+                "width": "1/2"
+              },
+              {
+                "name": "phone",
+                "sensitive": true,
                 "type": "text",
                 "width": "1/2"
               }

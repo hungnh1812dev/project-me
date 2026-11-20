@@ -17,6 +17,7 @@ import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
 import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { requireAccountActor } from '../../access';
+import { HUMAN_CHECK_FORMS, RequireHumanCheck, withoutTurnstileToken } from '../../human-check';
 import { TwoFactorLoginService } from '../application/TwoFactorLogin.service';
 import {
   TwoFactorManagementService,
@@ -106,6 +107,7 @@ export class TwoFactorController {
   @Post(TWO_FACTOR_ROUTES.VERIFY)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @RequireHumanCheck(HUMAN_CHECK_FORMS.TWO_FACTOR)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_VERIFY)
   async verify(
     @Body() body: unknown,
@@ -113,7 +115,7 @@ export class TwoFactorController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<AccessTokenResponse> {
     const tokens = await this.login.verifyLogin(
-      parseBody(verifyTwoFactorSchema, body),
+      withoutTurnstileToken(parseBody(verifyTwoFactorSchema, body)),
       clientMetaOf(this.clientIp, req),
     );
     setRefreshCookie(res, tokens.refreshToken, tokens.rememberMe);
@@ -123,6 +125,7 @@ export class TwoFactorController {
   /** 202 with an empty body; a TOTP account gets no email. */
   @Post(TWO_FACTOR_ROUTES.EMAIL_CHALLENGE)
   @HttpCode(HttpStatus.ACCEPTED)
+  @RequireHumanCheck(HUMAN_CHECK_FORMS.TWO_FACTOR)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.TWO_FACTOR_EMAIL_CHALLENGE)
   emailChallenge(@Body() body: unknown, @Req() req: Request): Promise<void> {
     return this.login.emailChallenge(

@@ -1,16 +1,16 @@
 export interface NotFoundText {
-  notFoundTitle: string;
-  notFoundDescription: string;
+  title: string;
+  description: string;
 }
 
 export interface NotFoundPage {
   notFoundText: NotFoundText;
 }
 
-/** The not-found page text; `notFoundText` is a GraphQL alias of the cms-api root field `header`. */
+/** The not-found page text; `notFoundText` is a GraphQL alias of the cms-api root field `moduleNotFound`. */
 export const NOT_FOUND_PAGE_QUERY = `query NotFoundPage {
-notFoundText: header {
-    notFoundTitle
-    notFoundDescription
+notFoundText: moduleNotFound {
+    title
+    description
   }
 }`;

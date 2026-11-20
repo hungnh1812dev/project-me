@@ -17,7 +17,7 @@ vi.mock('../../../configs/Server.env', () => ({ getServerEnv: () => env }));
 
 type PostOptions = {
   headers: Record<string, string>;
-  body: { query: string };
+  body: { query: string; variables?: Record<string, string> };
   next: { revalidate?: number };
   resolveData: (answer: { status: number; body: unknown }) => unknown;
 };
@@ -82,6 +82,14 @@ describe('executeGraphql request', () => {
       authorization: 'Bearer api-token-secret',
       accept: 'application/json',
     });
+  });
+
+  it('sends variables as the body variables, and none without them', async () => {
+    postMock.mockResolvedValue(answer(200, { data: DATA }));
+    await executeGraphql(QUERY, { variables: { documentId: 'doc-1' } });
+    await executeGraphql(QUERY);
+    expect(callOptions(0).body).toEqual({ query: QUERY, variables: { documentId: 'doc-1' } });
+    expect(callOptions(1).body).toEqual({ query: QUERY });
   });
 
   it('goes anonymous without a token and passes next on', async () => {
@@ -170,6 +178,15 @@ describe('executeGraphql failures with the mocks off', () => {
     });
     expect(logged()).toEqual(['[api-error] cms-api-graphql UNAUTHENTICATED 200 Page']);
     expect(logged().join()).not.toContain('api-token-secret');
+  });
+
+  it('logs no variable value when a read with variables fails', async () => {
+    postMock.mockResolvedValue(answer(200, { errors: [{ message: 'doc-secret-id' }] }));
+    await expect(
+      executeGraphql(QUERY, { variables: { documentId: 'doc-secret-id' } }),
+    ).rejects.toBeInstanceOf(WebApiError);
+    expect(logged()).toHaveLength(1);
+    expect(logged().join()).not.toContain('doc-secret-id');
   });
 
   it('turns a transport failure into NETWORK_ERROR and keeps retryable', async () => {

@@ -54,7 +54,6 @@ export interface SignInText {
     invalidCode: string;
     unsupportedMethod: string;
   };
-  openCms: string | null;
   signedInAs: string | null;
   signOutFailed: string | null;
 }
@@ -117,7 +116,6 @@ signInText: moduleAuth {
       invalidCode
       unsupportedMethod
     }
-    openCms
     signedInAs
     signOutFailed
   }

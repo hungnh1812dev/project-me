@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import { HUMAN_CHECK_FORMS, resetTurnstile, useTurnstile } from '@abyss/form-commons/human-check';
+import { HumanCheckField } from '@components/HumanCheckField';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { OTP_CODE_LENGTH } from '@configs/Auth.constants';
@@ -30,13 +32,16 @@ type SetValues = z.input<typeof setSchema>;
 /**
  * Invitation: the invited person enters the emailed code and chooses
  * a password; the account becomes active. A fresh code can be requested
- * here, since one lasts only a few minutes.
+ * here, since one lasts only a few minutes; that request is human-checked
+ * (D25) with the password-reset form id, the set itself is not.
  */
 export function SetPasswordPage() {
   const passwords = usePasswordApi();
   const navigate = useNavigate();
   const [error, setError] = useState<PasswordError | null>(null);
   const [resentTo, setResentTo] = useState<string | null>(null);
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
 
   const form = useForm<SetValues>({
     resolver: zodResolver(setSchema),
@@ -65,7 +70,8 @@ export function SetPasswordPage() {
 
   const resend = useMutation({
     mutationFn: passwords.requestCode,
-    onSuccess: (_data, email) => {
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET),
+    onSuccess: (_data, { email }) => {
       setError(null);
       setResentTo(email);
       form.resetField('code');
@@ -81,7 +87,13 @@ export function SetPasswordPage() {
     const emailOk = await form.trigger('email', { shouldFocus: true });
     // An invalid email shows its inline error and takes focus.
     if (!emailOk) return;
-    resend.mutate(form.getValues('email').trim());
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.PASSWORD_RESET);
+      return;
+    }
+    setIsTokenMissing(false);
+    resend.mutate({ email: form.getValues('email').trim(), turnstileToken });
   };
 
   const onSubmit = form.handleSubmit((values) => {
@@ -152,7 +164,12 @@ export function SetPasswordPage() {
           </Button>
         </form>
       </FormProvider>
-      <div className="mt-4">
+      <div className="mt-4 grid gap-3">
+        <HumanCheckField
+          formId={HUMAN_CHECK_FORMS.PASSWORD_RESET}
+          text={COMMON_TEXT.password.humanCheck}
+          isTokenMissing={isTokenMissing && turnstileToken === ''}
+        />
         <Button
           variant="link"
           className="h-auto px-0"

@@ -41,11 +41,11 @@ Token header or refresh rules: `Auth.interceptor.ts` only. A new call that must 
 auth/ (27 files)
 ```
 
-Tests: 10 files (not listed).
+Tests: 12 files (not listed).
 
 | File | Description |
 |---|---|
-| `Auth.api.ts` | Login, 2FA, refresh and logout calls |
+| `Auth.api.ts` | Login, 2FA, refresh and logout calls; login, verify and email challenge bodies carry `turnstileToken` |
 | `Auth.feature.ts` | Feature registration (reducer and wiring) |
 | `Auth.interceptor.ts` | Bearer header, 401 refresh-and-retry, fresh token before flagged uploads |
 | `Auth.slice.ts` | Session state and current user |
@@ -53,18 +53,18 @@ Tests: 10 files (not listed).
 | `AuthWiring.setup.ts` | Builds the auth API, reducer and cross-tab options |
 | `BackToSignIn.tsx` | Link back to sign-in |
 | `CrossTabRefresh.ts` | Cross-tab single refresh via locks and channel |
-| `Login.errors.ts` | Maps login failures to kinds; takes the `login` screen text as its last parameter |
+| `Login.errors.ts` | Maps login failures to kinds (human check refusals have their own); takes the `login` screen text as its last parameter |
 | `LoginNotice.rules.ts` | Notice shown on the login screen |
-| `Password.api.ts` | Reset and set-password calls |
-| `Password.errors.ts` | Maps password failures to kinds |
+| `Password.api.ts` | Code request, reset and set-password calls; the code request and reset bodies carry `turnstileToken` |
+| `Password.errors.ts` | Maps password failures to kinds (human check refusals have their own) |
 | `Password.form.ts` | Password form field shapes |
 | `PasswordApi.context.tsx` | Context for the password API |
 | `ProtectedRoute.tsx` | Route guard |
 | `Session.context.tsx` | Session provider and hook |
 | `Session.ts` | Session lifecycle (restore, refresh, logout) |
 | `SessionLoading.tsx` | Loading state while the session restores |
-| `Setup.api.ts` | First-owner setup calls |
-| `Setup.errors.ts` | Maps setup failures; takes the `setup` screen text as its last parameter |
+| `Setup.api.ts` | First-owner setup calls; the owner body carries `turnstileToken` |
+| `Setup.errors.ts` | Maps setup failures (human check refusals become alerts); takes the `setup` screen text as its last parameter |
 | `SetupApi.context.tsx` | Context for the setup API |
 | `SingleFlight.rules.ts` | Shares one in-flight promise between callers |
 | `index.ts` | Public exports |

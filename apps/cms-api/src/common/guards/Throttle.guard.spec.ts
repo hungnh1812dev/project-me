@@ -7,7 +7,12 @@ import type { RateLimitOverrideEnvKey } from '../../config/Config.constants';
 import { RATE_LIMIT_KEY_SOURCES, type RateLimitRule } from '../constants/Limits.constants';
 import type { ClientIpResolver } from '../http/ClientIp.resolver';
 import type { RateLimitStore } from '../rate-limit/RateLimit.store';
-import { RATE_LIMIT_POLICY_METADATA, ThrottleGuard } from './Throttle.guard';
+import {
+  AccountThrottleGuard,
+  IpThrottleGuard,
+  RATE_LIMIT_POLICY_METADATA,
+  ThrottleGuard,
+} from './Throttle.guard';
 
 const OVERRIDDEN_RULE: RateLimitRule = {
   name: 'a:ip',
@@ -87,5 +92,55 @@ describe('ThrottleGuard limit overrides', () => {
 
   it('lowers the declared rule without touching the other', async () => {
     expect(await rejectedRulesAfter(4, { LOGIN_RATE_LIMIT_IP: 2 })).toEqual(['hit 3', 'hit 4']);
+  });
+});
+
+describe('split throttle guards', () => {
+  const emailRule: RateLimitRule = {
+    name: 'c:email',
+    keySource: RATE_LIMIT_KEY_SOURCES.EMAIL,
+    maxHits: 10,
+    windowMs: 1_000,
+  };
+
+  async function countedKeys(
+    GuardClass: typeof ThrottleGuard,
+    rules: readonly RateLimitRule[],
+  ): Promise<string[]> {
+    const keys: string[] = [];
+    const guard = new GuardClass(
+      { get: () => rules } as unknown as Reflector,
+      { resolve: () => '1.2.3.4' } as unknown as ClientIpResolver,
+      {
+        hit: (key: string) => {
+          keys.push(key);
+          return Promise.resolve({ count: 1, resetAt: 0 });
+        },
+      },
+      { now: () => 0 },
+      { rateLimit: { limitOverrides: {} } } as unknown as IAppConfig,
+      { accountSubjectOf: () => undefined, isAnonymousRequest: () => false },
+    );
+    const context = {
+      getHandler: () => undefined,
+      switchToHttp: () => ({ getRequest: () => ({ body: { email: 'a@b.c' } }) as Request }),
+    } as unknown as ExecutionContext;
+    await guard.canActivate(context);
+    return keys;
+  }
+
+  it('counts only IP-keyed rules in the IP guard', async () => {
+    const keys = await countedKeys(IpThrottleGuard, [OTHER_RULE, emailRule]);
+    expect(keys).toEqual(['b:ip:1.2.3.4']);
+  });
+
+  it('counts only the other rules in the account guard', async () => {
+    const keys = await countedKeys(AccountThrottleGuard, [OTHER_RULE, emailRule]);
+    expect(keys).toHaveLength(1);
+    expect(keys[0]).toMatch(/^c:email:/);
+  });
+
+  it('counts every rule in the plain guard', async () => {
+    expect(await countedKeys(ThrottleGuard, [OTHER_RULE, emailRule])).toHaveLength(2);
   });
 });

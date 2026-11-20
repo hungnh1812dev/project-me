@@ -6,12 +6,13 @@ import { clientApi } from '@/apis/client/Api.client';
 import { BFF_ENDPOINTS } from '@/configs/Api.endpoints';
 import { useWebSession, type WebSession } from '@/features/session';
 
-import { ContactCard } from './ContactCard';
-import { SkillsSection, SummarySection } from './CvSection';
+import { ContactCard, ProfileAvatar } from './ContactCard';
+import { LanguagesSection, SkillsSection, SummarySection } from './CvSection';
 import { EducationsSection } from './EducationsSection';
 import { ExperiencesSection } from './ExperiencesSection';
-import { mainCvOf, type CvCommonText, type PageCvData } from './PageCv.graphql';
+import type { CvCommonText, PageCvData } from './PageCv.graphql';
 import { ProjectsSection } from './ProjectsSection';
+import { ReferencesSection } from './ReferencesSection';
 
 const ANONYMOUS_ACTOR = 'anonymous';
 
@@ -26,14 +27,14 @@ function actorKeyOf({ status, user }: WebSession): string {
  * visitor refetches through the BFF, and signing out falls back to the server
  * data. Both arrive sanitized by the server.
  */
-function usePageCvData(serverData: PageCvData) {
+function usePageCvData(documentId: string, serverData: PageCvData) {
   const actor = actorKeyOf(useWebSession());
   const isAnonymous = actor === ANONYMOUS_ACTOR;
 
   return useQuery({
-    queryKey: ['cv', actor],
+    queryKey: ['cv', documentId, actor],
     queryFn: async () => {
-      const { data } = await clientApi.get<PageCvData>(BFF_ENDPOINTS.CV);
+      const { data } = await clientApi.get<PageCvData>(BFF_ENDPOINTS.CV(documentId));
       return data;
     },
     retry: false,
@@ -45,33 +46,52 @@ function usePageCvData(serverData: PageCvData) {
 }
 
 interface PageCvClientProps {
+  /** The id of the CV on this page, the one the signed-in refetch asks for. */
+  documentId: string;
   /** What the server rendered for the public role. */
   initialData: PageCvData;
   /** The CV labels; `null` leaves every label out. */
   text: CvCommonText | null;
 }
 
-export function PageCvClient({ initialData, text }: PageCvClientProps) {
-  const { data: fetchedData, isPending, isError } = usePageCvData(initialData);
+export function PageCvClient({ documentId, initialData, text }: PageCvClientProps) {
+  const { data: fetchedData, isPending, isError } = usePageCvData(documentId, initialData);
 
   if (isPending) {
     return <output aria-busy="true" className="block" />;
   }
   // A failed signed-in refetch keeps the anonymous CV the server rendered, with no message.
   const data = isError ? initialData : fetchedData;
-  const cv = mainCvOf(data);
-  if (cv === undefined) return null;
+  const { pageCvA: cv } = data;
 
   return (
-    <>
-      {cv.name ? <h1 className="text-2xl font-semibold tracking-tight">{cv.name}</h1> : null}
-      {cv.position ? <p className="text-muted-foreground mt-1 text-base">{cv.position}</p> : null}
-      <ContactCard profile={data.profile} />
-      <SummarySection cv={cv} text={text} />
-      <SkillsSection cv={cv} text={text} />
-      <ExperiencesSection cv={cv} text={text} />
-      <ProjectsSection cv={cv} text={text} />
-      <EducationsSection cv={cv} text={text} />
-    </>
+    // Prints as the on-screen sheet: tints kept, the band edge to edge, the text inside the page margin.
+    <article className="text-cv-text [print-color-adjust:exact]">
+      <header className="bg-cv-band print:px-cv-page flex flex-col gap-5 rounded-lg p-6 sm:flex-row sm:items-start print:flex-row print:rounded-none">
+        <ProfileAvatar profile={data.profile} />
+        <div className="min-w-0 flex-1">
+          {cv.name ? (
+            <h1 className="text-cv-ink text-3xl font-extrabold tracking-tight uppercase">
+              {cv.name}
+            </h1>
+          ) : null}
+          {cv.position ? (
+            <p className="text-cv-muted tracking-cv-title mt-1 text-base uppercase">
+              {cv.position}
+            </p>
+          ) : null}
+          <ContactCard profile={data.profile} />
+        </div>
+      </header>
+      <div className="print:px-cv-page">
+        <SummarySection cv={cv} text={text} />
+        <ExperiencesSection cv={cv} text={text} />
+        <ProjectsSection cv={cv} text={text} />
+        <SkillsSection cv={cv} text={text} />
+        <EducationsSection cv={cv} text={text} />
+        <LanguagesSection cv={cv} text={text} />
+        <ReferencesSection cv={cv} text={text} />
+      </div>
+    </article>
   );
 }

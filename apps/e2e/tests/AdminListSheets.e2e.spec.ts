@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { expectSignedIn } from '../src/Session.fixture';
+import { clickAfterHumanCheck, expectSignedIn } from '../src/Session.fixture';
 
 /** A list shows its empty state, not a table, until the first row exists. */
 const LIST_ROUTES = [
@@ -18,7 +18,7 @@ test.describe('admin list sheets', { tag: ['@cms-admin', '@cms-api'] }, () => {
     await page.goto('/login');
     await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expectSignedIn(page);
 
     for (const { path, empty, ...rest } of LIST_ROUTES) {

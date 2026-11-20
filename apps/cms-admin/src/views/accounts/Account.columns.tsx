@@ -6,9 +6,9 @@ import { formatDate } from '@utils/DateFormat.rules';
 import { AccountRowActions } from './AccountRowActions';
 
 const STATUS_CLASS: Record<Account['status'], string> = {
-  invited: 'bg-info-soft text-info-strong',
-  active: 'bg-success-soft text-success-strong',
-  disabled: 'bg-muted text-muted-foreground',
+  invited: 'bg-info-soft text-info-strong border border-border/40',
+  active: 'bg-success-soft text-success-strong border border-border/40',
+  disabled: 'bg-muted text-muted-foreground border border-border/40',
 };
 
 interface AccountColumnsOptions {
@@ -59,25 +59,31 @@ export function accountColumns({
       rowHeader: true,
       renderCell: (account) => (
         <>
-          <span className="font-medium">{account.displayName}</span>
+          <span className="font-semibold text-foreground">{account.displayName}</span>
           {account.id === currentUserId ? (
-            <span className="ml-2 text-xs font-normal text-muted-foreground">{copy.you}</span>
+            <span className="ml-2 rounded-control bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {copy.you}
+            </span>
           ) : null}
-          <span className="block font-normal text-muted-foreground">{account.email}</span>
+          <span className="block text-xs font-normal text-muted-foreground">{account.email}</span>
         </>
       ),
     },
     {
       key: 'role',
       header: copy.columns.role,
-      renderCell: (account) => <span className="text-foreground">{account.role.name}</span>,
+      renderCell: (account) => (
+        <span className="inline-flex items-center rounded-control bg-muted/60 px-2 py-0.5 text-xs font-medium text-foreground">
+          {account.role.name}
+        </span>
+      ),
     },
     {
       key: 'status',
       header: copy.columns.status,
       renderCell: (account) => (
         <span
-          className={`inline-block rounded-sm px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[account.status]}`}
+          className={`inline-flex items-center rounded-control px-2.5 py-0.5 text-xs font-medium tracking-wide shadow-xs ${STATUS_CLASS[account.status]}`}
         >
           {copy.status[account.status]}
         </span>

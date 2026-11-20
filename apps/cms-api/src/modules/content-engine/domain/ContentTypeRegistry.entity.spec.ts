@@ -29,6 +29,8 @@ describe('ContentTypeRegistry', () => {
       'page_cv_a__experience',
       'page_cv_a__project',
       'page_cv_a__education',
+      'page_cv_a__language',
+      'page_cv_a__reference',
     ]);
     const experience = type.root.components[1]?.table;
     expect(experience?.components.map((c) => c.table.plan.name)).toEqual([

@@ -22,8 +22,8 @@ demo_api_url() { echo "http://$LOOPBACK:$API_PORT$API_PREFIX$1"; }
 # stdin so the password never shows in a process list.
 demo_sign_in_owner() {
   local login_json response status
-  login_json="$(DEMO_EMAIL="$STACK_OWNER_EMAIL" DEMO_PASSWORD="$STACK_OWNER_PASSWORD" node -e \
-    'process.stdout.write(JSON.stringify({ email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD }))')"
+  login_json="$(DEMO_EMAIL="$STACK_OWNER_EMAIL" DEMO_PASSWORD="$STACK_OWNER_PASSWORD" DEMO_TURNSTILE_TOKEN="$STACK_TURNSTILE_DUMMY_TOKEN" node -e \
+    'process.stdout.write(JSON.stringify({ email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD, turnstileToken: process.env.DEMO_TURNSTILE_TOKEN }))')"
   response="$(printf '%s' "$login_json" | curl -sS --max-time "$DEMO_REQUEST_TIMEOUT_SECONDS" \
     -w "\n$DEMO_HTTP_STATUS_FORMAT" -X POST -H 'Content-Type: application/json' \
     --data-binary @- "$(demo_api_url "$DEMO_LOGIN_PATH")")"
@@ -100,7 +100,7 @@ demo_seed_content() {
 # Used by `dev-stack.sh seed` (an opt-in extra on a running dev stack, so specs that expect
 # an empty library or an empty collection keep working): one media file and one document
 # that is published and then edited, so it holds a draft that differs from the published copy.
-# The document is not the main CV (isMain false), so /cv keeps the seeded main one.
+# The document is a second CV with isMain false, so it differs from the seeded main one.
 DEMO_MEDIA_PATH="/media"
 DEMO_SEED_DOCUMENT_SLUG="page-cv-a"
 DEMO_SEED_DRAFT_VALUES='{"summary":"<p>Edited after publishing, so this document holds a draft.</p>"}'

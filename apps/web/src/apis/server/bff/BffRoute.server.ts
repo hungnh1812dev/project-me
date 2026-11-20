@@ -16,27 +16,23 @@ import {
   SEC_FETCH_SITE_HEADER,
   SEC_FETCH_SITE_SAME_ORIGIN,
 } from '@/configs/Http.constants';
-import { TurnstileAction } from '@/configs/Security.constants';
 import { getServerEnv } from '@/configs/Server.env';
 
-import { verifyHumanCheck } from '../restful/Turnstile.client';
 import { BffError, bffErrorOf, bffErrorResponse } from './Bff.errors';
 import { visitorIpOf } from './ClientIp.rules';
 import { FixedWindowRateLimiter } from './RateLimit.rules';
 
 export type BffMethod = 'GET' | 'POST';
 export type BffBucket = keyof typeof BFF_RATE_LIMITS;
-export type HumanCheckAction = TurnstileAction;
-
-/** Field of the request body that carries the Turnstile token; never passed to `handle`. */
-export const HUMAN_CHECK_TOKEN_FIELD = 'humanCheckToken';
 
 export interface BffContext<TBody> {
   request: Request;
-  /** The parsed body without the human-check token; `{}` when the route has no body schema. */
+  /** The parsed body; `{}` when the route has no body schema. */
   body: TBody;
   /** Undefined when no trusted address was found. */
   visitorIp: string | undefined;
+  /** The awaited route params (`[documentId]` and the like); `{}` for a route without one. */
+  params: Record<string, string>;
 }
 
 export interface BffRouteOptions<TSchema extends z.ZodObject> {
@@ -44,12 +40,15 @@ export interface BffRouteOptions<TSchema extends z.ZodObject> {
   bucket: BffBucket;
   /** Applied with `.strict()`: an unknown key is refused. */
   bodySchema?: TSchema;
-  /** The route needs a Turnstile token for this action in `humanCheckToken`. */
-  humanCheckAction?: HumanCheckAction;
   handle: (context: BffContext<z.output<TSchema>>) => Promise<Response>;
 }
 
-type BffHandler = (request: Request) => Promise<Response>;
+/** The second argument Next passes to a route handler. */
+interface NextRouteContext {
+  params?: Promise<Record<string, string>>;
+}
+
+type BffHandler = (request: Request, routeContext?: NextRouteContext) => Promise<Response>;
 export type BffRouteHandlers = Record<'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', BffHandler>;
 
 const HANDLED_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
@@ -126,14 +125,10 @@ async function parseBody(text: string, schema: z.ZodObject): Promise<Record<stri
   return parsed.data;
 }
 
-function withoutHumanCheckToken(body: Record<string, unknown>): Record<string, unknown> {
-  const { [HUMAN_CHECK_TOKEN_FIELD]: _token, ...rest } = body;
-  return rest;
-}
-
 async function runPipeline<TSchema extends z.ZodObject>(
   options: BffRouteOptions<TSchema>,
   request: Request,
+  params: Record<string, string>,
 ): Promise<Response> {
   const env = getServerEnv();
   if (!options.methods.includes(request.method as BffMethod)) {
@@ -152,25 +147,43 @@ async function runPipeline<TSchema extends z.ZodObject>(
   const body = hasBody
     ? await parseBody(bodyText, options.bodySchema ?? NO_BODY_SCHEMA)
     : ({} as Record<string, unknown>);
-  if (options.humanCheckAction !== undefined) {
-    await verifyHumanCheck(body[HUMAN_CHECK_TOKEN_FIELD], options.humanCheckAction, visitorIp);
-  }
   return options.handle({
     request,
-    body: withoutHumanCheckToken(body) as z.output<TSchema>,
+    body: body as z.output<TSchema>,
     visitorIp,
+    params,
   });
 }
 
-/** Logs a failure once, with the method and path as its operation: codes only, never a body, token or cookie. */
-function logFailure(request: Request, error: unknown): void {
+/** The request path with each route param value replaced by `[name]`, so a log line never holds a param value. */
+function routePatternOf(pathname: string, params: Record<string, string>): string {
+  const nameByValue = new Map(Object.entries(params).map(([name, value]) => [value, name]));
+  return pathname
+    .split('/')
+    .map((segment) => {
+      const name = nameByValue.get(safeDecode(segment));
+      return name === undefined ? segment : `[${name}]`;
+    })
+    .join('/');
+}
+
+function safeDecode(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+/** Logs a failure once, with the method and route pattern as its operation: codes only, never a body, token, cookie or param value. */
+function logFailure(request: Request, params: Record<string, string>, error: unknown): void {
   const failure = error instanceof WebApiError ? error : bffErrorOf(error);
   logApiError(
     new WebApiError({
       source: failure.source,
       errorCode: failure.errorCode,
       statusCode: failure.statusCode,
-      operation: `${request.method} ${new URL(request.url).pathname}`,
+      operation: `${request.method} ${routePatternOf(new URL(request.url).pathname, params)}`,
       retryAfterSeconds: failure.retryAfterSeconds,
       upstreamErrorCode: failure.upstreamErrorCode,
     }),
@@ -185,12 +198,14 @@ function logFailure(request: Request, error: unknown): void {
 export function defineBffRoute<TSchema extends z.ZodObject = z.ZodObject<Record<string, never>>>(
   options: BffRouteOptions<TSchema>,
 ): BffRouteHandlers {
-  const handler: BffHandler = async (request) => {
+  const handler: BffHandler = async (request, routeContext) => {
     let response: Response;
+    let params: Record<string, string> = {};
     try {
-      response = await runPipeline(options, request);
+      params = (await routeContext?.params) ?? {};
+      response = await runPipeline(options, request, params);
     } catch (error) {
-      logFailure(request, error);
+      logFailure(request, params, error);
       response = bffErrorResponse(bffErrorOf(error));
     }
     response.headers.set(CACHE_CONTROL_HEADER, CACHE_CONTROL_NO_STORE);

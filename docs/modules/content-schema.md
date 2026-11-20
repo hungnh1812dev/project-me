@@ -230,7 +230,7 @@ its table; `width` is `1/3`, `1/2` or `full`:
 ```
 
 (Shortened: the real file also has `skills`, `projects` and, as a single
-component, `educations`.) It produces 6 tables (acceptance criterion 16):
+component, `educations`, plus `languages` and `references` since 0018.) It produces 8 tables (acceptance criterion 16):
 
 ```
 page_cv_a                      root: name, position, is_main, summary
@@ -239,18 +239,23 @@ page_cv_a__experience          company, location, period
 page_cv_a__experience__role    position, period, team_size, projects, tech_stacks, responsibilities
 page_cv_a__project             name, team_size, role, live_link, repository_link, tech_stack, responsibilities
 page_cv_a__education           degree, institution, period, location
+page_cv_a__language            language, level
+page_cv_a__reference           name, role, phone
 ```
 
 `header` uses the same table naming (`header__nav__sub_navigation`).
 
 Sensitive fields: `profile` `address`, `phone`, `email`, `github`, and
-`page-cv-a` `experiences.company`. Integration specs that need a type deeper
+`page-cv-a` `experiences.company` and `references.phone`. Integration specs that need a type deeper
 than depth 2 use a fixture definition inside the spec, never a repo schema.
 
 ## Data-migration notes
 
 Generated migration files are never edited; what a migration does not carry
-over is written here.
+over is written here. A data step (`content:generate --data-step <file>`, see
+"content:generate") is the way to keep data across a restructure: it moves the
+data before the destructive statements run, and the entry here names the
+migration and what it carries.
 
 ### `0006_content.sql` (cv-page schema format)
 
@@ -303,6 +308,40 @@ over is written here.
   empty. No data is carried over; enter the texts again in cms-admin. The SDL
   has `cvCommonText`, no `pageCvText`.
 
+### `0017_header_restructure.sql` (header restructure, ADR 0026, Q-HR1..Q-HR6)
+
+- Written with a data step (`--data-step`, no `--allow-destructive`); the step
+  is the file's only copy, between `-- Data step (begin)` and `(end)`.
+- Carried: `header.name` into `app_name` (draft and published rows);
+  `header__nav__sub_navigation` rows into `header__nav__sub_nav` (same
+  `component_uid`, `parent_id`, `order_index`, `title`, `link`, `requires_role`);
+  a non-empty `header.nav_cv_link` into a first `header__nav` row (`link`
+  `/cv`, `requires_role` `public`, one `component_uid` per document, the other
+  rows move down by one); `not_found_title` and `not_found_description` into
+  the new single type `module-not-found` (one new `document_id` per header
+  document).
+- Discarded: `header.nav_label` (user, 2026-11-19; the header has one nav
+  landmark). `header.app_icon` is added empty.
+- Value check: empty `requires_role` and `level` strings become null; a stored
+  `requires_role` (nav, sub navigation) outside `public`, `owner`, `admin`,
+  `editor`, or a `page-cv-a` skill `level` outside its options, stops the
+  migration with the table, document id and value. Fix those in cms-admin
+  before deploying.
+- Release note: back up the database first; release cms-api before web.
+
+### `0018_page_cv_languages_references.sql` (`page-cv-a` languages and references)
+
+- Additive only: tables `page_cv_a__language` and `page_cv_a__reference`, and
+  column `cv_common_text.phone`. No data step; existing rows are untouched.
+
+### `0019_drop_open_cms.sql` (`module-auth.openCms` dropped, Q-HC3, WEB-12)
+
+- Destructive: `DROP COLUMN module_auth.open_cms`. The text was a link label to
+  cms-admin that nobody keeps (user decision 2026-11-19, Q-HC3); web no longer
+  asks for it. No data step; the dropped text is not kept.
+- Release note: back up the database first; release cms-api after web stops
+  asking for the field.
+
 ## Migrations
 
 Content tables are never created at runtime. Changes go through two
@@ -312,6 +351,7 @@ commands (run from `apps/cms-api`):
 pnpm content:generate                     # build, diff, write content/migrations/NNNN_content.sql
 pnpm content:generate -- --dry-run        # print the SQL and destructive changes, write nothing
 pnpm content:generate -- --name add_github --allow-destructive
+pnpm content:generate -- --name restructure --data-step step.sql   # keep data across a destructive change
 pnpm build && pnpm content:migrate        # apply pending migrations (needs the DB_* connection variables)
 ```
 
@@ -328,17 +368,37 @@ pnpm build && pnpm content:migrate        # apply pending migrations (needs the 
    `richtext`, `kind`, `unsigned`, `options`, `default`) still writes a comment-only migration so the
    `_content_types` row gets updated.
 
-| Change                                  | SQL                                  | Destructive? |
-| --------------------------------------- | ------------------------------------ | ------------ |
-| New content type / component            | `CREATE TABLE` + indexes             | no           |
-| New field                               | `ADD COLUMN` (nullable)              | no           |
-| Field type with a different column type | `ALTER COLUMN … TYPE … USING col::t` | yes          |
-| Removed field                           | `DROP COLUMN`                        | yes          |
-| Removed component / content type        | `DROP TABLE` (children first)        | yes          |
-| Renamed field                           | drop + add (data is not moved)       | yes          |
+| Change                                  | SQL                                            | Destructive? |
+| --------------------------------------- | ---------------------------------------------- | ------------ |
+| New content type / component            | `CREATE TABLE` + indexes                       | no           |
+| New field                               | `ADD COLUMN` (nullable)                        | no           |
+| Field type with a different column type | `ALTER COLUMN … TYPE … USING col::t`           | yes          |
+| Removed field                           | `DROP COLUMN`                                  | yes          |
+| Removed component / content type        | `DROP TABLE` (children first)                  | yes          |
+| Renamed field                           | drop + add; data kept only through a data step | yes          |
 
-Destructive changes fail with the list of changes unless `--allow-destructive`
-is passed. Review the SQL with `--dry-run` first.
+Statement order in a migration: renames, creates and added columns; the data
+step; then the destructive statements (type changes, dropped columns, dropped
+tables children first).
+
+`--data-step <file>` is a SQL file the developer writes: top comment lines
+`-- carries <target>` (data moved elsewhere in this migration) or
+`-- discards <target>: <who decided, date>`, then `INSERT`, `UPDATE`, `DELETE`,
+`SELECT` and `DO` blocks. `<target>` is `<table>.<column>` or `<table>`, as in
+the destructive change list. The file is refused when it has no statement,
+holds `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`, `TRUNCATE`, `DROP`, `ALTER` or
+`CREATE`, has a `discards` without a reason, declares a target that is not a
+destructive change of the plan, or the content types have no change. It is
+written verbatim between `-- Data step (begin)` and `-- Data step (end)`, after
+`-- Carries` / `-- Discards` header lines; the input file is not committed. It
+runs in the runner's one transaction: a raising statement rolls back the whole
+`content:migrate` run. A field that becomes an enumeration or whose `options`
+shrink gets a `DO` block that raises on a stored value outside the options.
+
+Destructive changes fail with the list of changes unless the data step declares
+each of them (the error lists only the undeclared ones) or `--allow-destructive`
+is passed (test data only). Review the SQL with `--dry-run` first; `--dry-run`
+and `--check` print the full file with the data step.
 
 ### Column types
 

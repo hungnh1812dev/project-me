@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { API_ERROR_CODES, API_ERROR_SOURCES, WebApiError } from '@/apis/WebApi.errors';
+import { HUMAN_CHECK_ERROR_CODES } from '@/configs/Auth.constants';
 import {
   ALLOW_HEADER,
   CACHE_CONTROL_HEADER,
@@ -43,6 +44,10 @@ export const BFF_ERROR_CODES = {
   BFF_PRIVILEGED_ACCOUNT: {
     statusCode: HTTP_STATUS.FORBIDDEN,
     message: 'This account cannot sign in on the public site.',
+  },
+  BFF_NOT_FOUND: {
+    statusCode: HTTP_STATUS.NOT_FOUND,
+    message: 'Not found.',
   },
   BFF_METHOD_NOT_ALLOWED: {
     statusCode: HTTP_STATUS.METHOD_NOT_ALLOWED,
@@ -122,10 +127,30 @@ function isBffErrorCode(errorCode: string): errorCode is BffErrorCode {
   return errorCode in BFF_ERROR_CODES;
 }
 
+function humanCheckCodeOf(
+  error: WebApiError,
+): 'BFF_HUMAN_CHECK_FAILED' | 'BFF_HUMAN_CHECK_UNAVAILABLE' | undefined {
+  const { statusCode, upstreamErrorCode } = error;
+  if (
+    statusCode === HTTP_STATUS.BAD_REQUEST &&
+    upstreamErrorCode === HUMAN_CHECK_ERROR_CODES.FAILED
+  ) {
+    return 'BFF_HUMAN_CHECK_FAILED';
+  }
+  if (
+    statusCode === HTTP_STATUS.SERVICE_UNAVAILABLE &&
+    upstreamErrorCode === HUMAN_CHECK_ERROR_CODES.UNAVAILABLE
+  ) {
+    return 'BFF_HUMAN_CHECK_UNAVAILABLE';
+  }
+  return undefined;
+}
+
 /**
  * The refusal a failure answers with. A `BffError` answers as it is; a `WebApiError` of cms-api or
- * Turnstile carrying a BFF code answers with it (a 429 keeps its Retry-After); a transport timeout
- * is `BFF_UPSTREAM_TIMEOUT`; anything else is `BFF_UPSTREAM_FAILED`.
+ * carrying a BFF code answers with it (a 429 keeps its Retry-After); cms-api's `400
+ * HUMAN_CHECK_FAILED` and `503 HUMAN_CHECK_UNAVAILABLE` answer with their human-check codes; a
+ * transport timeout is `BFF_UPSTREAM_TIMEOUT`; anything else is `BFF_UPSTREAM_FAILED`.
  */
 export function bffErrorOf(error: unknown): BffError {
   if (error instanceof BffError) return error;
@@ -138,6 +163,10 @@ export function bffErrorOf(error: unknown): BffError {
   }
   if (error.errorCode === API_ERROR_CODES.SERVER_API.TIMEOUT) {
     return new BffError('BFF_UPSTREAM_TIMEOUT');
+  }
+  const humanCheckCode = humanCheckCodeOf(error);
+  if (humanCheckCode !== undefined) {
+    return new BffError(humanCheckCode, {}, [], { upstreamErrorCode: error.upstreamErrorCode });
   }
   return new BffError(isBffErrorCode(error.errorCode) ? error.errorCode : 'BFF_UPSTREAM_FAILED');
 }

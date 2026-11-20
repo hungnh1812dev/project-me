@@ -19,8 +19,12 @@ allowBuilds:
 
 # GHSA-q7qp-rjg7-q26m (multer DoS, fixed in 2.5.0): @nestjs/platform-express
 # pins multer 2.4.0 exactly. Drop this when a Nest release pins >= 2.5.0.
+# GHSA-7589-6fvf-x4pw (effect ReDoS, fixed in 3.22.1): @prisma/config (Prisma
+# 7.x, up to 7.10.1) and @hookform/resolvers pull effect 3.20.0. Drop this when
+# both resolve effect >= 3.22.1 without it.
 overrides:
   multer: 2.5.0
+  'effect@<3.22.1': 3.22.4
 
 # WARNING (check later): GHSA-fc5q-39xc-vjpf (picomatch ReDoS through repeated
 # extglobs, <=4.0.7) has no fixed release (npm latest 4.0.7 on 2026-11-18).

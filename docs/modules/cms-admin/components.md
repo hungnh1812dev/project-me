@@ -38,7 +38,7 @@ A new menu item: add the page to `views/Views.registry.ts` and its section in `N
 <!-- prettier-ignore-start -->
 
 ```
-components/ (7 files)
+components/ (8 files)
   layouts/ (8 files)
 ```
 
@@ -47,6 +47,7 @@ Tests: 8 files (not listed).
 | File | Description |
 |---|---|
 | `ConfirmDialog.tsx` | `ConfirmDialog`: two-button confirmation (Cancel focused first, confirm button names the action); used by `DocumentActions` and the leave guard |
+| `HumanCheckField.tsx` | `HumanCheckField`: the Turnstile slot of a form plus its "required" line (D25) |
 | `Modal.tsx` | `Modal`, `ModalActions`: dialog frame with the standard button order; an outside click closes it only with `isDismissedOutside` |
 | `PageStates.tsx` | `PageHeader` (optional `badge`), `TableSkeleton` (neutral rows in a flush `Card`), `LoadError`, `EmptyState` (title, optional hint and icon in a `Card`): page title and loading, error and empty states |
 | `Pagination.tsx` | `Pagination`: previous/next paging control for list pages |

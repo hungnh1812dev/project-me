@@ -3,6 +3,7 @@ import { APP_ROUTES } from '@configs/App.routes';
 import { API_ERROR_CODES } from '@configs/Http.constants';
 import { EN_TEXT } from '@configs/locales/en';
 import type { FakeHandler } from '@test/FakeApi.fixture';
+import { humanCheckFake } from '@test/HumanCheck.fixture';
 import { createTestServices, renderApp } from '@test/RenderApp.fixture';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -96,6 +97,7 @@ describe('OwnerSetupPage', () => {
       setupToken: TOKEN,
       email: EMAIL,
       password: PASSWORD,
+      turnstileToken: expect.stringMatching(/^owner-setup-token-\d+$/) as string,
     });
     expect(body).not.toHaveProperty('confirmPassword');
     expect(window.location.href).not.toContain(TOKEN);
@@ -176,6 +178,48 @@ describe('OwnerSetupPage', () => {
 
     expect(await signInHeading()).toBeInTheDocument();
     expect(screen.getByText(EN_TEXT.login.notices.setupComplete)).toBeInTheDocument();
+  });
+
+  describe('human check', () => {
+    it('sends nothing and says the check is required while no token is ready', async () => {
+      humanCheckFake.solves = false;
+      const { api } = await openSetup({ [`POST ${OWNER}`]: () => ({ status: 201 }) });
+      await waitForForm();
+      await fillAndSubmit();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.setup.humanCheck.required);
+      expect(api.callsTo(`POST ${OWNER}`)).toHaveLength(0);
+      expect(humanCheckFake.resetFormIds).toEqual(['owner-setup']);
+    });
+
+    it('starts a fresh check after the request, and sends the fresh token next time', async () => {
+      const { api } = await openSetup({ [`POST ${OWNER}`]: () => ({ status: 401 }) });
+      await waitForForm();
+      await fillAndSubmit();
+      await waitFor(() => expect(humanCheckFake.resetFormIds).toEqual(['owner-setup']));
+
+      await userEvent.click(submit());
+      await waitFor(() => expect(api.callsTo(`POST ${OWNER}`)).toHaveLength(2));
+      const [first, second] = [0, 1].map(
+        (index) =>
+          (
+            JSON.parse(String(api.callsTo(`POST ${OWNER}`)[index]?.data)) as {
+              turnstileToken: string;
+            }
+          ).turnstileToken,
+      );
+      expect(second).not.toBe(first);
+    });
+
+    it.each([
+      [API_ERROR_CODES.HUMAN_CHECK_FAILED, EN_TEXT.setup.humanCheck.errors.failed],
+      [API_ERROR_CODES.HUMAN_CHECK_UNAVAILABLE, EN_TEXT.setup.humanCheck.errors.unavailable],
+    ])('shows its own text for %s', async (errorCode, message) => {
+      await openSetup({ [`POST ${OWNER}`]: () => ({ status: 401, data: { errorCode } }) });
+      await waitForForm();
+      await fillAndSubmit();
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    });
   });
 
   it('shows the wait time in an alert when rate limited', async () => {

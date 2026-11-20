@@ -202,7 +202,7 @@ export function CollectionListPage() {
               }}
             />
           ) : null}
-          <Card padding="flush" className="min-w-0 overflow-hidden">
+          <Card padding="flush" className="min-w-0 overflow-hidden shadow-card">
             <SortableSheet
               className="rounded-none border-0"
               caption={list.tableLabel(displayName)}

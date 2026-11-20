@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { API_ERROR_CODES, LOGIN_CODE_LENGTH, READ_ACTION } from './Auth.constants';
+import {
+  API_ERROR_CODES,
+  HUMAN_CHECK_ERROR_CODES,
+  LOGIN_CODE_LENGTH,
+  READ_ACTION,
+} from './Auth.constants';
 import {
   CLOUDINARY_IMAGE_ORIGIN,
   RICHTEXT_TEXT_ALIGNMENTS,
@@ -13,6 +18,7 @@ interface PublicConstants {
   totp: { digits: number };
   errorCodes: {
     auth: Record<string, string>;
+    humanCheck: Record<string, string>;
   };
   permissionActions: string[];
   richtextTextColors: { name: string; hex: string | null }[];
@@ -35,6 +41,10 @@ describe('web constants against the cms-api public constants', () => {
       expect(publishedAuth).toContain(code);
     }
     expect(published.permissionActions).toContain(READ_ACTION);
+  });
+
+  it('uses the published human check codes', () => {
+    expect(HUMAN_CHECK_ERROR_CODES).toEqual(published.errorCodes.humanCheck);
   });
 
   it('pins the richtext palette and alignments in both directions', () => {

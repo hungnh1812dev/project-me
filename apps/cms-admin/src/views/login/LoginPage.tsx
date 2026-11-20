@@ -6,6 +6,8 @@ import {
   TextInput,
   type FormAlertTone,
 } from '@abyss/form-commons';
+import { HUMAN_CHECK_FORMS, resetTurnstile, useTurnstile } from '@abyss/form-commons/human-check';
+import { HumanCheckField } from '@components/HumanCheckField';
 import { AuthPageLayout } from '@components/layouts/AuthPageLayout';
 import { APP_ROUTES } from '@configs/App.routes';
 import { useScreenText, type ScreenText } from '@configs/locales';
@@ -44,6 +46,8 @@ type LoginValues = z.input<ReturnType<typeof loginSchemaOf>>;
 const ALERT_TONE: Record<LoginError['kind'], string> = {
   'invalid-credentials': 'bg-destructive-soft text-destructive-strong',
   'rate-limited': 'bg-warning-soft text-warning-strong',
+  'human-check-failed': 'bg-destructive-soft text-destructive-strong',
+  'human-check-unavailable': 'bg-warning-soft text-warning-strong',
   network: 'bg-warning-soft text-warning-strong',
   unexpected: 'bg-destructive-soft text-destructive-strong',
 };
@@ -81,6 +85,8 @@ export function LoginPage() {
   const session = useSession();
   // A failed status call shows nothing extra: setup is never the default.
   const isSetupOpen = useSetupStatus().data?.open === true;
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.LOGIN);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
   const [error, setError] = useState<LoginError | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [challengeExpired, setChallengeExpired] = useState(false);
@@ -93,6 +99,7 @@ export function LoginPage() {
 
   const signIn = useMutation({
     mutationFn: session.signIn,
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.LOGIN),
     onSuccess: (outcome) => {
       // A signed-in outcome re-renders into <Navigate> below.
       if (outcome.kind === 'two-factor-required') {
@@ -134,10 +141,17 @@ export function LoginPage() {
   const onSubmit = form.handleSubmit((values) => {
     setError(null);
     setChallengeExpired(false);
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.LOGIN);
+      return;
+    }
+    setIsTokenMissing(false);
     signIn.mutate({
       email: values.email.trim(),
       password: values.password,
       rememberMe: values.rememberMe,
+      turnstileToken,
     });
   });
 
@@ -186,6 +200,11 @@ export function LoginPage() {
             name="rememberMe"
             label={copy.rememberMe}
             description={copy.rememberMeHint}
+          />
+          <HumanCheckField
+            formId={HUMAN_CHECK_FORMS.LOGIN}
+            text={copy.humanCheck}
+            isTokenMissing={isTokenMissing && turnstileToken === ''}
           />
           <Button
             type="submit"

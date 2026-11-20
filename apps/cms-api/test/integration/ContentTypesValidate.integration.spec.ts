@@ -7,8 +7,8 @@ import {
 } from '../../src/infrastructure/database/PrismaClient.adapter';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
+import { TURNSTILE_VERIFIER } from '../../src/modules/human-check';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import { TURNSTILE_VERIFIER } from '../../src/modules/reviewer/application/Reviewer.port';
 import {
   ARTICLE_DEFINITION,
   NOTE_DEFINITION,

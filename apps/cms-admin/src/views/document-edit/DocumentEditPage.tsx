@@ -7,7 +7,7 @@ import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
 import type { DocumentRecord, DocumentTree } from '@features/content/Content.api';
 import { isMissing, toSaveError, type SaveError } from '@features/content/Content.errors';
-import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
+import { CONTENT_QUERY_KEYS, invalidateDocumentQueries } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { toDocumentTree, toFormValues, type FormValues } from '@features/content/Document.form';
 import { DynamicFormRenderer } from '@features/content/DynamicFormRenderer';
@@ -113,8 +113,8 @@ export function DocumentEditPage() {
         <FormAlert tone="info">{copy.noFields}</FormAlert>
       ) : (
         <DocumentForm
-          // A saved or reloaded draft has a new version: start from its data.
-          key={`${documentId ?? 'new'}:${draft.data?.version ?? 0}`}
+          // A new type, document or saved version starts the form from its own data.
+          key={`${slug}:${documentId ?? 'new'}:${draft.data?.version ?? 0}`}
           slug={slug}
           fields={fields}
           draftAndPublish={draftAndPublish}
@@ -176,14 +176,13 @@ function DocumentForm({
       setError(null);
       showSavedToast();
       if (record === null) {
+        await invalidateDocumentQueries(queryClient, slug);
         void navigate(contentEditPath(slug, written.documentId), {
           replace: true,
         });
         return;
       }
-      await queryClient.invalidateQueries({
-        queryKey: CONTENT_QUERY_KEYS.draft(slug, record.documentId),
-      });
+      await invalidateDocumentQueries(queryClient, slug, record.documentId);
     },
     onError: (failure) => {
       setError(toSaveError(failure, content));
@@ -204,9 +203,7 @@ function DocumentForm({
       setError(null);
       setConflict(null);
       setMergeOpen(false);
-      await queryClient.invalidateQueries({
-        queryKey: CONTENT_QUERY_KEYS.draft(slug, record?.documentId ?? ''),
-      });
+      await invalidateDocumentQueries(queryClient, slug, record?.documentId);
       showSavedToast();
     },
     onError: (failure) => {
@@ -258,7 +255,7 @@ function DocumentForm({
           <DynamicFormRenderer fields={fields} masked={masked} />
         </fieldset>
         {readOnly ? null : (
-          <div className="sticky bottom-0 z-10 rounded-t-surface bg-card px-4 py-3 shadow-bar-top">
+          <div className="sticky bottom-0 z-10 rounded-t-surface border-t border-border bg-card/95 px-6 py-4 shadow-bar-top backdrop-blur-md">
             <DocumentActions
               slug={slug}
               record={record}

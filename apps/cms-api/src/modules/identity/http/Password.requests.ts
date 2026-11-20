@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { turnstileTokenSchema } from '../../human-check';
 import { EMAIL_MAX_LENGTH, OTP, PASSWORD_MAX_LENGTH } from '../domain/Identity.constants';
 
 /**
@@ -15,12 +16,16 @@ const code = z
   .trim()
   .max(OTP.DIGITS * 2);
 
-export const requestOtpSchema = z.object({ email });
+export const requestOtpSchema = z.object({
+  email,
+  turnstileToken: turnstileTokenSchema.optional(),
+});
 
 export const resetPasswordSchema = z.object({
   email,
   code,
   newPassword: z.string(),
+  turnstileToken: turnstileTokenSchema.optional(),
   totpCode: z
     .string()
     .trim()

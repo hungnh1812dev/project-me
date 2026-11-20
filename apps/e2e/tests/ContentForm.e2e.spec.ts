@@ -198,7 +198,7 @@ test.describe.serial(
       await fieldByLabel(page, 'Position').fill(POSITION);
       await addButton(page, 'Skills').click();
       await fieldByLabel(listItem(page, 'Skills', 0), 'Skill').fill(SKILL_NAMES[0] ?? '');
-      await fieldByLabel(listItem(page, 'Skills', 0), 'Level').fill('Expert');
+      await fieldByLabel(listItem(page, 'Skills', 0), 'Level').selectOption('Proficient');
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(EDIT_URL);
       stop();

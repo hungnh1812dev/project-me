@@ -14,6 +14,12 @@ export const SECURITY_RESPONSE_HEADERS = [
   { key: 'X-Frame-Options', value: 'DENY' },
 ] as const;
 
+/** Extra headers of the CV pages (PS-5): the id is the only access, so no index and no shared cache. */
+export const CV_RESPONSE_HEADERS = [
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, nosnippet' },
+  { key: 'Cache-Control', value: 'private, no-store' },
+] as const;
+
 /** Static policy for `/api/*` (`BFF_BASE_PATH`): the proxy skips these paths, so an unmatched one (Next's HTML 404) would carry no CSP. */
 export const BFF_RESPONSE_HEADERS = [
   { key: 'Content-Security-Policy', value: "default-src 'none'; frame-ancestors 'none'" },

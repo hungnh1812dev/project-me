@@ -21,7 +21,7 @@ check_seed_content() {
     fail "content bodies built from the web mocks"
     return
   fi
-  login_body="$(printf '{"email":"%s","password":"%s"}' "$STACK_OWNER_EMAIL" "$STACK_OWNER_PASSWORD")"
+  login_body="$(printf '{"email":"%s","password":"%s","turnstileToken":"%s"}' "$STACK_OWNER_EMAIL" "$STACK_OWNER_PASSWORD" "$STACK_TURNSTILE_DUMMY_TOKEN")"
   printf '%s' "$login_body" >"$WORK_DIR/content-login"
   request POST "$ADMIN_ORIGIN$API_PREFIX/auth/login" -H 'Content-Type: application/json' \
     --data-binary @"$WORK_DIR/content-login"

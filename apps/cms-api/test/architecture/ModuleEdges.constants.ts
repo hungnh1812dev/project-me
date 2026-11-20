@@ -18,6 +18,7 @@ export const MODULE_NODES = [
   'graphql',
   'reviewer',
   'backups',
+  'human-check',
 ] as const;
 
 export type ModuleNode = (typeof MODULE_NODES)[number];
@@ -28,15 +29,16 @@ export const ALLOWED_MODULE_EDGES: Record<ModuleNode, readonly ModuleNode[]> = {
   health: ['platform'],
   'access-core': ['platform', 'content-engine'],
   'security-audit': ['platform', 'access-core'],
-  identity: ['platform', 'access-core', 'security-audit'],
+  identity: ['platform', 'access-core', 'security-audit', 'human-check'],
   'access-management': ['platform', 'access-core', 'identity', 'security-audit'],
   'access-document-auth': ['platform', 'access-core', 'identity'],
   'content-types': ['platform', 'content-engine', 'access-core', 'identity'],
   media: ['platform', 'content-engine', 'access-core', 'identity', 'security-audit'],
   documents: ['platform', 'content-engine', 'access-core', 'access-document-auth', 'media'],
   graphql: ['platform', 'content-engine', 'access-core', 'access-document-auth', 'documents'],
-  reviewer: ['platform', 'access-core', 'identity', 'security-audit'],
+  reviewer: ['platform', 'access-core', 'identity', 'security-audit', 'human-check'],
   backups: ['platform', 'access-core', 'identity', 'security-audit'],
+  'human-check': ['platform'],
 };
 
 /**

@@ -9,7 +9,7 @@ import {
 import { ADMIN_COPY, WEB_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor } from '../src/Mailpit.client';
-import { signInAsOwner } from '../src/Session.fixture';
+import { clickAfterHumanCheck, signInAsOwner } from '../src/Session.fixture';
 
 /**
  * Stacked footers (below sm): Cancel / Discard sits above the confirm button and comes first in Tab
@@ -74,7 +74,7 @@ test.describe(
         await mailIdsFor(context, e2eEnv.reader2faEmail);
         await form.getByRole('textbox', { name: login.emailLabel }).fill(e2eEnv.reader2faEmail);
         await form.getByLabel(login.passwordLabel).fill(e2eEnv.reader2faPassword);
-        await form.getByRole('button', { name: login.submit, exact: true }).click();
+        await clickAfterHumanCheck(form.getByRole('button', { name: login.submit, exact: true }));
         const step = page.getByRole('dialog', { name: login.twoFactor.title });
         await expect(step).toBeVisible();
         const cancel = step.getByRole('button', { name: login.twoFactor.cancel, exact: true });

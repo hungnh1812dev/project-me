@@ -6,7 +6,7 @@ import { HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { labelStartingWith } from '../src/Locators.fixture';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
-import { submitLogin } from '../src/Session.fixture';
+import { clickAfterHumanCheck, submitLogin, withHumanCheck } from '../src/Session.fixture';
 
 /** A different password of a valid length (12-128) for this run. */
 const TEMPORARY_PASSWORD = `${e2eEnv.ownerPassword.slice(0, 100)}-reset`;
@@ -48,7 +48,9 @@ test.describe(
       await page
         .getByLabel(labelStartingWith(ADMIN_COPY.password.emailLabel))
         .fill(e2eEnv.ownerEmail);
-      await page.getByRole('button', { name: ADMIN_COPY.password.reset.sendCode }).click();
+      await clickAfterHumanCheck(
+        page.getByRole('button', { name: ADMIN_COPY.password.reset.sendCode }),
+      );
       await expect(
         page.getByRole('heading', {
           level: 1,
@@ -65,7 +67,9 @@ test.describe(
       await page
         .getByLabel(labelStartingWith(ADMIN_COPY.password.confirmPasswordLabel))
         .fill(TEMPORARY_PASSWORD);
-      await page.getByRole('button', { name: ADMIN_COPY.password.reset.submit }).click();
+      await clickAfterHumanCheck(
+        page.getByRole('button', { name: ADMIN_COPY.password.reset.submit }),
+      );
 
       await expect(page.getByRole('status')).toHaveText(ADMIN_COPY.login.notices.passwordReset);
       await expect(page).toHaveURL(/\/login$/);
@@ -81,17 +85,23 @@ test.describe(
       // Put the original password back for the other specs and later runs.
       const before = await mailIdsFor(context, e2eEnv.ownerEmail);
       expect(
-        await postFromAdmin(page, API_PATHS.AUTH.REQUEST_OTP, {
-          email: e2eEnv.ownerEmail,
-        }),
+        await postFromAdmin(
+          page,
+          API_PATHS.AUTH.REQUEST_OTP,
+          withHumanCheck({ email: e2eEnv.ownerEmail }),
+        ),
       ).toBe(HTTP.ACCEPTED);
       const restoreCode = await waitForCode(context, e2eEnv.ownerEmail, before);
       expect(
-        await postFromAdmin(page, API_PATHS.AUTH.PASSWORD_RESET, {
-          email: e2eEnv.ownerEmail,
-          code: restoreCode,
-          newPassword: e2eEnv.ownerPassword,
-        }),
+        await postFromAdmin(
+          page,
+          API_PATHS.AUTH.PASSWORD_RESET,
+          withHumanCheck({
+            email: e2eEnv.ownerEmail,
+            code: restoreCode,
+            newPassword: e2eEnv.ownerPassword,
+          }),
+        ),
       ).toBe(HTTP.NO_CONTENT);
 
       // The reset ended this session too: the next API call sends us to sign in.

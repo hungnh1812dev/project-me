@@ -30,9 +30,9 @@ describe('RootLayout', () => {
 
   it('titles the page with the brand', async () => {
     vi.mocked(loadSiteHeader).mockResolvedValue({
-      header: { ...SITE_HEADER_MOCK.header, nav: [] },
+      header: { ...SITE_HEADER_MOCK.header, navs: [] },
     });
-    expect(await generateMetadata()).toEqual({ title: SITE_HEADER_MOCK.header.name });
+    expect(await generateMetadata()).toEqual({ title: SITE_HEADER_MOCK.header.appName });
   });
 
   it('titles the page with the last-resort brand when the header did not load', async () => {

@@ -27,6 +27,8 @@ import {
   TEST_SMTP_USER,
   TEST_TOTP_ENC_KID,
   TEST_TOTP_ENC_PREVIOUS_KID,
+  TEST_TURNSTILE_HOSTNAMES,
+  TEST_TURNSTILE_SECRET,
 } from '../../test/fixtures/Env.fixture';
 import { ConfigValidationError, loadAppConfig, loadDatabaseConfig } from './AppConfig.setup';
 import {
@@ -35,6 +37,7 @@ import {
   OPTIONAL_SECRET_ENV_KEYS,
   REDACTED,
   SECRET_ENV_KEYS,
+  TURNSTILE_ALWAYS_PASS_TEST_SECRET,
 } from './Config.constants';
 import { summarizeConfig } from './ConfigSummary.rules';
 
@@ -140,6 +143,95 @@ describe('loadAppConfig', () => {
     const config = loadAppConfig(devEnv({ TURNSTILE_SECRET_KEY: 'ts-secret' }));
     expect(config.secrets.turnstileSecretKey).toBe('ts-secret');
     expect(JSON.stringify(summarizeConfig(config))).not.toContain('ts-secret');
+  });
+
+  describe('human check (D25, ADR 0027)', () => {
+    const issueOf = (env: Record<string, string | undefined>, key: string) =>
+      configErrorOf(env).issues.find((issue) => issue.startsWith(`${key}:`));
+
+    it('reads TURNSTILE_EXPECTED_HOSTNAME as a lower-cased list, empty when unset', () => {
+      expect(loadAppConfig(devEnv()).humanCheck.expectedHostnames).toEqual([]);
+      expect(
+        loadAppConfig(devEnv({ TURNSTILE_EXPECTED_HOSTNAME: '' })).humanCheck.expectedHostnames,
+      ).toEqual([]);
+      const config = loadAppConfig(
+        devEnv({ TURNSTILE_EXPECTED_HOSTNAME: 'Web.Example.test, admin.example.test' }),
+      );
+      expect(config.humanCheck.expectedHostnames).toEqual([
+        'web.example.test',
+        'admin.example.test',
+      ]);
+    });
+
+    it.each(['a.test,', ',a.test', 'a.test,,b.test', 'a.test, ', 'https://a.test', 'a.test/x'])(
+      'refuses the hostname list %j',
+      (value) => {
+        expect(
+          issueOf(devEnv({ TURNSTILE_EXPECTED_HOSTNAME: value }), 'TURNSTILE_EXPECTED_HOSTNAME'),
+        ).toBeDefined();
+      },
+    );
+
+    it('accepts ALLOW_TURNSTILE_TEST_SECRET only as smoke', () => {
+      expect(loadAppConfig(devEnv()).humanCheck.isTestSecretAllowed).toBe(false);
+      expect(
+        loadAppConfig(devEnv({ ALLOW_TURNSTILE_TEST_SECRET: '' })).humanCheck.isTestSecretAllowed,
+      ).toBe(false);
+      expect(
+        loadAppConfig(devEnv({ ALLOW_TURNSTILE_TEST_SECRET: 'smoke' })).humanCheck
+          .isTestSecretAllowed,
+      ).toBe(true);
+      expect(
+        issueOf(devEnv({ ALLOW_TURNSTILE_TEST_SECRET: 'true' }), 'ALLOW_TURNSTILE_TEST_SECRET'),
+      ).toBeDefined();
+    });
+
+    it('starts in production with a real secret and a hostname list', () => {
+      const config = loadAppConfig(productionEnv());
+      expect(config.humanCheck.expectedHostnames).toEqual(TEST_TURNSTILE_HOSTNAMES.split(','));
+    });
+
+    it('refuses production without a Turnstile secret', () => {
+      expect(
+        issueOf(productionEnv({ TURNSTILE_SECRET_KEY: undefined }), 'TURNSTILE_SECRET_KEY'),
+      ).toMatch(/required in production/);
+    });
+
+    it('refuses production with the test secret unless smoke opts in', () => {
+      const withTestSecret = { TURNSTILE_SECRET_KEY: TURNSTILE_ALWAYS_PASS_TEST_SECRET };
+      expect(issueOf(productionEnv(withTestSecret), 'TURNSTILE_SECRET_KEY')).toMatch(
+        /ALLOW_TURNSTILE_TEST_SECRET=smoke/,
+      );
+      expect(() =>
+        loadAppConfig(
+          productionEnv({
+            ...withTestSecret,
+            TURNSTILE_EXPECTED_HOSTNAME: undefined,
+            ALLOW_TURNSTILE_TEST_SECRET: 'smoke',
+          }),
+        ),
+      ).not.toThrow();
+    });
+
+    it('refuses production with a real secret and no hostname list', () => {
+      expect(
+        issueOf(
+          productionEnv({ TURNSTILE_EXPECTED_HOSTNAME: undefined }),
+          'TURNSTILE_EXPECTED_HOSTNAME',
+        ),
+      ).toMatch(/required in production/);
+    });
+
+    it('never prints a secret value in a refusal', () => {
+      const issues = configErrorOf(
+        productionEnv({ TURNSTILE_EXPECTED_HOSTNAME: undefined }),
+      ).issues;
+      expect(issues.join('\n')).not.toContain(TEST_TURNSTILE_SECRET);
+      const testSecretIssues = configErrorOf(
+        productionEnv({ TURNSTILE_SECRET_KEY: TURNSTILE_ALWAYS_PASS_TEST_SECRET }),
+      ).issues;
+      expect(testSecretIssues.join('\n')).not.toContain(TURNSTILE_ALWAYS_PASS_TEST_SECRET);
+    });
   });
 
   describe('REVIEWER_FEATURE_ENABLED (ADR 0014)', () => {

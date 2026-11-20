@@ -51,7 +51,11 @@ function EditLink({
   children: string;
 }) {
   return (
-    <Button asChild variant="link" className="h-auto p-0">
+    <Button
+      asChild
+      variant="link"
+      className="duration-fast h-auto p-0 font-semibold text-foreground transition-colors hover:text-primary"
+    >
       <Link to={contentEditPath(slug, row.documentId)}>{children}</Link>
     </Button>
   );

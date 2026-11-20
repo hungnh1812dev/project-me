@@ -11,6 +11,7 @@ cms-admin apps/cms-admin/src/components
 web apps/web/src/features/*
 web apps/web/src/views/*
 form-commons packages/form-commons/src/components/*
+form-commons packages/form-commons/src/human-check
 base-config packages/base-config/src
 e2e apps/e2e/src
 web apps/web/src/apis/server

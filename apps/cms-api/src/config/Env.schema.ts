@@ -16,6 +16,7 @@ import {
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   TOTP_ISSUER_MAX_LENGTH,
   TOTP_ISSUER_PATTERN,
+  TURNSTILE_TEST_SECRET_OPT_IN,
   type RateLimitOverrideEnvKey,
 } from './Config.constants';
 import { ENV_RULES, requireRootCertificateForVerifyFull } from './Env.rules';
@@ -53,6 +54,16 @@ function isHttpUrlWithoutQueryOrTrailingSlash(value: string): boolean {
     return false;
   }
 }
+
+const HOSTNAME_PATTERN = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/;
+
+/** Comma-separated bare hostnames, lower-cased; an empty entry or a non-hostname is refused. */
+const hostnameList = z
+  .string()
+  .transform((value) => value.split(',').map((entry) => entry.trim().toLowerCase()))
+  .refine((hostnames) => hostnames.every((hostname) => HOSTNAME_PATTERN.test(hostname)), {
+    message: 'must be a comma-separated list of bare hostnames, e.g. domain.com,admin.domain.com',
+  });
 
 /** Optional exact origin (scheme + host [+ port]); empty = unset. */
 const optionalOrigin = z.preprocess(
@@ -186,16 +197,10 @@ export const envSchema = z
     OWNER_SETUP_TOKEN: optionalSecret,
     REVIEWER_FEATURE_ENABLED: envBoolean(CONFIG_DEFAULTS.REVIEWER_FEATURE_ENABLED),
     TURNSTILE_SECRET_KEY: optionalSecret,
-    TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(
+    TURNSTILE_EXPECTED_HOSTNAME: z.preprocess(emptyToUndefined, hostnameList.optional()),
+    ALLOW_TURNSTILE_TEST_SECRET: z.preprocess(
       emptyToUndefined,
-      z
-        .string()
-        .trim()
-        .toLowerCase()
-        .regex(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/, {
-          message: 'must be a bare hostname, e.g. domain.com',
-        })
-        .optional(),
+      z.literal(TURNSTILE_TEST_SECRET_OPT_IN).optional(),
     ),
     BACKUP_STORAGE_ENDPOINT: optionalOrigin,
     BACKUP_STORAGE_REGION: z.preprocess(

@@ -27,20 +27,31 @@ export type PageCvContent =
       data: PageCvData;
       text: CvCommonText | null;
     }
-  /** No main CV, or its read failed: the page answers 200 with `text.noCvText` or the last-resort text. */
-  | { state: 'no-cv-live'; text: CvCommonText | null };
+  /** The `pageCvA` read failed and no mock filled it: the page answers 200 with `text.noCvText` or the last-resort text. */
+  | { state: 'no-cv-live'; text: CvCommonText | null }
+  /** A malformed id, or no published CV has it: the page answers 404 (public-site PS-2). */
+  | { state: 'not-found' };
+
+const CV_DOCUMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The one UUID check of the page and the BFF: the id, or `null` when `value` is not a UUID. */
+export function parseCvDocumentId(value: unknown): string | null {
+  return typeof value === 'string' && CV_DOCUMENT_ID_PATTERN.test(value) ? value : null;
+}
 
 /**
- * The public CV, its profile and the page text, each read on its own so one failure never fails
- * the page (public-site PS-2); one request per render even if metadata and page both ask.
- * `executeGraphql` logged each failure, so nothing is logged again here.
+ * The CV of one `documentId`, its profile and the page text, each read on its own so one failure
+ * never fails the page (public-site PS-2); one request per render even if metadata and page both
+ * ask. `executeGraphql` logged each failure, so nothing is logged again here.
  */
-export const loadPageCv = cache(async (): Promise<PageCvContent> => {
-  const [list, profile, text] = await Promise.all([
+export const loadPageCv = cache(async (documentId: string): Promise<PageCvContent> => {
+  const validId = parseCvDocumentId(documentId);
+  if (validId === null) return { state: 'not-found' };
+  const [cvRead, profile, text] = await Promise.all([
     readOrNull(() =>
-      executeGraphql<Pick<PageCvData, 'pageCvAList'>>(PAGE_CV_A_QUERY, {
+      executeGraphql<Pick<PageCvData, 'pageCvA'>>(PAGE_CV_A_QUERY, {
         mock: 'page-cv-a',
-        resolveData: requireRootField('pageCvAList'),
+        variables: { documentId: validId },
       }),
     ),
     readOrNull(async () => {
@@ -58,10 +69,12 @@ export const loadPageCv = cache(async (): Promise<PageCvContent> => {
       return sanitizeCommonText(cvCommonText);
     }),
   ]);
-  if (list === null || list.pageCvAList.data.length === 0) return { state: 'no-cv-live', text };
+  if (cvRead === null) return { state: 'no-cv-live', text };
+  // The resolver accepts a null root field: no published CV has this id, never mocked (PS-2).
+  if (cvRead.pageCvA === null) return { state: 'not-found' };
   return {
     state: 'cv',
-    data: sanitizeCvRichtext({ pageCvAList: list.pageCvAList, profile }, sanitizeRichtextOnServer),
+    data: sanitizeCvRichtext({ pageCvA: cvRead.pageCvA, profile }, sanitizeRichtextOnServer),
     text,
   };
 });
@@ -81,20 +94,30 @@ function sanitizeCommonText(text: CvCommonText): CvCommonText {
   };
 }
 
-/** The CV data as the signed-in visitor: sent with their token and never cached. */
-export async function loadPageCvForSession(accessToken: string): Promise<PageCvData> {
+/** The CV data as the signed-in visitor: sent with their token and never cached; `null` when no published CV has the id. */
+export async function loadPageCvForSession(
+  accessToken: string,
+  documentId: string,
+): Promise<PageCvData | null> {
+  const data = await executeGraphql<Pick<PageCvData, 'pageCvA'> & { profile: Profile | null }>(
+    PAGE_CV_VISITOR_QUERY,
+    { accessToken, variables: { documentId } },
+  );
+  if (data.pageCvA === null || data.pageCvA === undefined) return null;
   return sanitizeCvRichtext(
-    await executeGraphql<PageCvData>(PAGE_CV_VISITOR_QUERY, { accessToken }),
+    { pageCvA: data.pageCvA, profile: data.profile ?? null },
     sanitizeRichtextOnServer,
   );
 }
 
-/** `GET /api/v1/cv`: the CV page data for the signed-in visitor, `BFF_SESSION_REQUIRED` otherwise. */
-export async function answerCvRead({ request }: BffContext<unknown>): Promise<Response> {
+/** `GET /api/v1/cv/{documentId}`: the CV page data for the signed-in visitor; `BFF_SESSION_REQUIRED` first for any id, then `BFF_NOT_FOUND` alike for a malformed, unknown or unpublished id. */
+export async function answerCvRead({ request, params }: BffContext<unknown>): Promise<Response> {
   const read = await readWebSession(request);
   if (read.status === 'signed-out') throw new BffError('BFF_SESSION_REQUIRED', {}, read.setCookies);
-  return withSetCookies(
-    Response.json(await loadPageCvForSession(read.accessToken)),
-    read.setCookies,
-  );
+  const documentId = parseCvDocumentId(params['documentId']);
+  if (documentId === null) throw new BffError('BFF_NOT_FOUND');
+  const data = await loadPageCvForSession(read.accessToken, documentId);
+  // An unknown or unpublished id answers exactly like a malformed one.
+  if (data === null) throw new BffError('BFF_NOT_FOUND', {}, read.setCookies);
+  return withSetCookies(Response.json(data), read.setCookies);
 }

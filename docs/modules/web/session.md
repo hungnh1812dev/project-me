@@ -18,7 +18,7 @@ Holds the visitor's session (anonymous or a signed-in reader account) for the wh
 
 ## Techniques
 
-A client context: one `GET /api/v1/session` on mount settles `unknown` into `anonymous` or `authenticated`; sign-in, 2FA and sign-out go through the BFF login, verify, email-code and logout routes (the last two send a JSON body). The BFF refuses accounts with any permission other than `read` (`BFF_PRIVILEGED_ACCOUNT`); `Auth.api.ts` turns that into `PrivilegedAccessError`. The sign-in calls take an optional `humanCheckToken` for the dialog's Turnstile widget.
+A client context: one `GET /api/v1/session` on mount settles `unknown` into `anonymous` or `authenticated`; sign-in, 2FA and sign-out go through the BFF login, verify, email-code and logout routes (the last two send a JSON body). The BFF refuses accounts with any permission other than `read` (`BFF_PRIVILEGED_ACCOUNT`); `Auth.api.ts` turns that into `PrivilegedAccessError`. The sign-in calls (login, verify, email code) take a required `turnstileToken` from the dialog's Turnstile slot; the BFF forwards it to cms-api, which verifies it.
 
 ## Technologies
 

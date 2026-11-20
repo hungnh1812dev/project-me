@@ -4,7 +4,13 @@ import { ADMIN_COPY, APP_ROUTES, contentListPath, contentNewPath } from '../src/
 import { expectNoViolation, watchCsp } from '../src/CspWatch.fixture';
 import { PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { expectSignedIn, openUserMenu, signInAsOwner, submitLogin } from '../src/Session.fixture';
+import {
+  clickAfterHumanCheck,
+  expectSignedIn,
+  openUserMenu,
+  signInAsOwner,
+  submitLogin,
+} from '../src/Session.fixture';
 
 // The Vite dev server sends no CSP, so on the dev stack this spec has nothing
 // to catch; it guards the production build behind nginx (tier 3).
@@ -22,7 +28,7 @@ test.describe(
       await expect(
         page.getByRole('heading', { level: 1, name: ADMIN_COPY.login.title }),
       ).toBeVisible();
-      await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+      await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
       await expect(page.getByText(ADMIN_COPY.login.validation.emailRequired).first()).toBeVisible();
       await expectNoViolation(readViolations, 'cold /login');
 

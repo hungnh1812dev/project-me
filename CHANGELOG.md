@@ -6,6 +6,60 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.3.0 (2026-11-20)
+
+Repo 0.3.0, cms-api, cms-admin and web 0.3.0, e2e 0.1.0: the shared human check on the public auth forms, the CV pages on their own links, the header restructure, keep-me-signed-in sign-in, and the fixes since 0.2.0.
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.3.0   | yes                     |
+| `@abyss/cms-api`      | 0.3.0   | yes                     |
+| `@abyss/cms-admin`    | 0.3.0   | yes                     |
+| `@abyss/web`          | 0.3.0   | yes                     |
+| `@abyss/base-config`  | 0.1.0   | yes (version kept)      |
+| `@abyss/form-commons` | 0.1.0   | yes (version kept)      |
+| e2e                   | 0.1.0   | yes                     |
+
+### New features
+
+- form-commons: Turnstile kit (widget, hook, per-form reset) shared by web and cms-admin ([ADR 0027](docs/adr/0027-shared-human-check.md)).
+- cms-api: human check (Turnstile) on six public routes: login, 2FA verify, email challenge, owner setup, password request-otp and reset (D25).
+- cms-admin: human check on sign-in, 2FA, owner setup and password reset; new build arg `VITE_TURNSTILE_SITE_KEY`; CSP allows Turnstile.
+- cms-api: `content:generate --data-step` carries data before destructive statements ([content-modeling](docs/flows/content-modeling/SPEC.md) CM-12).
+- cms-api: remember-me at login; refresh tokens keep a 30-day lifetime when remembered, 12 hours otherwise.
+- cms-admin: "keep me signed in" box on the sign-in form.
+- web: "keep me signed in" box in the sign-in dialog, carried through the BFF login, the 2FA step and the sealed session.
+
+### Changes
+
+- root: `effect` pinned to 3.22.4 by a pnpm override (GHSA-7589-6fvf-x4pw, ReDoS; reached through Prisma's config loader and `@hookform/resolvers`).
+- cms-api: `module-auth.openCms` dropped with a destructive content migration. Take a database backup before deploying.
+- web: the BFF forwards `turnstileToken` to cms-api; `TURNSTILE_*` keys and `NEXT_PUBLIC_ADMIN_URL` and the "Open CMS" link removed.
+- cms-api: `header` restructured and new `module-not-found` type; migration 0017 carries the data. Take a database backup before deploying.
+- web: header and not-found page read the new fields; `public` nav entries show to everyone.
+- cms-api: `page-cv-a` gets `languages` and `references` (`references.phone` sensitive), `cv-common-text` gets `phone`; migration 0018 only adds tables and a column.
+- web: Next.js 16.4.2 → 16.4.6 (and `@next/eslint-plugin-next`): security patch.
+- web: `/cv` redesigned after the CV print layout (header band, company bars, project panels, skills by level, languages, references) and prints on A4, readable in black and white.
+- web: each CV renders on its own link-only page `/cv/<documentId>`, with no-index headers, `robots.txt` and a BFF path by id (public-site PS-5).
+- web: the stored header `/cv` entry now leads to the not-found page; the owner shares `/cv/<documentId>` links instead.
+- web: the header shows every entry to every visitor (`requiresRole` is no longer read by the web header); sub lists open on hover, focus and tap (on touch the first tap opens); an entry with sub entries and no link is a label; the fix round keeps sub lists in view and closes them on navigation (header-nav feature, commits fbba896c..6dc9b361).
+- docs: content-modeling CM-12; public-site PS-1, PS-3, Q-PS4, Q-PS6, Q-PS2d.
+- docs: shared human check D25 and ADR 0027 (cms-api verifies Turnstile for every public auth form), web WEB-12 (no reference to cms-admin), acceptance criteria 29 and 30; D17, D21, criterion 24 and public-site PS-3 amended.
+- docs: public-site PS-5 (each CV on its own link-only page `/cv/<documentId>`, never crawled or indexed), content-modeling CM-13 (`linkOnly` type option), acceptance criterion 31; PS-1 (the web header reads no `requiresRole`), PS-2, PS-4, criterion 25 and web D21 amended.
+- docs: public-site PS-6 (on a phone the header entries move into a side drawer opened by a menu button), Q-HN3; web WEB-3 amended (two built-in button names).
+
+### Bug fixes
+
+- cms-admin: reopening a single type from the side menu opens its saved document, not a new form; a create form no longer keeps another content type's values.
+- cms-admin: the keep-me-signed-in box is unticked after a failed sign-in.
+- web: the sign-in dialog validates on submit so the keep-me-signed-in box stays put; the anonymous CV stays visible when the signed-in refetch fails; the header sub menu closes on Escape and on navigation, and focus returns to the sign-in button when the dialog closes.
+
+### DevOps patches
+
+- [cms-api](docs/apps/cms-api/patch-cms-api-0.3.0.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.3.0.md) and [web](docs/apps/web/patch-web-0.3.0.md) patches 0.3.0 (secret, hosts, site key; release cms-api first).
+
 ## 0.2.0 (2026-11-18)
 
 Repo 0.2.0, cms-api, cms-admin and web 0.2.0, e2e 0.0.3: schema builder field types and defaults, the premium admin look with toasts, the CV page on the web BFF path with new content types, remember-me sign-in and the fixes since 0.1.0.

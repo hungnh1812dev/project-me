@@ -3,7 +3,7 @@ import 'server-only';
 import type { MetadataRoute } from 'next';
 import { connection } from 'next/server';
 
-import { CRAWLER_FILE_PATHS, SITEMAP_PAGE_PATHS } from '@/configs/Api.endpoints';
+import { CRAWLER_FILE_PATHS, CV_PAGE_PATH, SITEMAP_PAGE_PATHS } from '@/configs/Api.endpoints';
 import type { AppEnv } from '@/configs/AppEnv.rules';
 import { getServerEnv } from '@/configs/Server.env';
 
@@ -24,16 +24,26 @@ export function buildRobots({
 }: CrawlerOrigin & { appEnv: AppEnv }): MetadataRoute.Robots {
   const rules: MetadataRoute.Robots['rules'] =
     appEnv === 'production'
-      ? { userAgent: ROBOTS_USER_AGENT_ALL, allow: ALLOW_ALL_PATH, disallow: BFF_DISALLOWED_PREFIX }
+      ? {
+          userAgent: ROBOTS_USER_AGENT_ALL,
+          allow: ALLOW_ALL_PATH,
+          disallow: [BFF_DISALLOWED_PREFIX, CV_PAGE_PATH],
+        }
       : { userAgent: ROBOTS_USER_AGENT_ALL, disallow: DISALLOW_ALL_PATH };
   return { rules, sitemap: `${webOrigin}${CRAWLER_FILE_PATHS.SITEMAP}` };
+}
+
+function isCvPagePath(pagePath: string): boolean {
+  return pagePath === CV_PAGE_PATH || pagePath.startsWith(`${CV_PAGE_PATH}/`);
 }
 
 export function buildSitemap({
   webOrigin,
   pagePaths,
 }: CrawlerOrigin & { pagePaths: readonly string[] }): MetadataRoute.Sitemap {
-  return pagePaths.map((pagePath) => ({ url: `${webOrigin}${pagePath}` }));
+  return pagePaths
+    .filter((pagePath) => !isCvPagePath(pagePath))
+    .map((pagePath) => ({ url: `${webOrigin}${pagePath}` }));
 }
 
 /** Per request: the origin and stack come from the runtime env, never from the build. */

@@ -4,26 +4,10 @@ import type { UnitOfWork } from '../../../infrastructure/database/TransactionRun
 export const REVIEWER_REPOSITORY = Symbol('REVIEWER_REPOSITORY');
 /** DI token of the reviewer account and role store. */
 export const REVIEWER_ACCOUNT_GATEWAY = Symbol('REVIEWER_ACCOUNT_GATEWAY');
-/** DI token for the Turnstile verifier. */
-export const TURNSTILE_VERIFIER = Symbol('TURNSTILE_VERIFIER');
 /** DI token of the deploy switch REVIEWER_FEATURE_ENABLED (`boolean`, ADR 0014). */
 export const IS_REVIEWER_FEATURE_ENABLED = Symbol('IS_REVIEWER_FEATURE_ENABLED');
 /** DI token of the key behind the visitor-IP HMAC (`Buffer | undefined`). */
 export const REVIEWER_IP_KEY = Symbol('REVIEWER_IP_KEY');
-
-/**
- * `passed`: the challenge was solved. `failed`: Cloudflare refused the token.
- * `unavailable`: no answer (not configured, network error, bad reply); the
- * caller must fail closed.
- */
-export type TurnstileOutcome = 'passed' | 'failed' | 'unavailable';
-
-export interface TurnstileVerifier {
-  /** False when no secret key is set: `verify` then always answers `unavailable`. */
-  readonly isConfigured: boolean;
-  /** Server-side verification of the widget's response token. */
-  verify(responseToken: string, remoteIp?: string): Promise<TurnstileOutcome>;
-}
 
 export interface NewReviewerSession {
   readonly accountId: number;

@@ -7,6 +7,11 @@ import {
   RICHTEXT_TEXT_COLORS,
 } from '../modules/content-engine';
 import {
+  HUMAN_CHECK_ERROR_CODES,
+  HUMAN_CHECK_FORMS,
+  TURNSTILE_TOKEN_FIELD,
+} from '../modules/human-check';
+import {
   AUTH_ERROR_CODES,
   OTP,
   OWNER_DISPLAY_NAME_MAX_LENGTH,
@@ -37,6 +42,8 @@ export function buildPublicConstants() {
     otp: { digits: OTP.DIGITS, ttlSeconds: OTP.TTL_SECONDS },
     totp: { digits: TOTP.DIGITS, periodSeconds: TOTP.PERIOD_SECONDS },
     refreshCookieName: REFRESH_COOKIE.NAME,
+    humanCheckForms: { ...HUMAN_CHECK_FORMS },
+    humanCheckTokenField: TURNSTILE_TOKEN_FIELD,
     reviewerInputLimits: { ...REVIEWER_INPUT_LIMITS },
     mediaUpload: {
       allowedMimeTypes: Object.keys(ALLOWED_MEDIA_TYPES),
@@ -46,6 +53,7 @@ export function buildPublicConstants() {
       common: { ...ERROR_CODES },
       auth: { ...AUTH_ERROR_CODES },
       ownerSetup: { ...OWNER_SETUP_ERROR_CODES },
+      humanCheck: { ...HUMAN_CHECK_ERROR_CODES },
       reviewer: { ...REVIEWER_ERROR_CODES },
       access: { ...ACCESS_ERROR_CODES },
       backups: { ...BACKUPS_ERROR_CODES },

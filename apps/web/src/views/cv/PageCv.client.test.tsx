@@ -13,6 +13,7 @@ import { PageCvClient } from './PageCv.client';
 import type { PageCvA, PageCvData } from './PageCv.graphql';
 
 const TEXT = PAGE_CV_MOCK.cvCommonText;
+const DOCUMENT_ID = '3f6c1a52-9d4e-4b7a-8c21-5e0a7d9b1f34';
 
 const cvOf = (name: string | null, overrides: Partial<PageCvA> = {}): PageCvA => ({
   documentId: 'c1',
@@ -23,12 +24,14 @@ const cvOf = (name: string | null, overrides: Partial<PageCvA> = {}): PageCvA =>
   experiences: null,
   projects: null,
   educations: null,
+  languages: null,
+  references: null,
   _maskedFields: [],
   ...overrides,
 });
 
-const SERVER_DATA: PageCvData = { pageCvAList: { data: [cvOf('Mai Server')] }, profile: null };
-const OWNER_DATA: PageCvData = { pageCvAList: { data: [cvOf('Mai Private')] }, profile: null };
+const SERVER_DATA: PageCvData = { pageCvA: cvOf('Mai Server'), profile: null };
+const OWNER_DATA: PageCvData = { pageCvA: cvOf('Mai Private'), profile: null };
 
 const signedInApi = () =>
   fakeApi({ readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER) });
@@ -45,7 +48,7 @@ describe('PageCvClient', () => {
     const get = vi.spyOn(clientApi, 'get');
     render(
       <Wrapper api={fakeApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
 
@@ -60,7 +63,8 @@ describe('PageCvClient', () => {
     render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
-          initialData={{ pageCvAList: { data: [cvOf(null)] }, profile: null }}
+          documentId={DOCUMENT_ID}
+          initialData={{ pageCvA: cvOf(null), profile: null }}
           text={TEXT}
         />
       </Wrapper>,
@@ -73,42 +77,48 @@ describe('PageCvClient', () => {
     render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
+          documentId={DOCUMENT_ID}
           initialData={{
-            pageCvAList: {
-              data: [
-                cvOf('Mai Server', {
-                  summary: '<p>Hi there</p>',
-                  projects: [
-                    {
-                      name: 'Billing core',
-                      teamSize: null,
-                      role: null,
-                      liveLink: null,
-                      repositoryLink: null,
-                      techStack: null,
-                      responsibilities: null,
-                    },
-                  ],
-                }),
+            pageCvA: cvOf('Mai Server', {
+              summary: '<p>Hi there</p>',
+              projects: [
+                {
+                  name: 'Billing core',
+                  teamSize: null,
+                  role: null,
+                  liveLink: null,
+                  repositoryLink: null,
+                  techStack: null,
+                  responsibilities: null,
+                },
               ],
-            },
+              skills: [{ skill: 'TypeScript', level: 'Proficient' }],
+              languages: [{ language: 'English', level: 'Fluent' }],
+              references: [{ name: 'Mr. Ref', role: 'Lead', phone: '0900' }],
+            }),
             profile: PAGE_CV_MOCK.profile,
           }}
           text={TEXT}
         />
       </Wrapper>,
     );
-    expect(await screen.findByRole('link', { name: 'mai@example.com' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: TEXT.summary })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 2, name: TEXT.projects })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: PAGE_CV_MOCK.profile.email }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
+    ).toEqual([TEXT.summary, TEXT.projects, TEXT.skills, TEXT.languages, TEXT.reference]);
+    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(screen.getByText('0900')).toBeInTheDocument();
   });
 
   it('renders the CV with no section title when the labels are null', async () => {
     render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
+          documentId={DOCUMENT_ID}
           initialData={{
-            pageCvAList: { data: [cvOf('Mai Server', { summary: '<p>Hi there</p>' })] },
+            pageCvA: cvOf('Mai Server', { summary: '<p>Hi there</p>' }),
             profile: PAGE_CV_MOCK.profile,
           }}
           text={null}
@@ -124,7 +134,7 @@ describe('PageCvClient', () => {
     vi.spyOn(clientApi, 'get').mockReturnValue(new Promise(() => undefined));
     render(
       <Wrapper api={signedInApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     const output = await screen.findByRole('status');
@@ -138,21 +148,22 @@ describe('PageCvClient', () => {
       .mockResolvedValue({ status: 200, data: OWNER_DATA } as AxiosResponse);
     render(
       <Wrapper api={signedInApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
 
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Mai Private' }),
     ).toBeInTheDocument();
-    expect(get).toHaveBeenCalledWith(BFF_ENDPOINTS.CV);
+    expect(get).toHaveBeenCalledWith(BFF_ENDPOINTS.CV(DOCUMENT_ID));
+    expect(get).toHaveBeenCalledWith('/cv/3f6c1a52-9d4e-4b7a-8c21-5e0a7d9b1f34');
   });
 
   it('keeps the server CV with no alert text when the refetch fails', async () => {
     const get = vi.spyOn(clientApi, 'get').mockRejectedValue(new Error('401'));
     render(
       <Wrapper api={signedInApi()}>
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     await waitFor(() => expect(get).toHaveBeenCalled());
@@ -169,7 +180,7 @@ describe('PageCvClient', () => {
     render(
       <Wrapper api={signedInApi()}>
         <SignOutButton />
-        <PageCvClient initialData={SERVER_DATA} text={TEXT} />
+        <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
       </Wrapper>,
     );
     await screen.findByRole('heading', { name: 'Mai Private' });
@@ -183,10 +194,9 @@ describe('PageCvClient', () => {
     const { container } = render(
       <Wrapper api={fakeApi()}>
         <PageCvClient
+          documentId={DOCUMENT_ID}
           initialData={{
-            pageCvAList: {
-              data: [cvOf('Mai Server', { summary: '***', _maskedFields: ['summary'] })],
-            },
+            pageCvA: cvOf('Mai Server', { summary: '***', _maskedFields: ['summary'] }),
             profile: null,
           }}
           text={null}
@@ -195,14 +205,5 @@ describe('PageCvClient', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Mai Server' })).toBeInTheDocument();
     expect(container).not.toHaveTextContent('***');
-  });
-
-  it('renders nothing when the data holds no CV', () => {
-    const { container } = render(
-      <Wrapper api={fakeApi()}>
-        <PageCvClient initialData={{ pageCvAList: { data: [] }, profile: null }} text={TEXT} />
-      </Wrapper>,
-    );
-    expect(container).toBeEmptyDOMElement();
   });
 });

@@ -200,7 +200,7 @@ function throwTwoFactorRefusal(response: ServerApiAnswer): never {
 export const cmsApiClient = {
   /** Any 401 is `BFF_INVALID_CREDENTIALS`: no account enumeration. */
   async logIn(
-    credentials: { email: string; password: string; rememberMe: boolean },
+    credentials: { email: string; password: string; rememberMe: boolean; turnstileToken: string },
     visitorIp: VisitorIp,
   ): Promise<LogInResult> {
     const response = await callCmsApi({
@@ -224,7 +224,7 @@ export const cmsApiClient = {
   },
 
   async verifyTwoFactor(
-    input: { tempToken: string; code: string },
+    input: { tempToken: string; code: string; turnstileToken: string },
     visitorIp: VisitorIp,
   ): Promise<IssuedTokens> {
     const response = await callCmsApi({
@@ -238,12 +238,15 @@ export const cmsApiClient = {
     return { accessToken, refreshToken: refreshTokenOf(response) };
   },
 
-  async sendEmailChallenge(tempToken: string, visitorIp: VisitorIp): Promise<void> {
+  async sendEmailChallenge(
+    input: { tempToken: string; turnstileToken: string },
+    visitorIp: VisitorIp,
+  ): Promise<void> {
     const response = await callCmsApi({
       method: 'POST',
       path: API_ENDPOINTS.TWO_FACTOR.EMAIL_CHALLENGE,
       visitorIp,
-      body: { tempToken },
+      body: input,
     });
     if (response.status !== HTTP_STATUS.ACCEPTED) return throwTwoFactorRefusal(response);
   },

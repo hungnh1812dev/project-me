@@ -50,10 +50,16 @@ export function renderApp(services: ReturnType<typeof createAppServices>, route 
 }
 
 /** One component inside the app providers and a router, with no routes of the app around it. */
-export function renderInApp(services: ReturnType<typeof createAppServices>, ui: ReactNode) {
+export function renderInApp(
+  services: ReturnType<typeof createAppServices>,
+  ui: ReactNode,
+  history: { entries: string[]; index: number } = { entries: ['/'], index: 0 },
+) {
   return render(
     <AppProviders services={services}>
-      <MemoryRouter>{ui}</MemoryRouter>
+      <MemoryRouter initialEntries={history.entries} initialIndex={history.index}>
+        {ui}
+      </MemoryRouter>
     </AppProviders>,
   );
 }

@@ -30,6 +30,20 @@ export { FormAlert, type FormAlertProps, type FormAlertTone } from './components
 export { TextInput, type TextInputProps } from './components/forms/text-input';
 export { FIELD_ID_SUFFIX } from './constants/Field.constants';
 export { CSP_NONCE_META_NAME } from './constants/Security.constants';
+export {
+  configureTurnstile,
+  resetTurnstile,
+  useTurnstile,
+  TurnstileSlot,
+  HUMAN_CHECK_FORMS,
+  TURNSTILE_ORIGIN,
+  TURNSTILE_SCRIPT_URL,
+  TURNSTILE_TOKEN_FIELD,
+  TURNSTILE_TOKEN_MAX_LENGTH,
+  type HumanCheckForm,
+  type TurnstileSlotProps,
+  type TurnstileSlotText,
+} from './human-check';
 export { Checkbox } from './components/ui/Checkbox';
 export { NativeSelect } from './components/ui/NativeSelect';
 export {

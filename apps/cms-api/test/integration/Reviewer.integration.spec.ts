@@ -19,12 +19,12 @@ import {
   emptySnapshot,
   planMigration,
 } from '../../src/modules/content-engine/domain/SqlGenerator.rules';
-import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import {
   TURNSTILE_VERIFIER,
-  type TurnstileOutcome,
+  type HumanCheckOutcome,
   type TurnstileVerifier,
-} from '../../src/modules/reviewer/application/Reviewer.port';
+} from '../../src/modules/human-check';
+import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { REVIEWER_SESSION_TTL_MS } from '../../src/modules/reviewer/domain/Reviewer.constants';
 import {
   REVIEWER_IP_WINDOW_MS,
@@ -62,10 +62,10 @@ function nextIp(): string {
   return `10.31.${Math.floor(ipCounter / OCTET_RANGE)}.${(ipCounter % OCTET_RANGE) + 1}`;
 }
 
-const outcome: { value: TurnstileOutcome } = { value: 'passed' };
+const outcome: { value: HumanCheckOutcome } = { value: 'passed' };
 const verifier = {
   isConfigured: true,
-  verify: (): Promise<TurnstileOutcome> => Promise.resolve(outcome.value),
+  verify: (): Promise<HumanCheckOutcome> => Promise.resolve(outcome.value),
 } satisfies TurnstileVerifier;
 
 const SESSION_BODY = {

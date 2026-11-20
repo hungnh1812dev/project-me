@@ -12,7 +12,7 @@ export interface CurrentUser {
 
 /** Carried by every sign-in step; the Turnstile token is supplied by the dialog. */
 export interface HumanCheckInput {
-  humanCheckToken?: string;
+  turnstileToken: string;
 }
 
 export interface LoginCredentials extends HumanCheckInput {
@@ -91,7 +91,7 @@ export function createAuthApi(client: ClientApi) {
     },
 
     /** Emails the login code of an email-2FA account (202). The BFF requires a JSON body. */
-    async sendLoginEmailCode(input: HumanCheckInput = {}): Promise<void> {
+    async sendLoginEmailCode(input: HumanCheckInput): Promise<void> {
       await client.post(BFF_ENDPOINTS.EMAIL_CODE, input);
     },
 

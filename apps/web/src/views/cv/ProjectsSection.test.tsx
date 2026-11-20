@@ -27,6 +27,8 @@ function cvOf(overrides: Partial<PageCvA> = {}): PageCvA {
       },
     ],
     educations: null,
+    languages: null,
+    references: null,
     _maskedFields: [],
     ...overrides,
   };
@@ -37,15 +39,19 @@ describe('ProjectsSection', () => {
     render(<ProjectsSection cv={cvOf()} text={TEXT} />);
     expect(screen.getByRole('heading', { level: 2, name: TEXT.projects })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 3, name: 'Billing core' })).toBeInTheDocument();
-    expect(screen.getByText('Owner · Team size: 4')).toBeInTheDocument();
+    expect(screen.getByText('Owner')).toBeInTheDocument();
+    expect(screen.getByText(`${TEXT.teamSize} 4`)).toBeInTheDocument();
+    expect(screen.getByText(`${TEXT.achievements}:`)).toBeInTheDocument();
+    expect(screen.getByText(`${TEXT.webLink}:`, { exact: false })).toBeInTheDocument();
     expect(screen.getByText('NestJS')).toBeInTheDocument();
     expect(screen.getByText('Designed the invoicing model.')).toBeInTheDocument();
   });
 
   it('shows each link as its URL and refuses an unsafe target', () => {
     render(<ProjectsSection cv={cvOf()} text={TEXT} />);
-    const project = screen.getByRole('heading', { name: 'Billing core' })
-      .parentElement as HTMLElement;
+    const project = screen
+      .getByRole('heading', { name: 'Billing core' })
+      .closest('li') as HTMLElement;
 
     const live = within(project).getByRole('link', { name: 'https://billing.example.com' });
     expect(live).toHaveAttribute('href', 'https://billing.example.com');

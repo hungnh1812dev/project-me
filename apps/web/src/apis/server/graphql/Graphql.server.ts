@@ -18,6 +18,8 @@ export interface ExecuteGraphqlOptions<T> {
   next?: ServerApiNextOptions;
   /** A signed-in visitor's token: the call is sent with it, never cached and never mocked. */
   accessToken?: string;
+  /** GraphQL variables sent beside the query; their values never reach a log line, an error or a mock lookup. */
+  variables?: Record<string, string>;
 }
 
 const NO_CACHE: ServerApiNextOptions = { revalidate: 0 };
@@ -29,7 +31,7 @@ function bearerHeaderOf(token: string | undefined): Record<string, string> {
 async function postQuery(
   query: string,
   operation: string,
-  { accessToken, next }: ExecuteGraphqlOptions<unknown>,
+  { accessToken, next, variables }: ExecuteGraphqlOptions<unknown>,
 ): Promise<unknown> {
   const { appApiToken } = getServerEnv();
   let answer: { status: number; body: unknown };
@@ -39,7 +41,7 @@ async function postQuery(
         [ACCEPT_HEADER]: JSON_MEDIA_TYPE,
         ...bearerHeaderOf(accessToken ?? appApiToken),
       },
-      body: { query },
+      body: variables === undefined ? { query } : { query, variables },
       resolveData: ({ status, body }) => ({ status, body }),
       next: accessToken === undefined ? (next ?? {}) : NO_CACHE,
     });

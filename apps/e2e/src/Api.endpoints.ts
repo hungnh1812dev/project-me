@@ -85,6 +85,7 @@ export const isCmsApiRequest = (url: string): boolean => {
   return (
     target.origin === web.origin &&
     target.pathname.startsWith('/api/') &&
-    !BFF_ROUTES.includes(target.pathname)
+    !BFF_ROUTES.includes(target.pathname) &&
+    !target.pathname.startsWith(`${BFF_PATHS.CV}/`)
   );
 };

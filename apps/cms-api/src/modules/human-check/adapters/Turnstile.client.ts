@@ -2,7 +2,13 @@ import { Logger } from '@nestjs/common';
 import { z } from 'zod';
 
 import { MS_PER_SECOND } from '../../../common/constants/Time.constants';
-import type { TurnstileOutcome, TurnstileVerifier } from '../application/Reviewer.port';
+import { TURNSTILE_ALWAYS_PASS_TEST_SECRET } from '../../../config/Config.constants';
+import type { TurnstileVerifier } from '../application/HumanCheck.port';
+import {
+  judgeSiteverifyAnswer,
+  type HumanCheckOutcome,
+  type SiteverifyAnswer,
+} from '../domain/HumanCheck.rules';
 
 /** Cloudflare's server-side verification endpoint (provider contract, not config). */
 export const TURNSTILE_SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
@@ -17,11 +23,9 @@ const TURNSTILE_FIELDS = {
   REMOTE_IP: 'remoteip',
 } as const;
 
-/** Error code Cloudflare uses when its own side failed (retryable, not the visitor's fault). */
-const TURNSTILE_INTERNAL_ERROR = 'internal-error';
-
 const siteverifyResponseSchema = z.object({
   success: z.boolean(),
+  action: z.string().optional(),
   hostname: z.string().optional(),
   'error-codes': z.array(z.string()).optional(),
 });
@@ -35,7 +39,7 @@ export type HttpFetch = (
 export class UnconfiguredTurnstileVerifier implements TurnstileVerifier {
   readonly isConfigured = false;
 
-  verify(): Promise<TurnstileOutcome> {
+  verify(): Promise<HumanCheckOutcome> {
     return Promise.resolve('unavailable');
   }
 }
@@ -46,24 +50,42 @@ export class TurnstileClient implements TurnstileVerifier {
   private readonly logger = new Logger(TurnstileClient.name);
 
   private readonly fetchFn: HttpFetch;
-  private readonly expectedHostname: string | undefined;
+  private readonly expectedHostnames: readonly string[];
 
   /**
-   * `expectedHostname`: when set, a passing reply must name exactly this
-   * hostname (the page that hosts the widget), else the token is `failed`.
+   * `expectedHostnames`: when not empty, a passing reply must name one of
+   * them (the pages that host the widget), else the token is `failed`.
    */
   constructor(
     private readonly secretKey: string,
     options: {
       fetchFn?: HttpFetch;
-      expectedHostname?: string | undefined;
+      expectedHostnames?: readonly string[];
     } = {},
   ) {
     this.fetchFn = options.fetchFn ?? fetch;
-    this.expectedHostname = options.expectedHostname;
+    this.expectedHostnames = options.expectedHostnames ?? [];
   }
 
-  async verify(responseToken: string, remoteIp?: string): Promise<TurnstileOutcome> {
+  async verify(
+    responseToken: string,
+    remoteIp?: string,
+    expectedAction?: string,
+  ): Promise<HumanCheckOutcome> {
+    const answer = await this.askSiteverify(responseToken, remoteIp);
+    // The always-pass test secret answers no real action, so only it skips that comparison.
+    const isActionChecked = this.secretKey !== TURNSTILE_ALWAYS_PASS_TEST_SECRET;
+    return judgeSiteverifyAnswer(answer, {
+      expectedAction: isActionChecked ? expectedAction : undefined,
+      expectedHostnames: this.expectedHostnames,
+    });
+  }
+
+  /** The parsed reply, or undefined when Cloudflare gave no usable one. */
+  private async askSiteverify(
+    responseToken: string,
+    remoteIp: string | undefined,
+  ): Promise<SiteverifyAnswer | undefined> {
     const formFields = new URLSearchParams({
       [TURNSTILE_FIELDS.SECRET]: this.secretKey,
       [TURNSTILE_FIELDS.RESPONSE]: responseToken,
@@ -77,21 +99,18 @@ export class TurnstileClient implements TurnstileVerifier {
         body: formFields,
         signal: AbortSignal.timeout(TURNSTILE_TIMEOUT_MS),
       });
-      if (!reply.ok) return 'unavailable';
+      if (!reply.ok) return undefined;
       const parsedReply = siteverifyResponseSchema.safeParse(await reply.json());
-      if (!parsedReply.success) return 'unavailable';
-      if (parsedReply.data.success) {
-        const wrongHost =
-          this.expectedHostname !== undefined &&
-          parsedReply.data.hostname?.toLowerCase() !== this.expectedHostname;
-        return wrongHost ? 'failed' : 'passed';
-      }
-      return parsedReply.data['error-codes']?.includes(TURNSTILE_INTERNAL_ERROR) === true
-        ? 'unavailable'
-        : 'failed';
+      if (!parsedReply.success) return undefined;
+      return {
+        success: parsedReply.data.success,
+        action: parsedReply.data.action,
+        hostname: parsedReply.data.hostname,
+        errorCodes: parsedReply.data['error-codes'] ?? [],
+      };
     } catch {
       this.logger.warn('Turnstile verification request failed.');
-      return 'unavailable';
+      return undefined;
     }
   }
 }

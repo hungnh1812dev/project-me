@@ -4,7 +4,9 @@ import '@styles/global.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CSP_NONCE_META_NAME } from '@abyss/form-commons';
+import { configureTurnstile } from '@abyss/form-commons/human-check';
 import { apiClient } from '@apis/client/Api.client';
+import { appEnv } from '@configs/App.env';
 import { createQueryClient } from '@libs/QueryClient.setup';
 import { setNonce } from 'get-nonce';
 import { BrowserRouter } from 'react-router';
@@ -24,6 +26,8 @@ const nonce = document
   .querySelector(`meta[name="${CSP_NONCE_META_NAME}"]`)
   ?.getAttribute('content');
 if (nonce) setNonce(nonce);
+
+configureTurnstile({ siteKey: appEnv.turnstileSiteKey });
 
 const services = createAppServices(apiClient, createQueryClient());
 // Once per page load, outside React, so StrictMode can't start it twice.

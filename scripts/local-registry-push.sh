@@ -5,7 +5,7 @@
 #   LOCAL_REGISTRY    registry host:port; default k3d-registry.localhost:5001
 #   LOCAL_IMAGE_TAG   image tag; default a UTC timestamp (YYYYmmdd-HHMMSS), so every build gets a new tag
 #   Build args come from .github/scripts/build-args.sh run with ENVIRONMENT=local, so it reads TURBO_VERSION,
-#   VITE_API_BASE_URL, NEXT_PUBLIC_ADMIN_URL, NEXT_PUBLIC_TURNSTILE_SITE_KEY and APP_ENV (web) from the environment.
+#   VITE_API_BASE_URL and VITE_TURNSTILE_SITE_KEY (cms-admin), NEXT_PUBLIC_TURNSTILE_SITE_KEY and APP_ENV (web) from the environment.
 # Prints each pushed image ref, one per line. Reads no .env file and never prints a build-arg value.
 set -euo pipefail
 

@@ -1,12 +1,12 @@
-import { CvSection, hasText, MUTED_CLASS } from './CvSection';
+import { CvSection, hasText, KEEP_TOGETHER_CLASS } from './CvSection';
 import type { CvCommonText, PageCvA, PageCvEducation } from './PageCv.graphql';
 
-function detailsOf({ institution, period, location }: PageCvEducation): string[] {
-  return [institution, period, location].filter(hasText);
+function detailsOf({ period, degree, location }: PageCvEducation): string[] {
+  return [period, degree, location].filter(hasText);
 }
 
 function hasContent(education: PageCvEducation): boolean {
-  return hasText(education.degree) || detailsOf(education).length > 0;
+  return hasText(education.institution) || detailsOf(education).length > 0;
 }
 
 export function EducationsSection({ cv, text }: { cv: PageCvA; text: CvCommonText | null }) {
@@ -16,9 +16,20 @@ export function EducationsSection({ cv, text }: { cv: PageCvA; text: CvCommonTex
     <CvSection title={text?.educations}>
       <ul className="space-y-4">
         {educations.map((education, index) => (
-          <li key={index}>
-            <h3 className="text-base font-medium">{education.degree}</h3>
-            <p className={MUTED_CLASS}>{detailsOf(education).join(' · ')}</p>
+          <li key={index} className={KEEP_TOGETHER_CLASS}>
+            {hasText(education.institution) ? (
+              <h3 className="text-cv-text text-base font-bold">{education.institution}</h3>
+            ) : null}
+            <p className="text-cv-muted mt-0.5 flex flex-wrap items-center gap-x-3 text-sm">
+              {detailsOf(education).map((detail, detailIndex) => (
+                <span
+                  key={detailIndex}
+                  className="border-cv-rule [&:not(:first-child)]:border-l [&:not(:first-child)]:pl-3"
+                >
+                  {detail}
+                </span>
+              ))}
+            </p>
           </li>
         ))}
       </ul>

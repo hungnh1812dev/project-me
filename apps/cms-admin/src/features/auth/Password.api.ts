@@ -1,11 +1,17 @@
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import type { AxiosInstance } from 'axios';
 
+export interface RequestCodeInput {
+  email: string;
+  turnstileToken: string;
+}
+
 export interface ResetPasswordInput {
   email: string;
   code: string;
   newPassword: string;
   totpCode?: string;
+  turnstileToken: string;
 }
 
 export interface SetPasswordInput {
@@ -21,12 +27,10 @@ export interface SetPasswordInput {
 export function createPasswordApi(client: AxiosInstance) {
   return {
     /** Always 202, whether or not the email has an account. */
-    requestCode: async (email: string): Promise<void> => {
-      await client.post(
-        API_ENDPOINTS.PASSWORD.REQUEST_OTP,
-        { email },
-        { shouldSkipAuthRefresh: true },
-      );
+    requestCode: async (input: RequestCodeInput): Promise<void> => {
+      await client.post(API_ENDPOINTS.PASSWORD.REQUEST_OTP, input, {
+        shouldSkipAuthRefresh: true,
+      });
     },
 
     reset: async (input: ResetPasswordInput): Promise<void> => {

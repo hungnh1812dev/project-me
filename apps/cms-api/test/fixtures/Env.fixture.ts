@@ -40,6 +40,10 @@ export const TEST_MAIL_FROM = 'Abyss CMS <no-reply@example.test>';
 export const TEST_SMTP_USER = 'mailer@example.test';
 export const TEST_SMTP_PASSWORD = 'smtp-app-password';
 
+/** A Turnstile secret that is not Cloudflare's test secret, so production needs a hostname list with it. */
+export const TEST_TURNSTILE_SECRET = '0x4AAAAAAA-test-turnstile-secret-value';
+export const TEST_TURNSTILE_HOSTNAMES = 'example.test,admin.example.test';
+
 export const TEST_CLOUDINARY_CLOUD_NAME = 'test-cloud';
 export const TEST_CLOUDINARY_API_KEY = 'test-cloudinary-key';
 export const TEST_CLOUDINARY_API_SECRET = 'test-cloudinary-secret';
@@ -83,6 +87,8 @@ export function productionEnv(
     OTP_PEPPER: TEST_SECRET_32_BYTES,
     TOTP_ENC_KEY: TEST_SECRET_32_BYTES,
     TOTP_ENC_KID: TEST_TOTP_ENC_KID,
+    TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET,
+    TURNSTILE_EXPECTED_HOSTNAME: TEST_TURNSTILE_HOSTNAMES,
     ...overrides,
   };
 }

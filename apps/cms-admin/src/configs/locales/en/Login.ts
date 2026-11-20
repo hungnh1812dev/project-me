@@ -4,6 +4,7 @@ import {
   TOTP_CODE_LENGTH,
   TOTP_PERIOD_SECONDS,
 } from '../../Auth.constants';
+import { HUMAN_CHECK_COPY } from './Common';
 
 export const LOGIN_COPY = {
   title: 'Sign in',
@@ -41,6 +42,7 @@ export const LOGIN_COPY = {
     network: 'Could not reach the server. Check your connection and try again.',
     unexpected: 'Something went wrong on our side. Try again in a moment.',
   },
+  humanCheck: HUMAN_CHECK_COPY,
   twoFactor: {
     title: 'Enter your verification code',
     totpDescription: 'Open your authenticator app and enter the current code for Abyss CMS.',

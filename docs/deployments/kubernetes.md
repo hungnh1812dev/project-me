@@ -151,10 +151,9 @@ containers:
     env:
       - { name: APP_API_URL, value: 'http://cms-api.<ns>.svc.cluster.local:3000/api/v1' }
       - { name: WEB_ORIGIN, value: 'https://<domain>' }
-      - { name: TURNSTILE_EXPECTED_HOSTNAME, value: '<domain>' }
       - { name: TRUST_PROXY_HOPS, value: '1' }
     envFrom:
-      - secretRef: { name: web-secrets } # WEB_SESSION_SECRET, TURNSTILE_SECRET_KEY, APP_API_TOKEN
+      - secretRef: { name: web-secrets } # WEB_SESSION_SECRET, APP_API_TOKEN
     livenessProbe:
       tcpSocket: { port: http }
       initialDelaySeconds: 10
@@ -170,7 +169,7 @@ containers:
       capabilities: { drop: [ALL] }
 ```
 
-- **Never set `ALLOW_TURNSTILE_TEST_SECRET`, `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE` or `WEB_REVALIDATE_SECONDS`** in the web env (smoke and dev stacks only, ADR 0018 sections 2.6 and 2.7). `APP_ENV` (`production` for every CI image, equal to the build variable) is set in `web-secrets`. Web has no browser-side API calls, so it needs no Traefik route to cms-api.
+- **Never set `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE` or `WEB_REVALIDATE_SECONDS`** in the web env (smoke and dev stacks only, ADR 0018 sections 2.6 and 2.7). `APP_ENV` (`production` for every CI image, equal to the build variable) is set in `web-secrets`. Web has no browser-side API calls, so it needs no Traefik route to cms-api.
 - **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` route) and the web pods (BFF and content calls through `APP_API_URL`); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
 
 ```yaml

@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 import { inviteAccount } from '../src/Accounts.fixture';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
-import { bearer, ownerApiToken, signInAsOwner } from '../src/Session.fixture';
+import { bearer, ownerApiToken, signInAsOwner, withHumanCheck } from '../src/Session.fixture';
 
 const EDITOR_ROLE = 'Editor';
 const EDITOR_EMAIL = `validate-editor-${RUN_ID}@example.test`;
@@ -79,7 +79,7 @@ test.describe(
         password: EDITOR_PASSWORD,
       });
       const login = await request.post(apiUrl(API_PATHS.AUTH.LOGIN), {
-        data: { email: EDITOR_EMAIL, password: EDITOR_PASSWORD },
+        data: withHumanCheck({ email: EDITOR_EMAIL, password: EDITOR_PASSWORD }),
       });
       expect(login.status()).toBe(HTTP.OK);
       const editor = bearer(((await login.json()) as { accessToken: string }).accessToken);

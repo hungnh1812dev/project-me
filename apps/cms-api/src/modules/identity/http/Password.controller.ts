@@ -13,9 +13,10 @@ import type { Request } from 'express';
 import { type z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
-import { Throttle } from '../../../common/guards/Throttle.guard';
+import { Throttle, ThrottleAccount, ThrottleIp } from '../../../common/guards/Throttle.guard';
 import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { requireAccountActor } from '../../access';
+import { HUMAN_CHECK_FORMS, RequireHumanCheck, withoutTurnstileToken } from '../../human-check';
 import { PasswordService } from '../application/Password.service';
 import { AUTH_ERROR_CODES, AUTH_ERROR_MESSAGES } from '../domain/Identity.constants';
 import { IDENTITY_RATE_LIMIT_POLICIES, PASSWORD_ROUTES } from './IdentityHttp.constants';
@@ -52,7 +53,9 @@ export class PasswordController {
   /** Always 202 with an empty body, known email or not (D8). */
   @Post(PASSWORD_ROUTES.REQUEST_OTP)
   @HttpCode(HttpStatus.ACCEPTED)
-  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST)
+  @ThrottleAccount(IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST)
+  @RequireHumanCheck(HUMAN_CHECK_FORMS.PASSWORD_RESET)
+  @ThrottleIp(IDENTITY_RATE_LIMIT_POLICIES.OTP_REQUEST)
   requestOtp(@Body() body: unknown, @Req() req: Request): void {
     this.passwords.requestOtp(
       parseBody(requestOtpSchema, body).email,
@@ -63,10 +66,11 @@ export class PasswordController {
   @Post(PASSWORD_ROUTES.RESET)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @RequireHumanCheck(HUMAN_CHECK_FORMS.PASSWORD_RESET)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.PASSWORD_SUBMIT)
   reset(@Body() body: unknown, @Req() req: Request): Promise<void> {
     return this.passwords.reset(
-      parseBody(resetPasswordSchema, body),
+      withoutTurnstileToken(parseBody(resetPasswordSchema, body)),
       clientMetaOf(this.clientIp, req),
     );
   }

@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { signOutFromUserMenu } from '../src/Session.fixture';
+import { clickAfterHumanCheck, signOutFromUserMenu } from '../src/Session.fixture';
 
 const homeHeading = (page: Page) =>
   page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title });
@@ -32,7 +32,7 @@ test.describe('admin tabs', { tag: ['@cms-admin', '@cms-api', '@sign-in'] }, () 
     await page.goto('/');
     await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expect(homeHeading(page)).toBeVisible();
 
     // Second tab: same browser context, so the same refresh cookie.

@@ -14,7 +14,7 @@ import { loadSiteHeader } from '@/features/site-header/SiteHeader.server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteHeader = await loadSiteHeader();
-  return { title: siteHeader?.header.name ?? LAST_RESORT_TEXT.appName };
+  return { title: siteHeader?.header.appName ?? LAST_RESORT_TEXT.appName };
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -28,7 +28,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Providers>
           <div className="min-h-dvh">
             <SiteHeader />
-            <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">{children}</main>
+            <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12 print:max-w-none print:p-0">
+              {children}
+            </main>
           </div>
         </Providers>
       </body>

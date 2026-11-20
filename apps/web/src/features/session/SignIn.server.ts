@@ -1,9 +1,10 @@
 import 'server-only';
 
+import { TURNSTILE_TOKEN_FIELD, TURNSTILE_TOKEN_MAX_LENGTH } from '@abyss/form-commons/human-check';
 import { z } from 'zod';
 
 import { BffError } from '@/apis/server/bff/Bff.errors';
-import { BffContext, HUMAN_CHECK_TOKEN_FIELD } from '@/apis/server/bff/BffRoute.server';
+import { BffContext } from '@/apis/server/bff/BffRoute.server';
 import { cmsApiClient, IssuedTokens } from '@/apis/server/restful/CmsApi.client';
 import {
   EMAIL_MAX_LENGTH,
@@ -12,7 +13,6 @@ import {
   TWO_FACTOR_METHODS,
 } from '@/configs/Auth.constants';
 import { HTTP_STATUS } from '@/configs/Http.constants';
-import { TURNSTILE } from '@/configs/Security.constants';
 
 import {
   clearSessionCookie,
@@ -25,25 +25,19 @@ import {
 } from './SealedCookie.server';
 import { accessExpiryOf, isPrivilegedAccount, publicUserOf } from './WebSession.server';
 
-const humanCheckToken = z.string().min(1).max(TURNSTILE.TOKEN_MAX_LENGTH);
+const turnstileToken = z.string().min(1).max(TURNSTILE_TOKEN_MAX_LENGTH);
 
 export const loginBodySchema = z.object({
   email: z.string().min(1).max(EMAIL_MAX_LENGTH),
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
   rememberMe: z.boolean().default(false),
-  [HUMAN_CHECK_TOKEN_FIELD]: humanCheckToken,
+  [TURNSTILE_TOKEN_FIELD]: turnstileToken,
 });
-export const emailCodeBodySchema = z.object({ [HUMAN_CHECK_TOKEN_FIELD]: humanCheckToken });
+export const emailCodeBodySchema = z.object({ [TURNSTILE_TOKEN_FIELD]: turnstileToken });
 export const verifyBodySchema = z.object({
   code: z.string().min(1).max(TWO_FACTOR_CODE_MAX_LENGTH),
-  [HUMAN_CHECK_TOKEN_FIELD]: humanCheckToken,
+  [TURNSTILE_TOKEN_FIELD]: turnstileToken,
 });
-
-/** What `handle` receives: the pipeline strips the human-check token. */
-type HandledBody<TSchema extends z.ZodObject> = Omit<
-  z.output<TSchema>,
-  typeof HUMAN_CHECK_TOKEN_FIELD
->;
 
 /** Only the methods the sign-in dialog knows leave the server. */
 function knownMethodsOf(methods: string[]) {
@@ -108,9 +102,14 @@ async function sealSession(
 export async function logInVisitor({
   body,
   visitorIp,
-}: BffContext<HandledBody<typeof loginBodySchema>>): Promise<Response> {
+}: BffContext<z.output<typeof loginBodySchema>>): Promise<Response> {
   const result = await cmsApiClient.logIn(
-    { email: body.email, password: body.password, rememberMe: body.rememberMe },
+    {
+      email: body.email,
+      password: body.password,
+      rememberMe: body.rememberMe,
+      turnstileToken: body.turnstileToken,
+    },
     visitorIp,
   );
   if (result.kind === 'signed-in') {
@@ -125,10 +124,13 @@ export async function logInVisitor({
 
 export async function sendTwoFactorEmailCode({
   request,
+  body,
   visitorIp,
-}: BffContext<unknown>): Promise<Response> {
+}: BffContext<z.output<typeof emailCodeBodySchema>>): Promise<Response> {
   const { tempToken } = requireTwoFactorChallenge(request);
-  await withExpiredChallengeCleared(() => cmsApiClient.sendEmailChallenge(tempToken, visitorIp));
+  await withExpiredChallengeCleared(() =>
+    cmsApiClient.sendEmailChallenge({ tempToken, turnstileToken: body.turnstileToken }, visitorIp),
+  );
   return new Response(null, { status: HTTP_STATUS.ACCEPTED });
 }
 
@@ -136,10 +138,13 @@ export async function verifyTwoFactorCode({
   request,
   body,
   visitorIp,
-}: BffContext<HandledBody<typeof verifyBodySchema>>): Promise<Response> {
+}: BffContext<z.output<typeof verifyBodySchema>>): Promise<Response> {
   const { tempToken, rememberMe } = requireTwoFactorChallenge(request);
   const issued = await withExpiredChallengeCleared(() =>
-    cmsApiClient.verifyTwoFactor({ tempToken, code: body.code }, visitorIp),
+    cmsApiClient.verifyTwoFactor(
+      { tempToken, code: body.code, turnstileToken: body.turnstileToken },
+      visitorIp,
+    ),
   );
   const { user, setCookies } = await sealSession(issued, rememberMe, visitorIp);
   return withSetCookies(Response.json({ user }), setCookies);

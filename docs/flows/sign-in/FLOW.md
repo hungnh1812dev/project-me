@@ -1,6 +1,6 @@
 ---
 flow: sign-in
-modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/login, apps/web/src/features/auth, apps/web/src/features/session, packages/form-commons/src/components/forms
+modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/login, apps/web/src/features/auth, apps/web/src/features/session, packages/form-commons/src/components/forms, apps/cms-api/src/modules/human-check
 ---
 
 # Sign-in: flow
@@ -16,7 +16,7 @@ Part of the [project spec](../../../SPEC.md). Flow `sign-in`: [SPEC.md](SPEC.md)
 
 ## Steps
 
-1. The user sends email, password and the remember-me choice (`POST /auth/login`; web: `POST /api/v1/auth/login` with a Turnstile token).
+1. The user sends email, password, the remember-me choice and a Turnstile token `turnstileToken` (`POST /auth/login`; web: `POST /api/v1/auth/login`, which forwards the token). cms-api checks the token before anything else (D25); the 2FA verify and email challenge requests carry a fresh token each.
 2. cms-api runs exactly one Argon2id verify (a dummy hash for an unknown email) and answers unknown, wrong and inactive accounts the same way (D8).
 3. 2FA off: the session starts at once (`AuthService.startSession`). 2FA on: cms-api answers with a 2FA temp token (TTL 300 s, 5 attempts) that carries the remember-me claim `rm`; the user sends the code to `POST /auth/2fa/verify` (email code: `POST /auth/2fa/email-challenge` first), and the session starts with the claim's value (RM-1).
 4. Starting a session issues the refresh token row (with `remember_me` and the TTL of that mode) and writes `auth.login_succeeded` in the same transaction (RM-2, RM-4).
@@ -125,14 +125,15 @@ sequenceDiagram
   participant T as Cloudflare Turnstile
   participant API as cms-api (APP_API_URL)
   U->>B: email + password (+ Keep me signed in)
-  B->>F: POST /api/v1/auth/login (humanCheckToken, rememberMe?)
+  B->>F: POST /api/v1/auth/login (turnstileToken, rememberMe?)
   F->>F: method, Origin, JSON, size, rate limit, Zod schema
-  F->>T: siteverify (action login)
-  F->>API: POST /auth/login (forwarded client IP)
+  F->>API: POST /auth/login (turnstileToken, forwarded client IP)
+  API->>T: siteverify (action login, D25)
   alt 2FA required
     F-->>B: two-factor-required + sealed __Host-abyss_web_2fa (carries rememberMe)
-    B->>F: POST /api/v1/auth/two-factor/verify (code, humanCheckToken)
-    F->>API: POST /auth/2fa/verify
+    B->>F: POST /api/v1/auth/two-factor/verify (code, turnstileToken)
+    F->>API: POST /auth/2fa/verify (turnstileToken)
+    API->>T: siteverify (action two-factor, D25)
   end
   F->>F: refuse accounts with any permission other than read (403 BFF_PRIVILEGED_ACCOUNT)
   F-->>B: signed-in user + sealed __Host-abyss_web_session (no token in the body)
@@ -149,9 +150,10 @@ sequenceDiagram
 | `apps/cms-api/src/modules/security-audit` | `auth.login_succeeded` / `auth.login_failed` rows (D15, RM-4) | [security-audit.md](../../modules/cms-api/security-audit.md) |
 | `apps/cms-admin/src/features/auth` | Session, in-memory access token, refresh interceptor, single-flight and cross-tab refresh, login API client | [auth.md](../../modules/cms-admin/auth.md) |
 | `apps/cms-admin/src/views/login` | Sign-in page with the 2FA modal and the remember-me checkbox (RM-5) | [login.md](../../modules/cms-admin/login.md) |
-| `apps/web/src/features/auth` | Web login dialog, Turnstile widget (D21, RM-6) | [auth.md](../../modules/web/auth.md) |
+| `apps/web/src/features/auth` | Web login dialog and 2FA step on the shared Turnstile kit (D21, D25, RM-6) | [auth.md](../../modules/web/auth.md) |
 | `apps/web/src/features/session` | Who is signed in; the sealed BFF session cookie server-side (D21, RM-6) | [session.md](../../modules/web/session.md) |
 | `packages/form-commons/src/components/forms` | `CheckboxInput` used by the remember-me checkbox (RM-5) | [forms.md](../../modules/form-commons/forms.md) |
+| `apps/cms-api/src/modules/human-check` | The human check on `POST /auth/login`, `/auth/2fa/verify` and `/auth/2fa/email-challenge` (D25) | [human-check.md](../../modules/cms-api/human-check.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

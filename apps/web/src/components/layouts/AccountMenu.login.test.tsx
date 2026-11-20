@@ -1,40 +1,32 @@
-import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
 import { SITE_HEADER_MOCK } from '@/apis/server/graphql/mocks/SiteHeader.mock';
 
+import { humanCheckFake, resetHumanCheckFake } from '../../features/auth/HumanCheck.fixture';
 import { PrivilegedAccessError, type AuthApi } from '../../features/session/Auth.api';
 import { bffError, fakeApi, TEST_USER, Wrapper } from '../../features/session/Session.fixture';
 import { formatText } from '../../utils/TextTemplate.rules';
 import { AccountMenu } from './AccountMenu';
 
-const humanCheck = vi.hoisted(() => ({ solves: true, tokensIssued: 0, siteKey: 'site-key' }));
+const humanCheck = vi.hoisted(() => ({ siteKey: 'site-key' }));
 
 vi.mock('../../configs/Browser.env', () => ({
   appEnv: {
     get turnstileSiteKey() {
       return humanCheck.siteKey || undefined;
     },
-    adminUrl: undefined,
   },
 }));
-// Stands in for Cloudflare: solves on every mount (a fresh challenge) with a new token.
-vi.mock('../../features/auth/TurnstileWidget', () => ({
-  TurnstileWidget: ({ action, onToken }: { action: string; onToken: (token: string) => void }) => {
-    useEffect(() => {
-      if (humanCheck.solves) onToken(`${action}-token-${++humanCheck.tokensIssued}`);
-      // Once per mount, like the real widget (it keeps its callbacks in a ref).
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    return <div data-testid={`turnstile-${action}`} />;
-  },
-}));
+vi.mock('@abyss/form-commons/human-check', async (importOriginal) =>
+  (await import('../../features/auth/HumanCheck.fixture')).fakeHumanCheckKit(
+    await importOriginal<object>(),
+  ),
+);
 
 beforeEach(() => {
-  humanCheck.solves = true;
-  humanCheck.tokensIssued = 0;
+  resetHumanCheckFake();
   humanCheck.siteKey = 'site-key';
 });
 
@@ -81,7 +73,7 @@ describe('sign-in dialog', () => {
       email: 'owner@example.com',
       password: 'correct horse',
       rememberMe: false,
-      humanCheckToken: 'login-token-1',
+      turnstileToken: 'login-token-1',
     });
     expect(screen.getByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
   });
@@ -145,7 +137,7 @@ describe('sign-in dialog', () => {
     expect(await screen.findByText(signedInAs(TEST_USER.displayName))).toBeInTheDocument();
     expect(api.verifyTwoFactor).toHaveBeenCalledWith({
       code: '123456',
-      humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
+      turnstileToken: expect.stringMatching(/^two-factor-token-/) as unknown,
     });
     expect(api.sendLoginEmailCode).not.toHaveBeenCalled();
   });
@@ -197,7 +189,7 @@ describe('sign-in dialog', () => {
     expect(await screen.findByText(login.twoFactor.emailWarning)).toBeInTheDocument();
     await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
     expect(api.sendLoginEmailCode).toHaveBeenCalledWith({
-      humanCheckToken: expect.stringMatching(/^two-factor-token-/) as unknown,
+      turnstileToken: expect.stringMatching(/^two-factor-token-/) as unknown,
     });
   });
 
@@ -218,8 +210,8 @@ describe('sign-in dialog', () => {
     await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
     await waitFor(() => expect(api.verifyTwoFactor).toHaveBeenCalledTimes(1));
     const tokens = [
-      ...vi.mocked(api.sendLoginEmailCode).mock.calls.map(([input]) => input?.humanCheckToken),
-      vi.mocked(api.verifyTwoFactor).mock.calls[0]?.[0].humanCheckToken,
+      ...vi.mocked(api.sendLoginEmailCode).mock.calls.map(([input]) => input?.turnstileToken),
+      vi.mocked(api.verifyTwoFactor).mock.calls[0]?.[0].turnstileToken,
     ];
     expect(tokens).toHaveLength(3);
     expect(new Set(tokens).size).toBe(3);
@@ -228,7 +220,7 @@ describe('sign-in dialog', () => {
   it('holds the emailed code until the second check passes', async () => {
     const api = fakeApi({
       login: vi.fn<AuthApi['login']>().mockImplementation(() => {
-        humanCheck.solves = false;
+        humanCheckFake.solves = false;
         return Promise.resolve({ kind: 'two-factor-required', methods: ['email'] });
       }),
     });
@@ -266,12 +258,69 @@ describe('sign-in dialog', () => {
 
 describe('human check', () => {
   it('renders a login widget and blocks the call until it passes', async () => {
-    humanCheck.solves = false;
+    humanCheckFake.solves = false;
     const { user, api } = await openDialog();
     expect(screen.getByTestId('turnstile-login')).toBeInTheDocument();
     await fillCredentials(user);
     expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
     expect(api.login).not.toHaveBeenCalled();
+  });
+
+  it('resets the login challenge once the sign-in request answers, and not before', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({ kind: 'signed-in', user: TEST_USER }),
+    });
+    const { user } = await openDialog(api);
+    expect(humanCheckFake.resetFormIds).toEqual([]);
+    await fillCredentials(user);
+    await waitFor(() => expect(humanCheckFake.resetFormIds).toEqual(['login']));
+  });
+
+  it('shows the required line, sends nothing and resets the challenge on an empty token', async () => {
+    humanCheckFake.solves = false;
+    const { user, api } = await openDialog();
+    await fillCredentials(user);
+    expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
+    expect(api.login).not.toHaveBeenCalled();
+    expect(humanCheckFake.resetFormIds).toEqual(['login']);
+  });
+
+  it('blocks the code check until its own challenge passes', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockImplementation(() => {
+        humanCheckFake.solves = false;
+        return Promise.resolve({ kind: 'two-factor-required', methods: ['totp'] });
+      }),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    await user.type(await screen.findByLabelText(new RegExp(login.twoFactor.totpLabel)), '123456');
+    await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
+    expect(await screen.findByText(login.humanCheck.required)).toBeInTheDocument();
+    expect(api.verifyTwoFactor).not.toHaveBeenCalled();
+    expect(humanCheckFake.resetFormIds).toContain('two-factor');
+  });
+
+  it('resets the two-factor challenge after the emailed code and after the verify', async () => {
+    const api = fakeApi({
+      login: vi.fn<AuthApi['login']>().mockResolvedValue({
+        kind: 'two-factor-required',
+        methods: ['email'],
+      }),
+      verifyTwoFactor: vi.fn<AuthApi['verifyTwoFactor']>().mockResolvedValue(TEST_USER),
+    });
+    const { user } = await openDialog(api);
+    await fillCredentials(user);
+    await waitFor(() => expect(api.sendLoginEmailCode).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(humanCheckFake.resetFormIds.filter((id) => id === 'two-factor')).toHaveLength(1),
+    );
+    await user.type(screen.getByLabelText(new RegExp(login.twoFactor.emailLabel)), '123456');
+    await user.click(screen.getByRole('button', { name: login.twoFactor.submit }));
+    await waitFor(() => expect(api.verifyTwoFactor).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(humanCheckFake.resetFormIds.filter((id) => id === 'two-factor')).toHaveLength(2),
+    );
   });
 
   it('asks for a fresh check after a failed sign-in', async () => {
@@ -287,7 +336,7 @@ describe('human check', () => {
     await user.type(screen.getByLabelText(new RegExp(login.passwordLabel)), 'correct horse');
     await user.click(screen.getByRole('button', { name: login.submit }));
     await waitFor(() => expect(api.login).toHaveBeenCalledTimes(2));
-    const tokens = vi.mocked(api.login).mock.calls.map(([input]) => input.humanCheckToken);
+    const tokens = vi.mocked(api.login).mock.calls.map(([input]) => input.turnstileToken);
     expect(new Set(tokens).size).toBe(2);
   });
 
@@ -370,19 +419,6 @@ describe('account menu', () => {
     expect(await screen.findByRole('button', { name: author.btnLoginText })).toBeInTheDocument();
     expect(api.logout).toHaveBeenCalledTimes(1);
   });
-
-  it('hides Open CMS when no admin URL is configured', async () => {
-    const api = fakeApi({
-      readSession: vi.fn<AuthApi['readSession']>().mockResolvedValue(TEST_USER),
-    });
-    render(
-      <Wrapper api={api}>
-        <AccountMenu {...MENU_PROPS} />
-      </Wrapper>,
-    );
-    await screen.findByText(signedInAs(TEST_USER.displayName));
-    expect(screen.queryByRole('link', { name: login.openCms })).not.toBeInTheDocument();
-  });
 });
 
 describe('account menu without the sign-in text (Q-PS1b)', () => {
@@ -410,6 +446,5 @@ describe('account menu without the sign-in text (Q-PS1b)', () => {
     );
     expect(await screen.findByRole('button', { name: author.btnLogoutText })).toBeInTheDocument();
     expect(screen.queryByText(signedInAs(TEST_USER.displayName))).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: login.openCms ?? '' })).not.toBeInTheDocument();
   });
 });

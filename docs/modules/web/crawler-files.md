@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Builds `/robots.txt` and `/sitemap.xml` for the public site ([public-site flow](../../flows/public-site/FLOW.md), PS-4). Crawlers read them; `app/robots.ts` and `app/sitemap.ts` only bind the default export to `readRobots` / `readSitemap`. Only the `production` stack is indexable; every other `APP_ENV` disallows the whole site.
+Builds `/robots.txt` and `/sitemap.xml` for the public site ([public-site flow](../../flows/public-site/FLOW.md), PS-4). Crawlers read them; `app/robots.ts` and `app/sitemap.ts` only bind the default export to `readRobots` / `readSitemap`. Only the `production` stack is indexable; every other `APP_ENV` disallows the whole site. Production also disallows `CV_PAGE_PATH` (`/cv`) next to the BFF prefix, and the sitemap drops any path under it (PS-5); the headers of the CV pages are set in `next.config.ts` from `CV_RESPONSE_HEADERS`.
 
 ## Techniques
 

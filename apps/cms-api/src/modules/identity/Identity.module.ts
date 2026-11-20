@@ -11,6 +11,7 @@ import { APP_CONFIG } from '../../config/Config.constants';
 import { DatabaseModule } from '../../infrastructure/database/Database.module';
 import { MailModule } from '../../infrastructure/mail/Mail.module';
 import { AccessModule } from '../access';
+import { HumanCheckModule } from '../human-check';
 import { SecurityAuditModule, SecurityAuditService } from '../security-audit';
 import { PrismaAccountRepository } from './adapters/PrismaAccount.repository';
 import { PrismaOtpCodeRepository } from './adapters/PrismaOtpCode.repository';
@@ -50,7 +51,14 @@ import { TwoFactorController } from './http/TwoFactor.controller';
 
 /** Login, JWT, refresh rotation; OTP + password lifecycle; 2FA. */
 @Module({
-  imports: [AccessModule, DatabaseModule, MailModule, PassportModule, SecurityAuditModule],
+  imports: [
+    AccessModule,
+    DatabaseModule,
+    HumanCheckModule,
+    MailModule,
+    PassportModule,
+    SecurityAuditModule,
+  ],
   controllers: [AuthController, OwnerSetupController, PasswordController, TwoFactorController],
   providers: [
     { provide: ACCOUNT_REPOSITORY, useClass: PrismaAccountRepository },

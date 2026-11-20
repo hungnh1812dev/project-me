@@ -62,7 +62,7 @@ describe('useWebSession', () => {
         email: 'a@b.co',
         password: 'pw',
         rememberMe: false,
-        humanCheckToken: 'hc',
+        turnstileToken: 'hc',
       });
     });
     expect(result.current.status).toBe('authenticated');
@@ -71,7 +71,7 @@ describe('useWebSession', () => {
       email: 'a@b.co',
       password: 'pw',
       rememberMe: false,
-      humanCheckToken: 'hc',
+      turnstileToken: 'hc',
     });
   });
 
@@ -85,14 +85,19 @@ describe('useWebSession', () => {
     const { result } = setup(api);
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
-      await result.current.signIn({ email: 'a@b.co', password: 'pw', rememberMe: false });
+      await result.current.signIn({
+        email: 'a@b.co',
+        password: 'pw',
+        rememberMe: false,
+        turnstileToken: 'hc',
+      });
     });
     expect(result.current.status).toBe('anonymous');
     await act(async () => {
-      await result.current.completeTwoFactor({ code: '123456' });
+      await result.current.completeTwoFactor({ code: '123456', turnstileToken: 'hc' });
     });
     expect(result.current.status).toBe('authenticated');
-    expect(api.verifyTwoFactor).toHaveBeenCalledWith({ code: '123456' });
+    expect(api.verifyTwoFactor).toHaveBeenCalledWith({ code: '123456', turnstileToken: 'hc' });
   });
 
   it('stays anonymous and rethrows when the sign-in is refused', async () => {
@@ -103,7 +108,12 @@ describe('useWebSession', () => {
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
     await act(async () => {
       await expect(
-        result.current.signIn({ email: 'a@b.co', password: 'pw', rememberMe: false }),
+        result.current.signIn({
+          email: 'a@b.co',
+          password: 'pw',
+          rememberMe: false,
+          turnstileToken: 'hc',
+        }),
       ).rejects.toThrow('refused');
     });
     expect(result.current.status).toBe('anonymous');
@@ -112,8 +122,8 @@ describe('useWebSession', () => {
   it('sends the email code request through the API', async () => {
     const { result, api } = setup();
     await waitFor(() => expect(result.current.status).toBe('anonymous'));
-    await act(() => result.current.sendLoginEmailCode({ humanCheckToken: 'hc' }));
-    expect(api.sendLoginEmailCode).toHaveBeenCalledWith({ humanCheckToken: 'hc' });
+    await act(() => result.current.sendLoginEmailCode({ turnstileToken: 'hc' }));
+    expect(api.sendLoginEmailCode).toHaveBeenCalledWith({ turnstileToken: 'hc' });
   });
 
   it('signs out through the API and resets', async () => {

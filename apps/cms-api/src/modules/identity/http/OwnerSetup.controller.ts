@@ -15,13 +15,24 @@ import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { Throttle } from '../../../common/guards/Throttle.guard';
 import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { parseRequest } from '../../../common/http/RequestParsing.rules';
+import {
+  HUMAN_CHECK_FORMS,
+  RequireHumanCheck,
+  turnstileTokenSchema,
+  withoutTurnstileToken,
+} from '../../human-check';
 import { ownerInputSchema, type OwnerBootstrapInput } from '../application/OwnerBootstrap.service';
 import { OwnerSetupService, SetupClosedError } from '../application/OwnerSetup.service';
 import { IDENTITY_RATE_LIMIT_POLICIES, SETUP_ROUTES } from './IdentityHttp.constants';
 
+/** The route body: the shared owner input plus the human-check token (the CLI has none). */
+const ownerSetupRequestSchema = ownerInputSchema.extend({
+  turnstileToken: turnstileTokenSchema.optional(),
+});
+
 /** The setup token is read apart (it is checked before anything else). */
 function parseOwnerSetupBody(body: unknown): OwnerBootstrapInput {
-  return parseRequest(ownerInputSchema, body);
+  return withoutTurnstileToken(parseRequest(ownerSetupRequestSchema, body));
 }
 
 /** The submitted token, if the body carries a non-empty string under it. */
@@ -53,6 +64,7 @@ export class OwnerSetupController {
   @Post(SETUP_ROUTES.OWNER)
   @HttpCode(HttpStatus.CREATED)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
+  @RequireHumanCheck(HUMAN_CHECK_FORMS.OWNER_SETUP)
   @Throttle(IDENTITY_RATE_LIMIT_POLICIES.SETUP_SUBMIT)
   async createOwner(@Body() body: unknown, @Req() req: Request): Promise<{ email: string }> {
     const meta = { ip: clientMetaOf(this.clientIp, req).ip };

@@ -1,9 +1,15 @@
 import '@testing-library/jest-dom/vitest';
 
 import { cleanup, configure } from '@testing-library/react';
-import { afterEach, beforeAll } from 'vitest';
+import { afterEach, beforeAll, vi } from 'vitest';
 
 import { preloadScreenText, type ScreenName } from '../src/configs/locales';
+import { resetHumanCheckFake } from './HumanCheck.fixture';
+
+// Cloudflare is not reachable in tests: every form mounts the fake human-check kit.
+vi.mock('@abyss/form-commons/human-check', async (importOriginal) =>
+  (await import('./HumanCheck.fixture')).fakeHumanCheckKit(await importOriginal<object>()),
+);
 
 // jsdom has <dialog> but not its modal API: open/close via the attribute.
 // Tests cannot check focus trapping or inertness; the browser e2e covers them.
@@ -48,4 +54,5 @@ beforeAll(async () => {
 
 afterEach(() => {
   cleanup();
+  resetHumanCheckFake();
 });

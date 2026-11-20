@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react';
 import { Button } from '@abyss/form-commons';
 
-import { appEnv } from '@/configs/Browser.env';
 import { LAST_RESORT_TEXT } from '@/configs/LastResort.constants';
 import { WebLoginDialog, type SignInText } from '@/features/auth';
 import { useWebSession } from '@/features/session';
@@ -16,7 +15,7 @@ interface AccountMenuProps {
   signInText: SignInText | null;
 }
 
-/** Header controls: sign in, or the account name with Open CMS and sign out. */
+/** Header controls: sign in, or the account name with sign out. */
 export function AccountMenu({ author, signInText }: AccountMenuProps) {
   const { status, user, signOut } = useWebSession();
   const signInButtonRef = useRef<HTMLButtonElement>(null);
@@ -57,11 +56,6 @@ export function AccountMenu({ author, signInText }: AccountMenuProps) {
         <span className="text-muted-foreground hidden max-w-48 truncate text-sm sm:inline">
           {formatText(signInText.signedInAs, { name: user.displayName })}
         </span>
-      ) : null}
-      {appEnv.adminUrl !== undefined && signInText?.openCms ? (
-        <Button asChild size="sm" variant="secondary">
-          <a href={appEnv.adminUrl}>{signInText.openCms}</a>
-        </Button>
       ) : null}
       <Button
         size="sm"

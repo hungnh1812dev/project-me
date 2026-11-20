@@ -16,7 +16,7 @@ describe('UnknownPathNotFound', () => {
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: NOT_FOUND_PAGE_MOCK.notFoundText.notFoundTitle,
+        name: NOT_FOUND_PAGE_MOCK.notFoundText.title,
       }),
     ).toBeInTheDocument();
   });

@@ -21,6 +21,17 @@ describe('bffErrorResponse', () => {
     });
   });
 
+  it('answers BFF_NOT_FOUND with 404 and a message that names no id or type', async () => {
+    const response = bffErrorResponse(new BffError('BFF_NOT_FOUND'));
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({
+      statusCode: 404,
+      errorCode: 'BFF_NOT_FOUND',
+      message: 'Not found.',
+    });
+  });
+
   it('adds Allow to a 405 and Retry-After to a 429', () => {
     const notAllowed = bffErrorResponse(BffError.methodNotAllowed(['GET', 'POST']));
     expect(notAllowed.status).toBe(405);
@@ -31,7 +42,7 @@ describe('bffErrorResponse', () => {
   });
 
   it('lists every code with its own error code as the key', () => {
-    expect(Object.keys(BFF_ERROR_CODES)).toHaveLength(15);
+    expect(Object.keys(BFF_ERROR_CODES)).toHaveLength(16);
     expect(Object.keys(BFF_ERROR_CODES).every((code) => code.startsWith('BFF_'))).toBe(true);
   });
 });
@@ -49,6 +60,35 @@ describe('BffError', () => {
   });
 });
 
+describe('bffErrorOf human check answers of cms-api', () => {
+  const upstream = (statusCode: number, upstreamErrorCode: string) =>
+    new WebApiError({
+      source: API_ERROR_SOURCES.CMS_API_REST,
+      errorCode: API_ERROR_CODES.BFF.UPSTREAM_FAILED,
+      statusCode,
+      upstreamErrorCode,
+    });
+
+  it('maps 400 HUMAN_CHECK_FAILED and 503 HUMAN_CHECK_UNAVAILABLE', () => {
+    expect(bffErrorOf(upstream(400, 'HUMAN_CHECK_FAILED'))).toMatchObject({
+      errorCode: 'BFF_HUMAN_CHECK_FAILED',
+      statusCode: 400,
+    });
+    expect(bffErrorOf(upstream(503, 'HUMAN_CHECK_UNAVAILABLE'))).toMatchObject({
+      errorCode: 'BFF_HUMAN_CHECK_UNAVAILABLE',
+      statusCode: 503,
+    });
+  });
+
+  it('ignores the code at another status and any other upstream code', () => {
+    expect(bffErrorOf(upstream(503, 'HUMAN_CHECK_FAILED')).errorCode).toBe('BFF_UPSTREAM_FAILED');
+    expect(bffErrorOf(upstream(400, 'HUMAN_CHECK_UNAVAILABLE')).errorCode).toBe(
+      'BFF_UPSTREAM_FAILED',
+    );
+    expect(bffErrorOf(upstream(400, 'AUTH_INVALID_REQUEST')).errorCode).toBe('BFF_UPSTREAM_FAILED');
+  });
+});
+
 describe('bffErrorOf', () => {
   const cmsApi = (errorCode: WebApiError['errorCode'], retryAfterSeconds?: number) =>
     new WebApiError({ source: API_ERROR_SOURCES.CMS_API_REST, errorCode, retryAfterSeconds });
@@ -58,21 +98,13 @@ describe('bffErrorOf', () => {
     expect(bffErrorOf(error)).toBe(error);
   });
 
-  it('maps a timeout, a rate limit and a Turnstile code, and any other failure to upstream failed', () => {
+  it('maps a timeout and a rate limit, and any other failure to upstream failed', () => {
     expect(bffErrorOf(cmsApi(API_ERROR_CODES.SERVER_API.TIMEOUT)).errorCode).toBe(
       'BFF_UPSTREAM_TIMEOUT',
     );
     expect(bffErrorOf(cmsApi(API_ERROR_CODES.BFF.RATE_LIMITED, 7)).headers).toEqual({
       'retry-after': '7',
     });
-    expect(
-      bffErrorOf(
-        new WebApiError({
-          source: API_ERROR_SOURCES.TURNSTILE,
-          errorCode: API_ERROR_CODES.BFF.HUMAN_CHECK_UNAVAILABLE,
-        }),
-      ).statusCode,
-    ).toBe(503);
     expect(bffErrorOf(cmsApi(API_ERROR_CODES.SERVER_API.NETWORK)).errorCode).toBe(
       'BFF_UPSTREAM_FAILED',
     );

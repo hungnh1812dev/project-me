@@ -37,9 +37,17 @@ The schema format of `apps/cms-api/content/schemas/cv-page.json` as changed on 2
 
 - **CM-11 `default`.** Optional on every field whose type an editor types or picks a value for: `text`, `string`, `richtext`, `integer`, `biginteger`, `decimal`, `float`, `double`, `boolean`, `date`, `datetime`, `time`, `enumeration`, `json`. On `media` and `component` it is `schema.invalid`; so is `null`. The value must be one the API accepts on a write of that field: the field type's own value check, with the field's `unsigned` and `options` (an `enumeration` default is one of its `options`), else `schema.invalid` with path `fields[i].default`. A `richtext` default is checked with no media origin and is refused when sanitizing changes it (so it holds no image). It is metadata only (comment-only migration, no column `DEFAULT`); stored documents keep their values when it is added, changed or removed. `GET /content-types` field views carry it, in the API's value form (a `time` as `HH:MM:SS`, a `biginteger` as a digit string), only when the schema sets it. The API never applies it: only cms-admin does (CE-5 in [content-editing](../content-editing/SPEC.md); Q-TID4). It is allowed on a `sensitive` field and, being schema metadata, holds no secret (Q-TID5). Defaults are fixed values only (Q-TID3). A new type that takes a value is one field type entry that says it accepts a default.
 
+### Data steps (feature `header-restructure`, ADR 0026, user 2026-11-19)
+
+- **CM-12 Data steps keep data through a restructure.** `content:generate --data-step <file>` places a reviewed SQL file (DML and `DO` blocks only) inside the generated migration, after the renames, creates and added columns and before the destructive statements (type changes, dropped columns, dropped tables), all in the migration's one transaction. The file declares each destructive change it covers as `-- carries <target>` or `-- discards <target>: <who decided, date>` (`<table>.<column>` or `<table>`). Without `--allow-destructive` the migration is written only when every destructive change is declared; a declaration that names none of them is refused. A field that becomes an `enumeration`, or whose `options` shrink, is checked in the data step: a stored value outside `options` stops the migration.
+
+### Link-only types (feature `cv-private-link`, public-site PS-5, user 2026-11-19)
+
+- **CM-13 `linkOnly` type option.** A collection type's schema may set `"linkOnly": true` (top level, next to `draftAndPublish`; optional, default `false`): its documents are reached only by their `documentId`, never by a list. On a single type it is `schema.invalid`. It lives in the definition, the registry and `snapshot.json`; turning it on or off makes no SQL statement. For a link-only type, a list read (REST `GET /documents/:slug` with any filter, sort, search or page, and the GraphQL `<type>List` root field) is served only to an actor that holds a write action (`create`, `update`, `delete`, `publish` or `unpublish`) on that type, as the owner and editors do in cms-admin. Every other actor (anonymous with the `public` role, `guest`, `reviewer`, a read-only role, an API token whose scope reads only) gets REST `403 DOCUMENT_LIST_NOT_ALLOWED`, and GraphQL leaves the `<type>List` field out of that actor's schema, so asking for it fails validation like an unknown field (D18 "hidden = unknown"). Reading one document by `documentId` (REST `GET /documents/:slug/:documentId`, GraphQL `<type>(documentId:)`) is unchanged: published only for those actors, with their field masks (D3), and the same not-found answer for an unknown and an unpublished id. cms-admin shows a refused list with its existing forbidden state. The schema builder (D24) keeps the option when it saves a type; a control for it in the builder is not in this feature. `page-cv-a` is the first link-only type (PS-5, Q-CL6).
+
 ## Acceptance
 
-Global success criterion of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 16.
+Global success criteria of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.md)): 16, 31.
 
 ## Decisions
 
@@ -48,6 +56,8 @@ Global success criterion of this flow ([ACCEPTANCE.md](../../global/ACCEPTANCE.m
 Q1 (Kysely for content queries) is global: [DECISIONS.md](../../global/DECISIONS.md).
 
 **Field metadata and component names.** CM-1..CM-10: `docs/adr/0019-content-field-metadata-and-component-names.md` (accepted 2026-11-05, user). The cms-admin side (labels, inputs, widths) is CE-1..CE-3 in [content-editing](../content-editing/SPEC.md).
+
+**Data steps.** CM-12: `docs/adr/0026-content-migration-data-steps.md` (accepted 2026-11-19, user).
 
 ## Out of scope
 

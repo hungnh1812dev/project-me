@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 # Build from the repo root:
-#   docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=... .
+#   docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=... \
+#     --build-arg VITE_TURNSTILE_SITE_KEY=... .
 ARG NODE_IMAGE=node:24.18-alpine
 ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.29-alpine
 
@@ -29,6 +30,9 @@ COPY --from=prune /repo/tsconfig.base.json ./
 ARG VITE_API_BASE_URL
 RUN test -n "$VITE_API_BASE_URL" || (echo "VITE_API_BASE_URL build arg is required" >&2; exit 1)
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_TURNSTILE_SITE_KEY
+RUN test -n "$VITE_TURNSTILE_SITE_KEY" || (echo "VITE_TURNSTILE_SITE_KEY build arg is required" >&2; exit 1)
+ENV VITE_TURNSTILE_SITE_KEY=$VITE_TURNSTILE_SITE_KEY
 RUN pnpm turbo run build --filter=@abyss/cms-admin
 
 # 3. Runtime: static files on unprivileged nginx (runs as uid 101, port 8080).

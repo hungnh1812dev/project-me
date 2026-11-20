@@ -71,7 +71,10 @@ function PaletteItemRow({ type, icon: Icon, label, onPick }: PaletteItemProps) {
     id: `${PALETTE_ID_PREFIX}${type}`,
   });
   return (
-    <li ref={setNodeRef} className={`flex items-center gap-0.5 ${isDragging ? 'opacity-60' : ''}`}>
+    <li
+      ref={setNodeRef}
+      className={`flex items-center gap-1 rounded-control border border-border bg-card p-1 shadow-xs transition-colors hover:border-primary/40 ${isDragging ? 'opacity-60 ring-2 ring-primary' : ''}`}
+    >
       <IconButton
         ref={setActivatorNodeRef}
         type="button"

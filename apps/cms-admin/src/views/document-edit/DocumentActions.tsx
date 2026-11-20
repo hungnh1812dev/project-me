@@ -7,7 +7,7 @@ import { useCallerAccess } from '@features/access/useCallerAccess';
 import type { DocumentRecord } from '@features/content/Content.api';
 import { PUBLISH_STATE } from '@features/content/Content.constants';
 import { toSaveError } from '@features/content/Content.errors';
-import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
+import { invalidateDocumentQueries } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -63,14 +63,7 @@ export function DocumentActions({
   const state = record?.publishState;
   const hasLifecycle = record !== null && draftAndPublish && state !== undefined;
 
-  const refetch = async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({
-        queryKey: CONTENT_QUERY_KEYS.draft(slug, record?.documentId ?? ''),
-      }),
-      queryClient.invalidateQueries({ queryKey: CONTENT_QUERY_KEYS.list(slug) }),
-    ]);
-  };
+  const refetch = () => invalidateDocumentQueries(queryClient, slug, record?.documentId);
   const lifecycle = useMutation({
     mutationFn: async (action: 'publish' | ConfirmedAction) => {
       const documentId = record?.documentId ?? '';
@@ -108,7 +101,7 @@ export function DocumentActions({
     holds('update') && access.canWriteEveryField(slug, rootFieldNames) && hasLifecycle;
 
   return (
-    <fieldset className="m-0 flex min-w-0 flex-wrap justify-end gap-2 border-0 p-0">
+    <fieldset className="m-0 flex min-w-0 flex-wrap items-center justify-end gap-3 border-0 p-0">
       <legend className="sr-only">{copy.group}</legend>
       {canDiscard ? (
         <Button
