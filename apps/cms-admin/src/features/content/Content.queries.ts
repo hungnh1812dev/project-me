@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, type QueryClient } from '@tanstack/react-query';
 
 import { CONTENT_LIST_PAGE_SIZE } from './Content.constants';
 import { useContentApi } from './ContentApi.context';
@@ -12,6 +12,23 @@ export const CONTENT_QUERY_KEYS = {
   presence: (slug: string, documentId: string) =>
     ['content', 'presence', slug, documentId] as const,
 } as const;
+
+/**
+ * The one place that says which cached answers a document write makes stale:
+ * every list of the type and, with a document id, that document's draft.
+ */
+export async function invalidateDocumentQueries(
+  queryClient: QueryClient,
+  slug: string,
+  documentId?: string,
+): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: CONTENT_QUERY_KEYS.list(slug) }),
+    documentId === undefined
+      ? undefined
+      : queryClient.invalidateQueries({ queryKey: CONTENT_QUERY_KEYS.draft(slug, documentId) }),
+  ]);
+}
 
 /** One page of a collection (drafts for draft-and-publish types). */
 export function useDocumentListQuery(

@@ -14,7 +14,7 @@ Flows: [`content-editing`](../../flows/content-editing/FLOW.md).
 
 ## Purpose
 
-`/content/:slug`: the draft list of a collection (sort, paging, bulk publish, unpublish, delete, JSON import). A single type is sent on to its one document. Titles use the content type's `displayName`.
+`/content/:slug`: the draft list of a collection (sort, paging, bulk publish, unpublish, delete, JSON import). A single type is sent on to its one document, decided only on a list answer fetched after the page mounted (never on a cached or placeholder answer; a failed refetch shows the error, not a redirect). Titles use the content type's `displayName`.
 
 ## Techniques
 
@@ -41,7 +41,7 @@ A new bulk action: `useBulkRun.ts` and `Bulk.rules.ts`, with its copy in `config
 collection-list/ (10 files)
 ```
 
-Tests: 2 files (not listed).
+Tests: 3 files (not listed).
 
 | File | Description |
 |---|---|

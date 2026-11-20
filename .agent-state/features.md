@@ -38,12 +38,17 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 39 | header-mobile-drawer | done | features/header-mobile-drawer/ | apps/web (components/layouts SiteNav, MobileNavDrawer, SiteHeader, LastResort.constants), docs/modules/web/site-header.md, apps/e2e (qc), docs/flows/public-site, docs/apps/web, CHANGELOG.md | 51a6bb0fe7953dc1d891b2e3812b5694b6bb4585 | features/header-mobile-drawer/SUMMARY.md |
 | 38 | cv-private-link | done 2026-11-19 (web only; after header-nav; head 73851ce4) | features/cv-private-link/ | apps/web (views/cv, cv BFF route, crawler-files, security headers), scripts/smoke, apps/e2e (qc), CHANGELOG.md | 841fc76b421897805fcb441d91ce684176e008d6 | features/cv-private-link/SUMMARY.md |
 | 36 | shared-human-check | done 2026-11-20 (head 422d2c90) | features/shared-human-check/ | packages/form-commons, apps/cms-api, apps/cms-admin, apps/web, docker-compose.smoke.yml, scripts/, .github, docs, CHANGELOG.md, apps/e2e (qc) | 1883764ab9d63f6531660bd834601407283d38e0 | features/shared-human-check/SUMMARY.md |
+| 40 | single-type-stale-redirect | done | features/single-type-stale-redirect/ | apps/cms-admin, apps/e2e (qc), docs/modules/cms-admin | 21a5df654c76ac04e33053b6eba29a376aef5995 | features/single-type-stale-redirect/SUMMARY.md |
+| 41 | effect-audit | done 2026-11-20 (head a930c34f) | features/effect-audit/ | repo config (pnpm-workspace.yaml, pnpm-lock.yaml, CHANGELOG.md), apps/e2e (qc) | 86ba76bae7d275ada55b663035a33af1a4d7429b | features/effect-audit/SUMMARY.md |
 | 10 | launch-gate | todo (stopped by user 2026-11-16; not resumed until the user asks; resume: ask for TOTP secret CLG-15/16, CLG-56 stage 2 data, Q2/Q3) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
 
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
 ## Follow-ups
+- single-type-stale-redirect: cms-api accepts a second document of a single type (user 2026-11-20: a separate later feature) -> planner SPEC, unscheduled.
+- single-type-stale-redirect: no unsaved-changes warning when the editor leaves a document (user 2026-11-20: not now) -> user decision, unscheduled.
+- single-type-stale-redirect: second single-type documents created before the fix are counted by qc at STR-A; the user deletes them by hand (user 2026-11-20) -> user, unscheduled.
 - shared-human-check: `apps/web/.env` (git-ignored) still holds unused `TURNSTILE_*` keys, one looking like a real Cloudflare secret -> user removes the keys and/or rotates the secret, unscheduled.
 - shared-human-check: `optionalLinkTarget` in `apps/web/src/configs/RequireEnv.rules.ts` is unused; remove it with its test -> core-builder or ui-builder, unscheduled.
 - shared-human-check: docs still naming the web Turnstile secret, the hostname or `NEXT_PUBLIC_ADMIN_URL`: docs/global/reference/env-vars.md, docs/guidelines/local-run.md, docs/apps/web/SPEC.md, docs/global/ACCEPTANCE.md (criterion 30), ADR 0027 decision text (WEB-12) -> planner, unscheduled.

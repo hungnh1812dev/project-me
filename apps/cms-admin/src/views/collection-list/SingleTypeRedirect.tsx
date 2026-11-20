@@ -22,7 +22,13 @@ export function SingleTypeRedirect({
   const list = useScreenText('content').content.collection;
   const documents = useDocumentListQuery(slug, 1, undefined, draftAndPublish, true);
 
-  if (documents.isSuccess) {
+  const hasFreshList =
+    documents.isSuccess &&
+    documents.isFetchedAfterMount &&
+    !documents.isFetching &&
+    !documents.isPlaceholderData;
+
+  if (hasFreshList) {
     const [only] = documents.data.data;
     return (
       <Navigate

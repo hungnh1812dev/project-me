@@ -96,7 +96,7 @@ test.describe.serial(
       for (const [index, name] of SKILLS.entries()) {
         await a.getByRole('button', { name: list.addSlot('Skills') }).click();
         await skillName(a, index).fill(name);
-        await skillLevel(a, index).fill('Basic');
+        await skillLevel(a, index).selectOption({ label: 'Others' });
       }
       await a.keyboard.press('Enter');
       await expect(a).toHaveURL(EDIT_URL);
@@ -162,10 +162,10 @@ test.describe.serial(
     test('item cases: removed, added, level and reorder each take either side', async () => {
       await staleA(async (page) => {
         await fieldByLabel(page, 'Position').fill(`B2 ${RUN_ID}`);
-        await skillLevel(page, 1).fill('B-level');
+        await skillLevel(page, 1).selectOption({ label: 'Intermediate' });
       });
       await fieldByLabel(a, 'Position').fill(`A2 ${RUN_ID}`);
-      await skillLevel(a, 0).fill('A-level');
+      await skillLevel(a, 0).selectOption({ label: 'Proficient' });
       await a.getByRole('button', { name: list.remove('Skills', 1) }).click();
       await a.getByRole('button', { name: list.addSlot('Skills') }).click();
       await skillName(a, 2).fill(`Delta ${RUN_ID}`);
@@ -194,12 +194,14 @@ test.describe.serial(
       await expect(toast(a, copy.saved)).toBeVisible();
       await expect(fieldByLabel(a, 'Position')).toHaveValue(`B2 ${RUN_ID}`);
       expect(await skillNames(a)).toEqual([SKILLS[0], SKILLS[1], SKILLS[2], `Delta ${RUN_ID}`]);
-      await expect(skillLevel(a, 0)).toHaveValue('A-level');
-      await expect(skillLevel(a, 1)).toHaveValue('B-level');
+      await expect(skillLevel(a, 0).locator('option:checked')).toHaveText('Proficient');
+      await expect(skillLevel(a, 1).locator('option:checked')).toHaveText('Intermediate');
     });
 
     test('item cases, other side: own removal, saved add, own order', async () => {
-      await staleA((page) => skillLevel(page, 2).fill('B-gamma'));
+      await staleA(async (page) => {
+        await skillLevel(page, 2).selectOption({ label: 'Working Knowledge' });
+      });
       await a.getByRole('button', { name: list.remove('Skills', 2) }).click();
       await a.getByRole('button', { name: list.addSlot('Skills') }).click();
       await skillName(a, 3).fill(`Eps ${RUN_ID}`);
@@ -239,7 +241,7 @@ test.describe.serial(
     test('a second concurrent save during the merge refreshes the diff and resets choices', async () => {
       await staleA((page) => fieldByLabel(page, 'Position').fill(`B4 ${RUN_ID}`));
       await fieldByLabel(a, 'Position').fill(`A4 ${RUN_ID}`);
-      await skillLevel(a, 0).fill('A4-level');
+      await skillLevel(a, 0).selectOption({ label: 'Working Knowledge' });
       const first = await save(a);
       expect(first.status()).toBe(HTTP.CONFLICT);
       const firstVersion = ((await first.json()) as { details: { currentVersion: number } }).details

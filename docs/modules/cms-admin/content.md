@@ -38,7 +38,7 @@ A field label is the definition's `displayName`, else `labelOf(name)` (`techStac
 
 ## Where to change what
 
-A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`.
+A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`. A new document write (create, update, merge, lifecycle) calls `invalidateDocumentQueries(queryClient, slug, documentId?)` from `Content.queries.ts`, the one place that says which cached answers a write makes stale (the type's lists and, with an id, that draft).
 
 ## Files
 

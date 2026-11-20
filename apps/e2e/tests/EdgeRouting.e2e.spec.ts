@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { withHumanCheck } from '../src/Session.fixture';
 
 /**
  * SPEC §12-2 and §12-17 through the real edge (Traefik in front of cms-api):
@@ -21,7 +22,7 @@ test.describe('edge routing', { tag: ['@cms-api', '@sign-in'] }, () => {
   }) => {
     for (const path of [LOGIN, `${LOGIN}/`]) {
       const response = await request.post(apiUrl(path), {
-        data: CREDENTIALS,
+        data: withHumanCheck(CREDENTIALS),
         maxRedirects: 0,
       });
       expect(response.status(), path).toBe(HTTP.UNAUTHORIZED);

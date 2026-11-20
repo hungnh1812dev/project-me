@@ -15,6 +15,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- root: `effect` pinned to 3.22.4 by a pnpm override (GHSA-7589-6fvf-x4pw, ReDoS; reached through Prisma's config loader and `@hookform/resolvers`).
 - cms-api: `module-auth.openCms` dropped with a destructive content migration. Take a database backup before deploying.
 - web: the BFF forwards `turnstileToken` to cms-api; `TURNSTILE_*` keys and `NEXT_PUBLIC_ADMIN_URL` and the "Open CMS" link removed.
 - DevOps: [cms-api](docs/apps/cms-api/patch-cms-api-0.3.0.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.3.0.md) and [web](docs/apps/web/patch-web-0.3.0.md) patches 0.3.0 (secret, hosts, site key; release cms-api first).
@@ -30,6 +31,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - docs: shared human check D25 and ADR 0027 (cms-api verifies Turnstile for every public auth form), web WEB-12 (no reference to cms-admin), acceptance criteria 29 and 30; D17, D21, criterion 24 and public-site PS-3 amended.
 - docs: public-site PS-5 (each CV on its own link-only page `/cv/<documentId>`, never crawled or indexed), content-modeling CM-13 (`linkOnly` type option), acceptance criterion 31; PS-1 (the web header reads no `requiresRole`), PS-2, PS-4, criterion 25 and web D21 amended.
 - docs: public-site PS-6 (on a phone the header entries move into a side drawer opened by a menu button), Q-HN3; web WEB-3 amended (two built-in button names).
+
+### Bug fixes
+
+- cms-admin: reopening a single type from the side menu opens its saved document, not a new form; a create form no longer keeps another content type's values.
 
 ## 0.2.0 (2026-11-18)
 
