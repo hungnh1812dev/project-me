@@ -77,6 +77,12 @@ export const LOGIN_RATE_LIMIT_OVERRIDE_OPT_IN = 'smoke';
 /** The only accepted value of ALLOW_LOCAL_MEDIA_PROVIDER (local media in production: test stacks only). */
 export const LOCAL_MEDIA_PROVIDER_OPT_IN = 'smoke';
 
+/** The only accepted value of ALLOW_TURNSTILE_TEST_SECRET (the Turnstile test secret in production: smoke stack only). */
+export const TURNSTILE_TEST_SECRET_OPT_IN = 'smoke';
+
+/** Cloudflare's published always-pass test secret (it accepts every token and answers no real action). */
+export const TURNSTILE_ALWAYS_PASS_TEST_SECRET = '1x0000000000000000000000000000000AA';
+
 /**
  * Env keys that may replace one rate-limit rule's limit. Config
  * names env keys only; a rule opts in with `limitOverrideEnvKey`. Refused in

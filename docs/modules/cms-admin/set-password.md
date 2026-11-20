@@ -18,7 +18,7 @@ The invited person activates the account by entering the code from the invitatio
 
 ## Techniques
 
-A view (page) folder registered in `views/Views.registry.ts`; it reads data only through feature facades ([cms-admin rules](../../apps/cms-admin/RULES.md)). A fresh code can be requested here, since one lasts only a few minutes.
+A view (page) folder registered in `views/Views.registry.ts`; it reads data only through feature facades ([cms-admin rules](../../apps/cms-admin/RULES.md)). A fresh code can be requested here, since one lasts only a few minutes; that request carries a `password-reset` human check token (D25), the set itself does not.
 
 ## Technologies
 

@@ -42,8 +42,15 @@ function componentEntries(): Record<string, string> {
  */
 const CONSTANT_ENTRIES = { 'security/index': 'src/constants/Security.constants.ts' };
 
+const HUMAN_CHECK_ENTRIES = { 'human-check/index': 'src/human-check/index.ts' };
+
 export default defineConfig({
-  entry: { index: 'src/index.ts', ...componentEntries(), ...CONSTANT_ENTRIES },
+  entry: {
+    index: 'src/index.ts',
+    ...componentEntries(),
+    ...CONSTANT_ENTRIES,
+    ...HUMAN_CHECK_ENTRIES,
+  },
   format: ['esm'],
   dts: true,
   sourcemap: true,

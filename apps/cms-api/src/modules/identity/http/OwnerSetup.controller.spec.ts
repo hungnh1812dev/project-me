@@ -29,6 +29,7 @@ describe('OwnerSetupController.createOwner', () => {
       setupToken: 'tok',
       email: ' O@Example.test ',
       password: 'correct horse battery staple',
+      turnstileToken: 'token',
     };
     await expect(controller.createOwner(body, REQUEST)).resolves.toEqual({
       email: 'o@example.test',

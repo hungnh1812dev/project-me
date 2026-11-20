@@ -1,11 +1,17 @@
 import { retryAfterSecondsOf } from '@apis/client/ApiFailure.errors';
-import { HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
+import { API_ERROR_CODES, HTTP_STATUS, RETRY_AFTER_HEADER } from '@configs/Http.constants';
 import type { ScreenText } from '@configs/locales';
 import { isAxiosError } from 'axios';
 
 const SECONDS_PER_MINUTE = 60;
 
-export type LoginErrorKind = 'invalid-credentials' | 'rate-limited' | 'network' | 'unexpected';
+export type LoginErrorKind =
+  | 'invalid-credentials'
+  | 'rate-limited'
+  | 'human-check-failed'
+  | 'human-check-unavailable'
+  | 'network'
+  | 'unexpected';
 
 type LoginText = ScreenText<'login'>;
 
@@ -35,6 +41,13 @@ export function toLoginError(error: unknown, text: LoginText): LoginError {
   const response = error.response;
   if (response === undefined) {
     return { kind: 'network', message: text.login.errors.network };
+  }
+  const errorCode = (response.data as { errorCode?: unknown } | null)?.errorCode;
+  if (errorCode === API_ERROR_CODES.HUMAN_CHECK_FAILED) {
+    return { kind: 'human-check-failed', message: text.login.humanCheck.errors.failed };
+  }
+  if (errorCode === API_ERROR_CODES.HUMAN_CHECK_UNAVAILABLE) {
+    return { kind: 'human-check-unavailable', message: text.login.humanCheck.errors.unavailable };
   }
   if (response.status === HTTP_STATUS.TOO_MANY_REQUESTS) {
     const headers = response.headers as Record<string, unknown>;

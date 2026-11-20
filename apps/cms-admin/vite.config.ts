@@ -55,7 +55,11 @@ export default defineConfig(({ mode }) => {
       environment: 'jsdom',
       globals: true,
       // Replaces .env files in tests.
-      env: { VITE_API_BASE_URL: 'http://domain.localhost/api/v1' },
+      env: {
+        VITE_API_BASE_URL: 'http://domain.localhost/api/v1',
+        // Cloudflare's published always-pass test key.
+        VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
+      },
       setupFiles: ['./test/Vitest.setup.ts'],
       include: ['src/**/*.test.{ts,tsx}'],
       testTimeout: TEST_TIMEOUT_MS,

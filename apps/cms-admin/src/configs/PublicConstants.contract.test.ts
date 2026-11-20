@@ -24,6 +24,7 @@ interface PublicConstants {
     ownerSetup: Record<string, string>;
     access: Record<string, string>;
     backups: Record<string, string>;
+    humanCheck: Record<string, string>;
   };
   permissionActions: string[];
 }
@@ -88,6 +89,11 @@ describe('admin constants against the cms-api public constants', () => {
       expect(publishedAccess).toContain(code);
       expect(adminCodes).not.toContain(code);
     }
+  });
+
+  it('mirrors the published human check codes', () => {
+    expect(adminCodes).toContain(published.errorCodes.humanCheck.FAILED);
+    expect(adminCodes).toContain(published.errorCodes.humanCheck.UNAVAILABLE);
   });
 
   it('mirrors the published backups not-configured code', () => {

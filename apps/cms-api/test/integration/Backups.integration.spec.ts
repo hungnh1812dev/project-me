@@ -19,12 +19,9 @@ import { BACKUPS_ERROR_CODES } from '../../src/modules/backups/domain/Backups.co
 import { BACKUPS_RATE_LIMIT_POLICIES } from '../../src/modules/backups/http/Backups.controller';
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
+import { TURNSTILE_VERIFIER, type TurnstileVerifier } from '../../src/modules/human-check';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
 import { AUTH_ERROR_CODES } from '../../src/modules/identity/domain/Identity.constants';
-import {
-  TURNSTILE_VERIFIER,
-  type TurnstileVerifier,
-} from '../../src/modules/reviewer/application/Reviewer.port';
 import { AUDIT_ACTIONS } from '../../src/modules/security-audit';
 import {
   ARTICLE_DEFINITION,

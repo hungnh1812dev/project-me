@@ -49,4 +49,14 @@ describe('toSetupError', () => {
     expect(toSetupError(failure(500), SETUP_TEXT).kind).toBe('alert');
     expect(toSetupError(new Error('x'), SETUP_TEXT).kind).toBe('alert');
   });
+
+  it.each([
+    ['HUMAN_CHECK_FAILED', 401, EN_TEXT.setup.humanCheck.errors.failed],
+    ['HUMAN_CHECK_UNAVAILABLE', 503, EN_TEXT.setup.humanCheck.errors.unavailable],
+  ])('maps %s to its own alert, before the status', (errorCode, status, message) => {
+    expect(toSetupError(failure(status, { errorCode }), SETUP_TEXT)).toEqual({
+      kind: 'alert',
+      message,
+    });
+  });
 });

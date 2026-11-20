@@ -14,6 +14,16 @@ describe('toPasswordError', () => {
     [API_ERROR_CODES.INVALID_OTP, 'invalid-code', EN_TEXT.password.errors.invalidCode],
     [API_ERROR_CODES.WEAK_PASSWORD, 'weak-password', EN_TEXT.password.errors.weakPassword],
     [API_ERROR_CODES.TOTP_REQUIRED, 'totp-required', EN_TEXT.password.errors.totpRequired],
+    [
+      API_ERROR_CODES.HUMAN_CHECK_FAILED,
+      'human-check-failed',
+      EN_TEXT.password.humanCheck.errors.failed,
+    ],
+    [
+      API_ERROR_CODES.HUMAN_CHECK_UNAVAILABLE,
+      'human-check-unavailable',
+      EN_TEXT.password.humanCheck.errors.unavailable,
+    ],
   ])('maps %s', (errorCode, kind, message) => {
     expect(toPasswordError(httpError(400, { errorCode }))).toEqual({
       kind,

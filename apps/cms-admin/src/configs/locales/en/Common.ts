@@ -31,7 +31,20 @@ export const SESSION_COPY = {
   accountMenu: (name: string) => `Account menu for ${name}`,
 } as const;
 
+/** Shared by the four human-checked pages (sign in, 2FA, setup, password reset). */
+export const HUMAN_CHECK_COPY = {
+  loading: 'Checking that you are not a robot...',
+  failed: 'The check could not load. Reload the page and try again.',
+  expired: 'The check expired. Wait for it to renew, then try again.',
+  required: 'Wait for the check to finish, then try again.',
+  errors: {
+    failed: 'The check did not pass. Try again.',
+    unavailable: 'The check is unavailable right now. Try again in a moment.',
+  },
+} as const;
+
 export const PASSWORD_COPY = {
+  humanCheck: HUMAN_CHECK_COPY,
   emailLabel: 'Email',
   codeLabel: 'Verification code',
   codeHint: `The ${OTP_CODE_LENGTH}-digit code from the email. It works for ${OTP_TTL_MINUTES} minutes.`,

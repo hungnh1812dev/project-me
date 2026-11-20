@@ -1,21 +1,23 @@
-import { useEffect } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { SIGN_IN_MOCK } from '@/apis/server/graphql/mocks/SignIn.mock';
 
 import { fakeApi, TEST_USER, Wrapper } from '../session/Session.fixture';
+import { resetHumanCheckFake } from './HumanCheck.fixture';
 import { WebLoginDialog } from './WebLoginDialog';
 
 const copy = SIGN_IN_MOCK.signInText;
-const HUMAN_CHECK_TOKEN = 'human-check-token';
 
-vi.mock('./TurnstileWidget', () => ({
-  TurnstileWidget: ({ onToken }: { onToken: (token: string) => void }) => {
-    useEffect(() => onToken(HUMAN_CHECK_TOKEN), [onToken]);
-    return <div data-testid="human-check" />;
-  },
+vi.mock('@abyss/form-commons/human-check', async (importOriginal) =>
+  (await import('./HumanCheck.fixture')).fakeHumanCheckKit(await importOriginal<object>()),
+);
+
+vi.mock('@/configs/Browser.env', () => ({
+  appEnv: { turnstileSiteKey: 'site-key' },
 }));
+
+beforeEach(resetHumanCheckFake);
 
 function renderDialog(api = fakeApi()) {
   render(
@@ -44,7 +46,7 @@ describe('WebLoginDialog keep me signed in', () => {
     renderDialog();
     const password = screen.getByLabelText(new RegExp(copy.passwordLabel));
     const box = screen.getByRole('checkbox', { name: copy.rememberMeLabel });
-    const humanCheck = screen.getByTestId('human-check');
+    const humanCheck = screen.getByTestId('turnstile-login');
     expect(password.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(box.compareDocumentPosition(humanCheck) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -60,7 +62,7 @@ describe('WebLoginDialog keep me signed in', () => {
       email: 'reader@example.com',
       password: 'pw',
       rememberMe: false,
-      humanCheckToken: HUMAN_CHECK_TOKEN,
+      turnstileToken: 'login-token-1',
     });
   });
 

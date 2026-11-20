@@ -95,3 +95,9 @@ export const WEB_SESSION_COOKIE_NAME = '__Host-abyss_web_session';
 
 /** Sealed code-step cookie of the web BFF (Max-Age 300). */
 export const WEB_TWO_FACTOR_COOKIE_NAME = '__Host-abyss_web_2fa';
+
+/** Body field cms-api reads the human-check token from; mirrors `humanCheckTokenField` of the published constants. */
+export const HUMAN_CHECK_TOKEN_FIELD = 'turnstileToken';
+
+/** Any non-empty token: the dev and smoke stacks verify it against Cloudflare's always-pass test secret. */
+export const E2E_HUMAN_CHECK_TOKEN = 'XXXX.DUMMY.TOKEN.XXXX';

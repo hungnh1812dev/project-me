@@ -9,6 +9,8 @@ import {
   OPTIONAL_SECRET_ENV_KEYS,
   RATE_LIMIT_OVERRIDE_ENV_KEYS,
   SECRET_ENV_KEYS,
+  TURNSTILE_ALWAYS_PASS_TEST_SECRET,
+  TURNSTILE_TEST_SECRET_OPT_IN,
 } from './Config.constants';
 import type { DatabaseEnv, Env } from './Env.schema';
 
@@ -171,6 +173,27 @@ const requireHttpsBackupEndpoint: EnvRule = (env, ctx) => {
   }
 };
 
+const requireSafeTurnstileSecret: EnvRule = (env, ctx) => {
+  const secret = env.TURNSTILE_SECRET_KEY;
+  if (secret === undefined) {
+    addIssue(ctx, 'TURNSTILE_SECRET_KEY', 'TURNSTILE_SECRET_KEY is required in production');
+  } else if (secret === TURNSTILE_ALWAYS_PASS_TEST_SECRET) {
+    if (env.ALLOW_TURNSTILE_TEST_SECRET !== TURNSTILE_TEST_SECRET_OPT_IN) {
+      addIssue(
+        ctx,
+        'TURNSTILE_SECRET_KEY',
+        `the Turnstile test secret is not allowed in production without ALLOW_TURNSTILE_TEST_SECRET=${TURNSTILE_TEST_SECRET_OPT_IN}`,
+      );
+    }
+  } else if (env.TURNSTILE_EXPECTED_HOSTNAME === undefined) {
+    addIssue(
+      ctx,
+      'TURNSTILE_EXPECTED_HOSTNAME',
+      'TURNSTILE_EXPECTED_HOSTNAME is required in production with a real Turnstile secret',
+    );
+  }
+};
+
 const requireProductionKeys: EnvRule = (env, ctx) => {
   addMissingIssues(env, ctx, PRODUCTION_REQUIRED_KEYS, (key) => `${key} is required in production`);
 };
@@ -197,6 +220,7 @@ const PRODUCTION_RULES: readonly EnvRule[] = [
   rejectConsoleMailProvider,
   requireHttpsBackupEndpoint,
   requireProductionKeys,
+  requireSafeTurnstileSecret,
   requireStrongSecrets,
 ];
 

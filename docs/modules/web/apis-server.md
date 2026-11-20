@@ -1,7 +1,7 @@
 ---
 module: apps/web/src/apis/server
 app: web
-summary: Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client
+summary: Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST client, and the server GraphQL client
 ---
 
 # Server APIs (web)
@@ -18,9 +18,9 @@ Everything the Next server does on behalf of the browser. `bff/` runs every `/ap
 
 ## Techniques
 
-- One pipeline, in order: method (405) · Origin and Sec-Fetch-Site on POST (403) · JSON content type (415) · body cap by Content-Length and capped stream read (413) · per-IP fixed-window limit per bucket (429) · strict Zod schema (400) · human check · `handle` · `Cache-Control: no-store`. An unexpected throw is `502 BFF_UPSTREAM_FAILED` with no detail.
+- One pipeline, in order: method (405) · Origin and Sec-Fetch-Site on POST (403) · JSON content type (415) · body cap by Content-Length and capped stream read (413) · per-IP fixed-window limit per bucket (429) · strict Zod schema (400) · `handle` · `Cache-Control: no-store`. An unexpected throw is `502 BFF_UPSTREAM_FAILED` with no detail.
 - Refusals are `{ statusCode, errorCode, message }` with fixed messages from `Bff.errors.ts`; every failure is logged once through `logApiError` (source, code, status, `METHOD path`; no body, token or cookie).
-- The human-check step reads `humanCheckToken` from the parsed body, calls `verifyHumanCheck` and strips the token before `handle`. Fails closed: bad or missing token, action or hostname is `400 BFF_HUMAN_CHECK_FAILED`; siteverify unreachable or not JSON is `503 BFF_HUMAN_CHECK_UNAVAILABLE`. Only the action comparison is skipped, and only with Cloudflare's always-pass test secret (`TURNSTILE.ALWAYS_PASS_TEST_SECRET`). `configs/Server.env.ts` guards production at start (ADR 0018 section 2.6): the test secret needs `ALLOW_TURNSTILE_TEST_SECRET=smoke` (smoke stack only), any other secret needs `TURNSTILE_EXPECTED_HOSTNAME`. Likewise `BFF_AUTH_RATE_LIMIT_IP` needs `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` in production.
+- The BFF no longer verifies the human check (D25, D21 amended): the sign-in body schemas require `turnstileToken` (1 to `TURNSTILE_TOKEN_MAX_LENGTH`, an unknown key such as the old `humanCheckToken` is refused), the handler forwards it in the cms-api body of login, email challenge and verify, and cms-api verifies it. `bffErrorOf` maps cms-api `400 HUMAN_CHECK_FAILED` to `400 BFF_HUMAN_CHECK_FAILED` and `503 HUMAN_CHECK_UNAVAILABLE` to `503 BFF_HUMAN_CHECK_UNAVAILABLE` by the failure's status and `upstreamErrorCode`. `configs/Server.env.ts` guards production at start (ADR 0018 section 2.6): `BFF_AUTH_RATE_LIMIT_IP` needs `ALLOW_BFF_RATE_LIMIT_OVERRIDE=smoke` in production; the Turnstile secret, hostname and test-secret opt-in moved to cms-api.
 - Route params: `handle` receives `BffContext.params` (the dynamic segments of the route, e.g. `documentId` of `/api/v1/cv/[documentId]`, answered by `answerCvRead` in `views/cv/PageCv.data.ts`). `BFF_NOT_FOUND` (404) is the refusal for an id that is malformed, unknown or unpublished, answered alike so no id leaks (ADR 0018 section 3).
 - `cmsApiClient` sends every call through `serverApi` (`serverApi.request` with an identity `resolveData` and `next: { revalidate: 0 }`; no redirect is followed) to `APP_API_URL` + `API_ENDPOINTS` paths, with a timeout and exactly one `X-Forwarded-For` (plus `CLIENT_IP_HEADER`). It first builds the headers with `Headers`, because axios strips CR/LF from a header value and would send a malformed token altered; a bad token is a fixed upstream failure and never reaches cms-api. It reads the refresh token from `Set-Cookie` by name, parses every answer with Zod and returns allowlisted fields. Upstream failures are `WebApiError`s of source `cms-api-rest` (a 429 carries `retryAfterSeconds`, a 4xx or 5xx carries `statusCode` and cms-api's `upstreamErrorCode`); `bffErrorOf` turns them into the fixed BFF answer (a `TIMEOUT` is 504, the other codes, a 5xx and a 3xx are 502, 429 keeps `Retry-After`). Refusals that mean something to the sign-in (401 credentials, 2FA codes) are `BffError`s; a refused refresh token or access token returns `null` instead of throwing.
 - Visitor IP (D7): `CLIENT_IP_HEADER` when it carries an address, else the `TRUST_PROXY_HOPS`-th address from the right of `X-Forwarded-For`. The rate limiters live in the process (one per bucket, at most 10 000 keys).
@@ -36,7 +36,7 @@ Zod 4 (body schemas), Next Route Handlers (Web `Request` / `Response`), `node:ne
 
 ## Entry points
 
-`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorOf`, `bffErrorResponse` (`bff/`); `serverApi` (`restful/ServerApi.client.ts`); `cmsApiClient`, `verifyHumanCheck` (`restful/`); `executeGraphql` (API token or the visitor's `accessToken`, `next` cache options, optional `mock` key, `resolveData` and `variables` (string values, sent as the body's `variables`, never logged or used in a mock lookup); an `accessToken` call is never cached or mocked) and `requireRootField` (a `resolveData` that fails with `NO_DATA` on a null root field) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, humanCheckAction?, handle })`; unbound methods answer 405 with `Allow`.
+`defineBffRoute`, `BffError`, `BFF_ERROR_CODES`, `bffErrorOf`, `bffErrorResponse` (`bff/`); `serverApi` (`restful/ServerApi.client.ts`); `cmsApiClient` (`restful/`); `executeGraphql` (API token or the visitor's `accessToken`, `next` cache options, optional `mock` key, `resolveData` and `variables` (string values, sent as the body's `variables`, never logged or used in a mock lookup); an `accessToken` call is never cached or mocked) and `requireRootField` (a `resolveData` that fails with `NO_DATA` on a null root field) (`graphql/`). A route file: `export const { GET, POST, PUT, PATCH, DELETE } = defineBffRoute({ methods, bucket, bodySchema?, handle })`; unbound methods answer 405 with `Allow`.
 
 ## Where to change what
 
@@ -56,15 +56,15 @@ server/ (0 files)
   bff/ (4 files)
   graphql/ (3 files)
     mocks/ (6 files)
-  restful/ (3 files)
+  restful/ (2 files)
 ```
 
-Tests: 10 files (not listed).
+Tests: 9 files (not listed).
 
 | File | Description |
 |---|---|
 | `bff/Bff.errors.ts` | The 15 BFF error codes with status and fixed message, `BffError` (a `WebApiError` of source `bff`; may carry headers and `Set-Cookie` lines), `bffErrorOf` and the refusal response |
-| `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, human-check hook, handle, no-store |
+| `bff/BffRoute.server.ts` | `defineBffRoute`: method, origin, content type, body cap, rate limit, schema, handle, no-store |
 | `bff/ClientIp.rules.ts` | `visitorIpOf`: the visitor IP from `CLIENT_IP_HEADER` or `X-Forwarded-For` (D7) |
 | `bff/RateLimit.rules.ts` | `FixedWindowRateLimiter`: fixed-window counts per key, oldest key evicted past the cap |
 | `graphql/ContentQuery.fixture.ts` | Test helper: `describeContentQueryContract` runs the spec every query string has (valid against the cms-api SDL, its `MOCK_VIEW` entry and selection match both ways, D18 limits); the spec passes `MOCK_VIEW` in (exports `ContentQueryContractInput`, `describeContentQueryContract`) |
@@ -78,7 +78,6 @@ Tests: 10 files (not listed).
 | `graphql/mocks/SiteHeader.mock.ts` | Mock data of the header (`header`) and its text (`headerText`) (exports `SITE_HEADER_MOCK`) |
 | `restful/CmsApi.client.ts` | `cmsApiClient`: the fixed cms-api calls (log in with `rememberMe`, 2FA, refresh, log out, current account, live health) with IP forwarding, raising `WebApiError`, sent through `serverApi` |
 | `restful/ServerApi.client.ts` | `serverApi`: `request` and the six verbs over axios with the fetch adapter, `resolveData`, Next `revalidate` / `tags`, timeout, no redirect, `WebApiError` failures |
-| `restful/Turnstile.client.ts` | `verifyHumanCheck`: Cloudflare siteverify with action and hostname checks, fail closed (`WebApiError` of source `turnstile`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

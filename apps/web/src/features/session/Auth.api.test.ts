@@ -42,7 +42,7 @@ describe('createAuthApi', () => {
       email: 'a@b.co',
       password: 'pw',
       rememberMe: true,
-      humanCheckToken: 'hc',
+      turnstileToken: 'hc',
     };
     await expect(api.login(credentials)).resolves.toEqual({ kind: 'signed-in', user: TEST_USER });
     expect(seen[0]?.url).toBe('/auth/login');
@@ -52,7 +52,7 @@ describe('createAuthApi', () => {
   it('maps a 2FA login to its methods only', async () => {
     const { api } = clientAnswering(() => ({ status: 'two-factor-required', methods: ['email'] }));
     await expect(
-      api.login({ email: 'a@b.co', password: 'pw', rememberMe: false }),
+      api.login({ email: 'a@b.co', password: 'pw', rememberMe: false, turnstileToken: 'tt' }),
     ).resolves.toEqual({
       kind: 'two-factor-required',
       methods: ['email'],
@@ -61,15 +61,17 @@ describe('createAuthApi', () => {
 
   it('returns the visitor after the code check', async () => {
     const { api, seen } = clientAnswering(() => ({ user: TEST_USER }));
-    await expect(api.verifyTwoFactor({ code: '123456' })).resolves.toEqual(TEST_USER);
+    await expect(api.verifyTwoFactor({ code: '123456', turnstileToken: 'tt' })).resolves.toEqual(
+      TEST_USER,
+    );
     expect(seen[0]?.url).toBe('/auth/two-factor/verify');
   });
 
-  it('sends a JSON body with the email code request, even without a token', async () => {
+  it('sends the token as the JSON body of the email code request', async () => {
     const { api, seen } = clientAnswering(() => null);
-    await api.sendLoginEmailCode();
+    await api.sendLoginEmailCode({ turnstileToken: 'tt' });
     expect(seen[0]?.url).toBe('/auth/two-factor/email-code');
-    expect(seen[0]?.data).toBe('{}');
+    expect(seen[0]?.data).toBe('{"turnstileToken":"tt"}');
     expect(seen[0]?.headers.get('Content-Type')).toContain('application/json');
   });
 
@@ -89,8 +91,8 @@ describe('createAuthApi', () => {
       );
       const call =
         method === 'login'
-          ? api.login({ email: 'a@b.co', password: 'pw', rememberMe: false })
-          : api.verifyTwoFactor({ code: '123456' });
+          ? api.login({ email: 'a@b.co', password: 'pw', rememberMe: false, turnstileToken: 'tt' })
+          : api.verifyTwoFactor({ code: '123456', turnstileToken: 'tt' });
       await expect(call).rejects.toBeInstanceOf(PrivilegedAccessError);
     },
   );
@@ -98,7 +100,7 @@ describe('createAuthApi', () => {
   it('lets any other failure through as its WebApiError', async () => {
     const { api } = clientAnswering(() => httpError(401, { errorCode: 'BFF_INVALID_CREDENTIALS' }));
     await expect(
-      api.login({ email: 'a@b.co', password: 'pw', rememberMe: false }),
+      api.login({ email: 'a@b.co', password: 'pw', rememberMe: false, turnstileToken: 'tt' }),
     ).rejects.toMatchObject({ errorCode: 'BFF_INVALID_CREDENTIALS', statusCode: 401 });
   });
 });

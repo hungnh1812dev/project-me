@@ -197,7 +197,7 @@
       }
     },
     "module-auth": {
-      "hash": "d0901c9f6495d2d92df75900510e6c835b83292a21ee5504b92ac0813f64b0b1",
+      "hash": "880240b1d60e2c44bda0777588994ebd74f2bd6d0f1fea87cb6cb33bee99f30b",
       "definition": {
         "slug": "module-auth",
         "displayName": "Module Auth",
@@ -411,10 +411,6 @@
                 "type": "text"
               }
             ]
-          },
-          {
-            "name": "openCms",
-            "type": "text"
           },
           {
             "name": "signedInAs",

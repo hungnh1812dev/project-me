@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-Loads and validates every environment key once at boot and hands the typed `IAppConfig` to the app through `APP_CONFIG`. Boot fails closed on a missing or invalid key; production-only guards (for example the local media provider opt-in) live here.
+Loads and validates every environment key once at boot and hands the typed `IAppConfig` to the app through `APP_CONFIG`. Boot fails closed on a missing or invalid key; production-only guards (for example the local media provider opt-in and the Turnstile secret rules, D25) live here.
 
 ## Techniques
 

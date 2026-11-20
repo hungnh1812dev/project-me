@@ -273,14 +273,15 @@ Components use semantic tokens only (`bg-card`, `text-muted-foreground`).
 ## Docker
 
 ```bash
-docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=... -t abyss-cms-admin .
+docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=... \
+  --build-arg VITE_TURNSTILE_SITE_KEY=... -t abyss-cms-admin .
 ```
 
 Multi-stage: `turbo prune`, build (form-commons first), then the static files
 on `nginx-unprivileged` (non-root, port 8080). `nginx.conf` sets
 `absolute_redirect off; port_in_redirect off;` so nginx never redirects to its
 internal host or port behind Traefik, and falls back to `index.html` for client
-routes. The build fails without `VITE_API_BASE_URL`.
+routes. The build fails without `VITE_API_BASE_URL` or `VITE_TURNSTILE_SITE_KEY` (the Turnstile site key, public by design, baked into the bundle).
 
 `public/robots.txt` disallows every crawler on the admin host (public-site PS-4); Vite copies it to the root of `dist/` and nginx serves it before the SPA fallback.
 
@@ -302,7 +303,7 @@ nginx sends the CSP, HSTS, `nosniff` and `Referrer-Policy` on every response
 (every location includes `/etc/nginx/conf.d/security-headers.inc`, rendered at
 container start by `nginx/15-security-headers.sh` from
 `nginx/security-headers.inc.template`). The CSP is
-`script-src 'self'`, `style-src 'self' 'nonce-<$request_id>'` + `style-src-attr 'unsafe-inline'`,
+`script-src 'self' https://challenges.cloudflare.com`, `frame-src https://challenges.cloudflare.com` (Turnstile, D25), `style-src 'self' 'nonce-<$request_id>'` + `style-src-attr 'unsafe-inline'`,
 `img-src 'self' data: blob:` + Cloudinary, `frame-ancestors 'none'`.
 `connect-src` is `'self'` plus the API **origin** (a CSP host-source with a path
 matches that exact URL only): the origin of the `VITE_API_BASE_URL` the image

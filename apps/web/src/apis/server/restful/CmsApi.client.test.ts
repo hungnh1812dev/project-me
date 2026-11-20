@@ -57,7 +57,10 @@ afterEach(() => {
 describe('every call', () => {
   it('goes to the internal URL without following redirects, forwarding the IP once', async () => {
     answer(200, { accessToken: 'a' });
-    await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP);
+    await cmsApiClient.logIn(
+      { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+      IP,
+    );
 
     const { url, init, headers } = lastCall();
     expect(url).toBe('http://api.internal/api/v1/auth/login');
@@ -70,7 +73,10 @@ describe('every call', () => {
 
   it('sends no forwarding header when no address is trusted', async () => {
     answer(200, { accessToken: 'a' });
-    await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, undefined);
+    await cmsApiClient.logIn(
+      { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+      undefined,
+    );
     expect(lastCall().headers.has('x-forwarded-for')).toBe(false);
   });
 
@@ -107,7 +113,10 @@ describe('every call', () => {
   it('raises a cms-api-rest WebApiError for a 429 and the BFF answers with its Retry-After', async () => {
     answer(429, { message: 'x' }, { 'retry-after': '42' });
     const error = await failureOf(
-      cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP),
+      cmsApiClient.logIn(
+        { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+        IP,
+      ),
     );
     expect(error).toBeInstanceOf(WebApiError);
     expect(error).toMatchObject({
@@ -125,7 +134,10 @@ describe('every call', () => {
   it('keeps the cms-api errorCode of an unexpected 4xx as upstreamErrorCode', async () => {
     answer(400, { errorCode: 'AUTH_INVALID_REQUEST' });
     const error = await failureOf(
-      cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP),
+      cmsApiClient.logIn(
+        { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+        IP,
+      ),
     );
     expect(error).toMatchObject({
       source: API_ERROR_SOURCES.CMS_API_REST,
@@ -158,7 +170,12 @@ describe('logIn', () => {
         ],
       }),
     );
-    expect(await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)).toEqual({
+    expect(
+      await cmsApiClient.logIn(
+        { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+        IP,
+      ),
+    ).toEqual({
       kind: 'signed-in',
       accessToken: 'at',
       refreshToken: 'rt-1',
@@ -167,17 +184,26 @@ describe('logIn', () => {
 
   it('sends rememberMe in the login body', async () => {
     answer(200, { accessToken: 'a' });
-    await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: true }, IP);
+    await cmsApiClient.logIn(
+      { email: 'e', password: 'p', rememberMe: true, turnstileToken: 'tt' },
+      IP,
+    );
     expect(await sentBody()).toEqual({
       email: 'e',
       password: 'p',
       rememberMe: true,
+      turnstileToken: 'tt',
     });
   });
 
   it('returns the second step with only the allowlisted fields', async () => {
     answer(200, { requires2FA: true, tempToken: 't', methods: ['totp'], leak: 1 });
-    expect(await cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)).toEqual({
+    expect(
+      await cmsApiClient.logIn(
+        { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+        IP,
+      ),
+    ).toEqual({
       kind: 'two-factor-required',
       tempToken: 't',
       methods: ['totp'],
@@ -187,15 +213,30 @@ describe('logIn', () => {
   it('maps any 401 to invalid credentials and an odd answer to upstream failure', async () => {
     answer(401, { errorCode: 'ANYTHING' });
     expect(
-      await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)),
+      await errorCodeOf(
+        cmsApiClient.logIn(
+          { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+          IP,
+        ),
+      ),
     ).toBe('BFF_INVALID_CREDENTIALS');
     answer(200, { nothing: true });
     expect(
-      await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)),
+      await errorCodeOf(
+        cmsApiClient.logIn(
+          { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+          IP,
+        ),
+      ),
     ).toBe('BFF_UPSTREAM_FAILED');
     answer(400, { errorCode: 'AUTH_INVALID_REQUEST' });
     expect(
-      await errorCodeOf(cmsApiClient.logIn({ email: 'e', password: 'p', rememberMe: false }, IP)),
+      await errorCodeOf(
+        cmsApiClient.logIn(
+          { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' },
+          IP,
+        ),
+      ),
     ).toBe('BFF_UPSTREAM_FAILED');
   });
 });
@@ -203,7 +244,12 @@ describe('logIn', () => {
 describe('verifyTwoFactor and sendEmailChallenge', () => {
   it('returns the issued tokens', async () => {
     answer(200, { accessToken: 'at' }, { 'set-cookie': '__Secure-abyss_rt=rt-2; Path=/' });
-    expect(await cmsApiClient.verifyTwoFactor({ tempToken: 't', code: '123456' }, IP)).toEqual({
+    expect(
+      await cmsApiClient.verifyTwoFactor(
+        { tempToken: 't', code: '123456', turnstileToken: 'tt' },
+        IP,
+      ),
+    ).toEqual({
       accessToken: 'at',
       refreshToken: 'rt-2',
     });
@@ -215,20 +261,64 @@ describe('verifyTwoFactor and sendEmailChallenge', () => {
     ['SOMETHING_ELSE', 'BFF_UPSTREAM_FAILED'],
   ])('maps the 401 code %s to %s', async (upstream, mapped) => {
     answer(401, { errorCode: upstream });
-    expect(await errorCodeOf(cmsApiClient.verifyTwoFactor({ tempToken: 't', code: '1' }, IP))).toBe(
-      mapped,
-    );
+    expect(
+      await errorCodeOf(
+        cmsApiClient.verifyTwoFactor({ tempToken: 't', code: '1', turnstileToken: 'tt' }, IP),
+      ),
+    ).toBe(mapped);
   });
 
   it('sends the email challenge and expects 202', async () => {
     answer(202);
-    await expect(cmsApiClient.sendEmailChallenge('t', IP)).resolves.toBeUndefined();
-    expect(await sentBody()).toEqual({ tempToken: 't' });
+    await expect(
+      cmsApiClient.sendEmailChallenge({ tempToken: 't', turnstileToken: 'tt' }, IP),
+    ).resolves.toBeUndefined();
+    expect(await sentBody()).toEqual({ tempToken: 't', turnstileToken: 'tt' });
 
     answer(401, { errorCode: 'AUTH_INVALID_TEMP_TOKEN' });
-    expect(await errorCodeOf(cmsApiClient.sendEmailChallenge('t', IP))).toBe(
-      'BFF_TWO_FACTOR_EXPIRED',
-    );
+    expect(
+      await errorCodeOf(
+        cmsApiClient.sendEmailChallenge({ tempToken: 't', turnstileToken: 'tt' }, IP),
+      ),
+    ).toBe('BFF_TWO_FACTOR_EXPIRED');
+  });
+});
+
+describe('human check answers of cms-api', () => {
+  const credentials = { email: 'e', password: 'p', rememberMe: false, turnstileToken: 'tt' };
+  const calls = [
+    ['login', () => cmsApiClient.logIn(credentials, IP)],
+    [
+      'email challenge',
+      () => cmsApiClient.sendEmailChallenge({ tempToken: 't', turnstileToken: 'tt' }, IP),
+    ],
+    [
+      'verify',
+      () => cmsApiClient.verifyTwoFactor({ tempToken: 't', code: '1', turnstileToken: 'tt' }, IP),
+    ],
+  ] as const;
+
+  it.each(calls)(
+    'maps 400 HUMAN_CHECK_FAILED of %s to BFF_HUMAN_CHECK_FAILED',
+    async (_name, call) => {
+      answer(400, { errorCode: 'HUMAN_CHECK_FAILED' });
+      expect(await errorCodeOf(call())).toBe('BFF_HUMAN_CHECK_FAILED');
+    },
+  );
+
+  it.each(calls)(
+    'maps 503 HUMAN_CHECK_UNAVAILABLE of %s to BFF_HUMAN_CHECK_UNAVAILABLE',
+    async (_name, call) => {
+      answer(503, { errorCode: 'HUMAN_CHECK_UNAVAILABLE' });
+      expect(await errorCodeOf(call())).toBe('BFF_HUMAN_CHECK_UNAVAILABLE');
+    },
+  );
+
+  it('keeps any other 400 or 503 an upstream failure', async () => {
+    answer(400, { errorCode: 'AUTH_INVALID_REQUEST' });
+    expect(await errorCodeOf(cmsApiClient.logIn(credentials, IP))).toBe('BFF_UPSTREAM_FAILED');
+    answer(503, { errorCode: 'SOMETHING_ELSE' });
+    expect(await errorCodeOf(cmsApiClient.logIn(credentials, IP))).toBe('BFF_UPSTREAM_FAILED');
   });
 });
 

@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { TURNSTILE } from '@/configs/Security.constants';
 import { loginBodySchema, logInVisitor } from '@/features/session/SignIn.server';
 
 const defineBffRoute = vi.hoisted(() =>
@@ -31,7 +30,6 @@ describe('/api/v1/auth/login route', () => {
       methods: ['POST'],
       bucket: 'auth',
       bodySchema: loginBodySchema,
-      humanCheckAction: TURNSTILE.ACTIONS.LOGIN,
       handle: logInVisitor,
     });
   });

@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { Button, FormAlert, TextInput } from '@abyss/form-commons';
+import {
+  HUMAN_CHECK_FORMS,
+  resetTurnstile,
+  TurnstileSlot,
+  useTurnstile,
+} from '@abyss/form-commons/human-check';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -12,13 +18,11 @@ import {
   TWO_FACTOR_METHODS,
   type TwoFactorMethod,
 } from '@/configs/Auth.constants';
-import { TURNSTILE } from '@/configs/Security.constants';
 
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { loginErrorAlertOf, sharedFailureAlertOf } from './LoginAlerts.rules';
 import type { SignInText } from './SignIn.graphql';
 import { useEmailCode } from './useEmailCode';
-import { useHumanCheck } from './useHumanCheck';
 
 const CODE_PATTERN = new RegExp(`^\\d{${LOGIN_CODE_LENGTH}}$`);
 
@@ -107,20 +111,24 @@ function CodeForm({
   const session = useWebSession();
   const copy = text.twoFactor;
   const [alert, setAlert] = useState<Alert | null>(null);
-  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.TWO_FACTOR, text.humanCheck);
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.TWO_FACTOR, siteKey);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
   // The emailed code goes out as soon as the first check passes; the next
   // check (a fresh token) is for the verify call.
   const email = useEmailCode(
     method === 'email'
-      ? () => {
-          const humanCheckToken = humanCheck.takeToken();
-          return session.sendLoginEmailCode(humanCheckToken === null ? {} : { humanCheckToken });
+      ? async () => {
+          try {
+            await session.sendLoginEmailCode({ turnstileToken });
+          } finally {
+            resetTurnstile(HUMAN_CHECK_FORMS.TWO_FACTOR);
+          }
         }
       : () => Promise.resolve(),
     (failure) => {
       if (alertOf(failure, text) === 'expired') onExpired();
     },
-    method !== 'email' || humanCheck.hasToken,
+    method !== 'email' || turnstileToken !== '',
   );
   const form = useForm<CodeValues>({
     defaultValues: { code: '' },
@@ -133,6 +141,7 @@ function CodeForm({
 
   const verify = useMutation({
     mutationFn: session.completeTwoFactor,
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.TWO_FACTOR),
     onSuccess: onDone,
     onError: (cause) => {
       const mapped = loginErrorAlertOf(cause, text.errors, (failure) => alertOf(failure, text));
@@ -146,11 +155,20 @@ function CodeForm({
     },
   });
 
+  /** False, with the "required" line shown and a fresh challenge started, while no token is ready. */
+  const requireTurnstileToken = () => {
+    if (turnstileToken !== '') {
+      setIsTokenMissing(false);
+      return true;
+    }
+    setIsTokenMissing(true);
+    resetTurnstile(HUMAN_CHECK_FORMS.TWO_FACTOR);
+    return false;
+  };
+
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
-    const humanCheckToken = humanCheck.requireToken();
-    if (humanCheckToken === null) return;
-    verify.mutate({ code: values.code.trim(), humanCheckToken });
+    if (requireTurnstileToken()) verify.mutate({ code: values.code.trim(), turnstileToken });
   });
 
   const sendAlert =
@@ -190,15 +208,21 @@ function CodeForm({
               loading={email.isSending}
               disabled={email.isCoolingDown}
               onClick={() => {
-                if (humanCheck.hasToken) email.resend();
-                else humanCheck.requireToken();
+                if (requireTurnstileToken()) email.resend();
               }}
             >
               {copy.resend}
             </Button>
           </p>
         ) : null}
-        {humanCheck.field}
+        <div className="grid gap-1">
+          <TurnstileSlot formId={HUMAN_CHECK_FORMS.TWO_FACTOR} text={text.humanCheck} />
+          {isTokenMissing && turnstileToken === '' ? (
+            <p role="alert" className="text-destructive-strong text-sm">
+              {text.humanCheck.required}
+            </p>
+          ) : null}
+        </div>
         {/* Stacked order is not reversed: Cancel stays above the confirm button and first in Tab order. */}
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onCancel}>

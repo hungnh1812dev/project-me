@@ -10,6 +10,7 @@ Hooks (`break-check --hook`, registered in .claude/settings.json; silent when al
 CLI (prints nothing and exits 0 when the gate holds):
   break-check                 the break checks
   break-check --pass <target> checkpoint pass: every row of checklists/<target>.md is `pass`, no findings
+                              (target `feature`: CHECKLIST.md in the feature folder)
   break-check --close         feature close: CHECKLIST.md all `pass` (or `n/a` with a Note), no findings, no open issue, handoff
                               emptied (follow-ups moved), no unit in progress
 
@@ -21,6 +22,7 @@ PROJECT_DIR = os.environ.get("CLAUDE_PROJECT_DIR") or os.path.dirname(os.path.di
 FEATURES_FILE = ".agent-state/features.md"
 BREAKS_DIR = ".agent-state/.breaks"
 KEEP_BREAKS = 5
+FEATURE_CHECKLIST = "CHECKLIST.md"
 MTIME_SLACK_S = 2
 BREAK_MESSAGE = re.compile(r"\bSession break\b")
 CELL = re.compile(r"(?<!\\)\|")
@@ -86,7 +88,7 @@ def break_problems(f):
 
 
 def pass_problems(f, target):
-    checklist = os.path.join(f, "checklists", f"{target}.md")
+    checklist = os.path.join(f, FEATURE_CHECKLIST if target == "feature" else os.path.join("checklists", f"{target}.md"))
     if not os.path.exists(checklist):
         return [f"no checklist {os.path.relpath(checklist, f)}"]
     problems = [f"row {r}" for r in not_passed(checklist)]
@@ -96,7 +98,7 @@ def pass_problems(f, target):
 
 def close_problems(f):
     problems = []
-    checklist = os.path.join(f, "CHECKLIST.md")
+    checklist = os.path.join(f, FEATURE_CHECKLIST)
     problems += [f"CHECKLIST.md row {r}" for r in not_passed(checklist)] if os.path.exists(checklist) else ["no CHECKLIST.md"]
     problems += [f"findings/{n} still exists" for n in findings(f)]
     problems += [f"qc-issues-handoff.md open: {l.strip()[:80]}" for l in read(os.path.join(f, "qc-issues-handoff.md")).splitlines()

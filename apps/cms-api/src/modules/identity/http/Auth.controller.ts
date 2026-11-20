@@ -17,10 +17,16 @@ import { z } from 'zod';
 
 import { NO_STORE_HEADER } from '../../../common/constants/Http.constants';
 import { DOMAIN_ERROR_KINDS, DomainError } from '../../../common/errors/Domain.errors';
-import { Throttle } from '../../../common/guards/Throttle.guard';
+import { Throttle, ThrottleAccount, ThrottleIp } from '../../../common/guards/Throttle.guard';
 import { ClientIpResolver, clientMetaOf } from '../../../common/http/ClientIp.resolver';
 import { type ClientMeta } from '../../../common/types/ClientMeta.entity';
 import { AccessPolicyService } from '../../access';
+import {
+  HUMAN_CHECK_FORMS,
+  RequireHumanCheck,
+  turnstileTokenSchema,
+  withoutTurnstileToken,
+} from '../../human-check';
 import { AuthService, type CurrentAccountProfile } from '../application/Auth.service';
 import {
   AUTH_ERROR_CODES,
@@ -48,6 +54,7 @@ const loginRequestSchema = z.object({
   email: z.string().trim().min(1).max(EMAIL_MAX_LENGTH),
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
   rememberMe: z.boolean().optional(),
+  turnstileToken: turnstileTokenSchema.optional(),
 });
 
 export interface AccessTokenResponse {
@@ -109,7 +116,9 @@ export class AuthController {
   @Post(AUTH_ROUTES.LOGIN)
   @HttpCode(HttpStatus.OK)
   @Header(NO_STORE_HEADER.NAME, NO_STORE_HEADER.VALUE)
-  @Throttle(IDENTITY_RATE_LIMIT_POLICIES.LOGIN)
+  @ThrottleAccount(IDENTITY_RATE_LIMIT_POLICIES.LOGIN)
+  @RequireHumanCheck(HUMAN_CHECK_FORMS.LOGIN)
+  @ThrottleIp(IDENTITY_RATE_LIMIT_POLICIES.LOGIN)
   async login(
     @Body() body: unknown,
     @Req() req: Request,
@@ -124,7 +133,7 @@ export class AuthController {
     }
 
     const loginOutcome = await this.auth.login(
-      { ...parsed.data, rememberMe: parsed.data.rememberMe ?? false },
+      { ...withoutTurnstileToken(parsed.data), rememberMe: parsed.data.rememberMe ?? false },
       this.clientMeta(req),
     );
     if (loginOutcome.kind === 'two-factor') {

@@ -18,6 +18,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 | documents | `apps/cms-api/src/modules/documents` | `docs/modules/cms-api/documents.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`public-site`](../flows/public-site/FLOW.md) | Document REST API: list/filter/sort, read, create, draft save with version check, publish, bulk, presence |
 | graphql | `apps/cms-api/src/modules/graphql` | `docs/modules/graphql.md` | complete | [`content-modeling`](../flows/content-modeling/FLOW.md), [`public-site`](../flows/public-site/FLOW.md) | Read-only GraphQL endpoint for documents, same rules as the REST reads |
 | health | `apps/cms-api/src/modules/health` | `docs/modules/cms-api/health.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Liveness and readiness probes: `{ status }` only, readiness pings the database |
+| human-check | `apps/cms-api/src/modules/human-check` | `docs/modules/cms-api/human-check.md` | complete | [`owner-setup`](../flows/owner-setup/FLOW.md), [`password`](../flows/password/FLOW.md), [`reviewer`](../flows/reviewer/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Verifies the Cloudflare Turnstile human check of public auth forms and reviewer sessions; fails closed |
 | identity | `apps/cms-api/src/modules/identity` | `docs/modules/cms-api/identity.md` | complete | [`access-admin`](../flows/access-admin/FLOW.md), [`backups`](../flows/backups/FLOW.md), [`owner-setup`](../flows/owner-setup/FLOW.md), [`password`](../flows/password/FLOW.md), [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md), [`two-factor-setup`](../flows/two-factor-setup/FLOW.md) | Sign-in, sessions, refresh tokens, passwords, OTP, two-factor (TOTP/email), owner setup and bootstrap CLIs |
 | media | `apps/cms-api/src/modules/media` | `docs/modules/cms-api/media.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`media`](../flows/media/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Media library API: upload, replace in place, alt text, delete, purge; storage adapters; media refs in documents |
 | reviewer | `apps/cms-api/src/modules/reviewer` | `docs/modules/cms-api/reviewer.md` | complete | [`reviewer`](../flows/reviewer/FLOW.md), [`security-audit`](../flows/security-audit/FLOW.md) | Self-service read-only reviewer sessions, the owner toggle, the session log and the cleanup job (D2, D2a) |
@@ -67,7 +68,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
-| auth | `apps/web/src/features/auth` | `docs/modules/web/auth.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Web sign-in dialog with the two-factor step and its Turnstile human check |
+| auth | `apps/web/src/features/auth` | `docs/modules/web/auth.md` | complete | [`sign-in`](../flows/sign-in/FLOW.md) | Web sign-in dialog with the two-factor step and its Turnstile human check (form-commons kit) |
 | crawler-files | `apps/web/src/features/crawler-files` | `docs/modules/web/crawler-files.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Per-request robots.txt and sitemap.xml of the public site |
 | not-found | `apps/web/src/features/not-found` | `docs/modules/web/not-found.md` | complete | - | The NotFoundPage content query, its loader and the shared not-found message |
 | session | `apps/web/src/features/session` | `docs/modules/web/session.md` | complete | [`public-site`](../flows/public-site/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | Who is signed in on the web: the session context and the auth API |
@@ -76,7 +77,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 | cv | `apps/web/src/views/cv` | `docs/modules/web/views-cv.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The CV page: query, loader, BFF read, sections, contact card, masked values |
 | home | `apps/web/src/views/home` | `docs/modules/web/views-home.md` | complete | - | The / page, which renders the module status |
 | status | `apps/web/src/views/status` | `docs/modules/web/views-status.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | The /status page, which renders the module status |
-| server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST and Turnstile clients, and the server GraphQL client |
+| server | `apps/web/src/apis/server` | `docs/modules/web/apis-server.md` | complete | [`public-site`](../flows/public-site/FLOW.md) | Server-only calls of the web app: the BFF request pipeline, its error list, rate limiter and visitor IP, the cms-api REST client, and the server GraphQL client |
 
 ## form-commons
 
@@ -84,6 +85,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 |---|---|---|---|---|---|
 | forms | `packages/form-commons/src/components/forms` | `docs/modules/form-commons/forms.md` | complete | [`content-editing`](../flows/content-editing/FLOW.md), [`media`](../flows/media/FLOW.md), [`sign-in`](../flows/sign-in/FLOW.md) | react-hook-form inputs (text, number, select, switch, json, date, media, richtext) and table helpers |
 | ui | `packages/form-commons/src/components/ui` | `docs/modules/form-commons/ui.md` | complete | - | Base controls on Radix: button, icon button, inputs, dialog, dropdown, popover, tooltip, switch |
+| human-check | `packages/form-commons/src/human-check` | `docs/modules/form-commons/human-check.md` | complete | - | Cloudflare Turnstile for public forms: one script per page, one widget per form id, its token, reset and state texts |
 
 ## base-config
 

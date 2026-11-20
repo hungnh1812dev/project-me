@@ -40,6 +40,13 @@ function toHttpSetupError(
   error: unknown,
   text: SetupText,
 ): SetupError {
+  // Human check refusals (D25) are named by their code, whatever the status.
+  if (errorCode === API_ERROR_CODES.HUMAN_CHECK_FAILED) {
+    return { kind: 'alert', message: text.setup.humanCheck.errors.failed };
+  }
+  if (errorCode === API_ERROR_CODES.HUMAN_CHECK_UNAVAILABLE) {
+    return { kind: 'alert', message: text.setup.humanCheck.errors.unavailable };
+  }
   if (status === HTTP_STATUS.UNAUTHORIZED) return { kind: 'token-invalid' };
   if (status === HTTP_STATUS.NOT_FOUND) return { kind: 'setup-closed' };
   if (status === HTTP_STATUS.CONFLICT && errorCode === API_ERROR_CODES.OWNER_EMAIL_TAKEN) {

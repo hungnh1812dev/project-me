@@ -4,7 +4,7 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { expectSignedIn, signOutFromUserMenu } from '../src/Session.fixture';
+import { clickAfterHumanCheck, expectSignedIn, signOutFromUserMenu } from '../src/Session.fixture';
 
 const homeHeading = (page: Page) =>
   page.getByRole('heading', { level: 1, name: ADMIN_COPY.page.title });
@@ -30,7 +30,7 @@ test.describe('admin auth', { tag: ['@cms-admin', '@cms-api', '@sign-in'] }, () 
 
     await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
 
     await expect(homeHeading(page)).toBeVisible();
     await expectSignedIn(page);
@@ -77,7 +77,7 @@ test.describe('admin auth', { tag: ['@cms-admin', '@cms-api', '@sign-in'] }, () 
     await page.goto('/');
     await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(`${e2eEnv.ownerPassword}-wrong`);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
 
     await expect(
       page.getByRole('alert').filter({ hasText: ADMIN_COPY.login.errors.invalidCredentials }),
@@ -94,7 +94,7 @@ test.describe('admin auth', { tag: ['@cms-admin', '@cms-api', '@sign-in'] }, () 
     await page.goto('/');
     await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill('any-password-1');
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
   }
 
   const loginAlert = (page: Page, text: string) =>
@@ -123,7 +123,7 @@ test.describe('admin auth', { tag: ['@cms-admin', '@cms-api', '@sign-in'] }, () 
 
     retryAfter = String(RETRY_AFTER_MINUTES * SECONDS_PER_MINUTE);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill('any-password-1');
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expect(
       loginAlert(page, ADMIN_COPY.login.errors.rateLimitedMinutes(RETRY_AFTER_MINUTES)),
     ).toBeVisible();

@@ -5,6 +5,7 @@ import { WEB_COPY } from '../src/Apps.contract';
 import { WEB_SESSION_COOKIE_NAME, WEB_TWO_FACTOR_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
 import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
+import { clickAfterHumanCheck } from '../src/Session.fixture';
 import { countActiveRefreshTokens } from '../src/SmokeDatabase.client';
 
 /**
@@ -66,7 +67,7 @@ test.describe('web session', { tag: ['@web', '@cms-api', '@sign-in'] }, () => {
     await form.getByLabel(login.passwordLabel).fill(password);
     // Ticked after the fields are filled: a blur error above the box would shift it under the pointer.
     if (options.remember) await form.getByRole('checkbox', { name: login.rememberMeLabel }).check();
-    await form.getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(form.getByRole('button', { name: login.submit }));
   }
 
   const signOutButton = (page: Page) =>
@@ -85,12 +86,12 @@ test.describe('web session', { tag: ['@web', '@cms-api', '@sign-in'] }, () => {
 
     await openDialog(page);
     await waitForHumanCheck(page);
-    await dialog(page).getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(dialog(page).getByRole('button', { name: login.submit }));
     await expect(dialog(page).getByText(login.validation.emailRequired)).toBeVisible();
     await dialog(page).getByRole('textbox', { name: login.emailLabel }).fill('not-an-email');
     await dialog(page).getByLabel(login.passwordLabel).fill('x');
     await waitForHumanCheck(page);
-    await dialog(page).getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(dialog(page).getByRole('button', { name: login.submit }));
     await expect(dialog(page).getByText(login.validation.emailInvalid)).toBeVisible();
 
     await page.keyboard.press('Escape');
@@ -152,8 +153,8 @@ test.describe('web session', { tag: ['@web', '@cms-api', '@sign-in'] }, () => {
     });
     expect(await storageState(page)).toEqual(EMPTY_STORAGE);
 
-    // The "Open CMS" link needs NEXT_PUBLIC_ADMIN_URL, which the smoke stack leaves unset.
-    await expect(page.getByRole('link', { name: WEB_COPY.session.openCms })).toHaveCount(0);
+    // The web has no link to cms-admin any more (HC-6).
+    await expect(page.getByRole('link', { name: 'Open CMS' })).toHaveCount(0);
 
     await page.reload();
     await expect(page.getByText(/^Signed in as /)).toBeVisible();
@@ -391,7 +392,7 @@ test.describe('web session', { tag: ['@web', '@cms-api', '@sign-in'] }, () => {
     );
     await dialog(page).getByLabel(login.passwordLabel).fill('x');
     await waitForHumanCheck(page);
-    await dialog(page).getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(dialog(page).getByRole('button', { name: login.submit }));
     await expect(
       dialog(page).getByText(withCount(login.errors.rateLimitedMinutesOther, 2)),
     ).toBeVisible();
@@ -400,14 +401,14 @@ test.describe('web session', { tag: ['@web', '@cms-api', '@sign-in'] }, () => {
     await page.route(loginRoute, (route) => route.fulfill({ status: 429, json: rateLimitedBody }));
     await dialog(page).getByLabel(login.passwordLabel).fill('x');
     await waitForHumanCheck(page);
-    await dialog(page).getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(dialog(page).getByRole('button', { name: login.submit }));
     await expect(dialog(page).getByText(login.errors.rateLimited)).toBeVisible();
 
     await page.unroute(loginRoute);
     await page.route(loginRoute, (route) => route.abort('connectionrefused'));
     await dialog(page).getByLabel(login.passwordLabel).fill('x');
     await waitForHumanCheck(page);
-    await dialog(page).getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(dialog(page).getByRole('button', { name: login.submit }));
     await expect(dialog(page).getByText(login.errors.network)).toBeVisible();
     await expect(page.getByText(/^Signed in as /)).toHaveCount(0);
   });

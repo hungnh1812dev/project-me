@@ -230,7 +230,6 @@ type ModuleAuth {
   validation: ModuleAuth_SignInValidation
   errors: ModuleAuth_SignInErrors
   twoFactor: ModuleAuth_SignInTwoFactor
-  openCms: String
   signedInAs: String
   signOutFailed: String
 

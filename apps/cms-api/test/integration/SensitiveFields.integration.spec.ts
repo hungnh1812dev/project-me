@@ -17,11 +17,8 @@ import type { ContentDatabase } from '../../src/modules/content-engine/adapters/
 import { ContentRegistry } from '../../src/modules/content-engine/application/ContentRegistry.service';
 import { createMigrationDb } from '../../src/modules/content-engine/cli/ContentEngineCli.setup';
 import type { ContentTypeRegistry } from '../../src/modules/content-engine/domain/ContentTypeRegistry.entity';
+import { TURNSTILE_VERIFIER, type TurnstileVerifier } from '../../src/modules/human-check';
 import { hashPassword } from '../../src/modules/identity/application/Password.service';
-import {
-  TURNSTILE_VERIFIER,
-  type TurnstileVerifier,
-} from '../../src/modules/reviewer/application/Reviewer.port';
 import { seedRolePermissions, seedSystemRoles } from '../fixtures/Access.fixture';
 import { loadRegistryFromDatabase } from '../fixtures/ContentRegistry.fixture';
 import { inContentUnit } from '../fixtures/ContentUnit.fixture';

@@ -8,10 +8,16 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### New features
 
+- form-commons: Turnstile kit (widget, hook, per-form reset) shared by web and cms-admin ([ADR 0027](docs/adr/0027-shared-human-check.md)).
+- cms-api: human check (Turnstile) on six public routes: login, 2FA verify, email challenge, owner setup, password request-otp and reset (D25).
+- cms-admin: human check on sign-in, 2FA, owner setup and password reset; new build arg `VITE_TURNSTILE_SITE_KEY`; CSP allows Turnstile.
 - cms-api: `content:generate --data-step` carries data before destructive statements ([content-modeling](docs/flows/content-modeling/SPEC.md) CM-12).
 
 ### Changes
 
+- cms-api: `module-auth.openCms` dropped with a destructive content migration. Take a database backup before deploying.
+- web: the BFF forwards `turnstileToken` to cms-api; `TURNSTILE_*` keys and `NEXT_PUBLIC_ADMIN_URL` and the "Open CMS" link removed.
+- DevOps: [cms-api](docs/apps/cms-api/patch-cms-api-0.3.0.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.3.0.md) and [web](docs/apps/web/patch-web-0.3.0.md) patches 0.3.0 (secret, hosts, site key; release cms-api first).
 - cms-api: `header` restructured and new `module-not-found` type; migration 0017 carries the data. Take a database backup before deploying.
 - web: header and not-found page read the new fields; `public` nav entries show to everyone.
 - cms-api: `page-cv-a` gets `languages` and `references` (`references.phone` sensitive), `cv-common-text` gets `phone`; migration 0018 only adds tables and a column.

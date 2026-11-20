@@ -62,7 +62,7 @@ Tests: 9 files (not listed).
 | `constants/Time.constants.ts` | Holds (exports `MS_PER_SECOND`, `MS_PER_MINUTE`, `MS_PER_HOUR`, `SECONDS_PER_MINUTE` +2) |
 | `errors/Domain.errors.ts` | Holds (exports `DOMAIN_ERROR_KINDS`, `DomainErrorKind`, `DomainErrorInit`, `DomainError`) |
 | `filters/HttpException.filter.ts` | Unified error body; discards the unread body of a multipart upload answered with any error (401/403/413/415/...) |
-| `guards/Throttle.guard.ts` | Holds (exports `RATE_LIMIT_POLICY_METADATA`, `Throttle`, `ThrottleGuard`) |
+| `guards/Throttle.guard.ts` | Fixed-window throttle: `Throttle` counts every rule; `ThrottleIp` / `ThrottleAccount` count the IP-keyed or the other rules, so a guard (the human check) can sit between them |
 | `http/ClientIp.module.ts` | Holds (exports `ClientIpModule`) |
 | `http/ClientIp.resolver.ts` | Holds (exports `ClientIpResolver`, `clientMetaOf`) |
 | `http/DescribeHttpException.rules.ts` | Holds (exports `DOMAIN_ERROR_HTTP_STATUS`, `DOMAIN_ERROR_DEFAULT_MESSAGE`, `ERROR_CODE_BY_STATUS`, `HttpExceptionDescription` +4) |

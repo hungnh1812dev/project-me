@@ -2,6 +2,7 @@ import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { APP_ROUTES } from '@configs/App.routes';
 import { EN_TEXT } from '@configs/locales/en';
 import { deferred, type FakeReply } from '@test/FakeApi.fixture';
+import { humanCheckFake } from '@test/HumanCheck.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -64,7 +65,12 @@ describe('LoginPage', () => {
     await fillAndSubmit();
     await waitFor(() => expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(1));
     expect(api.callsTo(`POST ${LOGIN}`)[0]?.data).toBe(
-      JSON.stringify({ email: TEST_USER.email, password: PASSWORD, rememberMe: true }),
+      JSON.stringify({
+        email: TEST_USER.email,
+        password: PASSWORD,
+        rememberMe: true,
+        turnstileToken: 'login-token-1',
+      }),
     );
   });
 
@@ -92,7 +98,12 @@ describe('LoginPage', () => {
       screen.getByRole('button', { name: EN_TEXT.session.accountMenu(TEST_USER.displayName) }),
     ).toBeInTheDocument();
     expect(api.callsTo(`POST ${LOGIN}`)[0]?.data).toBe(
-      JSON.stringify({ email: TEST_USER.email, password: PASSWORD, rememberMe: false }),
+      JSON.stringify({
+        email: TEST_USER.email,
+        password: PASSWORD,
+        rememberMe: false,
+        turnstileToken: 'login-token-1',
+      }),
     );
     expect(services.store.getState().auth.accessToken).toBe('t1');
   });
@@ -140,6 +151,49 @@ describe('LoginPage', () => {
     await openLogin(() => 'network-error');
     await fillAndSubmit();
     expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.login.errors.network);
+  });
+
+  describe('human check', () => {
+    it('renders the challenge slot of the login form', async () => {
+      await openLogin(() => ({ status: 500 }));
+      expect(screen.getByTestId('turnstile-login')).toBeInTheDocument();
+    });
+
+    it('sends nothing and says the check is required while no token is ready', async () => {
+      humanCheckFake.solves = false;
+      const { api } = await openLogin(() => ({ status: 500 }));
+      await fillAndSubmit();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(EN_TEXT.login.humanCheck.required);
+      expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(0);
+      expect(humanCheckFake.resetFormIds).toEqual(['login']);
+    });
+
+    it('starts a fresh check after every request that sent a token', async () => {
+      const { api } = await openLogin(() => ({
+        status: 401,
+        data: { errorCode: 'AUTH_INVALID_CREDENTIALS' },
+      }));
+      await fillAndSubmit('wrong');
+      await screen.findByRole('alert');
+      expect(humanCheckFake.resetFormIds).toEqual(['login']);
+
+      await userEvent.type(password(), PASSWORD);
+      await userEvent.click(submit());
+      await waitFor(() => expect(api.callsTo(`POST ${LOGIN}`)).toHaveLength(2));
+      expect(JSON.parse(api.callsTo(`POST ${LOGIN}`)[1]?.data as string)).toMatchObject({
+        turnstileToken: 'login-token-2',
+      });
+    });
+
+    it.each([
+      ['HUMAN_CHECK_FAILED', EN_TEXT.login.humanCheck.errors.failed],
+      ['HUMAN_CHECK_UNAVAILABLE', EN_TEXT.login.humanCheck.errors.unavailable],
+    ])('shows its own text for %s', async (errorCode, message) => {
+      await openLogin(() => ({ status: 403, data: { errorCode } }));
+      await fillAndSubmit();
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    });
   });
 
   it('sends an already signed-in user home', async () => {

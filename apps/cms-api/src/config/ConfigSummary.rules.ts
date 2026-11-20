@@ -85,7 +85,10 @@ export function summarizeConfig(config: IAppConfig): Record<string, unknown> {
           },
     reviewer: {
       isFeatureEnabled: config.reviewer.isFeatureEnabled,
-      turnstileExpectedHostname: config.reviewer.turnstileExpectedHostname,
+    },
+    humanCheck: {
+      expectedHostnames: [...config.humanCheck.expectedHostnames],
+      isTestSecretAllowed: config.humanCheck.isTestSecretAllowed,
     },
     secrets: {
       jwtAccessSecret: secretState(config.secrets.jwtAccessSecret),

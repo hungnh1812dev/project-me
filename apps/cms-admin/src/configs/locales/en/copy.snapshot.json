@@ -59,6 +59,16 @@
       "network": "Could not reach the server. Check your connection and try again.",
       "unexpected": "Something went wrong on our side. Try again in a moment."
     },
+    "humanCheck": {
+      "loading": "Checking that you are not a robot...",
+      "failed": "The check could not load. Reload the page and try again.",
+      "expired": "The check expired. Wait for it to renew, then try again.",
+      "required": "Wait for the check to finish, then try again.",
+      "errors": {
+        "failed": "The check did not pass. Try again.",
+        "unavailable": "The check is unavailable right now. Try again in a moment."
+      }
+    },
     "twoFactor": {
       "title": "Enter your verification code",
       "totpDescription": "Open your authenticator app and enter the current code for Abyss CMS.",
@@ -109,6 +119,16 @@
       "rateLimited": "Too many attempts. Wait a few minutes and try again.",
       "network": "Could not reach the server. Check your connection and try again.",
       "unexpected": "Something went wrong on our side. Try again in a moment."
+    },
+    "humanCheck": {
+      "loading": "Checking that you are not a robot...",
+      "failed": "The check could not load. Reload the page and try again.",
+      "expired": "The check expired. Wait for it to renew, then try again.",
+      "required": "Wait for the check to finish, then try again.",
+      "errors": {
+        "failed": "The check did not pass. Try again.",
+        "unavailable": "The check is unavailable right now. Try again in a moment."
+      }
     }
   },
   "password": {
@@ -155,6 +175,16 @@
       "title": "Set your password",
       "description": "Enter the code from your invitation email and choose a password for your account.",
       "submit": "Set password"
+    },
+    "humanCheck": {
+      "loading": "Checking that you are not a robot...",
+      "failed": "The check could not load. Reload the page and try again.",
+      "expired": "The check expired. Wait for it to renew, then try again.",
+      "required": "Wait for the check to finish, then try again.",
+      "errors": {
+        "failed": "The check did not pass. Try again.",
+        "unavailable": "The check is unavailable right now. Try again in a moment."
+      }
     }
   },
   "security": {

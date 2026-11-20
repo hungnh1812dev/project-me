@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { TURNSTILE } from '@/configs/Security.constants';
 import { emailCodeBodySchema, sendTwoFactorEmailCode } from '@/features/session/SignIn.server';
 
 const defineBffRoute = vi.hoisted(() =>
@@ -21,7 +20,6 @@ describe('/api/v1/auth/two-factor/email-code route', () => {
       methods: ['POST'],
       bucket: 'auth',
       bodySchema: emailCodeBodySchema,
-      humanCheckAction: TURNSTILE.ACTIONS.TWO_FACTOR,
       handle: sendTwoFactorEmailCode,
     });
   });

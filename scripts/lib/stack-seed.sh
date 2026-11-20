@@ -15,6 +15,9 @@
 OWNER_BOOTSTRAP_CMD=(npm run --silent owner:bootstrap -- --password-stdin)
 
 STACK_SECRET_BYTES="32"
+# Cloudflare's published always-pass Turnstile test token. Every protected cms-api
+# call of the stack scripts sends it as `turnstileToken`; the test secret accepts it.
+STACK_TURNSTILE_DUMMY_TOKEN="XXXX.DUMMY.TOKEN.XXXX"
 # Creates the dedicated e2e accounts with the cms-api `seed:account` CLI:
 # active, password from stdin, hashed with the app's own Argon2id parameters,
 # audited. The smoke-only opt-in is passed on each call, never in deployed config.
@@ -192,8 +195,8 @@ stack_api_call() {
 # stack_sign_in <email> <password>: prints the access token; nothing and status 1 on failure.
 stack_sign_in() {
   local login_json access_token
-  login_json="$(STACK_EMAIL="$1" STACK_PASSWORD="$2" node -e \
-    'process.stdout.write(JSON.stringify({ email: process.env.STACK_EMAIL, password: process.env.STACK_PASSWORD }))')"
+  login_json="$(STACK_EMAIL="$1" STACK_PASSWORD="$2" STACK_TURNSTILE_TOKEN="$STACK_TURNSTILE_DUMMY_TOKEN" node -e \
+    'process.stdout.write(JSON.stringify({ email: process.env.STACK_EMAIL, password: process.env.STACK_PASSWORD, turnstileToken: process.env.STACK_TURNSTILE_TOKEN }))')"
   stack_api_call POST /auth/login "" "$login_json"
   [[ "$STACK_API_STATUS" == 2* ]] || return 1
   access_token="$(stack_json_eval "$STACK_API_BODY" 'data.accessToken')"

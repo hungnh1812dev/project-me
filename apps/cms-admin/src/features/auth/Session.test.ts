@@ -63,6 +63,7 @@ describe('session', () => {
       email: TEST_USER.email,
       password: 'pw',
       rememberMe: false,
+      turnstileToken: 'check-token',
     });
     expect(outcome).toEqual({ kind: 'signed-in', accessToken: 't2' });
     expect(services.store.getState().auth.status).toBe('authenticated');
@@ -79,6 +80,7 @@ describe('session', () => {
       email: TEST_USER.email,
       password: 'pw',
       rememberMe: false,
+      turnstileToken: 'check-token',
     });
     expect(outcome).toEqual({
       kind: 'two-factor-required',
@@ -99,13 +101,14 @@ describe('session', () => {
     await services.session.completeTwoFactor({
       tempToken: 'temp',
       code: '123456',
+      turnstileToken: 'check-token',
     });
     expect(services.store.getState().auth).toMatchObject({
       status: 'authenticated',
       accessToken: 't3',
     });
     expect(api.callsTo(`POST ${VERIFY}`)[0]?.data).toBe(
-      JSON.stringify({ tempToken: 'temp', code: '123456' }),
+      JSON.stringify({ tempToken: 'temp', code: '123456', turnstileToken: 'check-token' }),
     );
   });
 

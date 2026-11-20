@@ -66,7 +66,9 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
 - `src/configs/Browser.env.ts` reads `NEXT_PUBLIC_*` keys. They are inlined into
   the browser bundle at build time (so they are public, never secrets) and a
   missing `NEXT_PUBLIC_TURNSTILE_SITE_KEY` fails the build. No cms-api URL is
-  ever baked into the bundle.
+  ever baked into the bundle. The Turnstile secret key and the token check
+  belong to cms-api; the BFF only forwards `turnstileToken` (shared human-check
+  feature, D25).
 - `src/configs/AppEnv.rules.ts` holds the `APP_ENV` value list (`development`,
   `staging`, `production`). `next.config.ts` fails `next build` / `next dev` when
   `APP_ENV` is missing or not in the list and inlines it as the build constant
@@ -77,7 +79,7 @@ cms-api: it talks only to this origin (`/api/v1/*`), so the dev server has no
   `APP_API_TOKEN` (required in production, `ak_live_...`, never logged or sent to the
   browser), `WEB_REVALIDATE_SECONDS` (optional override of every call's cache lifetime),
   `WEB_STATUS_PAGE_ENABLED` and the BFF keys (`WEB_ORIGIN`,
-  `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY`, `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`,
+  `WEB_SESSION_SECRET`, `TRUST_PROXY_HOPS`,
   `CLIENT_IP_HEADER`, and the test-stack-only `BFF_AUTH_RATE_LIMIT_IP` and
   `ALLOW_BFF_RATE_LIMIT_OVERRIDE`) at runtime. An invalid value stops the server at
   start (`src/instrumentation.ts`). It is not run during `next build`.
@@ -137,9 +139,6 @@ tokens only (`bg-card`, `text-muted-foreground`).
   owner) is privileged: the token is dropped, the web stays anonymous and the
   dialog points to the admin console. A missing list counts as privileged.
   A failed sign-out keeps the session and shows an error to retry.
-- "Open CMS" links to `NEXT_PUBLIC_ADMIN_URL` (build-time, optional, http(s)
-  URL or path); the admin signs in silently from the same cookie. Unset hides
-  the link.
 - The CV page (`useCvContent`) refetches its GraphQL document with the
   account's Bearer token after sign-in; a reviewer session does the same.
 
@@ -159,7 +158,7 @@ tokens only (`bg-card`, `text-muted-foreground`).
   reload ends the review; "End review" drops the token locally. The dialog
   only handles step navigation and submit; each step is its own component
   (`RoleStep`, `PurposesStep`, `NotesStep`), form values and `toSessionInput`
-  live in `Reviewer.form.ts`, and `useHumanCheck.tsx` owns the Turnstile token.
+  live in `Reviewer.form.ts`.
 - Turnstile loads through `next/script` only while the dialog's last step is
   open (`challenges.cloudflare.com`, constant `TURNSTILE` in
   `src/configs/Security.constants.ts`). The CSP allows that origin in
@@ -176,9 +175,9 @@ docker run -e APP_API_URL=http://cms-api:3000/api/v1 -e APP_API_TOKEN=<token> -p
 
 Multi-stage: `turbo prune`, a frozen install, `turbo run build`, then the
 standalone server (`.next/standalone`, `.next/static`, `public/`) on Node as
-the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and without a valid `APP_ENV` build arg; `NEXT_PUBLIC_ADMIN_URL` is an optional build arg.
+the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and without a valid `APP_ENV` build arg.
 Runtime env: `APP_ENV` (must equal the build value), `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
-`WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TURNSTILE_SECRET_KEY` (required), `TURNSTILE_EXPECTED_HOSTNAME`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
+`WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
 (smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)
 (`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
@@ -201,7 +200,7 @@ The `abyss/file-names` ESLint rule (ADR 0008, run by `pnpm lint`) fails on a fil
   `Content-Security-Policy` on the forwarded request (Next.js stamps the nonce
   on its scripts) and on the response. The policy is built in
   `src/utils/ContentSecurityPolicy.rules.ts`: `script-src 'self' 'nonce-<n>'
-'strict-dynamic'` + the Turnstile origin, `style-src 'self' 'nonce-<n>'` with
+'strict-dynamic'` + the Turnstile origin (`TURNSTILE_ORIGIN` of form-commons), `style-src 'self' 'nonce-<n>'` with
   `style-src-attr 'unsafe-inline'`, `connect-src 'self'` (plus
   `ws:` in dev), `img-src` with Cloudinary,
   `frame-src` Turnstile, `frame-ancestors 'none'`. Dev adds `'unsafe-eval'` and

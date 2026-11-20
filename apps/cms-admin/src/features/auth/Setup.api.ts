@@ -11,6 +11,7 @@ export interface CreateOwnerInput {
   email: string;
   displayName?: string;
   password: string;
+  turnstileToken: string;
 }
 
 /**

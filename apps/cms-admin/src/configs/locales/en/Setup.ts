@@ -1,4 +1,5 @@
 import { PASSWORD_LENGTH } from '../../Auth.constants';
+import { HUMAN_CHECK_COPY } from './Common';
 
 export const SETUP_COPY = {
   title: 'Set up the owner account',
@@ -15,6 +16,7 @@ export const SETUP_COPY = {
   passwordHint: `${PASSWORD_LENGTH.MIN} to ${PASSWORD_LENGTH.MAX} characters. A few unrelated words work well.`,
   confirmPasswordLabel: 'Repeat password',
   submit: 'Create owner account',
+  humanCheck: HUMAN_CHECK_COPY,
   validation: {
     tokenRequired: 'Enter the setup token.',
     emailRequired: 'Enter your email address.',

@@ -61,7 +61,7 @@ check_admin_security_headers() {
   expect_common_security_headers "admin /"
   local admin_csp admin_img_src admin_style_nonce
   admin_csp="$(header Content-Security-Policy)"
-  if [[ "$admin_csp" == *"script-src 'self';"* && "$admin_csp" == *"connect-src 'self' $ADMIN_ORIGIN;"* && "$admin_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP: script-src self, connect-src is the API origin (no path), Cloudinary img-src"; else fail "admin CSP: '$admin_csp'"; fi
+  if [[ "$admin_csp" == *"script-src 'self' $TURNSTILE_ORIGIN;"* && "$admin_csp" == *"frame-src $TURNSTILE_ORIGIN;"* && "$admin_csp" == *"connect-src 'self' $ADMIN_ORIGIN;"* && "$admin_csp" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP: script-src self + Turnstile, frame-src Turnstile only, connect-src is the API origin (no path), Cloudinary img-src"; else fail "admin CSP: '$admin_csp'"; fi
   admin_img_src="$(printf '%s' "$admin_csp" | tr ';' '\n' | grep -E '^ *img-src ' || true)"
   if [[ "$admin_img_src" != *" $WEB_ORIGIN"* && "$admin_img_src" == *"$CLOUDINARY_ORIGIN"* ]]; then pass "admin CSP img-src holds Cloudinary and no web origin (local media is same-origin)"; else fail "admin CSP img-src: '$admin_img_src'"; fi
   # style-src carries a per-request nonce (Radix scroll-lock style); the HTML

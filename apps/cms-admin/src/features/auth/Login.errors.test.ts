@@ -57,4 +57,17 @@ describe('toLoginError', () => {
   it('reports a non-HTTP error as unexpected', () => {
     expect(toLoginError(new Error('boom'), LOGIN_TEXT).kind).toBe('unexpected');
   });
+
+  it.each([
+    ['HUMAN_CHECK_FAILED', 'human-check-failed', EN_TEXT.login.humanCheck.errors.failed],
+    [
+      'HUMAN_CHECK_UNAVAILABLE',
+      'human-check-unavailable',
+      EN_TEXT.login.humanCheck.errors.unavailable,
+    ],
+  ])('maps %s to its own text, not to incorrect credentials', (errorCode, kind, message) => {
+    const error = httpError(403);
+    (error.response as AxiosResponse).data = { errorCode };
+    expect(toLoginError(error, LOGIN_TEXT)).toEqual({ kind, message });
+  });
 });

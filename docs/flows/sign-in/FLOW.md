@@ -1,6 +1,6 @@
 ---
 flow: sign-in
-modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/login, apps/web/src/features/auth, apps/web/src/features/session, packages/form-commons/src/components/forms
+modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/login, apps/web/src/features/auth, apps/web/src/features/session, packages/form-commons/src/components/forms, apps/cms-api/src/modules/human-check
 ---
 
 # Sign-in: flow
@@ -153,6 +153,7 @@ sequenceDiagram
 | `apps/web/src/features/auth` | Web login dialog and 2FA step on the shared Turnstile kit (D21, D25, RM-6) | [auth.md](../../modules/web/auth.md) |
 | `apps/web/src/features/session` | Who is signed in; the sealed BFF session cookie server-side (D21, RM-6) | [session.md](../../modules/web/session.md) |
 | `packages/form-commons/src/components/forms` | `CheckboxInput` used by the remember-me checkbox (RM-5) | [forms.md](../../modules/form-commons/forms.md) |
+| `apps/cms-api/src/modules/human-check` | The human check on `POST /auth/login`, `/auth/2fa/verify` and `/auth/2fa/email-challenge` (D25) | [human-check.md](../../modules/cms-api/human-check.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

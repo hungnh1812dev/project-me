@@ -22,8 +22,8 @@ demo_api_url() { echo "http://$LOOPBACK:$API_PORT$API_PREFIX$1"; }
 # stdin so the password never shows in a process list.
 demo_sign_in_owner() {
   local login_json response status
-  login_json="$(DEMO_EMAIL="$STACK_OWNER_EMAIL" DEMO_PASSWORD="$STACK_OWNER_PASSWORD" node -e \
-    'process.stdout.write(JSON.stringify({ email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD }))')"
+  login_json="$(DEMO_EMAIL="$STACK_OWNER_EMAIL" DEMO_PASSWORD="$STACK_OWNER_PASSWORD" DEMO_TURNSTILE_TOKEN="$STACK_TURNSTILE_DUMMY_TOKEN" node -e \
+    'process.stdout.write(JSON.stringify({ email: process.env.DEMO_EMAIL, password: process.env.DEMO_PASSWORD, turnstileToken: process.env.DEMO_TURNSTILE_TOKEN }))')"
   response="$(printf '%s' "$login_json" | curl -sS --max-time "$DEMO_REQUEST_TIMEOUT_SECONDS" \
     -w "\n$DEMO_HTTP_STATUS_FORMAT" -X POST -H 'Content-Type: application/json' \
     --data-binary @- "$(demo_api_url "$DEMO_LOGIN_PATH")")"

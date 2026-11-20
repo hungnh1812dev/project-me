@@ -1,6 +1,6 @@
 ---
 flow: password
-modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-api/src/infrastructure/mail, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/set-password, apps/cms-admin/src/views/reset-password, apps/cms-admin/src/views/change-password
+modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-api/src/infrastructure/mail, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/set-password, apps/cms-admin/src/views/reset-password, apps/cms-admin/src/views/change-password, apps/cms-api/src/modules/human-check
 ---
 
 # Password: flow
@@ -52,6 +52,7 @@ sequenceDiagram
 | `apps/cms-admin/src/views/set-password` | Invitation acceptance page | [set-password.md](../../modules/cms-admin/set-password.md) |
 | `apps/cms-admin/src/views/reset-password` | Forgot and reset password page | [reset-password.md](../../modules/cms-admin/reset-password.md) |
 | `apps/cms-admin/src/views/change-password` | Signed-in password change (`/settings/password`) | [change-password.md](../../modules/cms-admin/change-password.md) |
+| `apps/cms-api/src/modules/human-check` | The human check on `POST /auth/password/request-otp` and `/reset` (D25) | [human-check.md](../../modules/cms-api/human-check.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

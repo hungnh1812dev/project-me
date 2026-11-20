@@ -1,6 +1,6 @@
 ---
 flow: owner-setup
-modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/owner-setup
+modules: apps/cms-api/src/modules/identity, apps/cms-api/src/modules/security-audit, apps/cms-admin/src/features/auth, apps/cms-admin/src/views/owner-setup, apps/cms-api/src/modules/human-check
 ---
 
 # Owner setup: flow
@@ -61,6 +61,7 @@ sequenceDiagram
 | `apps/cms-api/src/modules/security-audit` | `owner.created`, `owner.setup_rejected`, `account.seeded` (D15) | [security-audit.md](../../modules/cms-api/security-audit.md) |
 | `apps/cms-admin/src/features/auth` | Setup status check and the setup request | [auth.md](../../modules/cms-admin/auth.md) |
 | `apps/cms-admin/src/views/owner-setup` | The one-time setup page | [owner-setup.md](../../modules/cms-admin/owner-setup.md) |
+| `apps/cms-api/src/modules/human-check` | The human check on `POST /setup/owner` (D25) | [human-check.md](../../modules/cms-api/human-check.md) |
 
 <!-- prettier-ignore-end -->
 <!-- flow-modules:end -->

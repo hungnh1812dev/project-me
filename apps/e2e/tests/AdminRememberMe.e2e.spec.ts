@@ -4,7 +4,7 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { REFRESH_COOKIE_NAME } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { expectSignedIn } from '../src/Session.fixture';
+import { clickAfterHumanCheck, expectSignedIn } from '../src/Session.fixture';
 
 const REMEMBERED_SECONDS = 2_592_000;
 const SESSION_COOKIE_EXPIRES = -1;
@@ -29,7 +29,7 @@ test.describe('admin remember me', { tag: ['@cms-admin', '@cms-api', '@sign-in']
 
     await fillCredentials(page, `${e2eEnv.ownerPassword}-wrong`);
     await rememberBox(page).check();
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(rememberBox(page)).not.toBeChecked();
   });
@@ -56,7 +56,7 @@ test.describe('admin remember me', { tag: ['@cms-admin', '@cms-api', '@sign-in']
   }) => {
     await page.goto('/');
     await fillCredentials(page);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expectSignedIn(page);
 
     expect(await refreshCookie(context)).toMatchObject({ expires: SESSION_COOKIE_EXPIRES });
@@ -69,7 +69,7 @@ test.describe('admin remember me', { tag: ['@cms-admin', '@cms-api', '@sign-in']
     await page.goto('/');
     await fillCredentials(page);
     await rememberBox(page).check();
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expectSignedIn(page);
 
     const cookie = await refreshCookie(context);
@@ -90,7 +90,7 @@ test.describe('admin remember me', { tag: ['@cms-admin', '@cms-api', '@sign-in']
     await page.goto('/');
     await fillCredentials(page);
     await rememberBox(page).check();
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
 
     await expect(
       page.getByRole('dialog', { name: ADMIN_COPY.login.twoFactor.title }),
@@ -107,7 +107,7 @@ test.describe('admin remember me', { tag: ['@cms-admin', '@cms-api', '@sign-in']
   }) => {
     await page.goto('/');
     await fillCredentials(page);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expectSignedIn(page);
 
     const secondTab = await context.newPage();

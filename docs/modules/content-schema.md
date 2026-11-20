@@ -334,6 +334,14 @@ migration and what it carries.
 - Additive only: tables `page_cv_a__language` and `page_cv_a__reference`, and
   column `cv_common_text.phone`. No data step; existing rows are untouched.
 
+### `0019_drop_open_cms.sql` (`module-auth.openCms` dropped, Q-HC3, WEB-12)
+
+- Destructive: `DROP COLUMN module_auth.open_cms`. The text was a link label to
+  cms-admin that nobody keeps (user decision 2026-11-19, Q-HC3); web no longer
+  asks for it. No data step; the dropped text is not kept.
+- Release note: back up the database first; release cms-api after web stops
+  asking for the field.
+
 ## Migrations
 
 Content tables are never created at runtime. Changes go through two

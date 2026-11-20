@@ -3,7 +3,6 @@ import 'server-only';
 import { assertAppEnvMatchesBuild, parseAppEnv, type AppEnv } from './AppEnv.rules';
 import { BFF_RATE_LIMITS } from './Http.constants';
 import { optionalText, requireEnv } from './RequireEnv.rules';
-import { TURNSTILE } from './Security.constants';
 import { stripTrailingSlashes } from './StripTrailingSlashes.rules';
 
 /** Shortest WEB_SESSION_SECRET accepted in production (256 bits). */
@@ -12,7 +11,7 @@ export const SESSION_SECRET_MIN_BYTES = 32;
 /** Proxies in front of the web server when TRUST_PROXY_HOPS is unset (D7). */
 export const DEFAULT_TRUST_PROXY_HOPS = 1;
 
-/** The only value of ALLOW_TURNSTILE_TEST_SECRET and ALLOW_BFF_RATE_LIMIT_OVERRIDE: the smoke stack's production build may use a test-only setting. */
+/** The only value of ALLOW_BFF_RATE_LIMIT_OVERRIDE: the smoke stack's production build may use a test-only setting. */
 export const SMOKE_STACK_OPT_IN = 'smoke';
 
 /** Env key that raises a BFF bucket's limit per visitor IP; test stacks only (ADR 0018 section 2.7). */
@@ -22,8 +21,6 @@ export const BFF_RATE_LIMIT_OVERRIDE_ENV_KEYS = {
 
 /** cms-api API token (D5): `ak_live_` + base64url. */
 const API_TOKEN_PATTERN = /^ak_live_[A-Za-z0-9_-]+$/;
-
-const HOSTNAME_PATTERN = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/;
 
 export interface ServerEnv {
   /** cms-api base URL reachable from the Next server (never sent to the browser). */
@@ -40,10 +37,6 @@ export interface ServerEnv {
   webOrigin: string;
   /** Key material for the sealed session cookies. */
   sessionSecret: string;
-  /** Cloudflare Turnstile secret key; the BFF verifies every human check with it. */
-  turnstileSecretKey: string;
-  /** When set, a Turnstile answer must carry this hostname. */
-  turnstileExpectedHostname: string | undefined;
   /** Proxy hops to skip from the right of `X-Forwarded-For` to reach the visitor (D7). */
   trustProxyHops: number;
   /** Header a trusted CDN sets to the visitor IP (e.g. `CF-Connecting-IP`); wins over `X-Forwarded-For`. */
@@ -69,39 +62,6 @@ function parseSessionSecret(raw: string | undefined, source: EnvSource): string 
     throw new Error(`WEB_SESSION_SECRET must be at least ${SESSION_SECRET_MIN_BYTES} bytes.`);
   }
   return secret;
-}
-
-function parseExpectedHostname(raw: string | undefined): string | undefined {
-  const hostname = optionalText(raw)?.toLowerCase();
-  if (hostname !== undefined && !HOSTNAME_PATTERN.test(hostname)) {
-    throw new Error('TURNSTILE_EXPECTED_HOSTNAME must be a bare hostname, e.g. domain.com.');
-  }
-  return hostname;
-}
-
-/**
- * ADR 0018 section 2.6. Anything but unset, blank or `smoke` fails start; in
- * production the test secret needs the opt-in and a real secret needs a hostname.
- */
-function assertTurnstileSafeForEnvironment(
-  secretKey: string,
-  expectedHostname: string | undefined,
-  source: EnvSource,
-): void {
-  const optIn = optionalText(source.ALLOW_TURNSTILE_TEST_SECRET);
-  if (optIn !== undefined && optIn !== SMOKE_STACK_OPT_IN) {
-    throw new Error(`ALLOW_TURNSTILE_TEST_SECRET must be unset or ${SMOKE_STACK_OPT_IN}.`);
-  }
-  if (source.NODE_ENV !== 'production') return;
-  if (secretKey === TURNSTILE.ALWAYS_PASS_TEST_SECRET) {
-    if (optIn !== SMOKE_STACK_OPT_IN) {
-      throw new Error(
-        'TURNSTILE_SECRET_KEY is the Cloudflare test secret, not allowed in production.',
-      );
-    }
-  } else if (expectedHostname === undefined) {
-    throw new Error('TURNSTILE_EXPECTED_HOSTNAME is required in production.');
-  }
 }
 
 function parseTrustProxyHops(raw: string | undefined): number {
@@ -187,9 +147,6 @@ function parseRevalidateOverride(raw: string | undefined): number | undefined {
 export function parseServerEnv(source: EnvSource, buildAppEnv: string | undefined): ServerEnv {
   const appEnv = parseAppEnv(source.APP_ENV);
   assertAppEnvMatchesBuild(appEnv, buildAppEnv);
-  const turnstileSecretKey = requireEnv('TURNSTILE_SECRET_KEY', source.TURNSTILE_SECRET_KEY);
-  const turnstileExpectedHostname = parseExpectedHostname(source.TURNSTILE_EXPECTED_HOSTNAME);
-  assertTurnstileSafeForEnvironment(turnstileSecretKey, turnstileExpectedHostname, source);
 
   return {
     appApiUrl: parseAppApiUrl(source.APP_API_URL),
@@ -199,8 +156,6 @@ export function parseServerEnv(source: EnvSource, buildAppEnv: string | undefine
     isMockFallbackOn: appEnv !== 'production',
     webOrigin: parseWebOrigin(source.WEB_ORIGIN),
     sessionSecret: parseSessionSecret(source.WEB_SESSION_SECRET, source),
-    turnstileSecretKey,
-    turnstileExpectedHostname,
     trustProxyHops: parseTrustProxyHops(source.TRUST_PROXY_HOPS),
     clientIpHeader: optionalText(source.CLIENT_IP_HEADER),
     bffRateLimitOverrides: parseBffRateLimitOverrides(source),

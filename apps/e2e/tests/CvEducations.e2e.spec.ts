@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { withHumanCheck } from '../src/Session.fixture';
 
 /**
  * apps/web `/cv/<documentId>` Education section (repeatable `educations`): several entries in order, one
@@ -18,7 +19,7 @@ test.describe('cv educations', { tag: ['@web', '@cms-api', '@public-site'] }, ()
 
   test.beforeAll(async ({ request }) => {
     const login = await request.post(apiUrl(API_PATHS.AUTH.LOGIN), {
-      data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
+      data: withHumanCheck({ email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword }),
     });
     ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
   });

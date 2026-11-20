@@ -12,18 +12,22 @@ import {
   FormAlert,
   TextInput,
 } from '@abyss/form-commons';
+import {
+  HUMAN_CHECK_FORMS,
+  resetTurnstile,
+  TurnstileSlot,
+  useTurnstile,
+} from '@abyss/form-commons/human-check';
 import { useMutation } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import type { Alert } from '@/apis/client/ClientApi.errors';
 import { appEnv } from '@/configs/Browser.env';
-import { TURNSTILE } from '@/configs/Security.constants';
 
 import { useWebSession, type TwoFactorChallenge } from '../session';
 import { credentialAlertOf, loginErrorAlertOf } from './LoginAlerts.rules';
 import type { SignInText } from './SignIn.graphql';
 import { TwoFactorStep } from './TwoFactorStep';
-import { useHumanCheck } from './useHumanCheck';
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -100,7 +104,8 @@ function LoginFlow({
   onClose: () => void;
 }) {
   const session = useWebSession();
-  const humanCheck = useHumanCheck(siteKey, TURNSTILE.ACTIONS.LOGIN, copy.humanCheck);
+  const turnstileToken = useTurnstile(HUMAN_CHECK_FORMS.LOGIN, siteKey);
+  const [isTokenMissing, setIsTokenMissing] = useState(false);
   const [alert, setAlert] = useState<Alert | null>(null);
   const [challenge, setChallenge] = useState<TwoFactorChallenge | null>(null);
   const [hasExpired, setHasExpired] = useState(false);
@@ -113,6 +118,7 @@ function LoginFlow({
 
   const signIn = useMutation({
     mutationFn: session.signIn,
+    onSettled: () => resetTurnstile(HUMAN_CHECK_FORMS.LOGIN),
     onSuccess: (outcome) => {
       if (outcome.kind === 'signed-in') {
         onClose();
@@ -144,13 +150,17 @@ function LoginFlow({
   const onSubmit = form.handleSubmit((values) => {
     setAlert(null);
     setHasExpired(false);
-    const humanCheckToken = humanCheck.requireToken();
-    if (humanCheckToken === null) return;
+    if (turnstileToken === '') {
+      setIsTokenMissing(true);
+      resetTurnstile(HUMAN_CHECK_FORMS.LOGIN);
+      return;
+    }
+    setIsTokenMissing(false);
     signIn.mutate({
       email: values.email.trim(),
       password: values.password,
       rememberMe: values.rememberMe,
-      humanCheckToken,
+      turnstileToken,
     });
   });
 
@@ -209,7 +219,14 @@ function LoginFlow({
             label={copy.rememberMeLabel}
             description={copy.rememberMeHint}
           />
-          {humanCheck.field}
+          <div className="grid gap-1">
+            <TurnstileSlot formId={HUMAN_CHECK_FORMS.LOGIN} text={copy.humanCheck} />
+            {isTokenMissing && turnstileToken === '' ? (
+              <p role="alert" className="text-destructive-strong text-sm">
+                {copy.humanCheck.required}
+              </p>
+            ) : null}
+          </div>
           {/* Stacked order is not reversed: Cancel stays above the confirm button and first in Tab order. */}
           <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="secondary" onClick={onClose}>

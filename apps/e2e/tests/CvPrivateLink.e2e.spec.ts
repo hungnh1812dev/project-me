@@ -4,6 +4,7 @@ import { API_PATHS, apiUrl, BFF_PATHS } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
 import { HTTP, PAGE_CV_A_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { clickAfterHumanCheck, withHumanCheck } from '../src/Session.fixture';
 
 const NO_INDEX_HEADER = 'noindex, nofollow, noarchive, nosnippet';
 const UNKNOWN_DOCUMENT_ID = '00000000-0000-4000-8000-000000000000';
@@ -45,7 +46,7 @@ test.describe('cv private link', { tag: ['@web', '@cms-api', '@public-site'] }, 
 
   test.beforeAll(async ({ request }) => {
     const login = await request.post(apiUrl(API_PATHS.AUTH.LOGIN), {
-      data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
+      data: withHumanCheck({ email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword }),
     });
     ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
     const published = await createCv(request, CV_NAME);
@@ -142,7 +143,7 @@ test.describe('cv private link', { tag: ['@web', '@cms-api', '@public-site'] }, 
     await dialog.getByRole('textbox', { name: WEB_COPY.login.emailLabel }).fill(e2eEnv.readerEmail);
     await dialog.getByLabel(WEB_COPY.login.passwordLabel).fill(e2eEnv.readerPassword);
     await expect(dialog.locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
-    await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
+    await clickAfterHumanCheck(dialog.getByRole('button', { name: WEB_COPY.login.submit }));
     await expect(page.getByRole('button', { name: WEB_COPY.session.signOut })).toBeVisible();
     await expect.poll(() => bffCalls.length).toBeGreaterThan(0);
     expect(new Set(bffCalls)).toEqual(new Set([`${BFF_PATHS.CV}/${publishedId}`]));

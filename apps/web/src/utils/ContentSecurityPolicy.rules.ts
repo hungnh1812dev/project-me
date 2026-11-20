@@ -1,9 +1,6 @@
-import {
-  CLOUDINARY_IMAGE_ORIGIN,
-  CSP_KEYWORDS,
-  NONCE_BYTES,
-  TURNSTILE_ORIGIN,
-} from '@/configs/Security.constants';
+import { TURNSTILE_ORIGIN } from '@abyss/form-commons/human-check';
+
+import { CLOUDINARY_IMAGE_ORIGIN, CSP_KEYWORDS, NONCE_BYTES } from '@/configs/Security.constants';
 
 const { SELF, NONE, STRICT_DYNAMIC, UNSAFE_INLINE, UNSAFE_EVAL } = CSP_KEYWORDS;
 

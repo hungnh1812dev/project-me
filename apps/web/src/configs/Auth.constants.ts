@@ -26,6 +26,12 @@ export const API_ERROR_CODES = {
   INVALID_TEMP_TOKEN: 'AUTH_INVALID_TEMP_TOKEN',
 } as const;
 
+/** `errorCode` values of cms-api's human check; the BFF maps them to its own codes. */
+export const HUMAN_CHECK_ERROR_CODES = {
+  FAILED: 'HUMAN_CHECK_FAILED',
+  UNAVAILABLE: 'HUMAN_CHECK_UNAVAILABLE',
+} as const;
+
 /** Error codes of the BFF the sign-in UI branches on (ADR 0018 section 3). */
 export const BFF_ERROR_CODES = {
   INVALID_CREDENTIALS: 'BFF_INVALID_CREDENTIALS',
