@@ -6,10 +6,19 @@ import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
 import { QueryClient } from '@tanstack/react-query';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
 import type { FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import {
+  createTestServices,
+  findToast,
+  renderApp,
+  renderInApp,
+  TEST_USER,
+} from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Link, Navigate, Route, Routes } from 'react-router';
 import { vi } from 'vitest';
+
+import { DocumentEditPage } from './DocumentEditPage';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
@@ -479,5 +488,71 @@ describe('DocumentEditPage: cache after a write', () => {
       expect(invalidatedKeys(spy)).toContainEqual(CONTENT_QUERY_KEYS.list(SLUG));
       expect(invalidatedKeys(spy)).toContainEqual(CONTENT_QUERY_KEYS.draft(SLUG, DOC_ID));
     });
+  });
+});
+
+describe('DocumentEditPage: form key', () => {
+  const OTHER_SLUG = 'note';
+  const otherType = {
+    slug: OTHER_SLUG,
+    displayName: 'Note',
+    kind: 'collection',
+    draftAndPublish: false,
+    fields: [
+      {
+        path: 'title',
+        type: 'string',
+        system: false,
+        component: false,
+        width: 'full',
+        repeatable: false,
+        rootScalar: true,
+        conditionKind: null,
+        sensitive: false,
+        default: 'Untitled note',
+      },
+    ],
+  };
+
+  function openWithLink(handlers: Record<string, FakeHandler> = {}) {
+    const { api, services } = createTestServices({
+      [`GET ${CONTENT_TYPES.ONE(SLUG)}`]: typeHandler,
+      [`GET ${CONTENT_TYPES.ONE(OTHER_SLUG)}`]: () => ({ status: 200, data: otherType }),
+      ...handlers,
+    });
+    renderInApp(
+      services,
+      <>
+        <Link to={contentNewPath(OTHER_SLUG)}>go to note</Link>
+        <Routes>
+          <Route path="/" element={<Navigate to={contentNewPath(SLUG)} replace />} />
+          <Route path="/content/:slug/new" element={<DocumentEditPage />} />
+        </Routes>
+      </>,
+    );
+    return { api, services };
+  }
+
+  it('a create form of another type starts from that type, not the typed values', async () => {
+    const { services } = openWithLink();
+    // Cached before the move, so the form never sees a loading gap between the two types.
+    services.queryClient.setQueryData(CONTENT_QUERY_KEYS.type(OTHER_SLUG), otherType);
+    await userEvent.type(await screen.findByLabelText('Position'), 'Engineer');
+    await userEvent.click(screen.getByRole('link', { name: 'go to note' }));
+
+    expect(await screen.findByLabelText('Title')).toHaveValue('Untitled note');
+    expect(screen.queryByDisplayValue('Engineer')).not.toBeInTheDocument();
+  });
+
+  it('keeps typed values when a background refetch returns the same draft version', async () => {
+    const draftKey = `GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`;
+    const { services } = await open(contentEditPath(SLUG, DOC_ID), {
+      [draftKey]: () => ({ status: 200, data: draft() }),
+    });
+    const position = await screen.findByLabelText('Position');
+    await userEvent.clear(position);
+    await userEvent.type(position, 'Lead');
+    await services.queryClient.refetchQueries({ queryKey: CONTENT_QUERY_KEYS.draft(SLUG, DOC_ID) });
+    expect(screen.getByLabelText('Position')).toHaveValue('Lead');
   });
 });

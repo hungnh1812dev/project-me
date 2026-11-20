@@ -113,8 +113,8 @@ export function DocumentEditPage() {
         <FormAlert tone="info">{copy.noFields}</FormAlert>
       ) : (
         <DocumentForm
-          // A saved or reloaded draft has a new version: start from its data.
-          key={`${documentId ?? 'new'}:${draft.data?.version ?? 0}`}
+          // A new type, document or saved version starts the form from its own data.
+          key={`${slug}:${documentId ?? 'new'}:${draft.data?.version ?? 0}`}
           slug={slug}
           fields={fields}
           draftAndPublish={draftAndPublish}
