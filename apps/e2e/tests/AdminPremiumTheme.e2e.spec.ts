@@ -3,7 +3,12 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { expectSignedIn, openUserMenu, submitLogin } from '../src/Session.fixture';
+import {
+  clickAfterHumanCheck,
+  expectSignedIn,
+  openUserMenu,
+  submitLogin,
+} from '../src/Session.fixture';
 
 const accounts = ADMIN_COPY.access.accounts;
 const invite = ADMIN_COPY.access.invite;
@@ -277,7 +282,7 @@ test.describe.serial('cms-admin premium theme', { tag: ['@cms-admin', '@cms-api'
     await p.getByLabel(ADMIN_COPY.login.passwordLabel).fill('Wrong-password-1');
     const submit = p.getByRole('button', { name: ADMIN_COPY.login.submit });
     const before = (await submit.boundingBox())!.width;
-    await submit.click();
+    await clickAfterHumanCheck(submit);
     const busy = p.locator('button[aria-busy="true"]');
     await expect(busy).toBeVisible();
     await p.waitForTimeout(FOCUS_SETTLE_MS);
