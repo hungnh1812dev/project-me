@@ -199,7 +199,9 @@ test.describe.serial(
     });
 
     test('item cases, other side: own removal, saved add, own order', async () => {
-      await staleA((page) => skillLevel(page, 2).selectOption({ label: 'Working Knowledge' }));
+      await staleA(async (page) => {
+        await skillLevel(page, 2).selectOption({ label: 'Working Knowledge' });
+      });
       await a.getByRole('button', { name: list.remove('Skills', 2) }).click();
       await a.getByRole('button', { name: list.addSlot('Skills') }).click();
       await skillName(a, 3).fill(`Eps ${RUN_ID}`);
