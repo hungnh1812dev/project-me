@@ -31,6 +31,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - docs: public-site PS-5 (each CV on its own link-only page `/cv/<documentId>`, never crawled or indexed), content-modeling CM-13 (`linkOnly` type option), acceptance criterion 31; PS-1 (the web header reads no `requiresRole`), PS-2, PS-4, criterion 25 and web D21 amended.
 - docs: public-site PS-6 (on a phone the header entries move into a side drawer opened by a menu button), Q-HN3; web WEB-3 amended (two built-in button names).
 
+### Bug fixes
+
+- cms-admin: reopening a single type from the side menu opens its saved document, not a new form; a create form no longer keeps another content type's values.
+
 ## 0.2.0 (2026-11-18)
 
 Repo 0.2.0, cms-api, cms-admin and web 0.2.0, e2e 0.0.3: schema builder field types and defaults, the premium admin look with toasts, the CV page on the web BFF path with new content types, remember-me sign-in and the fixes since 0.1.0.
