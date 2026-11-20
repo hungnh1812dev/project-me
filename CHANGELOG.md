@@ -15,6 +15,7 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ### Changes
 
+- root: `effect` pinned to 3.22.4 by a pnpm override (GHSA-7589-6fvf-x4pw, ReDoS; reached through Prisma's config loader and `@hookform/resolvers`).
 - cms-api: `module-auth.openCms` dropped with a destructive content migration. Take a database backup before deploying.
 - web: the BFF forwards `turnstileToken` to cms-api; `TURNSTILE_*` keys and `NEXT_PUBLIC_ADMIN_URL` and the "Open CMS" link removed.
 - DevOps: [cms-api](docs/apps/cms-api/patch-cms-api-0.3.0.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.3.0.md) and [web](docs/apps/web/patch-web-0.3.0.md) patches 0.3.0 (secret, hosts, site key; release cms-api first).
