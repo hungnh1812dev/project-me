@@ -4,8 +4,12 @@ import { EN_TEXT } from '@configs/locales/en';
 import type { ContentType } from '@features/content-types';
 import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
 import { deferred, type FakeHandler } from '@test/FakeApi.fixture';
-import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
+import { createTestServices, renderApp, renderInApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Route, Routes, useLocation, useNavigate } from 'react-router';
+
+import { SingleTypeRedirect } from './SingleTypeRedirect';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
@@ -115,5 +119,41 @@ describe('SingleTypeRedirect', () => {
   it('shows the forbidden notice', async () => {
     await open({ [LIST_KEY]: () => ({ status: 403 }) });
     expect(await screen.findByText(copy.collection.forbidden)).toBeInTheDocument();
+  });
+
+  it('replaces the list entry, so Back skips it', async () => {
+    const { services } = createTestServices({
+      [`POST ${REFRESH}`]: () => ({ status: 200, data: { accessToken: 't1' } }),
+      [`GET ${ME}`]: () => ({ status: 200, data: TEST_USER }),
+      [LIST_KEY]: () => listOf([ONLY_DOCUMENT]),
+    });
+    await services.session.restore();
+    function Landing() {
+      const navigate = useNavigate();
+      return (
+        <button type="button" onClick={() => void navigate(-1)}>
+          back
+        </button>
+      );
+    }
+    function Where() {
+      return <output aria-label="where">{useLocation().pathname}</output>;
+    }
+    renderInApp(
+      services,
+      <>
+        <Where />
+        <Routes>
+          <Route
+            path={contentListPath(SLUG)}
+            element={<SingleTypeRedirect slug={SLUG} displayName="Header" draftAndPublish />}
+          />
+          <Route path="*" element={<Landing />} />
+        </Routes>
+      </>,
+      { entries: ['/previous', contentListPath(SLUG)], index: 1 },
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'back' }));
+    expect(screen.getByLabelText('where')).toHaveTextContent('/previous');
   });
 });
