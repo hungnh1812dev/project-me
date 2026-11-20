@@ -1,5 +1,7 @@
 // @vitest-environment node
 
+import { TURNSTILE_TOKEN_MAX_LENGTH } from '@abyss/form-commons/human-check';
+
 import { BffError } from '@/apis/server/bff/Bff.errors';
 import { BffContext } from '@/apis/server/bff/BffRoute.server';
 
@@ -74,14 +76,33 @@ beforeEach(() => {
 describe('body schemas', () => {
   it('require the human-check token and refuse unknown keys through strict', () => {
     expect(loginBodySchema.safeParse({ email: 'a@b.c', password: 'x' }).success).toBe(false);
-    expect(emailCodeBodySchema.safeParse({ humanCheckToken: 't' }).success).toBe(true);
-    expect(verifyBodySchema.safeParse({ code: '1'.repeat(13), humanCheckToken: 't' }).success).toBe(
+    expect(emailCodeBodySchema.safeParse({}).success).toBe(false);
+    expect(emailCodeBodySchema.safeParse({ turnstileToken: 't' }).success).toBe(true);
+    expect(verifyBodySchema.safeParse({ code: '1'.repeat(13), turnstileToken: 't' }).success).toBe(
       false,
     );
   });
 
+  it('refuse an empty token, one past the maximum length and the old humanCheckToken key', () => {
+    const base = { email: 'a@b.c', password: 'x' };
+    expect(loginBodySchema.safeParse({ ...base, turnstileToken: '' }).success).toBe(false);
+    expect(
+      loginBodySchema.safeParse({ ...base, turnstileToken: 't'.repeat(TURNSTILE_TOKEN_MAX_LENGTH) })
+        .success,
+    ).toBe(true);
+    expect(
+      loginBodySchema.safeParse({
+        ...base,
+        turnstileToken: 't'.repeat(TURNSTILE_TOKEN_MAX_LENGTH + 1),
+      }).success,
+    ).toBe(false);
+    expect(
+      emailCodeBodySchema.strict().safeParse({ turnstileToken: 't', humanCheckToken: 't' }).success,
+    ).toBe(false);
+  });
+
   it('login takes an optional boolean rememberMe, absent reads false, other types refused', () => {
-    const base = { email: 'a@b.c', password: 'x', humanCheckToken: 't' };
+    const base = { email: 'a@b.c', password: 'x', turnstileToken: 't' };
     expect(loginBodySchema.parse(base).rememberMe).toBe(false);
     expect(loginBodySchema.parse({ ...base, rememberMe: true }).rememberMe).toBe(true);
     expect(loginBodySchema.safeParse({ ...base, rememberMe: 'true' }).success).toBe(false);
@@ -89,14 +110,14 @@ describe('body schemas', () => {
   });
 
   it('verify refuses a rememberMe key as unknown', () => {
-    const body = { code: '123456', humanCheckToken: 't' };
+    const body = { code: '123456', turnstileToken: 't' };
     expect(verifyBodySchema.strict().safeParse(body).success).toBe(true);
     expect(verifyBodySchema.strict().safeParse({ ...body, rememberMe: true }).success).toBe(false);
   });
 });
 
 describe('logInVisitor', () => {
-  const body = { email: 'a@b.c', password: 'pw', rememberMe: false };
+  const body = { email: 'a@b.c', password: 'pw', rememberMe: false, turnstileToken: 'tt' };
 
   it('seals the session, clears the 2FA cookie and returns only allowlisted user fields', async () => {
     client.logIn.mockResolvedValue({ kind: 'signed-in', ...ISSUED });
@@ -116,7 +137,10 @@ describe('logInVisitor', () => {
       client.logIn.mockResolvedValue({ kind: 'signed-in', ...ISSUED });
       client.readCurrentAccount.mockResolvedValue(READER);
       const response = await logInVisitor(context({ ...body, rememberMe }));
-      expect(client.logIn).toHaveBeenCalledWith({ email: 'a@b.c', password: 'pw', rememberMe }, IP);
+      expect(client.logIn).toHaveBeenCalledWith(
+        { email: 'a@b.c', password: 'pw', rememberMe, turnstileToken: 'tt' },
+        IP,
+      );
       expect(response.headers.getSetCookie()[0]).toMatch(
         rememberMe ? /Max-Age=2592000$/ : /^(?!.*Max-Age)/,
       );
@@ -168,16 +192,21 @@ describe('two-factor routes', () => {
   });
 
   it('email-code answers 202 using the cookie temp token', async () => {
-    const response = await sendTwoFactorEmailCode(context({}, challenge));
+    const response = await sendTwoFactorEmailCode(context({ turnstileToken: 'tt' }, challenge));
     expect(response.status).toBe(202);
-    expect(client.sendEmailChallenge).toHaveBeenCalledWith('tmp', IP);
+    expect(client.sendEmailChallenge).toHaveBeenCalledWith(
+      { tempToken: 'tmp', turnstileToken: 'tt' },
+      IP,
+    );
   });
 
   it('both steps refuse without a 2FA cookie', async () => {
-    const error = await refusalOf(sendTwoFactorEmailCode(context({})));
+    const error = await refusalOf(sendTwoFactorEmailCode(context({ turnstileToken: 'tt' })));
     expect(error.errorCode).toBe('BFF_TWO_FACTOR_EXPIRED');
     expect(error.setCookies).toEqual([]);
-    const verify = await refusalOf(verifyTwoFactorCode(context({ code: '123456' })));
+    const verify = await refusalOf(
+      verifyTwoFactorCode(context({ code: '123456', turnstileToken: 'tt' })),
+    );
     expect(verify.errorCode).toBe('BFF_TWO_FACTOR_EXPIRED');
   });
 
@@ -187,7 +216,12 @@ describe('two-factor routes', () => {
     });
     expect(readTwoFactorCookie(request).isPresent).toBe(true);
     const error = await refusalOf(
-      sendTwoFactorEmailCode({ request, body: {}, visitorIp: IP, params: {} }),
+      sendTwoFactorEmailCode({
+        request,
+        body: { turnstileToken: 'tt' },
+        visitorIp: IP,
+        params: {},
+      }),
     );
     expect(error.setCookies).toHaveLength(1);
   });
@@ -195,8 +229,13 @@ describe('two-factor routes', () => {
   it('verify seals the session and clears the 2FA cookie', async () => {
     client.verifyTwoFactor.mockResolvedValue(ISSUED);
     client.readCurrentAccount.mockResolvedValue(READER);
-    const response = await verifyTwoFactorCode(context({ code: '123456' }, challenge));
-    expect(client.verifyTwoFactor).toHaveBeenCalledWith({ tempToken: 'tmp', code: '123456' }, IP);
+    const response = await verifyTwoFactorCode(
+      context({ code: '123456', turnstileToken: 'tt' }, challenge),
+    );
+    expect(client.verifyTwoFactor).toHaveBeenCalledWith(
+      { tempToken: 'tmp', code: '123456', turnstileToken: 'tt' },
+      IP,
+    );
     expect(await response.json()).toEqual({
       user: { id: '1', email: 'a@b.c', displayName: 'A', role: 'reader' },
     });
@@ -209,7 +248,9 @@ describe('two-factor routes', () => {
       client.verifyTwoFactor.mockResolvedValue(ISSUED);
       client.readCurrentAccount.mockResolvedValue(READER);
       const sealed = writeTwoFactorCookie({ tempToken: 'tmp', methods: ['email'], rememberMe });
-      const response = await verifyTwoFactorCode(context({ code: '123456' }, sealed));
+      const response = await verifyTwoFactorCode(
+        context({ code: '123456', turnstileToken: 'tt' }, sealed),
+      );
       expect(response.headers.getSetCookie()[0]).toMatch(
         rememberMe ? /Max-Age=2592000$/ : /^(?!.*Max-Age)/,
       );
@@ -218,10 +259,14 @@ describe('two-factor routes', () => {
 
   it('a wrong code keeps the challenge cookie; an expired temp token clears it', async () => {
     client.verifyTwoFactor.mockRejectedValueOnce(new BffError('BFF_INVALID_TWO_FACTOR_CODE'));
-    const wrong = await refusalOf(verifyTwoFactorCode(context({ code: '1' }, challenge)));
+    const wrong = await refusalOf(
+      verifyTwoFactorCode(context({ code: '1', turnstileToken: 'tt' }, challenge)),
+    );
     expect(wrong.setCookies).toEqual([]);
     client.verifyTwoFactor.mockRejectedValueOnce(new BffError('BFF_TWO_FACTOR_EXPIRED'));
-    const expired = await refusalOf(verifyTwoFactorCode(context({ code: '1' }, challenge)));
+    const expired = await refusalOf(
+      verifyTwoFactorCode(context({ code: '1', turnstileToken: 'tt' }, challenge)),
+    );
     expect(expired.errorCode).toBe('BFF_TWO_FACTOR_EXPIRED');
     expect(expired.setCookies).toHaveLength(1);
   });
@@ -229,7 +274,9 @@ describe('two-factor routes', () => {
   it('verify refuses a privileged account', async () => {
     client.verifyTwoFactor.mockResolvedValue(ISSUED);
     client.readCurrentAccount.mockResolvedValue({ ...READER, permissions: ['user:manage'] });
-    const error = await refusalOf(verifyTwoFactorCode(context({ code: '1' }, challenge)));
+    const error = await refusalOf(
+      verifyTwoFactorCode(context({ code: '1', turnstileToken: 'tt' }, challenge)),
+    );
     expect(error.errorCode).toBe('BFF_PRIVILEGED_ACCOUNT');
   });
 });

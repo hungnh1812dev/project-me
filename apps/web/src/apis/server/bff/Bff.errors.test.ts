@@ -60,6 +60,35 @@ describe('BffError', () => {
   });
 });
 
+describe('bffErrorOf human check answers of cms-api', () => {
+  const upstream = (statusCode: number, upstreamErrorCode: string) =>
+    new WebApiError({
+      source: API_ERROR_SOURCES.CMS_API_REST,
+      errorCode: API_ERROR_CODES.BFF.UPSTREAM_FAILED,
+      statusCode,
+      upstreamErrorCode,
+    });
+
+  it('maps 400 HUMAN_CHECK_FAILED and 503 HUMAN_CHECK_UNAVAILABLE', () => {
+    expect(bffErrorOf(upstream(400, 'HUMAN_CHECK_FAILED'))).toMatchObject({
+      errorCode: 'BFF_HUMAN_CHECK_FAILED',
+      statusCode: 400,
+    });
+    expect(bffErrorOf(upstream(503, 'HUMAN_CHECK_UNAVAILABLE'))).toMatchObject({
+      errorCode: 'BFF_HUMAN_CHECK_UNAVAILABLE',
+      statusCode: 503,
+    });
+  });
+
+  it('ignores the code at another status and any other upstream code', () => {
+    expect(bffErrorOf(upstream(503, 'HUMAN_CHECK_FAILED')).errorCode).toBe('BFF_UPSTREAM_FAILED');
+    expect(bffErrorOf(upstream(400, 'HUMAN_CHECK_UNAVAILABLE')).errorCode).toBe(
+      'BFF_UPSTREAM_FAILED',
+    );
+    expect(bffErrorOf(upstream(400, 'AUTH_INVALID_REQUEST')).errorCode).toBe('BFF_UPSTREAM_FAILED');
+  });
+});
+
 describe('bffErrorOf', () => {
   const cmsApi = (errorCode: WebApiError['errorCode'], retryAfterSeconds?: number) =>
     new WebApiError({ source: API_ERROR_SOURCES.CMS_API_REST, errorCode, retryAfterSeconds });
@@ -69,21 +98,13 @@ describe('bffErrorOf', () => {
     expect(bffErrorOf(error)).toBe(error);
   });
 
-  it('maps a timeout, a rate limit and a Turnstile code, and any other failure to upstream failed', () => {
+  it('maps a timeout and a rate limit, and any other failure to upstream failed', () => {
     expect(bffErrorOf(cmsApi(API_ERROR_CODES.SERVER_API.TIMEOUT)).errorCode).toBe(
       'BFF_UPSTREAM_TIMEOUT',
     );
     expect(bffErrorOf(cmsApi(API_ERROR_CODES.BFF.RATE_LIMITED, 7)).headers).toEqual({
       'retry-after': '7',
     });
-    expect(
-      bffErrorOf(
-        new WebApiError({
-          source: API_ERROR_SOURCES.TURNSTILE,
-          errorCode: API_ERROR_CODES.BFF.HUMAN_CHECK_UNAVAILABLE,
-        }),
-      ).statusCode,
-    ).toBe(503);
     expect(bffErrorOf(cmsApi(API_ERROR_CODES.SERVER_API.NETWORK)).errorCode).toBe(
       'BFF_UPSTREAM_FAILED',
     );

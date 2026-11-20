@@ -6,9 +6,6 @@ import { defineBffRoute } from './BffRoute.server';
 
 const WEB_ORIGIN = 'https://site.test';
 
-const verifyHumanCheck = vi.hoisted(() => vi.fn<() => Promise<void>>());
-vi.mock('../restful/Turnstile.client', () => ({ verifyHumanCheck }));
-
 vi.mock('../../../configs/Server.env', () => ({
   getServerEnv: () => ({
     webOrigin: 'https://site.test',
@@ -166,35 +163,20 @@ describe('defineBffRoute pipeline', () => {
     expect(JSON.stringify(await response.json())).not.toContain('hunter2');
   });
 
-  it('verifies the human-check token before handle and does not pass it on', async () => {
-    verifyHumanCheck.mockResolvedValue(undefined);
-    const ip = freshIp();
+  it('passes the parsed body, a turnstileToken field included, to handle untouched', async () => {
     const route = defineBffRoute({
       methods: ['POST'],
       bucket: 'auth',
-      humanCheckAction: 'login',
-      bodySchema: z.object({ name: z.string(), humanCheckToken: z.string() }),
+      bodySchema: z.object({ name: z.string(), turnstileToken: z.string() }),
       handle,
     }).POST;
-    const response = await route(requestOf({ ip, body: '{"name":"a","humanCheckToken":"tok"}' }));
+    const response = await route(
+      requestOf({ ip: freshIp(), body: '{"name":"a","turnstileToken":"tok"}' }),
+    );
     expect(response.status).toBe(200);
-    expect(verifyHumanCheck).toHaveBeenCalledWith('tok', 'login', ip);
-    expect(handle).toHaveBeenCalledWith(expect.objectContaining({ body: { name: 'a' } }));
-  });
-
-  it('refuses a human-check route when the verifier refuses, without calling handle', async () => {
-    const { BffError } = await import('./Bff.errors');
-    verifyHumanCheck.mockRejectedValue(new BffError('BFF_HUMAN_CHECK_UNAVAILABLE'));
-    const route = defineBffRoute({
-      methods: ['POST'],
-      bucket: 'auth',
-      humanCheckAction: 'login',
-      handle,
-    }).POST;
-    const response = await route(requestOf());
-    expect(response.status).toBe(503);
-    expect(await errorCodeOf(response)).toBe('BFF_HUMAN_CHECK_UNAVAILABLE');
-    expect(handle).not.toHaveBeenCalled();
+    expect(handle).toHaveBeenCalledWith(
+      expect.objectContaining({ body: { name: 'a', turnstileToken: 'tok' } }),
+    );
   });
 
   it('logs a refusal once, with the method and path as its operation and no body', async () => {

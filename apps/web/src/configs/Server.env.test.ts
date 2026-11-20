@@ -1,4 +1,3 @@
-import { TURNSTILE } from './Security.constants';
 import {
   DEFAULT_TRUST_PROXY_HOPS,
   parseServerEnv as parseServerEnvWithBuild,
@@ -16,12 +15,10 @@ const VALID = {
   APP_API_URL: 'http://cms-api:3000/api/v1/',
   WEB_ORIGIN: 'https://example.test/',
   WEB_SESSION_SECRET: 'short-dev-secret',
-  TURNSTILE_SECRET_KEY: 'turnstile-secret',
 };
 
 /** What a production start needs besides the base values: the Turnstile hostname and the API token. */
 const PRODUCTION_HOSTNAME = {
-  TURNSTILE_EXPECTED_HOSTNAME: 'example.test',
   APP_API_TOKEN: 'ak_live_abc',
 };
 
@@ -35,8 +32,6 @@ describe('parseServerEnv', () => {
       isMockFallbackOn: true,
       webOrigin: 'https://example.test',
       sessionSecret: 'short-dev-secret',
-      turnstileSecretKey: 'turnstile-secret',
-      turnstileExpectedHostname: undefined,
       trustProxyHops: DEFAULT_TRUST_PROXY_HOPS,
       clientIpHeader: undefined,
       bffRateLimitOverrides: {},
@@ -155,14 +150,9 @@ describe('parseServerEnv', () => {
     });
   });
 
-  it.each(['WEB_ORIGIN', 'WEB_SESSION_SECRET', 'TURNSTILE_SECRET_KEY'])(
-    'fails without %s',
-    (key) => {
-      expect(() => parseServerEnv({ ...VALID, [key]: ' ' })).toThrow(
-        new RegExp(`${key} is not set`),
-      );
-    },
-  );
+  it.each(['WEB_ORIGIN', 'WEB_SESSION_SECRET'])('fails without %s', (key) => {
+    expect(() => parseServerEnv({ ...VALID, [key]: ' ' })).toThrow(new RegExp(`${key} is not set`));
+  });
 
   it.each(['/path', 'ftp://example.test', 'https://example.test/app', 'example.test'])(
     'fails on WEB_ORIGIN=%s',
@@ -186,18 +176,13 @@ describe('parseServerEnv', () => {
     ).toBe(secret);
   });
 
-  it('reads the optional proxy and Turnstile keys', () => {
+  it('reads the optional proxy keys', () => {
     const env = parseServerEnv({
       ...VALID,
       TRUST_PROXY_HOPS: '0',
       CLIENT_IP_HEADER: ' CF-Connecting-IP ',
-      TURNSTILE_EXPECTED_HOSTNAME: 'example.test',
     });
-    expect(env).toMatchObject({
-      trustProxyHops: 0,
-      clientIpHeader: 'CF-Connecting-IP',
-      turnstileExpectedHostname: 'example.test',
-    });
+    expect(env).toMatchObject({ trustProxyHops: 0, clientIpHeader: 'CF-Connecting-IP' });
   });
 
   it.each(['-1', '1.5', 'abc'])('fails on TRUST_PROXY_HOPS=%s', (value) => {
@@ -262,64 +247,14 @@ describe('parseServerEnv', () => {
     });
   });
 
-  describe('Turnstile production guard', () => {
-    const PRODUCTION = {
+  it('no longer reads the Turnstile secret, hostname or test-secret opt-in (cms-api owns them)', () => {
+    const env = parseServerEnv({
       ...VALID,
-      NODE_ENV: 'production',
-      WEB_SESSION_SECRET: 'x'.repeat(40),
-      APP_API_TOKEN: 'ak_live_abc',
-    };
-    const TEST_SECRET = { TURNSTILE_SECRET_KEY: TURNSTILE.ALWAYS_PASS_TEST_SECRET };
-
-    it('refuses the test secret in production without the opt-in', () => {
-      expect(() => parseServerEnv({ ...PRODUCTION, ...TEST_SECRET })).toThrow(/test secret/);
+      TURNSTILE_SECRET_KEY: 'turnstile-secret',
+      TURNSTILE_EXPECTED_HOSTNAME: 'example.test',
+      ALLOW_TURNSTILE_TEST_SECRET: 'anything',
     });
-
-    it('allows the test secret in production with the smoke opt-in, hostname optional', () => {
-      const env = parseServerEnv({
-        ...PRODUCTION,
-        ...TEST_SECRET,
-        ALLOW_TURNSTILE_TEST_SECRET: SMOKE_STACK_OPT_IN,
-      });
-      expect(env.turnstileExpectedHostname).toBeUndefined();
-    });
-
-    it.each(['true', '1', 'Smoke'])('refuses the opt-in value %s in any environment', (value) => {
-      expect(() => parseServerEnv({ ...VALID, ALLOW_TURNSTILE_TEST_SECRET: value })).toThrow(
-        /ALLOW_TURNSTILE_TEST_SECRET/,
-      );
-      expect(() =>
-        parseServerEnv({ ...PRODUCTION, ...TEST_SECRET, ALLOW_TURNSTILE_TEST_SECRET: value }),
-      ).toThrow(/ALLOW_TURNSTILE_TEST_SECRET/);
-    });
-
-    it('treats a blank opt-in as unset', () => {
-      expect(() =>
-        parseServerEnv({ ...PRODUCTION, ...TEST_SECRET, ALLOW_TURNSTILE_TEST_SECRET: ' ' }),
-      ).toThrow(/test secret/);
-    });
-
-    it('requires the hostname with a real secret in production', () => {
-      expect(() => parseServerEnv(PRODUCTION)).toThrow(/TURNSTILE_EXPECTED_HOSTNAME is required/);
-      expect(
-        parseServerEnv({ ...PRODUCTION, TURNSTILE_EXPECTED_HOSTNAME: 'Example.test' })
-          .turnstileExpectedHostname,
-      ).toBe('example.test');
-    });
-
-    it('starts in development with the test secret, no hostname and no opt-in', () => {
-      expect(() =>
-        parseServerEnv({ ...VALID, ...TEST_SECRET, NODE_ENV: 'development' }),
-      ).not.toThrow();
-    });
-
-    it.each(['https://example.test', 'example.test/path', '-bad', 'a b'])(
-      'refuses the hostname %s',
-      (value) => {
-        expect(() => parseServerEnv({ ...VALID, TURNSTILE_EXPECTED_HOSTNAME: value })).toThrow(
-          /TURNSTILE_EXPECTED_HOSTNAME must be a bare hostname/,
-        );
-      },
-    );
+    expect(env).not.toHaveProperty('turnstileSecretKey');
+    expect(env).not.toHaveProperty('turnstileExpectedHostname');
   });
 });
