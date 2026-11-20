@@ -41,7 +41,7 @@ Token header or refresh rules: `Auth.interceptor.ts` only. A new call that must 
 auth/ (27 files)
 ```
 
-Tests: 10 files (not listed).
+Tests: 12 files (not listed).
 
 | File | Description |
 |---|---|
