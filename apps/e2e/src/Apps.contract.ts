@@ -38,7 +38,6 @@ export const WEB_COPY = {
   session: {
     signIn: SITE_HEADER_MOCK.header.author.btnLoginText,
     signOut: SITE_HEADER_MOCK.header.author.btnLogoutText,
-    openCms: SIGN_IN_MOCK.signInText.openCms,
     signOutFailed: SIGN_IN_MOCK.signInText.signOutFailed,
   },
   login: {

@@ -2,7 +2,12 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ADMIN_COPY } from '../src/Apps.contract';
 import { e2eEnv } from '../src/E2e.env';
-import { accountMenuTrigger, expectSignedIn, signOutFromUserMenu } from '../src/Session.fixture';
+import {
+  accountMenuTrigger,
+  clickAfterHumanCheck,
+  expectSignedIn,
+  signOutFromUserMenu,
+} from '../src/Session.fixture';
 
 const MISSING_PROVIDER_PATTERN = /must be used (inside|within)/i;
 const PAGE_PATHS = [
@@ -45,7 +50,7 @@ test.describe('feature providers', { tag: ['@cms-admin', '@cms-api'] }, () => {
     await page.goto('/login');
     await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(e2eEnv.ownerEmail);
     await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(e2eEnv.ownerPassword);
-    await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+    await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
     await expectSignedIn(page);
 
     for (const path of PAGE_PATHS) {

@@ -2,7 +2,7 @@ import { expect, type APIRequestContext, type Locator, type Page } from '@playwr
 
 import { API_PATHS, apiUrl } from './Api.endpoints';
 import { ADMIN_COPY, API_ENDPOINTS } from './Apps.contract';
-import { HTTP } from './E2e.constants';
+import { E2E_HUMAN_CHECK_TOKEN, HTTP, HUMAN_CHECK_TOKEN_FIELD } from './E2e.constants';
 import { e2eEnv } from './E2e.env';
 
 /** Opens the login page and submits the form; does not wait for the result. */
@@ -10,7 +10,7 @@ export async function submitLogin(page: Page, email: string, password: string): 
   await page.goto('/login');
   await page.getByRole('textbox', { name: ADMIN_COPY.login.emailLabel }).fill(email);
   await page.getByLabel(ADMIN_COPY.login.passwordLabel).fill(password);
-  await page.getByRole('button', { name: ADMIN_COPY.login.submit }).click();
+  await clickAfterHumanCheck(page.getByRole('button', { name: ADMIN_COPY.login.submit }));
 }
 
 const ACCOUNT_MENU_NAME = /^Account menu for /;
@@ -56,7 +56,7 @@ export const signInAsOwner = (page: Page): Promise<void> =>
 /** Access token of the owner, from the login API. */
 export async function ownerApiToken(request: APIRequestContext): Promise<string> {
   const response = await request.post(apiUrl(API_PATHS.AUTH.LOGIN), {
-    data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
+    data: withHumanCheck({ email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword }),
   });
   expect(response.status()).toBe(HTTP.OK);
   return ((await response.json()) as { accessToken: string }).accessToken;
@@ -78,4 +78,23 @@ export async function signInAsOwnerWithRole(page: Page, role: string): Promise<v
     await route.fulfill({ response, json: { ...user, role } });
   });
   await signInAsOwner(page);
+}
+
+/** Waits until every human-check widget on the page holds a token, then clicks; the widget fills its token a moment after load. */
+export async function clickAfterHumanCheck(button: Locator): Promise<void> {
+  const tokens = button.page().locator('input[name="cf-turnstile-response"]');
+  await expect
+    .poll(async () => {
+      const values = await tokens.evaluateAll((inputs) =>
+        inputs.map((input) => (input as HTMLInputElement).value),
+      );
+      return values.length > 0 && values.every((value) => value !== '');
+    })
+    .toBe(true);
+  await button.click();
+}
+
+/** Adds the human-check token a direct call to a protected cms-api route needs. */
+export function withHumanCheck<T extends object>(body: T): T & Record<string, string> {
+  return { ...body, [HUMAN_CHECK_TOKEN_FIELD]: E2E_HUMAN_CHECK_TOKEN };
 }

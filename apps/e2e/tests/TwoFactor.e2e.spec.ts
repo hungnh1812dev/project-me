@@ -16,6 +16,7 @@ import { mailIdsFor, waitForCode } from '../src/Mailpit.client';
 import {
   accountMenuTrigger,
   chooseUserMenuItem,
+  clickAfterHumanCheck,
   expectSignedIn,
   signOutFromUserMenu,
   submitLogin,
@@ -138,7 +139,9 @@ test.describe(
       await challenge
         .getByLabel(labelStartingWith(ADMIN_COPY.login.twoFactor.totpLabel))
         .fill(second.code);
-      await challenge.getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit }).click();
+      await clickAfterHumanCheck(
+        challenge.getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit }),
+      );
       await expectSignedIn(page);
 
       // Turn TOTP off (password + a fresh code).
@@ -185,7 +188,9 @@ test.describe(
       await challenge
         .getByLabel(labelStartingWith(ADMIN_COPY.login.twoFactor.emailLabel))
         .fill(loginCode);
-      await challenge.getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit }).click();
+      await clickAfterHumanCheck(
+        challenge.getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit }),
+      );
       await expectSignedIn(page);
 
       // Change password: every session ends, the client lands on sign-in.
@@ -229,7 +234,9 @@ test.describe(
           .getByLabel(labelStartingWith(ADMIN_COPY.login.twoFactor.emailLabel))
           .fill(code);
       }
-      await challenge.getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit }).click();
+      await clickAfterHumanCheck(
+        challenge.getByRole('button', { name: ADMIN_COPY.login.twoFactor.submit }),
+      );
       await expectSignedIn(challenge.page());
     }
 

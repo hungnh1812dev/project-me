@@ -16,6 +16,7 @@ import {
 import { WEB_COPY } from '../src/Apps.contract';
 import { HTTP, PAGE_CV_A_SLUG, PROFILE_SLUG } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { clickAfterHumanCheck, withHumanCheck } from '../src/Session.fixture';
 
 /** Next.js keeps one empty role=alert live region for route changes; it is not an app message. */
 const NEXT_ROUTE_ANNOUNCER_SELECTOR = '#__next-route-announcer__';
@@ -64,7 +65,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
 
   test.beforeAll(async ({ request }) => {
     const login = await request.post(apiUrl(API_PATHS.AUTH.LOGIN), {
-      data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
+      data: withHumanCheck({ email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword }),
     });
     ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
     const created = await request.post(apiUrl(API_PATHS.documents(PAGE_CV_A_SLUG)), {
@@ -171,7 +172,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     await dialog.getByRole('textbox', { name: WEB_COPY.login.emailLabel }).fill(e2eEnv.readerEmail);
     await dialog.getByLabel(WEB_COPY.login.passwordLabel).fill(e2eEnv.readerPassword);
     await expect(dialog.locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
-    await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
+    await clickAfterHumanCheck(dialog.getByRole('button', { name: WEB_COPY.login.submit }));
 
     const signOut = page.getByRole('button', { name: WEB_COPY.session.signOut });
     await expect(signOut).toBeVisible();
@@ -198,7 +199,7 @@ test.describe('cv page', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     await dialog.getByRole('textbox', { name: WEB_COPY.login.emailLabel }).fill(e2eEnv.readerEmail);
     await dialog.getByLabel(WEB_COPY.login.passwordLabel).fill(e2eEnv.readerPassword);
     await expect(dialog.locator('input[name="cf-turnstile-response"]')).not.toHaveValue('');
-    await dialog.getByRole('button', { name: WEB_COPY.login.submit }).click();
+    await clickAfterHumanCheck(dialog.getByRole('button', { name: WEB_COPY.login.submit }));
 
     await expect(page.getByRole('button', { name: WEB_COPY.session.signOut })).toBeVisible();
     await expect(page.locator(`[role="alert"]:not(${NEXT_ROUTE_ANNOUNCER_SELECTOR})`)).toHaveCount(

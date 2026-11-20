@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { withHumanCheck } from '../src/Session.fixture';
 
 const HEADER_SLUG = 'header';
 const DEV_INLINE_STYLE_CSP_NOISE =
@@ -66,7 +67,7 @@ test.describe('mobile nav drawer', { tag: ['@web', '@cms-api', '@public-site'] }
 
   test.beforeAll(async ({ request }) => {
     const login = await request.post(apiUrl(API_PATHS.AUTH.LOGIN), {
-      data: { email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword },
+      data: withHumanCheck({ email: e2eEnv.ownerEmail, password: e2eEnv.ownerPassword }),
     });
     ownerToken = ((await login.json()) as { accessToken: string }).accessToken;
     await publishHeader(request);

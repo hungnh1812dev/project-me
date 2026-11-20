@@ -2,8 +2,14 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 import { API_PATHS } from '../src/Api.endpoints';
 import { WEB_COPY } from '../src/Apps.contract';
-import { REFRESH_COOKIE_NAME, WEB_SESSION_COOKIE_NAME } from '../src/E2e.constants';
+import {
+  E2E_HUMAN_CHECK_TOKEN,
+  HUMAN_CHECK_TOKEN_FIELD,
+  REFRESH_COOKIE_NAME,
+  WEB_SESSION_COOKIE_NAME,
+} from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { clickAfterHumanCheck } from '../src/Session.fixture';
 import { newestRefreshTokenMode } from '../src/SmokeDatabase.client';
 
 /**
@@ -32,6 +38,7 @@ test.describe('remember modes', { tag: ['@web', '@cms-api', '@sign-in'] }, () =>
         email: e2eEnv.readerEmail,
         password: e2eEnv.readerPassword,
         rememberMe,
+        [HUMAN_CHECK_TOKEN_FIELD]: E2E_HUMAN_CHECK_TOKEN,
       }),
     });
     expect(response.status).toBe(200);
@@ -63,7 +70,7 @@ test.describe('remember modes', { tag: ['@web', '@cms-api', '@sign-in'] }, () =>
     await form.getByRole('textbox', { name: login.emailLabel }).fill(e2eEnv.readerEmail);
     await form.getByLabel(login.passwordLabel).fill(e2eEnv.readerPassword);
     if (remember) await form.getByRole('checkbox', { name: login.rememberMeLabel }).check();
-    await form.getByRole('button', { name: login.submit }).click();
+    await clickAfterHumanCheck(form.getByRole('button', { name: login.submit }));
     await expect(page.getByText(/^Signed in as /)).toBeVisible();
   }
 

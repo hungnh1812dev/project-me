@@ -4,6 +4,7 @@ import { API_PATHS, apiUrl } from '../src/Api.endpoints';
 import { ADMIN_COPY, APP_ROUTES } from '../src/Apps.contract';
 import { HTTP } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
+import { withHumanCheck } from '../src/Session.fixture';
 
 /**
  * SPEC §12-1, closed state: the smoke stack already has its owner (smoke.sh
@@ -69,7 +70,7 @@ test.describe('owner setup', { tag: ['@cms-admin', '@cms-api', '@owner-setup'] }
     expect(await status.json()).toEqual({ open: false });
 
     for (const body of [{ ...OWNER_BODY, setupToken: UNUSED_TOKEN }, OWNER_BODY]) {
-      const response = await request.post(SETUP_OWNER_URL, { data: body });
+      const response = await request.post(SETUP_OWNER_URL, { data: withHumanCheck(body) });
       expect(response.status()).toBe(HTTP.NOT_FOUND);
       expect(JSON.stringify(await response.json())).not.toContain(UNUSED_TOKEN);
     }
