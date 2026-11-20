@@ -7,7 +7,7 @@ import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
 import type { DocumentRecord, DocumentTree } from '@features/content/Content.api';
 import { isMissing, toSaveError, type SaveError } from '@features/content/Content.errors';
-import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
+import { CONTENT_QUERY_KEYS, invalidateDocumentQueries } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { toDocumentTree, toFormValues, type FormValues } from '@features/content/Document.form';
 import { DynamicFormRenderer } from '@features/content/DynamicFormRenderer';
@@ -176,14 +176,13 @@ function DocumentForm({
       setError(null);
       showSavedToast();
       if (record === null) {
+        await invalidateDocumentQueries(queryClient, slug);
         void navigate(contentEditPath(slug, written.documentId), {
           replace: true,
         });
         return;
       }
-      await queryClient.invalidateQueries({
-        queryKey: CONTENT_QUERY_KEYS.draft(slug, record.documentId),
-      });
+      await invalidateDocumentQueries(queryClient, slug, record.documentId);
     },
     onError: (failure) => {
       setError(toSaveError(failure, content));
@@ -204,9 +203,7 @@ function DocumentForm({
       setError(null);
       setConflict(null);
       setMergeOpen(false);
-      await queryClient.invalidateQueries({
-        queryKey: CONTENT_QUERY_KEYS.draft(slug, record?.documentId ?? ''),
-      });
+      await invalidateDocumentQueries(queryClient, slug, record?.documentId);
       showSavedToast();
     },
     onError: (failure) => {

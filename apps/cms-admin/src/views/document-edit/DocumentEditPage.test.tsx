@@ -2,11 +2,14 @@ import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { contentEditPath, contentNewPath } from '@configs/App.routes';
 import { EN_TEXT } from '@configs/locales/en';
 import type { DocumentRecord } from '@features/content/Content.api';
+import { CONTENT_QUERY_KEYS } from '@features/content/Content.queries';
+import { QueryClient } from '@tanstack/react-query';
 import { CV_PAGE_TYPE } from '@test/CvPage.fixture';
 import type { FakeHandler } from '@test/FakeApi.fixture';
 import { createTestServices, findToast, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 
 const { REFRESH, ME } = API_ENDPOINTS.AUTH;
 const { CONTENT_TYPES, DOCUMENTS, ROLES } = API_ENDPOINTS;
@@ -51,7 +54,7 @@ async function open(route: string, handlers: Record<string, FakeHandler> = {}) {
   });
   await services.session.restore();
   renderApp(services, route);
-  return { api };
+  return { api, services };
 }
 
 function bodyOf(call: { data?: unknown } | undefined): Record<string, unknown> {
@@ -357,6 +360,19 @@ describe('DocumentEditPage: edit draft', () => {
       );
     });
 
+    it('a merge resolve marks the type lists and the draft stale', async () => {
+      const spy = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
+      const dialog = await conflict([positionDiff], []);
+      spy.mockClear();
+      await userEvent.click(within(dialog).getByRole('button', { name: copy.conflict.save }));
+      await waitFor(() => {
+        const keys = spy.mock.calls.map(([filters]) => filters?.queryKey);
+        expect(keys).toContainEqual(CONTENT_QUERY_KEYS.list(SLUG));
+        expect(keys).toContainEqual(CONTENT_QUERY_KEYS.draft(SLUG, DOC_ID));
+      });
+      spy.mockRestore();
+    });
+
     it('choosing the saved version sends nothing and reloads', async () => {
       const puts: unknown[] = [];
       const dialog = await conflict([positionDiff], puts);
@@ -418,5 +434,50 @@ describe('DocumentEditPage: edit draft', () => {
       [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({ status: 404 }),
     });
     expect(await screen.findByText(copy.documentNotFound)).toBeInTheDocument();
+  });
+});
+
+describe('DocumentEditPage: cache after a write', () => {
+  const draftKey = `GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`;
+
+  function invalidatedKeys(spy: ReturnType<typeof vi.fn>) {
+    return spy.mock.calls.map(([filters]) => (filters as { queryKey: unknown }).queryKey);
+  }
+
+  it('a create marks the type lists stale', async () => {
+    const { services } = await open(contentNewPath(SLUG), {
+      [`POST ${DOCUMENTS.BY_SLUG(SLUG)}`]: () => ({
+        status: 201,
+        data: { documentId: DOC_ID, version: 1 },
+      }),
+      [draftKey]: () => ({ status: 200, data: draft() }),
+    });
+    const spy = vi.spyOn(services.queryClient, 'invalidateQueries');
+    await userEvent.type(await screen.findByLabelText('Position'), 'Engineer');
+    await userEvent.click(screen.getByRole('button', { name: copy.save }));
+    expect(
+      await screen.findByRole('heading', { name: copy.editTitle('Page CV (Type A)') }),
+    ).toBeInTheDocument();
+    expect(invalidatedKeys(spy)).toContainEqual(CONTENT_QUERY_KEYS.list(SLUG));
+  });
+
+  it('an update marks the type lists and the draft stale', async () => {
+    const { services } = await open(contentEditPath(SLUG, DOC_ID), {
+      [draftKey]: () => ({ status: 200, data: draft() }),
+      [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+        status: 200,
+        data: { documentId: DOC_ID, version: 4 },
+      }),
+    });
+    const spy = vi.spyOn(services.queryClient, 'invalidateQueries');
+    const position = await screen.findByLabelText('Position');
+    await userEvent.clear(position);
+    await userEvent.type(position, 'Lead');
+    await userEvent.click(screen.getByRole('button', { name: copy.save }));
+    await findToast(copy.saved);
+    await waitFor(() => {
+      expect(invalidatedKeys(spy)).toContainEqual(CONTENT_QUERY_KEYS.list(SLUG));
+      expect(invalidatedKeys(spy)).toContainEqual(CONTENT_QUERY_KEYS.draft(SLUG, DOC_ID));
+    });
   });
 });
