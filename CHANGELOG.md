@@ -28,11 +28,11 @@ None.
 
 ### Changes
 
-- cms-admin: nginx upgraded from 1.29 to 1.30.7 in the image (security fix for Nginx2root).
+- cms-admin: nginx upgraded from 1.29 to 1.30.7 in the image (`nginx/nginx-unprivileged:1.30.7-alpine`, the maintained repo; `nginxinc/nginx-unprivileged` is archived on Docker Hub).
 
 ### Bug fixes
 
-None.
+- cms-admin: fix the failed v0.3.1 image build; `nginxinc/nginx-unprivileged:1.30.7-alpine` does not exist on Docker Hub, so the base image moves to `nginx/nginx-unprivileged:1.30.7-alpine`.
 
 ### DevOps patches
 
