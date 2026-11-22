@@ -42,6 +42,7 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 41 | effect-audit | done 2026-11-20 (head a930c34f) | features/effect-audit/ | repo config (pnpm-workspace.yaml, pnpm-lock.yaml, CHANGELOG.md), apps/e2e (qc) | 86ba76bae7d275ada55b663035a33af1a4d7429b | features/effect-audit/SUMMARY.md |
 | 10 | launch-gate | todo (stopped by user 2026-11-16; not resumed until the user asks; resume: ask for TOTP secret CLG-15/16, CLG-56 stage 2 data, Q2/Q3) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
+| 42 | hotfix-cms-admin-nginx | in-progress (user 2026-11-22: hotfix of the v0.3.1 image build; release 0.3.2 follows) | features/hotfix-cms-admin-nginx/ | apps/cms-admin (Dockerfile), CHANGELOG.md, docs/deployments | 1d8f90ac28e2bd519d659af12c6b4f570649cb1b | - |
 
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
