@@ -6,6 +6,38 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.3.2 (2026-11-22)
+
+Repo 0.3.2 and cms-admin 0.3.2; cms-api, web, base-config, form-commons and e2e kept: the cms-admin image build fix (v0.3.1's image build failed).
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.3.2   | yes                     |
+| `@abyss/cms-api`      | 0.3.0   | no                      |
+| `@abyss/cms-admin`    | 0.3.2   | yes                     |
+| `@abyss/web`          | 0.3.0   | no                      |
+| `@abyss/base-config`  | 0.1.0   | no                      |
+| `@abyss/form-commons` | 0.1.0   | no                      |
+| e2e                   | 0.1.0   | no                      |
+
+### New features
+
+None.
+
+### Changes
+
+- cms-admin: nginx base image moved from `nginxinc/nginx-unprivileged` (archived on Docker Hub) to `nginx/nginx-unprivileged:1.30.7-alpine`, the maintained repo with the same 1.30.7 security upgrade.
+
+### Bug fixes
+
+- cms-admin: the image build failed in v0.3.1 because `nginxinc/nginx-unprivileged:1.30.7-alpine` does not exist on Docker Hub; the base image now comes from the maintained repo.
+
+### DevOps patches
+
+None in this release.
+
 ## 0.3.1 (2026-11-22)
 
 Repo 0.3.1 and cms-admin 0.3.1; cms-api, web, base-config, form-commons and e2e kept: the nginx security upgrade of the cms-admin image.
@@ -28,11 +60,11 @@ None.
 
 ### Changes
 
-- cms-admin: nginx upgraded from 1.29 to 1.30.7 in the image (`nginx/nginx-unprivileged:1.30.7-alpine`, the maintained repo; `nginxinc/nginx-unprivileged` is archived on Docker Hub).
+- cms-admin: nginx upgraded from 1.29 to 1.30.7 in the image (security fix for Nginx2root).
 
 ### Bug fixes
 
-- cms-admin: fix the failed v0.3.1 image build; `nginxinc/nginx-unprivileged:1.30.7-alpine` does not exist on Docker Hub, so the base image moves to `nginx/nginx-unprivileged:1.30.7-alpine`.
+None.
 
 ### DevOps patches
 
