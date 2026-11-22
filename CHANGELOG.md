@@ -6,6 +6,38 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.3.1 (2026-11-22)
+
+Repo 0.3.1 and cms-admin 0.3.1; cms-api, web, base-config, form-commons and e2e kept: the nginx security upgrade of the cms-admin image.
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.3.1   | yes                     |
+| `@abyss/cms-api`      | 0.3.0   | no                      |
+| `@abyss/cms-admin`    | 0.3.1   | yes                     |
+| `@abyss/web`          | 0.3.0   | no                      |
+| `@abyss/base-config`  | 0.1.0   | no                      |
+| `@abyss/form-commons` | 0.1.0   | no                      |
+| e2e                   | 0.1.0   | no                      |
+
+### New features
+
+None.
+
+### Changes
+
+- cms-admin: nginx upgraded from 1.29 to 1.30.7 in the image (security fix for Nginx2root).
+
+### Bug fixes
+
+None.
+
+### DevOps patches
+
+None in this release.
+
 ## 0.3.0 (2026-11-20)
 
 Repo 0.3.0, cms-api, cms-admin and web 0.3.0, e2e 0.1.0: the shared human check on the public auth forms, the CV pages on their own links, the header restructure, keep-me-signed-in sign-in, and the fixes since 0.2.0.

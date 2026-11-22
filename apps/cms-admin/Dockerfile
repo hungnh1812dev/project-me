@@ -3,7 +3,7 @@
 #   docker build -f apps/cms-admin/Dockerfile --build-arg VITE_API_BASE_URL=... \
 #     --build-arg VITE_TURNSTILE_SITE_KEY=... .
 ARG NODE_IMAGE=node:24.18-alpine
-ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.29-alpine
+ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.30.7-alpine
 
 FROM ${NODE_IMAGE} AS base
 ENV PNPM_HOME=/pnpm
