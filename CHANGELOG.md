@@ -6,6 +6,42 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.4.0 (2026-11-23)
+
+Repo 0.4.0; cms-api, web 0.4.0 and e2e 0.1.1; cms-admin kept: the print CV feature on the CV page, with its label field, tests and guards.
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.4.0   | yes                     |
+| `@abyss/cms-api`      | 0.4.0   | yes                     |
+| `@abyss/cms-admin`    | 0.3.2   | no                      |
+| `@abyss/web`          | 0.4.0   | yes                     |
+| `@abyss/base-config`  | 0.1.0   | no                      |
+| `@abyss/form-commons` | 0.1.0   | no                      |
+| e2e                   | 0.1.1   | yes                     |
+
+### New features
+
+- web: print button on the CV page `/cv/<documentId>`; it prints the CV on A4 without browser header and footer (browser print dialog, no new dependency).
+- cms-api: new optional `print` field on `cv-common-text` (the print label).
+
+### Changes
+
+- web, cms-api: spec: a print button on the CV page `/cv/<documentId>` opens the browser's print dialog (`window.print()`, no new dependency) and prints, or saves as PDF, the CV in the print layout of the reference `apps/web/public/Middle-Frontend-Developer_HungNguyenHuy_CV.pdf` (A4, header band from the paper edge, no browser header or footer, no site header or controls, no `documentId` on paper or in the PDF title); the screen layout stays as it is; the label is the new optional `cv-common-text` field `print` (flow public-site, PS-7; Q-CP1..Q-CP6 answered by the user 2026-11-23; the PDFs in `apps/web/public/` are not committed there).
+- web: spec: no text a visitor reads (BFF refusal messages, built-in texts, page texts) names the BFF; identifiers, `bff` folders, `BFF_*` error codes and env keys stay (app web, WEB-13; Q-BM1: the codes stay, a guard test only).
+- web: guard tests fail when a BFF refusal message or built-in text names the BFF.
+- e2e: print CV e2e spec and PDF checks; cms-admin and web checks aligned with the restyle and the new CV route.
+
+### Bug fixes
+
+None in this release.
+
+### DevOps patches
+
+None in this release.
+
 ## 0.3.2 (2026-11-22)
 
 Repo 0.3.2 and cms-admin 0.3.2; cms-api, web, base-config, form-commons and e2e kept: the cms-admin image build fix (v0.3.1's image build failed).

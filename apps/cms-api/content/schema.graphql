@@ -160,6 +160,7 @@ type CvCommonText {
   projectLink: String
   webLink: String
   adminLink: String
+  print: String
   noCvText: String
 
   """

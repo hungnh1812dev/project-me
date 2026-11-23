@@ -28,6 +28,7 @@ const EXPECTED_OWNER_NAV = [
   CONTENT_TYPE_NAMES['cv-common-text'],
   CONTENT_TYPE_NAMES.header,
   CONTENT_TYPE_NAMES['module-auth'],
+  CONTENT_TYPE_NAMES['module-not-found'],
   CONTENT_TYPE_NAMES['module-status'],
   CONTENT_TYPE_NAMES.profile,
   CONTENT_TYPE_NAMES[PAGE_CV_A_SLUG],

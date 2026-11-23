@@ -88,6 +88,7 @@ export interface CvCommonText {
   teamSize: string | null;
   webLink: string | null;
   projectLink: string | null;
+  print: string | null;
   noCvText: string | null;
 }
 
@@ -174,6 +175,7 @@ const CV_COMMON_TEXT_FIELD = `cvCommonText {
     teamSize
     webLink
     projectLink
+    print
     noCvText
   }`;
 

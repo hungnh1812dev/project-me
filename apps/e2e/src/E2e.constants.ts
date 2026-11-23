@@ -76,6 +76,7 @@ export const CONTENT_TYPE_NAMES = {
   'cv-common-text': 'CV Common Text',
   header: 'Header',
   'module-auth': 'Module Auth',
+  'module-not-found': 'Not Found Page',
   'module-status': 'Module Status',
   [PAGE_CV_A_SLUG]: PAGE_CV_A_NAME,
   profile: 'Profile',

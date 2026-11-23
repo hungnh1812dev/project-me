@@ -45,6 +45,11 @@ describe('bffErrorResponse', () => {
     expect(Object.keys(BFF_ERROR_CODES)).toHaveLength(16);
     expect(Object.keys(BFF_ERROR_CODES).every((code) => code.startsWith('BFF_'))).toBe(true);
   });
+
+  it('names the BFF in no refusal message a visitor can read (WEB-13)', () => {
+    const messages = Object.values(BFF_ERROR_CODES).map(({ message }) => message);
+    expect(messages.filter((message) => /bff/i.test(message))).toEqual([]);
+  });
 });
 
 describe('BffError', () => {

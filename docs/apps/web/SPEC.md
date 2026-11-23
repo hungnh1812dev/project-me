@@ -151,6 +151,13 @@ Source request (user 2026-11-19): "remove tất cả các tham chiếu từ web 
 
 - **WEB-12 No reference to cms-admin.** The web app links to no cms-admin page and knows no cms-admin URL: the account menu has no "Open CMS" link; `NEXT_PUBLIC_ADMIN_URL` is removed from web code, its Dockerfile, `turbo.json`, `.env.example`, the CI build arguments, the stack scripts and the deploy docs; the `module-auth` field `openCms` is dropped (ADR 0027 Decision point 11). The BFF still calls cms-api on `APP_API_URL` (D21); that is the API, not a cms-admin page. Checked by criterion 30.
 
+### No "BFF" in what a visitor reads (WEB-13, user 2026-11-23)
+
+Source request (user 2026-11-23, verbatim): "Normalize response message/err - remove word `BFF`". User answer (2026-11-23): change only the text a visitor reads; identifiers, the `bff` folders, the error codes and the env keys stay.
+
+- **WEB-13 No "BFF" in visitor text.** No text the web shows or answers for a person to read names the BFF: the `message` of every BFF refusal (ADR 0018 section 3), every last-resort text and built-in word (WEB-3) and every page text. The word is matched in any case (`BFF`, `bff`, `Bff`). Out of the rule, unchanged: code identifiers and the `bff` folders (D21 "internal names keep the word `bff`"), the `errorCode` values (`BFF_*`, the contract the browser client and e2e match on), the log source `bff` (WEB-10, never shown to a visitor) and the env keys (`BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE` and the other `BFF_` keys). A unit test over the refusal list and the last-resort set keeps it so. Planner check 2026-11-23: no current `message` or built-in text holds the word, so the rule changes no answer today (Q-BM1).
+- **Q-BM1** (user 2026-11-23, as recommended): no visitor sees the word beyond the `errorCode` of a refusal body (`BFF_NOT_FOUND`), and the `BFF_` codes stay: WEB-13 is a guard test only. Trade-off: dropping the prefix would change the BFF contract (ADR 0018 section 3, api-contract "Web BFF", the browser client, the login alerts, e2e) for no visible gain.
+
 ## Decisions
 
 **D21 Web BFF and web hardening (added 2026-10-31, user request Q7; [ADR 0018](../../adr/0018-web-bff.md) holds design, error list, module map, file map; feature `web-bff-hardening`).** Q-BFF1..Q-BFF5 answered by the user 2026-10-31: Q-BFF1 yes (cms-api moves to `admin.domain.com/api`); Q-BFF2 the homepage shows only the service status view and the CV moves to `/cv`; Q-BFF3 Turnstile on both 2FA steps; Q-BFF4 the web login reuses the reviewer Turnstile keys; Q-BFF5 the web reviewer files, `/status` and `Graphql.client.ts` are deleted (the builder asks before each delete).

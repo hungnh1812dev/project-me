@@ -79,6 +79,11 @@
       "width": "1/2"
     },
     {
+      "name": "print",
+      "type": "text",
+      "width": "1/2"
+    },
+    {
       "name": "noCvText",
       "displayName": "No CV Text",
       "type": "richtext"

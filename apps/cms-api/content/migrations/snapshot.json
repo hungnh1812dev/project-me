@@ -17,7 +17,7 @@
       }
     },
     "cv-common-text": {
-      "hash": "599540cb902e2474f96bfe9791e31e3363bac9a585d6ca211217a52b46ad43b3",
+      "hash": "94e8b046de721856864e7cdbe7cb9c5ac47ff7ba290616f49b5a2fe43dc939c9",
       "definition": {
         "slug": "cv-common-text",
         "displayName": "CV Common Text",
@@ -95,6 +95,11 @@
           {
             "name": "adminLink",
             "displayName": "Admin Link",
+            "type": "text",
+            "width": "1/2"
+          },
+          {
+            "name": "print",
             "type": "text",
             "width": "1/2"
           },

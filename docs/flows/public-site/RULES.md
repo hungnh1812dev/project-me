@@ -16,7 +16,7 @@ Rules of this flow only. Rules it shares with other flows are in the files under
 ## Must never
 
 1. Add GraphQL mutations or subscriptions (v2, [out of scope](../../../SPEC.md)).
-2. Hand out a `page-cv-a` `documentId` anywhere a visitor or crawler can read it, other than the CV's own `/cv/<documentId>` page and its refetch (a page, a built-in header entry, the sitemap, a crawler file, a BFF answer, a log line), or let an actor that only reads list a link-only type (CM-13, PS-5).
+2. Hand out a `page-cv-a` `documentId` anywhere a visitor or crawler can read it, other than the CV's own `/cv/<documentId>` page and its refetch (a page, a built-in header entry, the sitemap, a crawler file, a BFF answer, a log line, a printed page or its PDF title), or let an actor that only reads list a link-only type (CM-13, PS-5, PS-7).
 
 ## Also follows
 
