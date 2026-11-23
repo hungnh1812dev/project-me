@@ -16,3 +16,5 @@ SPEC.md
 # Agent-local dev env
 .localEnv.agent
 .dev-stack
+# Reference CV PDFs hold unmasked personal data; never ship them into an image.
+apps/web/public/*.pdf
