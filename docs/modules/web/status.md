@@ -14,7 +14,7 @@ Flows: [`public-site`](../../flows/public-site/FLOW.md).
 
 ## Purpose
 
-Owns the module status shown on `/` and `/status`: the `ModuleStatus` text query, the status card and the liveness check ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api. `views/home` and `views/status` only render it.
+Owns the module status shown on `/` and `/status`: the `ModuleStatus` text query, the status card and the liveness check ([public-site flow](../../flows/public-site/FLOW.md)). It calls `GET /api/v1/health` of this site, never cms-api. It also answers the uptime check `GET`/`HEAD /health` (PS-8) from the web server alone, outside the BFF and the nonce CSP. `views/home` and `views/status` only render it.
 
 ## Techniques
 
@@ -32,7 +32,7 @@ Axios, React, TanStack Query.
 
 ## Where to change what
 
-Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route); the card and its text: `ModuleStatus.tsx`; the check: `useLiveHealth.ts`.
+Another health call: `Health.api.ts` (browser) or `Health.server.ts` (BFF route); the uptime check answer: `answerUptimeCheck` in `Health.server.ts`, bound in `app/health/route.ts`, path `UPTIME_CHECK_PATH`, skipped in the `proxy.ts` matcher; the card and its text: `ModuleStatus.tsx`; the check: `useLiveHealth.ts`.
 
 ## Files
 
@@ -48,7 +48,7 @@ Tests: 4 files (not listed).
 | File | Description |
 |---|---|
 | `Health.api.ts` | Liveness call, response type and query keys (exports `HealthResponse`, `HEALTH_QUERY_KEYS`, `fetchLiveHealth`) |
-| `Health.server.ts` | Handler of `GET /api/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`) |
+| `Health.server.ts` | Handler of `GET /api/v1/health`: 200 `ok` or 503 `unavailable` from cms-api liveness (exports `answerHealthRead`, `answerUptimeCheck`: 200 `ok`, `no-store`, no cms-api call, for `/health`) |
 | `ModuleStatus.graphql.ts` | Client-safe `ModuleStatus` query string and text type (exports `ModuleStatusText`, `ModuleStatus`, `MODULE_STATUS_QUERY`) |
 | `ModuleStatus.server.ts` | `loadModuleStatusText` (React `cache`): `executeGraphql` with the mock key `module-status`, the status text or `null` when the read failed (exports `loadModuleStatusText`) |
 | `ModuleStatus.tsx` | Client component: heading, description and health card with the text prop; the last-resort card words when it is `null` (exports `ModuleStatus`) |

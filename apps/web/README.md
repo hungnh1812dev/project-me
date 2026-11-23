@@ -179,7 +179,7 @@ the non-root `node` user. The build fails without `NEXT_PUBLIC_TURNSTILE_SITE_KE
 Runtime env: `APP_ENV` (must equal the build value), `APP_API_URL`, `APP_API_TOKEN` (required in production), `WEB_REVALIDATE_SECONDS` (optional), `WEB_STATUS_PAGE_ENABLED`,
 `WEB_ORIGIN`, `WEB_SESSION_SECRET`, `TRUST_PROXY_HOPS`, `CLIENT_IP_HEADER`
 (smoke and dev stacks only, never deploy config: `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE`)
-(`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
+(`/status` is served only when `true`), `WEB_PORT` (default 8080). `HEALTHCHECK` requests `/health`. Telemetry is off (`NEXT_TELEMETRY_DISABLED=1`).
 
 ## Scripts
 
