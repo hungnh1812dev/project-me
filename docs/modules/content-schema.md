@@ -342,6 +342,11 @@ migration and what it carries.
 - Release note: back up the database first; release cms-api after web stops
   asking for the field.
 
+### `0020_cv_common_text_print.sql` (`cv-common-text.print`, Q-CP4)
+
+- Additive: `ADD COLUMN print` (nullable text) on `content.cv_common_text`. No
+  data step; the owner fills the print button label in production.
+
 ## Migrations
 
 Content tables are never created at runtime. Changes go through two
