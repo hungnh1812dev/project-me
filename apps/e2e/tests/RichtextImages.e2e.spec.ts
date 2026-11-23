@@ -274,7 +274,7 @@ test.describe.serial(
     });
 
     test('the CV shows the summary text and never a foreign image', async ({ page, request }) => {
-      const cvUrl = `${e2eEnv.webUrl}/cv`;
+      const cvUrl = `${e2eEnv.webUrl}/cv/${pageId}`;
       const html = await (await request.get(cvUrl)).text();
       expect(html).not.toContain('evil.example');
 
