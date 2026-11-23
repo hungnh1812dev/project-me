@@ -42,11 +42,12 @@ Open risks: braces 3.0.3 high DoS advisory (build-only, via tailwind CLI/shadcn;
 | 41 | effect-audit | done 2026-11-20 (head a930c34f) | features/effect-audit/ | repo config (pnpm-workspace.yaml, pnpm-lock.yaml, CHANGELOG.md), apps/e2e (qc) | 86ba76bae7d275ada55b663035a33af1a4d7429b | features/effect-audit/SUMMARY.md |
 | 10 | launch-gate | todo (stopped by user 2026-11-16; not resumed until the user asks; resume: ask for TOTP secret CLG-15/16, CLG-56 stage 2 data, Q2/Q3) | features/launch-gate/ | whole project | 9d6a334 | - |
 | 13 | deploy-docs | dropped (user 2026-11-04; folder kept as record, empty) | features/deploy-docs/ | docs/deployments | 1e7cab92 | - |
-| 42 | hotfix-cms-admin-nginx | in-progress (user 2026-11-22: hotfix of the v0.3.1 image build; release 0.3.2 follows) | features/hotfix-cms-admin-nginx/ | apps/cms-admin (Dockerfile), CHANGELOG.md, docs/deployments | 1d8f90ac28e2bd519d659af12c6b4f570649cb1b | - |
+| 42 | hotfix-cms-admin-nginx | done 2026-11-23 (user 2026-11-22: hotfix of the v0.3.1 image build; release 0.3.2 follows) | features/hotfix-cms-admin-nginx/ | apps/cms-admin (Dockerfile), CHANGELOG.md, docs/deployments | 1d8f90ac28e2bd519d659af12c6b4f570649cb1b | features/hotfix-cms-admin-nginx/SUMMARY.md |
 
 Bases 1, 2, 3 and 5 are the parent of the oldest commit of the feature's tasks (from `tasks/done.md`); feature histories interleave, so a `base..HEAD` diff also holds other features' commits. Folders 2-5 were pre-created during the migration to keep their open state; the manager keeps their content when it opens them.
 
 ## Follow-ups
+- remember-me (from hotfix-cms-admin-nginx): the rememberMe spec is applied (docs/flows/sign-in/SPEC.md); next PLAN for a cms-admin feature covering RM-7 (diagnosis), RM-8 (fix: same-origin deploy rebuild with a patch note) and the WebKit e2e project (acceptance 14) -> ask the user before the planner PLAN, since it adds a feature, unscheduled.
 - single-type-stale-redirect: cms-api accepts a second document of a single type (user 2026-11-20: a separate later feature) -> planner SPEC, unscheduled.
 - single-type-stale-redirect: no unsaved-changes warning when the editor leaves a document (user 2026-11-20: not now) -> user decision, unscheduled.
 - single-type-stale-redirect: second single-type documents created before the fix are counted by qc at STR-A; the user deletes them by hand (user 2026-11-20) -> user, unscheduled.
