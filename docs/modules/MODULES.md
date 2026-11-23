@@ -97,7 +97,7 @@ flows in `docs/flows/` whose `FLOW.md` names the module.
 
 | Module | Folder | Doc | Doc status | Flows | Summary |
 |---|---|---|---|---|---|
-| src | `apps/e2e/src` | `docs/modules/e2e/src.md` | complete | - | Shared Playwright fixtures, env, constants and clients (Mailpit, smoke DB) for the e2e specs |
+| src | `apps/e2e/src` | `docs/modules/e2e/src.md` | draft | - | Shared Playwright fixtures, env, constants and clients (Mailpit, smoke DB) for the e2e specs |
 
 ## Topic docs
 

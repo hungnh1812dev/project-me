@@ -22,6 +22,11 @@ describeContentQueryContract({
 describeContentQueryContract({ query: PAGE_CV_VISITOR_QUERY, mockView: MOCK_VIEW });
 
 describe('the PageCv operations', () => {
+  it('asks the print label and the mock holds one', () => {
+    expect(CV_COMMON_TEXT_QUERY).toContain('print');
+    expect(PAGE_CV_MOCK.cvCommonText.print).toBeTruthy();
+  });
+
   it('asks one CV by the documentId variable, with no main filter or list', () => {
     expect(PAGE_CV_A_QUERY).toContain('query PageCvA($documentId: ID!)');
     expect(PAGE_CV_A_QUERY).toContain('pageCvA(documentId: $documentId)');

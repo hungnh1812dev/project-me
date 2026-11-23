@@ -194,6 +194,7 @@ export const PAGE_CV_MOCK = {
     teamSize: 'Team of',
     webLink: 'Live',
     projectLink: 'Repository',
+    print: 'Print / Save as PDF',
     noCvText: '<p>No CV is live yet.</p>',
   },
 };

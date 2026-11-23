@@ -21,6 +21,7 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 4. Richtext is sanitized again with DOMPurify when rendering (D13).
 5. The homepage `/` and `/status` show only the module status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2, Q-PS5).
 6. A crawler reads `/robots.txt`, follows its `Sitemap:` line to `/sitemap.xml` and reads the pages listed there (`/` and `/status`); a crawler that keeps to `robots.txt` never fetches `/cv` in production (`Disallow: /cv`); a browser fetches `/favicon.ico`. The web server answers all three itself from its own config, without a cms-api call (PS-4). On the admin host, cms-admin's `/robots.txt` disallows everything (PS-4).
+7. On a CV, the visitor presses the print button; the browser opens its print dialog and prints, or saves as PDF, the CV as shown, in the print layout of the reference; the site header and every control stay off the paper (PS-7). Nothing is sent to the server.
 
 ```mermaid
 sequenceDiagram

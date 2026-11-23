@@ -40,7 +40,7 @@ A helper used by two or more specs goes here; one spec's helper stays in the spe
 <!-- prettier-ignore-start -->
 
 ```
-src/ (15 files)
+src/ (17 files)
 ```
 
 Tests: 2 files (not listed).
@@ -52,11 +52,13 @@ Tests: 2 files (not listed).
 | `Api.endpoints.ts` | `API_PATHS`, `apiUrl`: API paths the specs call directly |
 | `Apps.contract.ts` | Re-exports the apps' routes, copy, error codes and limits for the tests, and the web mock text (page-cv-a, module-status, sign-in, header) |
 | `CspWatch.fixture.ts` | `watchCsp`, `expectNoViolation`: fail on CSP console violations |
+| `CvPrint.fixture.ts` | TODO (exports `CV_PRINT_LABEL`, `CV_PRINT_SECRET_COMPANY_PREFIX`, `CV_PRINT_SECRET_PHONE`, `CV_PRINT_SECRET_EMAIL` +2) |
 | `E2e.constants.ts` | Timeouts, retries, workers, cookie name, Mailpit and OTP settings, the page-cv-a and profile slugs and the display names of the content types |
 | `E2e.env.ts` | `e2eEnv`: admin/web/API URLs and credentials from the environment |
 | `FakeMediaApi.fixture.ts` | `fakeMediaApi`, `PNG_BASE64`: routes media API calls to a fake |
 | `Locators.fixture.ts` | Common locators: field by label, list item, content save button |
 | `Mailpit.client.ts` | `waitForCode`, `mailIdsFor`: read one-time codes from Mailpit |
+| `PdfTools.client.ts` | TODO (exports `hasPdfTools`, `pdfStrings`, `pdfInfo`, `pdfText` +2) |
 | `Png.fixture.ts` | `pngOf`: builds a valid PNG of a given size |
 | `RichtextDocument.fixture.ts` | Create, update, read and remove a page-cv-a with richtext images through the API |
 | `Session.fixture.ts` | Sign in (owner, role), user menu, sign out, owner API token |

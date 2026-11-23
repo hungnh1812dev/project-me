@@ -9,7 +9,7 @@ import { useWebSession } from '@/features/session';
 import type { AuthApi } from '@/features/session/Auth.api';
 import { fakeApi, TEST_USER, Wrapper } from '@/features/session/Session.fixture';
 
-import { PageCvClient } from './PageCv.client';
+import { PageCvClient, type PageCvClientProps } from './PageCv.client';
 import type { PageCvA, PageCvData } from './PageCv.graphql';
 
 const TEXT = PAGE_CV_MOCK.cvCommonText;
@@ -205,5 +205,48 @@ describe('PageCvClient', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Mai Server' })).toBeInTheDocument();
     expect(container).not.toHaveTextContent('***');
+  });
+
+  describe('print button', () => {
+    const renderCv = (text: PageCvClientProps['text']) =>
+      render(
+        <Wrapper api={fakeApi()}>
+          <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={text} />
+        </Wrapper>,
+      );
+
+    it('prints once on a press, with no request, and is hidden in print', async () => {
+      const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+      const get = vi.spyOn(clientApi, 'get');
+      renderCv(TEXT);
+
+      const button = await screen.findByRole('button', { name: TEXT.print });
+      expect(button).toHaveClass('print:hidden');
+      await userEvent.click(button);
+
+      expect(print).toHaveBeenCalledTimes(1);
+      expect(get).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['a null text', null],
+      ['a null label', { ...TEXT, print: null }],
+      ['a blank label', { ...TEXT, print: '   ' }],
+    ])('shows no button for %s', async (_name, text) => {
+      renderCv(text);
+      await screen.findByRole('heading', { level: 1 });
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('shows no button while the signed-in refetch is pending', async () => {
+      vi.spyOn(clientApi, 'get').mockReturnValue(new Promise(() => undefined));
+      render(
+        <Wrapper api={signedInApi()}>
+          <PageCvClient documentId={DOCUMENT_ID} initialData={SERVER_DATA} text={TEXT} />
+        </Wrapper>,
+      );
+      await screen.findByRole('status');
+      expect(screen.queryByRole('button', { name: TEXT.print })).not.toBeInTheDocument();
+    });
   });
 });

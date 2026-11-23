@@ -66,7 +66,7 @@ export default [
     rules: { 'no-restricted-imports': 'off' },
   },
   {
-    files: ['src/SmokeDatabase.client.ts'],
+    files: ['src/SmokeDatabase.client.ts', 'src/PdfTools.client.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
 ];

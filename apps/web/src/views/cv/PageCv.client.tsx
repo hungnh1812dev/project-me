@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@abyss/form-commons';
 import { useQuery } from '@tanstack/react-query';
 
 import { clientApi } from '@/apis/client/Api.client';
@@ -45,13 +46,28 @@ function usePageCvData(documentId: string, serverData: PageCvData) {
   });
 }
 
-interface PageCvClientProps {
+export interface PageCvClientProps {
   /** The id of the CV on this page, the one the signed-in refetch asks for. */
   documentId: string;
   /** What the server rendered for the public role. */
   initialData: PageCvData;
   /** The CV labels; `null` leaves every label out. */
   text: CvCommonText | null;
+}
+
+function CvPrintButton({ text }: { text: CvCommonText | null }) {
+  const label = text?.print?.trim();
+  if (!label) return null;
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      className="absolute top-4 right-4 print:hidden"
+      onClick={() => window.print()}
+    >
+      {label}
+    </Button>
+  );
 }
 
 export function PageCvClient({ documentId, initialData, text }: PageCvClientProps) {
@@ -65,11 +81,13 @@ export function PageCvClient({ documentId, initialData, text }: PageCvClientProp
   const { pageCvA: cv } = data;
 
   return (
-    // Prints as the on-screen sheet: tints kept, the band edge to edge, the text inside the page margin.
+    // Prints as the on-screen sheet: tints kept, the band edge to edge, the text inside the side margin and the
+    // top and bottom spacing repeated on every page (see the @page note in app.css).
     <article className="text-cv-text [print-color-adjust:exact]">
-      <header className="bg-cv-band print:px-cv-page flex flex-col gap-5 rounded-lg p-6 sm:flex-row sm:items-start print:flex-row print:rounded-none">
+      <header className="bg-cv-band print:px-cv-page relative flex flex-col gap-5 rounded-lg p-6 sm:flex-row sm:items-start print:flex-row print:rounded-none">
+        <CvPrintButton text={text} />
         <ProfileAvatar profile={data.profile} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-40 sm:pr-48 print:pr-0">
           {cv.name ? (
             <h1 className="text-cv-ink text-3xl font-extrabold tracking-tight uppercase">
               {cv.name}
@@ -83,7 +101,7 @@ export function PageCvClient({ documentId, initialData, text }: PageCvClientProp
           <ContactCard profile={data.profile} />
         </div>
       </header>
-      <div className="print:px-cv-page">
+      <div className="print:px-cv-page print:py-cv-page-y print:[box-decoration-break:clone]">
         <SummarySection cv={cv} text={text} />
         <ExperiencesSection cv={cv} text={text} />
         <ProjectsSection cv={cv} text={text} />

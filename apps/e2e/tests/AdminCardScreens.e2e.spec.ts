@@ -193,12 +193,12 @@ test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api']
         bottomGap: Math.round(window.innerHeight - rect.bottom),
       };
     });
-    expect(info.borderTop).toBe('0px');
+    expect(info.borderTop).toBe('1px');
     expect(info.shadow).not.toBe('none');
     expect(info.bottomGap).toBe(0);
   });
 
-  test('status home lays its cards in a grid with 24 px gaps, 32 px at 1280 px', async () => {
+  test('status home lays its cards in a flex column with 16 px gaps at every width', async () => {
     const gapOf = async (width: number) => {
       await page.setViewportSize({ width, height: 800 });
       await openScreen(page, '/');
@@ -212,9 +212,10 @@ test.describe.serial('cms-admin card screens', { tag: ['@cms-admin', '@cms-api']
     const narrow = await gapOf(NARROW_VIEWPORT.width);
     const wide = await gapOf(WIDE_VIEWPORT.width);
     console.log('STATUS GRID', JSON.stringify({ narrow, wide }));
-    expect(wide.display).toBe('grid');
-    expect(narrow.rowGap).toBe('24px');
-    expect(wide.rowGap).toBe('32px');
+    expect(narrow.display).toBe('flex');
+    expect(wide.display).toBe('flex');
+    expect(narrow.rowGap).toBe('16px');
+    expect(wide.rowGap).toBe('16px');
   });
 
   test('the walk raised no console problem and no unexpected failed request', () => {

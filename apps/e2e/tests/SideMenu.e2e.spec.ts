@@ -17,7 +17,7 @@ const TABLET = { width: 768, height: 900 };
 const PHONE = { width: 375, height: 700 };
 
 // Every content type of the stack: the six seeded ones plus site, sign-in, status page and CV page text.
-const EXPECTED_CONTENT_TYPE_COUNT = 7;
+const EXPECTED_CONTENT_TYPE_COUNT = 8;
 const REVIEWER_ROLE = 'reviewer';
 const EDITOR_ROLE = 'editor';
 
