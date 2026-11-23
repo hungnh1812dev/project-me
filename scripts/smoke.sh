@@ -53,6 +53,8 @@ WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
 # The web BFF owns /api/v1/* on the web host; its old path /bff/v1 is removed (404, no alias).
 WEB_BFF_HEALTH_PATH="/api/v1/health"
+# OneShield's uptime check: answered by the web server alone, never by cms-api.
+WEB_UPTIME_PATH="/health"
 WEB_REMOVED_BFF_HEALTH_PATH="/bff/v1/health"
 BFF_CACHE_CONTROL="no-store"
 JWT_ACCESS_KID="smoke"
@@ -269,6 +271,7 @@ check_routing
 check_security_headers
 check_health
 check_api_absent_on_web_host
+check_uptime_route
 check_trailing_slashes
 check_cors
 

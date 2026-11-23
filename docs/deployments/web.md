@@ -17,7 +17,7 @@ A Next.js server (standalone output) run by Node, as uid 1000, with no nginx in 
 ## 3. Runtime
 
 - Port: `WEB_PORT`, default `8080` (image default; the Service and Traefik use 8080).
-- The image has a Docker `HEALTHCHECK` that requests `/` on `127.0.0.1:$WEB_PORT`. Kubernetes ignores it. In the cluster, probe the TCP port, not `/`: `/` renders on the server and calls cms-api, so an HTTP probe would take the site offline whenever the API is slow ([kubernetes.md](kubernetes.md) section 4, which holds the probes and resources). The web app has no dedicated health route.
+- The image has a Docker `HEALTHCHECK` that requests `/health` on `127.0.0.1:$WEB_PORT`, answered by the web server alone (no cms-api call). Kubernetes ignores it and the pod probes stay the TCP probes of [kubernetes.md](kubernetes.md) section 4, which holds the probes and resources.
 - One replica ([kubernetes.md](kubernetes.md) section 6).
 - Start fails on an invalid value (see section 4), so a bad config shows as a crash-looping pod with the key name in the log.
 

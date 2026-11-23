@@ -6,6 +6,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### New features
+
+- web: `GET /health` answers OneShield's uptime check; the image and smoke-stack health checks use it.
+
 ### Changes
 
 - web: spec: the web answers OneShield's uptime check `GET /health` on `<domain>` with 200 `{"status":"ok"}` from the web server alone (no cms-api call, no nonce CSP, not logged per check), in place of the not-found 404 it gets today; the web image and smoke-stack health checks move to `/health`, the Kubernetes probes stay TCP (flow public-site, PS-8; Q-HC1..Q-HC3 answered by the user 2026-11-23).

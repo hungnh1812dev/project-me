@@ -58,6 +58,19 @@ check_api_absent_on_web_host() {
   expect_status "removed $WEB_REMOVED_BFF_HEALTH_PATH is a 404, not a redirect" 404
 }
 
+# PS-8: GET /health on the web host is 200 {"status":"ok"}, no-store; HEAD has no body; no sub-path.
+check_uptime_route() {
+  request GET "$WEB_ORIGIN$WEB_UPTIME_PATH"
+  expect_status "web uptime check GET $WEB_UPTIME_PATH" 200
+  if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "web uptime body is {status: ok}"; else fail "web uptime body: $(cat "$BODY")"; fi
+  if [[ "$(header Cache-Control)" == *"$BFF_CACHE_CONTROL"* ]]; then pass "web uptime is $BFF_CACHE_CONTROL"; else fail "web uptime Cache-Control: '$(header Cache-Control)'"; fi
+  request HEAD "$WEB_ORIGIN$WEB_UPTIME_PATH" --head
+  expect_status "web uptime check HEAD $WEB_UPTIME_PATH" 200
+  if [[ ! -s "$BODY" ]]; then pass "web uptime HEAD has an empty body"; else fail "web uptime HEAD body: $(cat "$BODY")"; fi
+  request GET "$WEB_ORIGIN$WEB_UPTIME_PATH/anything"
+  expect_status "web $WEB_UPTIME_PATH/anything is a 404" 404
+}
+
 check_trailing_slashes() {
   echo "Trailing slashes (SPEC §12-17: never 3xx)"
   request GET "$ADMIN_ORIGIN$API_PREFIX/health/live/"
