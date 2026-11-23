@@ -81,7 +81,8 @@ export function PageCvClient({ documentId, initialData, text }: PageCvClientProp
   const { pageCvA: cv } = data;
 
   return (
-    // Prints as the on-screen sheet: tints kept, the band edge to edge, the text inside the page margin.
+    // Prints as the on-screen sheet: tints kept, the band edge to edge, the text inside the side margin and the
+    // top and bottom spacing repeated on every page (see the @page note in app.css).
     <article className="text-cv-text [print-color-adjust:exact]">
       <header className="bg-cv-band print:px-cv-page relative flex flex-col gap-5 rounded-lg p-6 sm:flex-row sm:items-start print:flex-row print:rounded-none">
         <CvPrintButton text={text} />
@@ -100,7 +101,7 @@ export function PageCvClient({ documentId, initialData, text }: PageCvClientProp
           <ContactCard profile={data.profile} />
         </div>
       </header>
-      <div className="print:px-cv-page">
+      <div className="print:px-cv-page print:py-cv-page-y print:[box-decoration-break:clone]">
         <SummarySection cv={cv} text={text} />
         <ExperiencesSection cv={cv} text={text} />
         <ProjectsSection cv={cv} text={text} />

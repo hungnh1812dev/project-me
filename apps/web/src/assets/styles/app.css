@@ -19,15 +19,16 @@
   --tracking-cv-title: 0.3em;
 
   --spacing-cv-page: 10mm;
+  --spacing-cv-page-y: 12mm;
   --spacing-cv-label: 10.5rem;
 }
 
-/* A4 paper; the first page has no top margin so the header band starts at the paper edge. */
+/*
+ * A4 paper with a zero page margin: Chrome prints its header and footer (URL, date, title, page
+ * number) only inside a page margin, so the margin is 0 and the 12 mm top and bottom spacing of every
+ * page is the padding of the CV body in PageCv.client.tsx, repeated on every page by box-decoration-break: clone (the header band stays edge to edge).
+ */
 @page {
   size: A4;
-  margin: 12mm 0;
-}
-
-@page :first {
-  margin-top: 0;
+  margin: 0;
 }
