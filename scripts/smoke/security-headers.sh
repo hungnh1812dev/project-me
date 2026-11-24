@@ -77,7 +77,7 @@ check_admin_security_headers() {
 }
 
 check_api_security_headers() {
-  request GET "$ADMIN_ORIGIN$API_PREFIX/health/live"
+  request GET "$ADMIN_ORIGIN$CMS_API_LIVE_PATH"
   expect_header "API sends default-src 'none'" Content-Security-Policy "$API_CSP_VALUE"
   if [[ "$(header_count Content-Security-Policy)" == "1" ]]; then pass "API has exactly one CSP header (Traefik adds none)"; else fail "API CSP header count: $(header_count Content-Security-Policy)"; fi
   expect_header "API sends no X-Powered-By" X-Powered-By ""

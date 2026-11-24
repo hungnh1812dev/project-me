@@ -1,6 +1,6 @@
 # Proxy smoke stack. Mirrors production routing (SPEC §1, §6):
 #   <SMOKE_DOMAIN>          -> web (its BFF is under /api/v1; no cms-api route)
-#   admin.<SMOKE_DOMAIN>    -> cms-admin, and /api/* -> cms-api (no StripPrefix)
+#   admin.<SMOKE_DOMAIN>    -> cms-admin, and /api/* and /health* -> cms-api (no StripPrefix)
 #   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (catches every email)
 # Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
 # below, generates throwaway secrets, runs the assertions and tears down.
@@ -94,15 +94,15 @@ services:
       mailpit:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/v1/health/ready']
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/health/ready']
       interval: 2s
       timeout: 3s
       retries: 30
     labels:
       traefik.enable: 'true'
-      # Whole segment, not PathPrefix: /api-tokens is an admin SPA route and must reach cms-admin.
+      # Whole segments, not PathPrefix: /api-tokens and /healthz are admin SPA routes and must reach cms-admin; /health, /health/live and /health/ready are cms-api's (outside /api/v1).
       traefik.http.routers.api.entrypoints: web
-      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathRegexp(`^/api(/|$$)`)
+      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathRegexp(`^/(api|health)(/|$$)`)
       traefik.http.routers.api.priority: '100'
       traefik.http.routers.api.middlewares: api-inflight
       # Upload and replace answer with Connection: close, so a rejected request
