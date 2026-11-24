@@ -117,7 +117,7 @@ Removed: `NEXT_PUBLIC_API_BASE_URL` and the admin-URL variable ([patch-web-0.3.0
 
 ## 5. cms-admin
 
-No Secret and no ConfigMap. `VITE_API_BASE_URL` is a **build arg**: the full API base on the admin host, `https://admin.<domain>/api/v1`. `VITE_TURNSTILE_SITE_KEY` is a second **build arg** (required): the public Cloudflare site key, the same as web's `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; its widget lists both `<domain>` and `admin.<domain>`. The CSP `connect-src` is derived from it at container start; the optional env `CSP_CONNECT_SRC` (space-separated origins) overrides it if the API origin ever differs.
+No Secret. One ConfigMap, `cms-admin-config`, with the runtime key `APP_API_ORIGIN`: the cms-api address inside the cluster, `http://cms-api.<namespace>.svc.cluster.local:3000` (no path). It is the Service FQDN because nginx's resolver does not use search domains, so `cms-api` alone does not resolve. Required: the container exits at start without it or with a value that is not `http(s)://host[:port]`. `/health/ready` asks `<APP_API_ORIGIN>/health/live`; it is never taken from `VITE_API_BASE_URL`, and the status card does not use it. `VITE_API_BASE_URL` is a **build arg**: the full API base on the admin host, `https://admin.<domain>/api/v1`. `VITE_TURNSTILE_SITE_KEY` is a second **build arg** (required): the public Cloudflare site key, the same as web's `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; its widget lists both `<domain>` and `admin.<domain>`. The CSP `connect-src` is derived from it at container start; the optional env `CSP_CONNECT_SRC` (space-separated origins) overrides it if the API origin ever differs.
 
 ## 6. ConfigMap `postgres-backup-config`
 

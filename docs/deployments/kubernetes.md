@@ -25,8 +25,8 @@ Scope in v1: one cluster per environment, Traefik as the ingress controller, **o
 | Workload          | Kind       | Replicas | Containers                                                                         | Probes                                             | Strategy                                               |
 | ----------------- | ---------- | -------- | ---------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
 | `cms-api`         | Deployment | 1        | init `migrate` (`npm run --silent deploy:migrate`), main `cms-api` (image default) | live `/health/live`, ready `/health/ready` on 3000 | `RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0`    |
-| `web`             | Deployment | 1        | `web`                                                                              | TCP on 8080 (section 4)                            | same                                                   |
-| `cms-admin`       | Deployment | 1        | `cms-admin`                                                                        | `/` on 8080                                        | same                                                   |
+| `web`             | Deployment | 1        | `web`                                                                              | live and ready `/health/live` on 8080 (section 4)  | same                                                   |
+| `cms-admin`       | Deployment | 1        | `cms-admin`                                                                        | live and ready `/health/live` on 8080 (section 5)  | same                                                   |
 | `postgres-backup` | CronJob    | -        | `dump`                                                                             | -                                                  | `concurrencyPolicy: Forbid` ([backups.md](backups.md)) |
 
 | Image                                        | Runs as                      | Port | Role                                                 |
@@ -134,7 +134,7 @@ spec:
     - port: 3000
 ```
 
-- Probes: `GET /health/live` and `/health/ready` (outside `/api/v1`) answer `{"status":"ok"}` only; `/health/ready` checks the database. `GET /health` answers like `/health/live` (no database call). The cms-admin probe stays `GET /` on 8080.
+- Probes: `GET /health/live` and `/health/ready` (outside `/api/v1`) answer `{"status":"ok"}` only; `/health/ready` checks the database. `GET /health` answers like `/health/live` (no database call). Only `/health` is public; Traefik answers `/health/live` and `/health/ready` from outside with 403 ([traefik.md](traefik.md) section 1), so they are checked from inside the cluster: `kubectl -n <ns> exec deploy/cms-api -- wget -qO- http://127.0.0.1:3000/health/ready`, or `kubectl -n <ns> port-forward deploy/cms-api 3000` and `curl -fsS http://127.0.0.1:3000/health/ready`. cms-api keeps its own probes; web and cms-admin probe `/health/live` (sections 4 and 5).
 - Memory: image uploads are re-encoded with sharp, which at the 50-megapixel guard uses about 200 MB on top of the Node baseline (about 120 MB idle), so keep the limit at 768Mi or more. The numbers are starting points; adjust after watching `kubectl top pod`.
 - The image bundles the sharp binary for its own platform. After building for another architecture, check `node -e "require('sharp')"` inside the image.
 
@@ -155,11 +155,11 @@ containers:
     envFrom:
       - secretRef: { name: web-secrets } # WEB_SESSION_SECRET, APP_API_TOKEN
     livenessProbe:
-      tcpSocket: { port: http }
+      httpGet: { path: /health/live, port: http }
       initialDelaySeconds: 10
       periodSeconds: 20
     readinessProbe:
-      tcpSocket: { port: http }
+      httpGet: { path: /health/live, port: http }
       periodSeconds: 10
     resources:
       requests: { cpu: 50m, memory: 128Mi }
@@ -170,7 +170,7 @@ containers:
 ```
 
 - **Never set `BFF_AUTH_RATE_LIMIT_IP`, `ALLOW_BFF_RATE_LIMIT_OVERRIDE` or `WEB_REVALIDATE_SECONDS`** in the web env (smoke and dev stacks only, ADR 0018 sections 2.6 and 2.7). `APP_ENV` (`production` for every CI image, equal to the build variable) is set in `web-secrets`. Web has no browser-side API calls, so it needs no Traefik route to cms-api.
-- **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` route) and the web pods (BFF and content calls through `APP_API_URL`); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
+- **NetworkPolicy on cms-api:** cms-api accepts ingress on 3000 only from the Traefik pods (the admin-host `/api` and `/health` routes), the web pods (BFF and content calls through `APP_API_URL`) and the cms-admin pods (`/health/ready` asks cms-api's `/health/live`, health rule 3); every other pod is refused. Example, adjust the namespace and pod labels to the deploy repo:
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -186,17 +186,18 @@ spec:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: <traefik-ns> } }
           podSelector: { matchLabels: { app.kubernetes.io/name: traefik } }
         - podSelector: { matchLabels: { app: web } }
+        - podSelector: { matchLabels: { app: cms-admin } }
       ports: [{ protocol: TCP, port: 3000 }]
 ```
 
 The cluster's CNI must enforce NetworkPolicy. The backup CronJob and the `kubectl exec` commands do not use the cms-api Service port, so they are not affected.
 
-- **Probe the port, not `/`.** `/` renders the home page on the server, which fetches content from cms-api: when the API is down or slow, an HTTP probe on `/` takes the whole site offline, and a liveness probe with the default 1 s timeout restarts the pod on a slow render. Use the TCP probes above until the web app has a light health route.
+- **Probe `/health/live`, not `/`.** `/` renders the home page on the server, which fetches content from cms-api: when the API is down or slow, an HTTP probe on `/` takes the whole site offline, and a liveness probe with the default 1 s timeout restarts the pod on a slow render. `/health/live` is answered by the web server alone and calls nothing, so a cms-api outage never restarts or unreadies the pod (health rule 6). Use it for readiness too, never `/health/ready` (that one asks cms-api). The image that serves `/health/live` is 0.5.0: change the probes in the same deploy commit as that image, or the pod never becomes ready ([patch-web-0.5.0.md](../apps/web/patch-web-0.5.0.md)).
 - Resources: the Node process idles around 60 MiB and grows with the data cache and concurrent renders; 128Mi request and 384Mi limit are a starting point. The response carries no `X-Powered-By` header.
 
 ## 5. cms-admin
 
-Static files on `nginx-unprivileged` (uid 101, port 8080). `VITE_API_BASE_URL` is a **build arg** ([configmaps.md](configmaps.md) section 5). No other runtime configuration. Probe `GET /` on 8080.
+Static files on `nginx-unprivileged` (uid 101, port 8080). `VITE_API_BASE_URL` is a **build arg** ([configmaps.md](configmaps.md) section 5). `APP_API_ORIGIN` is the one runtime key (below). Probes `GET /health/live` on 8080.
 
 ```yaml
 containers:
@@ -204,8 +205,14 @@ containers:
     image: ghcr.io/hungnh1812dev/project-me/cms-admin:<APP_IMAGE_TAG>
     ports:
       - { name: http, containerPort: 8080 }
+    env:
+      - name: APP_API_ORIGIN
+        valueFrom:
+          configMapKeyRef: { name: cms-admin-config, key: APP_API_ORIGIN }
+    livenessProbe:
+      httpGet: { path: /health/live, port: 8080 }
     readinessProbe:
-      httpGet: { path: /, port: 8080 }
+      httpGet: { path: /health/live, port: 8080 }
     resources:
       requests: { cpu: 20m, memory: 32Mi }
       limits: { memory: 128Mi }
@@ -214,7 +221,8 @@ containers:
       capabilities: { drop: [ALL] }
 ```
 
-- With `readOnlyRootFilesystem: true`, mount `emptyDir` volumes on `/tmp`, `/var/cache/nginx` and `/etc/nginx/security` (the entrypoint renders the CSP file there). **Not run**: test it before relying on it.
+- `APP_API_ORIGIN` is required: the container exits at start without it ([configmaps.md](configmaps.md) section 5). nginx answers `/health` and `/health/live` itself and `/health/ready` by asking cms-api's `/health/live` within 2 s, so the pod needs a NetworkPolicy path to cms-api on 3000 (section 4). The probes use `/health/live` and never `/health/ready`, so a cms-api outage does not unready cms-admin. The image that serves `/health/live` is 0.5.0: probes, key and NetworkPolicy rule go in the same deploy commit as that image ([patch-cms-admin-0.5.0.md](../apps/cms-admin/patch-cms-admin-0.5.0.md)).
+- With `readOnlyRootFilesystem: true`, mount `emptyDir` volumes on `/tmp` and `/var/cache/nginx`. The entrypoint renders `security-headers.inc` and `health-routes.inc` into `/etc/nginx/conf.d`, the folder that also holds `default.conf`, so that folder needs a writable copy too (an `emptyDir` seeded by an init container, or the two rendered files mounted from a volume). **Not run**: test it before relying on it.
 - The port is fixed at 8080. Once a cms-admin image reads `ADMIN_PORT`, the port can come from config (`command: ['sh', '-c', "ADMIN_PORT=${APP_PORT} exec /docker-entrypoint.sh nginx -g 'daemon off;'"]`); never change the probes before that image is deployed, or nginx keeps listening on 8080 while the probes move.
 
 ## 6. Single replica in v1

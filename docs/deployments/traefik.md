@@ -6,17 +6,19 @@ Traefik v3.6 (3.6.x) or a later v3 release; no router-level timeouts are used.
 
 ## 1. Hosts and routes
 
-| Host             | Path                             | Goes to                  |
-| ---------------- | -------------------------------- | ------------------------ |
-| `<domain>`       | all                              | web Service (8080)       |
-| `admin.<domain>` | `/api/*`, `/health`, `/health/*` | cms-api Service (3000)   |
-| `admin.<domain>` | everything else                  | cms-admin Service (8080) |
+| Host             | Path                            | Goes to                  |
+| ---------------- | ------------------------------- | ------------------------ |
+| `<domain>`       | all                             | web Service (8080)       |
+| `admin.<domain>` | `/api/*`, `/health`             | cms-api Service (3000)   |
+| both hosts       | `/health/live`, `/health/ready` | 403 from Traefik itself  |
+| `admin.<domain>` | everything else                 | cms-admin Service (8080) |
 
 Rules that matter:
 
 - **Never StripPrefix.** cms-api serves under `/api/v1`; the router passes the path through untouched.
 - **`/api` must win over the cms-admin catch-all on the admin host, and match the whole path segment** (`PathRegexp`, not `PathPrefix`, because `/api-tokens` is an admin SPA route). Set explicit `priority` values (below) instead of relying on rule length.
-- **`/health` is a whole segment too** (same `PathRegexp`): cms-api serves `/health`, `/health/live` and `/health/ready` at its root (API-3), while `/healthz` stays a cms-admin path. The route keeps the `/api` priority, so it wins over the cms-admin catch-all. The web host keeps `/health` for the web's own check (PS-8) and never routes to cms-api (D21).
+- **Only the exact `/health` goes to cms-api** (`PathRegexp` `^/(api(/|$)|health/?$)`, trailing slash tolerated): cms-api serves `/health` at its root and it is the one public health path (health rule 4, API-3), while `/healthz` stays a cms-admin path. The route keeps the `/api` priority, so it wins over the cms-admin catch-all. The web host keeps `/health` for the web's own check (PS-8) and never routes to cms-api (D21).
+- **`/health/live` and `/health/ready` are never forwarded** (health rule 4). The `health-internal` route below matches them (trailing slash included) on both hosts, above every app route, and answers 403 from Traefik. Its `ipAllowList` admits `127.0.0.1/32` only and sets no `ipStrategy`, so it judges the connection's own address and never `X-Forwarded-For` (a client can forge that header). The service is `noop@internal`, so nothing is sent to an app, and the route lives on the proxy: it still answers while any app is down. Pods and in-cluster monitoring reach these paths on the Service address, not through Traefik. cms-admin's `/health` is reachable only inside its pod (health rule 4). On the smoke stack the docker provider drops the `api` router while cms-api is stopped, so `admin.<domain>/health` then falls to cms-admin's nginx `/health` (200); an IngressRoute keeps its route and Traefik answers 503.
 - **No cms-api route on `<domain>`** (ADR 0018): web has no browser-side API calls; its Node server reaches cms-api through `APP_API_URL` inside the cluster. `<domain>/api/v1/*` is the web BFF and any other `<domain>/api/*` answers 404 from web. Traefik already sends the whole `<domain>` host to web, so this needs no deploy-repo change. A manifest that still routes `<domain>/api/v1` to cms-api (seen on the local k3s cluster, LG-api-1) breaks the BFF; its fix is items 5 and 6 of [patch-web-0.2.0.md](../apps/web/patch-web-0.2.0.md).
 - cms-admin and cms-api share the origin `https://admin.<domain>` (the refresh cookie `__Secure-abyss_rt` is host-only, `Path=/api/v1/auth`), and that origin is the only CORS origin. Web is a different origin and holds its own sealed session cookies set by its BFF.
 - TLS terminates at Traefik (`websecure`); nothing in the apps speaks TLS. Add a `web` entrypoint redirect to HTTPS.
@@ -33,7 +35,7 @@ spec:
   entryPoints: [websecure]
   routes:
     - kind: Rule
-      match: Host(`admin.<domain>`) && PathRegexp(`^/(api|health)(/|$)`)
+      match: Host(`admin.<domain>`) && PathRegexp(`^/(api(/|$)|health/?$)`)
       priority: 20
       middlewares:
         - name: api-inflight
@@ -62,6 +64,25 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
+  name: health-internal
+  namespace: <ns>
+spec:
+  entryPoints: [websecure]
+  routes:
+    - kind: Rule
+      match: (Host(`<domain>`) || Host(`admin.<domain>`)) && PathRegexp(`^/health/(live|ready)/?$`)
+      priority: 300 # above api-upload (200) and every app route
+      middlewares:
+        - name: health-internal-only
+      services:
+        - kind: TraefikService
+          name: noop@internal
+  tls:
+    secretName: <tls> # the secret or certResolver both hosts use
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
   name: abyss-public
   namespace: <ns>
 spec:
@@ -83,6 +104,15 @@ metadata:
 spec:
   inFlightReq:
     amount: 100 # per client IP (default sourceCriterion)
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: health-internal-only
+  namespace: <ns>
+spec:
+  ipAllowList:
+    sourceRange: ['127.0.0.1/32'] # no ipStrategy: the client address only
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
