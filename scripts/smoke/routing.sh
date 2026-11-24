@@ -66,7 +66,8 @@ check_uptime_route() {
   if [[ "$(header Cache-Control)" == *"$BFF_CACHE_CONTROL"* ]]; then pass "web uptime is $BFF_CACHE_CONTROL"; else fail "web uptime Cache-Control: '$(header Cache-Control)'"; fi
   request HEAD "$WEB_ORIGIN$WEB_UPTIME_PATH" --head
   expect_status "web uptime check HEAD $WEB_UPTIME_PATH" 200
-  if [[ ! -s "$BODY" ]]; then pass "web uptime HEAD has an empty body"; else fail "web uptime HEAD body: $(cat "$BODY")"; fi
+  # --head makes curl write the response headers into $BODY, so a body shows as the JSON payload.
+  if grep -q "$HEALTH_OK_BODY" "$BODY"; then fail "web uptime HEAD carries a body: $(cat "$BODY")"; else pass "web uptime HEAD has no body"; fi
   request GET "$WEB_ORIGIN$WEB_UPTIME_PATH/anything"
   expect_status "web $WEB_UPTIME_PATH/anything is a 404" 404
 }
