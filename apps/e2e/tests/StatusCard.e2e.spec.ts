@@ -5,14 +5,14 @@ import { ADMIN_COPY, API_ROOT_ENDPOINTS } from '../src/Apps.contract';
 import { SLOW_STATE_TEST_TIMEOUT_MS, SLOW_STATE_TIMEOUT_MS } from '../src/E2e.constants';
 import { signInAsOwner } from '../src/Session.fixture';
 
-const HEALTH_URL = apiOriginUrl(API_ROOT_ENDPOINTS.HEALTH.LIVE);
+const HEALTH_URL = apiOriginUrl(API_ROOT_ENDPOINTS.HEALTH);
 
 test.describe('status card', { tag: ['@cms-admin', '@cms-api'] }, () => {
   test('the status card shows the API as operational with its health URL', async ({ page }) => {
     await signInAsOwner(page);
 
     await expect(page.getByText(ADMIN_COPY.status.state.ok)).toBeVisible();
-    await expect(page.getByText(API_ROOT_ENDPOINTS.HEALTH.LIVE)).toBeVisible();
+    await expect(page.getByText(HEALTH_URL)).toBeVisible();
   });
 
   test('a failed health call shows the error and Check again recovers', async ({ page }) => {
