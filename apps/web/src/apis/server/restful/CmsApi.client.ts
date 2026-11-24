@@ -73,6 +73,8 @@ interface CallOptions {
   body?: unknown;
   /** `path` is a value of `API_ROOT_ENDPOINTS`. */
   isRootPath?: boolean;
+  /** Abort after this long; defaults to the server API's timeout. */
+  timeoutMs?: number;
 }
 
 function requestHeaders(options: CallOptions): Record<string, string> {
@@ -133,6 +135,7 @@ async function callCmsApi(options: CallOptions): Promise<ServerApiAnswer> {
       resolveData: (answer) => answer,
       next: { revalidate: 0 },
       ...(options.isRootPath === true && { isRootPath: true }),
+      ...(options.timeoutMs !== undefined && { timeoutMs: options.timeoutMs }),
     });
   } catch (error) {
     if (error instanceof WebApiError) throw error;
@@ -295,13 +298,14 @@ export const cmsApiClient = {
   },
 
   /** False for anything but an `ok` answer: down, slow, redirected or unreadable. */
-  async readLiveHealth(): Promise<boolean> {
+  async readLiveHealth(options: { timeoutMs?: number } = {}): Promise<boolean> {
     try {
       const response = await callCmsApi({
         method: 'GET',
         path: API_ROOT_ENDPOINTS.HEALTH.LIVE,
         visitorIp: undefined,
         isRootPath: true,
+        ...(options.timeoutMs !== undefined && { timeoutMs: options.timeoutMs }),
       });
       if (response.status !== HTTP_STATUS.OK) return false;
       return parseAnswer(response, healthAnswer).status === HEALTH_STATUS_OK;

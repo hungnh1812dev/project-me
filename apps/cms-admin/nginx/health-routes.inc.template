@@ -1,0 +1,6 @@
+# Rendered at container start by 16-health-routes.sh (envsubst) into
+# /etc/nginx/conf.d/health-routes.inc. Only ${HEALTH_RESOLVER} and ${APP_API_ORIGIN} are replaced.
+# The cms-api host is resolved per request, so nginx starts while cms-api is down.
+resolver ${HEALTH_RESOLVER} valid=10s ipv6=off;
+resolver_timeout 2s;
+set $cms_api_live_url ${APP_API_ORIGIN}/health/live;

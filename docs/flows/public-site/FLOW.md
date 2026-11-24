@@ -22,7 +22,7 @@ Part of the [project spec](../../../SPEC.md). Flow `public-site`: [SPEC.md](SPEC
 5. The homepage `/` and `/status` show only the module status card, which polls `GET /api/v1/health` and loads no CV data (D21, Q-BFF2, Q-PS5).
 6. A crawler reads `/robots.txt`, follows its `Sitemap:` line to `/sitemap.xml` and reads the pages listed there (`/` and `/status`); a crawler that keeps to `robots.txt` never fetches `/cv` in production (`Disallow: /cv`); a browser fetches `/favicon.ico`. The web server answers all three itself from its own config, without a cms-api call (PS-4). On the admin host, cms-admin's `/robots.txt` disallows everything (PS-4).
 7. On a CV, the visitor presses the print button; the browser opens its print dialog and prints, or saves as PDF, the CV as shown, in the print layout of the reference; the site header and every control stay off the paper (PS-7). Nothing is sent to the server.
-8. The hosting's OneShield sends `GET /health` to `<domain>` every 10 s; the web server answers 200 `{"status":"ok"}` itself, without a cms-api call; the image health check uses the same route, the pod probes stay as they are (PS-8).
+8. The hosting's OneShield sends `GET /health` to `<domain>` every 10 s; the web server answers 200 `{"status":"ok"}` itself, without a cms-api call; the image health check uses the same route and the pod probes `/health/live`; `/health/live` and `/health/ready` are reached in the cluster only (the proxy answers them with 403) and `/health/ready` asks cms-api (PS-8, global RULES "Health routes").
 
 ```mermaid
 sequenceDiagram

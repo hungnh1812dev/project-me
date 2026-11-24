@@ -109,7 +109,7 @@ rm abyss-<stamp>.dump
 
 Record the date, the dump used and the time it took. The decrypted dump holds the whole database: delete it when the drill ends.
 
-**Real disaster:** set up the roles on the target server first ([database.md](database.md) DB-1 to DB-4), restore into the new database (`pg_restore --no-owner -n public -n content` as the migration role), point `DB_HOST` and `DB_NAME` at it, roll out (the init container confirms the schema is current), then check `GET /health/ready` on `admin.<domain>`.
+**Real disaster:** set up the roles on the target server first ([database.md](database.md) DB-1 to DB-4), restore into the new database (`pg_restore --no-owner -n public -n content` as the migration role), point `DB_HOST` and `DB_NAME` at it, roll out (the init container confirms the schema is current), then check `https://admin.<domain>/health` (public) and `/health/ready` in the cluster (`kubectl -n <ns> exec deploy/cms-api -- wget -qO- http://127.0.0.1:3000/health/ready`).
 
 ## 5. Backup download (cms-admin)
 

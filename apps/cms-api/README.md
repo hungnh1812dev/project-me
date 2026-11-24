@@ -110,7 +110,7 @@ count).
 | GET    | `/health`, `/health/live` | `200 { "status": "ok" }`                                                                       |
 | GET    | `/health/ready`           | `200 { "status": "ok" }`, or `503 { "status": "error" }` when the DB ping fails or exceeds 2 s |
 
-Health routes live at the root, outside `/api/v1` (API-3); `/api/v1/health/*` answers 404.
+Health routes live at the root, outside `/api/v1` (API-3); every answer, 503 included, carries `Cache-Control: no-store`; `/api/v1/health/*` and `/health/other` answer 404.
 
 ### Auth (`src/modules/identity`)
 

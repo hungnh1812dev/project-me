@@ -71,7 +71,7 @@ openssl rand -base64 48     # run three times: JWT_ACCESS_SECRET, OTP_PEPPER, TO
 pnpm build
 pnpm db:migrate             # Prisma migrations + system role seed
 pnpm content:migrate        # content-type tables from content/migrations
-pnpm start:prod             # node dist/main; http://localhost:3000/api/v1, health: http://localhost:3000/health/ready
+pnpm start:prod             # node dist/main; http://localhost:3000/api/v1, health: http://localhost:3000/health (in-cluster-only `/health/live` and `/health/ready` also answer here, direct)
 ```
 
 (`pnpm deploy:migrate` runs the two migrate steps in order.) After a code change, `pnpm build` again, then `pnpm start:prod`. Create the one owner account once, in either way:

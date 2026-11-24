@@ -17,7 +17,7 @@ A Next.js server (standalone output) run by Node, as uid 1000, with no nginx in 
 ## 3. Runtime
 
 - Port: `WEB_PORT`, default `8080` (image default; the Service and Traefik use 8080).
-- The image has a Docker `HEALTHCHECK` that requests `/health` on `127.0.0.1:$WEB_PORT`, answered by the web server alone (no cms-api call). Kubernetes ignores it and the pod probes stay the TCP probes of [kubernetes.md](kubernetes.md) section 4, which holds the probes and resources.
+- The image has a Docker `HEALTHCHECK` that requests `/health` on `127.0.0.1:$WEB_PORT`, answered by the web server alone (no cms-api call). Kubernetes ignores it; the pod probes (liveness and readiness `GET /health/live` on 8080, answered by the web server alone) are in [kubernetes.md](kubernetes.md) section 4, which holds the probes and resources. `/health/ready` asks cms-api's `/health/live` within 2 s and is for in-cluster checks only; only `/health` is public, and Traefik answers `/health/live` and `/health/ready` from outside with 403.
 - One replica ([kubernetes.md](kubernetes.md) section 6).
 - Start fails on an invalid value (see section 4), so a bad config shows as a crash-looping pod with the key name in the log.
 
@@ -64,6 +64,7 @@ The whole `<domain>` host goes to the web Service on 8080; there is no cms-api r
 6. The response carries no `X-Powered-By` header.
 7. The Traefik access log shows real client IPs ([traefik.md](traefik.md) section 3).
 8. Content on the home page is current after 180 s (the per-call data cache) once an editor publishes a change.
+9. `curl -fsS https://<domain>/health` returns `{"status":"ok"}`; `https://<domain>/health/live` and `/health/ready` answer 403 from Traefik. In the cluster: `kubectl -n <ns> exec deploy/web -- wget -qO- http://127.0.0.1:8080/health/ready` returns `{"status":"ok"}` while cms-api answers.
 
 ## 9. What lives in the deploy repo
 

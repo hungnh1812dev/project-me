@@ -43,14 +43,32 @@ export const API_PATHS = {
 /** Absolute URL of a cms-api path. */
 export const apiUrl = (path: string): string => `${e2eEnv.apiBaseUrl}${path}`;
 
+/** The three health paths every app serves at the root of its origin (global RULES "Health routes"). */
+export const HEALTH_PATHS = {
+  UPTIME: '/health',
+  LIVE: '/health/live',
+  READY: '/health/ready',
+} as const;
+
+/** A path under `/health` that no app serves: 404 on every origin. */
+export const HEALTH_OTHER_PATH = '/health/other';
+
+/** Closed health paths: the proxy answers 403 on both hosts, with and without a trailing slash. */
+export const PROXY_CLOSED_HEALTH_PATHS = [
+  HEALTH_PATHS.LIVE,
+  `${HEALTH_PATHS.LIVE}/`,
+  HEALTH_PATHS.READY,
+  `${HEALTH_PATHS.READY}/`,
+] as const;
+
 /**
  * cms-api health probes at the root of its origin (outside `/api/v1`), and the removed
  * `/api/v1` ones. Read with `apiOriginUrl`.
  */
 export const API_ROOT_PATHS = {
-  HEALTH: '/health',
-  HEALTH_LIVE: '/health/live',
-  HEALTH_READY: '/health/ready',
+  HEALTH: HEALTH_PATHS.UPTIME,
+  HEALTH_LIVE: HEALTH_PATHS.LIVE,
+  HEALTH_READY: HEALTH_PATHS.READY,
 } as const;
 
 /** Removed health paths, relative to `e2eEnv.apiBaseUrl` (read with `apiUrl`): every one answers 404. */
