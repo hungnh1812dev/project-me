@@ -3,10 +3,6 @@
  * `appEnv.apiBaseUrl`. No trailing slashes; the API client strips them anyway.
  */
 export const API_ENDPOINTS = {
-  HEALTH: {
-    LIVE: '/health/live',
-    READY: '/health/ready',
-  },
   AUTH: {
     LOGIN: '/auth/login',
     REFRESH: '/auth/refresh',
@@ -90,5 +86,15 @@ export const API_ENDPOINTS = {
       `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/discard`,
     PRESENCE: (slug: string, id: string) =>
       `/documents/${encodeURIComponent(slug)}/${encodeURIComponent(id)}/presence`,
+  },
+} as const;
+
+/**
+ * cms-api paths at the server root, outside `/api/v1` (API-3), relative to
+ * `appEnv.apiOrigin`.
+ */
+export const API_ROOT_ENDPOINTS = {
+  HEALTH: {
+    LIVE: '/health/live',
   },
 } as const;

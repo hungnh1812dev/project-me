@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { createApiClient } from '@apis/client/Api.client';
-import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { healthLiveUrl } from '@features/status/Health.api';
 import { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
@@ -23,7 +23,7 @@ export const TEST_USER: CurrentUser = {
 /** App services on a fake API, wired exactly like `main.tsx`. */
 export function createTestServices(handlers: Record<string, FakeHandler> = {}) {
   const api = createFakeApi({
-    [`GET ${API_ENDPOINTS.HEALTH.LIVE}`]: () => ({
+    [`GET ${healthLiveUrl}`]: () => ({
       status: 200,
       data: { status: 'ok' },
     }),

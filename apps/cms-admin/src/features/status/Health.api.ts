@@ -1,9 +1,13 @@
-import { API_ENDPOINTS } from '@configs/Api.endpoints';
+import { API_ROOT_ENDPOINTS } from '@configs/Api.endpoints';
+import { appEnv } from '@configs/App.env';
 import type { AxiosInstance } from 'axios';
 
 export interface HealthResponse {
   status: string;
 }
+
+/** Absolute, so the client's API base URL is not prefixed. */
+export const healthLiveUrl = `${appEnv.apiOrigin}${API_ROOT_ENDPOINTS.HEALTH.LIVE}`;
 
 export const HEALTH_QUERY_KEYS = {
   live: ['health', 'live'],
@@ -12,7 +16,7 @@ export const HEALTH_QUERY_KEYS = {
 export function createHealthApi(client: AxiosInstance) {
   return {
     fetchLive: async (): Promise<HealthResponse> => {
-      const response = await client.get<HealthResponse>(API_ENDPOINTS.HEALTH.LIVE);
+      const response = await client.get<HealthResponse>(healthLiveUrl);
       return response.data;
     },
   };

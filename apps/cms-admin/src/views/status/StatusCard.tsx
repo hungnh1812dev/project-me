@@ -1,7 +1,6 @@
 import { Button, Card } from '@abyss/form-commons';
-import { API_ENDPOINTS } from '@configs/Api.endpoints';
-import { appEnv } from '@configs/App.env';
 import { useScreenText } from '@configs/locales';
+import { healthLiveUrl } from '@features/status/Health.api';
 import { formatTime } from '@utils/DateFormat.rules';
 import { Activity, AlertCircle, Clock, RefreshCw, Server } from 'lucide-react';
 
@@ -22,7 +21,6 @@ const DOT_TONE: Record<LiveHealthState, string> = {
 export function StatusCard() {
   const { status } = useScreenText('status');
   const { state, isFetching, lastCheckedAt, refetch } = useLiveHealth();
-  const endpoint = `${appEnv.apiBaseUrl}${API_ENDPOINTS.HEALTH.LIVE}`;
 
   return (
     <Card asChild padding="flush">
@@ -70,8 +68,8 @@ export function StatusCard() {
               <span className="inline-flex rounded-item bg-muted px-1.5 py-0.5 font-mono text-[11px] font-semibold text-foreground">
                 GET
               </span>
-              <span className="truncate" title={endpoint}>
-                {endpoint}
+              <span className="truncate" title={healthLiveUrl}>
+                {healthLiveUrl}
               </span>
             </dd>
           </div>

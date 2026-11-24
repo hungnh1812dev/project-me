@@ -1,6 +1,7 @@
 import { useToast } from '@abyss/form-commons';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { EN_TEXT } from '@configs/locales/en';
+import { healthLiveUrl } from '@features/status/Health.api';
 import { deferred, type FakeHandler, type FakeReply } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { render, screen } from '@testing-library/react';
@@ -9,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { AppProviders } from './AppProviders';
 
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
-const HEALTH_LIVE = `GET ${API_ENDPOINTS.HEALTH.LIVE}`;
+const HEALTH_LIVE = `GET ${healthLiveUrl}`;
 
 function signedInServices(extraHandlers: Record<string, FakeHandler> = {}) {
   return createTestServices({
@@ -76,7 +77,7 @@ describe('App', () => {
     renderApp(services);
 
     expect(await screen.findByText(EN_TEXT.status.state.ok)).toBeInTheDocument();
-    expect(screen.getByText(/\/api\/v1\/health\/live$/)).toBeInTheDocument();
+    expect(screen.getByText(/^http:\/\/domain\.localhost\/health\/live$/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: EN_TEXT.status.checkAgain })).toHaveAttribute(
       'data-slot',
       'button',
