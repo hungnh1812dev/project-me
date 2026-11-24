@@ -252,6 +252,21 @@ describe('serverApi', () => {
     expect(error.retryable).toBe(true);
   });
 
+  it('uses timeoutMs when given instead of API_TIMEOUT_MS', async () => {
+    fetchMock.mockImplementation((input) => {
+      const { signal } = input as Request;
+      return new Promise<Response>((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason as Error));
+      });
+    });
+    const startedAt = Date.now();
+
+    const error = await failureOf(serverApi.get('/things', { timeoutMs: 120 }));
+
+    expect(error.errorCode).toBe(API_ERROR_CODES.SERVER_API.TIMEOUT);
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(100);
+  });
+
   it('logs each failure once, with codes only', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     fetchMock.mockRejectedValue(new TypeError('fetch failed: secret-host'));

@@ -1,6 +1,9 @@
 /** Abort API requests that take longer than this. */
 export const API_TIMEOUT_MS = 10_000;
 
+/** Abort the readiness check's cms-api call after this long (health rule 3). */
+export const HEALTH_CHECK_TIMEOUT_MS = 2_000;
+
 /** Retries for the health query before it shows the error state. */
 export const HEALTH_QUERY_RETRY = 1;
 
