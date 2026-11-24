@@ -7,8 +7,18 @@ TEMPLATE=/etc/nginx/security/health-routes.inc.template
 TARGET=/etc/nginx/conf.d/health-routes.inc
 ORIGIN_PATTERN='^https?://[A-Za-z0-9.-]+(:[0-9]+)?$'
 
+ORIGIN_ERROR="APP_API_ORIGIN is required and must be http(s)://host[:port] with no path"
+
+# grep matches per line, so a multi-line value must be rejected on the whole value first.
+case "${APP_API_ORIGIN:-}" in
+  *[!A-Za-z0-9.:/-]*)
+    echo "$ORIGIN_ERROR" >&2
+    exit 1
+    ;;
+esac
+
 if ! printf '%s\n' "${APP_API_ORIGIN:-}" | grep -Eq "$ORIGIN_PATTERN"; then
-  echo "APP_API_ORIGIN is required and must be http(s)://host[:port] with no path" >&2
+  echo "$ORIGIN_ERROR" >&2
   exit 1
 fi
 
