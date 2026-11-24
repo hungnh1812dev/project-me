@@ -25,7 +25,7 @@ describe('security headers', () => {
   });
 
   it('hardens a normal route', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/health/live');
+    const res = await request(app.getHttpServer()).get('/health/live');
     expect(res.status).toBe(200);
     expect(res.headers['content-security-policy']).toBe(API_CONTENT_SECURITY_POLICY);
     expect(res.headers['x-powered-by']).toBeUndefined();

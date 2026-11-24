@@ -28,6 +28,7 @@ const PHONE_WIDTH = 375;
 const TABLET_WIDTH = 768;
 const DESKTOP_WIDTH = 1280;
 const VIEWPORT_HEIGHT = 900;
+const NEXT_PREFETCH_QUERY = '_rsc=';
 const MM_TO_PT = 72 / 25.4;
 const SIDE_MARGIN_PT = 10 * MM_TO_PT;
 const VERTICAL_MARGIN_PT = 12 * MM_TO_PT;
@@ -172,7 +173,10 @@ test.describe('cv print', { tag: ['@web', '@cms-api', '@public-site'] }, () => {
     await expect(printButton(page)).toBeVisible();
     expect(await printCalls(page)).toBe(0);
     const requests: string[] = [];
-    page.on('request', (req) => requests.push(req.url()));
+    // Next.js link prefetches (`?_rsc=`) of the header nav are not caused by the press.
+    page.on('request', (req) => {
+      if (!req.url().includes(NEXT_PREFETCH_QUERY)) requests.push(req.url());
+    });
     await printButton(page).click();
     expect(await printCalls(page)).toBe(1);
     await printButton(page).focus();

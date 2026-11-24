@@ -38,6 +38,8 @@ export interface ServerApiOptions<T = unknown> {
   resolveData?: (answer: ServerApiAnswer) => T;
   /** `revalidate` defaults to `DEFAULT_REVALIDATE_SECONDS`; `WEB_REVALIDATE_SECONDS`, when set, replaces any value except `0`. */
   next?: ServerApiNextOptions;
+  /** The path is a value of `API_ROOT_ENDPOINTS`, resolved against `appApiOrigin` instead of `appApiUrl` (API-3). */
+  isRootPath?: boolean;
 }
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS';
@@ -111,11 +113,12 @@ async function request<T>(
   path: string,
   options: ServerApiOptions<T> = {},
 ): Promise<T> {
-  const { appApiUrl, revalidateOverrideSeconds } = getServerEnv();
+  const { appApiUrl, appApiOrigin, revalidateOverrideSeconds } = getServerEnv();
+  const baseUrl = options.isRootPath === true ? appApiOrigin : appApiUrl;
   let response: AxiosResponse;
   try {
     response = await http.request({
-      url: `${appApiUrl}${path}`,
+      url: `${baseUrl}${path}`,
       method,
       ...(options.headers === undefined ? {} : { headers: options.headers }),
       ...(options.body === undefined ? {} : { data: options.body }),
@@ -149,7 +152,7 @@ const verb =
 
 /**
  * The one transport for cms-api calls made by the Next server (WEB-1). `path`
- * is a value of `API_ENDPOINTS`. Does not know tokens: the caller sets headers.
+ * is a value of `API_ENDPOINTS` (or `API_ROOT_ENDPOINTS` with `isRootPath`). Does not know tokens: the caller sets headers.
  */
 export const serverApi = {
   request,

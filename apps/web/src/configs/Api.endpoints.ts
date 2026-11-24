@@ -3,10 +3,6 @@
  * No trailing slashes; the API client strips them anyway.
  */
 export const API_ENDPOINTS = {
-  HEALTH: {
-    LIVE: '/health/live',
-    READY: '/health/ready',
-  },
   AUTH: {
     LOGIN: '/auth/login',
     REFRESH: '/auth/refresh',
@@ -18,6 +14,13 @@ export const API_ENDPOINTS = {
   TWO_FACTOR: {
     VERIFY: '/auth/2fa/verify',
     EMAIL_CHALLENGE: '/auth/2fa/email-challenge',
+  },
+} as const;
+
+/** cms-api paths at the server root, outside `/api/v1` (API-3), relative to `ServerEnv.appApiOrigin`. */
+export const API_ROOT_ENDPOINTS = {
+  HEALTH: {
+    LIVE: '/health/live',
   },
 } as const;
 
@@ -35,6 +38,9 @@ export const BFF_ENDPOINTS = {
   VERIFY_TWO_FACTOR: '/auth/two-factor/verify',
   LOGOUT: '/auth/logout',
 } as const;
+
+/** Uptime check of the web server alone (PS-8), outside `BFF_ENDPOINTS`; `proxy.ts` names the path too. */
+export const UPTIME_CHECK_PATH = '/health';
 
 /** Crawler files the site serves (PS-4); `proxy.ts` and `next.config.ts` name these paths too. */
 export const CRAWLER_FILE_PATHS = {

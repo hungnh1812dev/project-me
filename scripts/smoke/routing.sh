@@ -40,16 +40,28 @@ check_routing() {
 
 check_health() {
   echo "Health through the proxy"
-  request GET "$ADMIN_ORIGIN$API_PREFIX/health/ready"
-  expect_status "GET health/ready" 200
-  if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "health/ready body is {status: ok}"; else fail "health/ready body: $(cat "$BODY")"; fi
+  local path
+  for path in "$CMS_API_HEALTH_PATH" "$CMS_API_LIVE_PATH" "$CMS_API_READY_PATH"; do
+    request GET "$ADMIN_ORIGIN$path"
+    expect_status "GET $path on the admin host" 200
+    if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "$path body is {status: ok}"; else fail "$path body: $(cat "$BODY")"; fi
+  done
+  request GET "$ADMIN_ORIGIN$API_PREFIX$CMS_API_LIVE_PATH"
+  expect_status "removed $API_PREFIX$CMS_API_LIVE_PATH is cms-api's 404" 404
+  if grep -q errorCode "$BODY"; then pass "removed health path answers a cms-api error body"; else fail "removed health path body: $(cat "$BODY")"; fi
+  request GET "$ADMIN_ORIGIN$ADMIN_SPA_NEAR_HEALTH_PATH"
+  expect_status "$ADMIN_SPA_NEAR_HEALTH_PATH is not taken by the health router" 200
+  if grep -qi '<html' "$BODY"; then pass "$ADMIN_SPA_NEAR_HEALTH_PATH is the admin SPA"; else fail "$ADMIN_SPA_NEAR_HEALTH_PATH body: $(head -c 200 "$BODY")"; fi
 }
 
 # D21: cms-api is reachable on the admin host only; on the web host /api/v1/* is
 # the web BFF and the removed /bff/v1 path answers web's own 404.
 check_api_absent_on_web_host() {
-  request GET "$WEB_ORIGIN$API_PREFIX/health/live"
-  expect_status "cms-api is not served on the web origin ($API_PREFIX/health/live; the web BFF owns $API_PREFIX/*)" 404
+  local path
+  for path in "$CMS_API_LIVE_PATH" "$CMS_API_READY_PATH" "$API_PREFIX$CMS_API_LIVE_PATH"; do
+    request GET "$WEB_ORIGIN$path"
+    expect_status "cms-api is not served on the web origin ($path; the web answers its own 404)" 404
+  done
   request GET "$WEB_ORIGIN$WEB_BFF_HEALTH_PATH"
   expect_status "web BFF answers $WEB_BFF_HEALTH_PATH" 200
   if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "web BFF health body is {status: ok}"; else fail "web BFF health body: $(cat "$BODY")"; fi
@@ -58,11 +70,25 @@ check_api_absent_on_web_host() {
   expect_status "removed $WEB_REMOVED_BFF_HEALTH_PATH is a 404, not a redirect" 404
 }
 
+# PS-8: GET /health on the web host is 200 {"status":"ok"}, no-store; HEAD has no body; no sub-path.
+check_uptime_route() {
+  request GET "$WEB_ORIGIN$WEB_UPTIME_PATH"
+  expect_status "web uptime check GET $WEB_UPTIME_PATH" 200
+  if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "web uptime body is {status: ok}"; else fail "web uptime body: $(cat "$BODY")"; fi
+  if [[ "$(header Cache-Control)" == *"$BFF_CACHE_CONTROL"* ]]; then pass "web uptime is $BFF_CACHE_CONTROL"; else fail "web uptime Cache-Control: '$(header Cache-Control)'"; fi
+  request HEAD "$WEB_ORIGIN$WEB_UPTIME_PATH" --head
+  expect_status "web uptime check HEAD $WEB_UPTIME_PATH" 200
+  # --head makes curl write the response headers into $BODY, so a body shows as the JSON payload.
+  if grep -q "$HEALTH_OK_BODY" "$BODY"; then fail "web uptime HEAD carries a body: $(cat "$BODY")"; else pass "web uptime HEAD has no body"; fi
+  request GET "$WEB_ORIGIN$WEB_UPTIME_PATH/anything"
+  expect_status "web $WEB_UPTIME_PATH/anything is a 404" 404
+}
+
 check_trailing_slashes() {
   echo "Trailing slashes (SPEC §12-17: never 3xx)"
-  request GET "$ADMIN_ORIGIN$API_PREFIX/health/live/"
-  expect_status "GET health/live/ with trailing slash" 200
-  request POST "$ADMIN_ORIGIN$API_PREFIX/health/live/" -H 'Content-Type: application/json' --data '{}'
+  request GET "$ADMIN_ORIGIN$CMS_API_LIVE_PATH/"
+  expect_status "GET $CMS_API_LIVE_PATH/ with trailing slash" 200
+  request POST "$ADMIN_ORIGIN$CMS_API_LIVE_PATH/" -H 'Content-Type: application/json' --data '{}'
   if [[ "$STATUS" =~ ^3 || "$STATUS" == "000" ]]; then
     fail "POST with trailing slash returned $STATUS"
   else

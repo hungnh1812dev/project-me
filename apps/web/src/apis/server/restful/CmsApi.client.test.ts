@@ -8,6 +8,7 @@ import { serverApi } from './ServerApi.client';
 vi.mock('../../../configs/Server.env', () => ({
   getServerEnv: () => ({
     appApiUrl: 'http://api.internal/api/v1',
+    appApiOrigin: 'http://api.internal',
     webOrigin: 'https://site.test',
     clientIpHeader: 'cf-connecting-ip',
     revalidateOverrideSeconds: undefined,
@@ -382,7 +383,7 @@ describe('readLiveHealth', () => {
   it('is true only for an ok answer', async () => {
     answer(200, { status: 'ok' });
     expect(await cmsApiClient.readLiveHealth()).toBe(true);
-    expect(lastCall().url).toBe('http://api.internal/api/v1/health/live');
+    expect(lastCall().url).toBe('http://api.internal/health/live');
     answer(200, { status: 'degraded' });
     expect(await cmsApiClient.readLiveHealth()).toBe(false);
     answer(503, {});

@@ -4,6 +4,7 @@ import { serverApi } from './ServerApi.client';
 
 const env = vi.hoisted(() => ({
   appApiUrl: 'http://api.internal/api/v1',
+  appApiOrigin: 'http://api.internal',
   revalidateOverrideSeconds: undefined as number | undefined,
 }));
 
@@ -43,6 +44,16 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('serverApi', () => {
+  it('resolves an isRootPath call against the origin and any other against the base URL', async () => {
+    answer(200, '{}');
+    await serverApi.get('/health/live', { isRootPath: true });
+    expect(sentRequest().request.url).toBe('http://api.internal/health/live');
+    fetchMock.mockClear();
+    answer(200, '{}');
+    await serverApi.get('/things', { isRootPath: false });
+    expect(sentRequest().request.url).toBe('http://api.internal/api/v1/things');
+  });
+
   it.each([
     ['get', 'GET'],
     ['post', 'POST'],

@@ -25,6 +25,8 @@ const API_TOKEN_PATTERN = /^ak_live_[A-Za-z0-9_-]+$/;
 export interface ServerEnv {
   /** cms-api base URL reachable from the Next server (never sent to the browser). */
   appApiUrl: string;
+  /** Origin of `appApiUrl`, for cms-api root paths outside `/api/v1` (API-3). */
+  appApiOrigin: string;
   /** cms-api API token for server content reads (WEB-2); server only, never logged. Required in production. */
   appApiToken: string | undefined;
   /** When set, replaces every server call's data cache lifetime; 0 disables caching. */
@@ -148,8 +150,10 @@ export function parseServerEnv(source: EnvSource, buildAppEnv: string | undefine
   const appEnv = parseAppEnv(source.APP_ENV);
   assertAppEnvMatchesBuild(appEnv, buildAppEnv);
 
+  const appApiUrl = parseAppApiUrl(source.APP_API_URL);
   return {
-    appApiUrl: parseAppApiUrl(source.APP_API_URL),
+    appApiUrl,
+    appApiOrigin: new URL(appApiUrl).origin,
     appApiToken: parseAppApiToken(source.APP_API_TOKEN, source),
     revalidateOverrideSeconds: parseRevalidateOverride(source.WEB_REVALIDATE_SECONDS),
     appEnv,

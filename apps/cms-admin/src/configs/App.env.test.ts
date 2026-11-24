@@ -25,4 +25,21 @@ describe('appEnv', () => {
     vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '   ');
     await expect(importAppEnv()).rejects.toThrow('VITE_TURNSTILE_SITE_KEY is not set');
   });
+
+  it('takes the cms-api origin from an absolute base URL', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://api.domain.localhost/api/v1/');
+    const { appEnv } = await importAppEnv();
+    expect(appEnv.apiOrigin).toBe('https://api.domain.localhost');
+  });
+
+  it('takes the page origin from a relative base URL', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', '/api/v1');
+    const { appEnv } = await importAppEnv();
+    expect(appEnv.apiOrigin).toBe(window.location.origin);
+  });
+
+  it('throws naming the key when the base URL does not parse', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'http://[bad');
+    await expect(importAppEnv()).rejects.toThrow('VITE_API_BASE_URL is not a valid URL');
+  });
 });

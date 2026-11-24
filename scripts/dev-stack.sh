@@ -28,6 +28,7 @@ PID_DIR="$STATE_DIR/pids"
 API_DIR="$ROOT_DIR/apps/cms-api"
 DOMAIN="domain.localhost"
 API_PREFIX="/api/v1"
+API_READY_PATH="/health/ready"
 LOOPBACK="127.0.0.1"
 COMPOSE_PROJECT="abyss-dev"
 HEALTH_OK_BODY='"status":"ok"'
@@ -211,7 +212,7 @@ wait_until() {
   done
 }
 
-api_is_ready() { curl -sS --max-time 5 "http://$LOOPBACK:$API_PORT$API_PREFIX/health/ready" 2>/dev/null | grep -q "$HEALTH_OK_BODY"; }
+api_is_ready() { curl -sS --max-time 5 "http://$LOOPBACK:$API_PORT$API_READY_PATH" 2>/dev/null | grep -q "$HEALTH_OK_BODY"; }
 admin_is_up() { curl -sS --max-time 5 -o /dev/null "http://localhost:$ADMIN_PORT/" 2>/dev/null; }
 web_is_up() { curl -sS --max-time 30 -o /dev/null "http://localhost:$WEB_PORT_DEV/" 2>/dev/null; }
 
@@ -245,7 +246,7 @@ start_apps() {
   VITE_API_BASE_URL="$API_BASE_URL" VITE_TURNSTILE_SITE_KEY="$TURNSTILE_TEST_SITE_KEY" DEV_SERVER_PORT="$ADMIN_PORT" \
     DEV_API_PROXY_TARGET="http://$LOOPBACK:$API_PORT" \
     start_app cms-admin pnpm --dir "$ROOT_DIR" --filter @abyss/cms-admin dev
-  wait_until "cms-api ($API_PREFIX/health/ready)" cms-api api_is_ready
+  wait_until "cms-api ($API_READY_PATH)" cms-api api_is_ready
   # The web server needs the reader-account API token, which needs cms-api up.
   STACK_API_URL="http://$LOOPBACK:$API_PORT$API_PREFIX"
   stack_mint_content_token "$COMPOSE_PROJECT" "$LOCAL_ENV_FILE"

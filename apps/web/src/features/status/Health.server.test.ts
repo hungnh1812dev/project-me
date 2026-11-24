@@ -1,4 +1,4 @@
-import { answerHealthRead } from './Health.server';
+import { answerHealthRead, answerUptimeCheck } from './Health.server';
 
 const client = vi.hoisted(() => ({ readLiveHealth: vi.fn<() => Promise<boolean>>() }));
 vi.mock('../../apis/server/restful/CmsApi.client', () => ({ cmsApiClient: client }));
@@ -20,5 +20,19 @@ describe('answerHealthRead', () => {
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ status: 'unavailable' });
+  });
+});
+
+describe('answerUptimeCheck', () => {
+  it('answers 200 ok, uncached, without calling cms-api', async () => {
+    client.readLiveHealth.mockClear();
+
+    const response = answerUptimeCheck();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(await response.json()).toEqual({ status: 'ok' });
+    expect(client.readLiveHealth).not.toHaveBeenCalled();
   });
 });

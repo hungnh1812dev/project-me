@@ -20,8 +20,9 @@ function listRoutes(app: NestExpressApplication): string[] {
 }
 
 const EXPECTED_ROUTES: string[] = [
-  'GET /api/v1/health/live',
-  'GET /api/v1/health/ready',
+  'GET /health',
+  'GET /health/live',
+  'GET /health/ready',
   'POST /api/v1/auth/login',
   'POST /api/v1/auth/refresh',
   'POST /api/v1/auth/logout',

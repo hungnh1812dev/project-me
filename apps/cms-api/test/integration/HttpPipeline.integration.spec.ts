@@ -129,8 +129,9 @@ describe('HTTP pipeline request timing log', () => {
   });
 
   it('logs nothing for the health probes', async () => {
-    await request(app.getHttpServer()).get('/api/v1/health/live');
-    await request(app.getHttpServer()).get('/api/v1/health/ready');
+    await request(app.getHttpServer()).get('/health');
+    await request(app.getHttpServer()).get('/health/live');
+    await request(app.getHttpServer()).get('/health/ready');
     expect(info).not.toHaveBeenCalled();
     expect(warn).not.toHaveBeenCalled();
   });
