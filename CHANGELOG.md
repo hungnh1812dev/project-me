@@ -6,9 +6,27 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.4.1 (2026-11-24)
+
+Repo 0.4.1; cms-api and web 0.4.1, e2e 0.1.2; cms-admin 0.3.3: the health routes `/health`, `/health/live` and `/health/ready` on every app, in-cluster probes, and the status card reading cms-api's public `/health`.
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.4.1   | yes                     |
+| `@abyss/cms-api`      | 0.4.1   | yes                     |
+| `@abyss/cms-admin`    | 0.3.3   | yes                     |
+| `@abyss/web`          | 0.4.1   | yes                     |
+| `@abyss/base-config`  | 0.1.0   | no                      |
+| `@abyss/form-commons` | 0.1.0   | no                      |
+| e2e                   | 0.1.2   | yes                     |
+
 ### New features
 
 - web: `GET /health` answers OneShield's uptime check; the image and smoke-stack health checks use it.
+- web: serves `/health/live` and `/health/ready`.
+- cms-admin: serves `/health`, `/health/live` and `/health/ready` from nginx; the status card reads cms-api's public `/health`.
 
 ### Changes
 
@@ -16,6 +34,14 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 - cms-api, cms-admin: spec: cms-api health moves to `/health`, `/health/live`, `/health/ready` outside `/api/v1`; probes and callers follow ([cms-api SPEC](docs/apps/cms-api/SPEC.md) API-3).
 - cms-api, cms-admin, web: `/health/live` and `/health/ready` on every app, in-cluster only; cms-admin needs `APP_API_ORIGIN`; probes move ([cms-api](docs/apps/cms-api/patch-cms-api-0.4.1.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.4.1.md), [web](docs/apps/web/patch-web-0.4.1.md)).
 - cms-api, cms-admin, web: spec: every app serves `/health` and `/health/live` (app live, no dependency call) and `/health/ready` (cms-api: database; cms-admin and web: cms-api), with only `/health` public and `/health/live` and `/health/ready` reached in the cluster only (Traefik answers them with 403); the cms-admin status card reads cms-api's `/health`; cms-admin's nginx gets its own health routes and the required `APP_API_ORIGIN` key; liveness probes on `/health/live` for every app, readiness on `/health/ready` for cms-api and `/health/live` for web and cms-admin, with patch notes for web and cms-admin, in the same release as the health-routes change (global RULES "Health routes"; cms-api API-3, cms-admin ADM-12, public-site PS-8; user 2026-11-24).
+- cms-api: every health answer sends `no-store`.
+- e2e: cover the health live and ready routes.
+
+### Bug fixes
+
+- cms-admin: the health location regexes end with `\z`.
+- cms-admin: the health routes entrypoint rejects a multi-line `APP_API_ORIGIN`.
+- web: the proxy matcher has no capturing group.
 
 ### DevOps patches
 
