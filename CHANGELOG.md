@@ -14,11 +14,14 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 - web: spec: the web answers OneShield's uptime check `GET /health` on `<domain>` with 200 `{"status":"ok"}` from the web server alone (no cms-api call, no nonce CSP, not logged per check), in place of the not-found 404 it gets today; the web image and smoke-stack health checks move to `/health`, the Kubernetes probes stay TCP (flow public-site, PS-8; Q-HC1..Q-HC3 answered by the user 2026-11-23).
 - cms-api, cms-admin: spec: cms-api health moves to `/health`, `/health/live`, `/health/ready` outside `/api/v1`; probes and callers follow ([cms-api SPEC](docs/apps/cms-api/SPEC.md) API-3).
-- cms-api, cms-admin, web: health routes at `/health`, `/health/live`, `/health/ready`; `/api/v1/health/*` removed; probes move ([patch](docs/apps/cms-api/patch-cms-api-0.5.0.md)).
+- cms-api, cms-admin, web: `/health/live` and `/health/ready` on every app, in-cluster only; cms-admin needs `APP_API_ORIGIN`; probes move ([cms-api](docs/apps/cms-api/patch-cms-api-0.5.0.md), [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.5.0.md), [web](docs/apps/web/patch-web-0.5.0.md)).
+- cms-api, cms-admin, web: spec: every app serves `/health` and `/health/live` (app live, no dependency call) and `/health/ready` (cms-api: database; cms-admin and web: cms-api), with only `/health` public and `/health/live` and `/health/ready` reached in the cluster only (Traefik answers them with 403); the cms-admin status card reads cms-api's `/health`; cms-admin's nginx gets its own health routes and the required `APP_API_ORIGIN` key; liveness probes on `/health/live` for every app, readiness on `/health/ready` for cms-api and `/health/live` for web and cms-admin, with patch notes for web and cms-admin, in the same release as the health-routes change (global RULES "Health routes"; cms-api API-3, cms-admin ADM-12, public-site PS-8; user 2026-11-24).
 
 ### DevOps patches
 
-- [cms-api](docs/apps/cms-api/patch-cms-api-0.5.0.md) patch 0.5.0 (probe paths and admin-host route in one deploy commit with the new image).
+- [cms-api](docs/apps/cms-api/patch-cms-api-0.5.0.md) patch 0.5.0 (probe paths, narrowed `api` route and `health-internal` router in one deploy commit with the new image).
+- [cms-admin](docs/apps/cms-admin/patch-cms-admin-0.5.0.md) patch 0.5.0 (`APP_API_ORIGIN`, probes, NetworkPolicy rule in one deploy commit with the new image).
+- [web](docs/apps/web/patch-web-0.5.0.md) patch 0.5.0 (probes from TCP to `/health/live` in one deploy commit with the new image).
 
 ## 0.4.0 (2026-11-23)
 
