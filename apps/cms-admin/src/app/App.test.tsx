@@ -1,7 +1,7 @@
 import { useToast } from '@abyss/form-commons';
 import { API_ENDPOINTS } from '@configs/Api.endpoints';
 import { EN_TEXT } from '@configs/locales/en';
-import { healthLiveUrl } from '@features/status/Health.api';
+import { healthUrl } from '@features/status/Health.api';
 import { deferred, type FakeHandler, type FakeReply } from '@test/FakeApi.fixture';
 import { createTestServices, renderApp, TEST_USER } from '@test/RenderApp.fixture';
 import { render, screen } from '@testing-library/react';
@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { AppProviders } from './AppProviders';
 
 const { REFRESH, LOGOUT, ME } = API_ENDPOINTS.AUTH;
-const HEALTH_LIVE = `GET ${healthLiveUrl}`;
+const HEALTH_REQUEST = `GET ${healthUrl}`;
 
 function signedInServices(extraHandlers: Record<string, FakeHandler> = {}) {
   return createTestServices({
@@ -77,7 +77,7 @@ describe('App', () => {
     renderApp(services);
 
     expect(await screen.findByText(EN_TEXT.status.state.ok)).toBeInTheDocument();
-    expect(screen.getByText(/^http:\/\/domain\.localhost\/health\/live$/)).toBeInTheDocument();
+    expect(screen.getByText(/^http:\/\/domain\.localhost\/health$/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: EN_TEXT.status.checkAgain })).toHaveAttribute(
       'data-slot',
       'button',
@@ -87,7 +87,7 @@ describe('App', () => {
   it('shows the error state and recovers on "check again"', async () => {
     let healthCalls = 0;
     const { services } = signedInServices({
-      [HEALTH_LIVE]: () =>
+      [HEALTH_REQUEST]: () =>
         ++healthCalls === 1 ? 'network-error' : { status: 200, data: { status: 'ok' } },
     });
     await services.session.restore();
@@ -101,7 +101,7 @@ describe('App', () => {
 
   it('treats an unexpected health body as unreachable', async () => {
     const { services } = signedInServices({
-      [HEALTH_LIVE]: () => ({ status: 200, data: { status: 'error' } }),
+      [HEALTH_REQUEST]: () => ({ status: 200, data: { status: 'error' } }),
     });
     await services.session.restore();
     renderApp(services);

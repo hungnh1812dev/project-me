@@ -1,6 +1,6 @@
 import { Button, Card } from '@abyss/form-commons';
 import { useScreenText } from '@configs/locales';
-import { healthLiveUrl } from '@features/status/Health.api';
+import { healthUrl } from '@features/status/Health.api';
 import { formatTime } from '@utils/DateFormat.rules';
 import { Activity, AlertCircle, Clock, RefreshCw, Server } from 'lucide-react';
 
@@ -68,8 +68,8 @@ export function StatusCard() {
               <span className="inline-flex rounded-item bg-muted px-1.5 py-0.5 font-mono text-[11px] font-semibold text-foreground">
                 GET
               </span>
-              <span className="truncate" title={healthLiveUrl}>
-                {healthLiveUrl}
+              <span className="truncate" title={healthUrl}>
+                {healthUrl}
               </span>
             </dd>
           </div>
