@@ -283,6 +283,8 @@ on `nginx-unprivileged` (non-root, port 8080). `nginx.conf` sets
 internal host or port behind Traefik, and falls back to `index.html` for client
 routes. The build fails without `VITE_API_BASE_URL` or `VITE_TURNSTILE_SITE_KEY` (the Turnstile site key, public by design, baked into the bundle).
 
+Health routes (SPEC ADM-12, reached in the cluster only): nginx answers `GET /health` and `GET /health/live` itself with 200 `{"status":"ok"}`, and `GET /health/ready` with 200 only when cms-api's `/health/live` (at the runtime env `APP_API_ORIGIN`) answers 200 within 2 s, else 503 `{"status":"error"}`. Any other `/health/...` path is a JSON 404, never the app shell; all answers send `Cache-Control: no-store` and the D17 headers. `APP_API_ORIGIN` (`http(s)://host[:port]`, no path) is required: `nginx/16-health-routes.sh` stops the container without it. It is not `VITE_API_BASE_URL` and is not read by Vite.
+
 `public/robots.txt` disallows every crawler on the admin host (public-site PS-4); Vite copies it to the root of `dist/` and nginx serves it before the SPA fallback.
 
 ## Scripts
