@@ -77,6 +77,17 @@ Applies to flows: `content-editing`, `public-site`.
 1. Sanitize richtext on the server when it is written (`sanitize-html` allowlist) and again on web when it is rendered (DOMPurify) (D13, criterion 14).
 2. No global "XSS pipe" that rewrites all input (D13).
 
+## Health routes
+
+Every app keeps these rules: cms-api (API-3), cms-admin (ADM-12), web (public-site PS-8); user 2026-11-24, Q-HL1..Q-HL7 answered by the user the same day. What each app's `/health/ready` checks and how the proxy routes its paths: those three requirements.
+
+1. Each app serves `GET /health`, `GET /health/live` and `GET /health/ready` at its server root, outside any API prefix; the paths are named once, in the module that owns them.
+2. `/health` and `/health/live` answer 200 `{"status":"ok"}` while the app process runs. They call nothing: no database, no other app, no cache, no session read; a slow or down dependency never fails them.
+3. `/health/ready` checks the app's one dependency within 2 s: 200 `{"status":"ok"}` when it answers, 503 `{"status":"error"}` when it fails or times out. cms-admin and web check cms-api through its `/health/live` on its in-cluster address (Q-HL3, user 2026-11-24); only cms-api's own check reaches the database.
+4. Only `/health` is public (Q-HL1, user 2026-11-24). `/health/live` and `/health/ready` are for callers inside the cluster only (pod probes, the apps that check each other, in-cluster monitoring). The proxy never forwards them from outside, on any host: Traefik answers both (trailing slash included) itself with 403 through an `ipAllowList` middleware that admits no public source, ahead of every app route (Q-HL2, user 2026-11-24; the route and middleware: `docs/deployments/traefik.md`). One app per host has the public `/health`: the web on `<domain>`, cms-api on `admin.<domain>`; cms-admin's `/health` is reachable only inside its pod (Q-HL7, user 2026-11-24; API-3, ADM-12, PS-8).
+5. Every answer: `Content-Type: application/json`, `Cache-Control: no-store`, the app's D17 headers, the body `{ status }` only (no version, host name, uptime or error text; the same on every stack); `HEAD` gets the same status with no body; a trailing slash is tolerated; any other path under `/health/` keeps the app's 404. No credentials, no cookie set, no per-request log line, no rate limit of its own.
+6. Pod probes: liveness `GET /health/live` on every app; readiness `GET /health/ready` on cms-api, `GET /health/live` on cms-admin and web, so a cms-api outage never takes them out of service (they keep serving their own pages and error states) (Q-HL4, user 2026-11-24). A probe path change ships in the same deploy commit as the image that serves it, with a `patch-<app>-<repo version>.md` note.
+
 ## Design tokens and themes (D23)
 
 - Every colour, radius, shadow and duration value lives once, in form-commons `src/styles/tokens.css`: primitives (raw scales, never used by components), then semantic tokens per theme (`:root` default, `[data-theme='<name>']` blocks); `theme.css` maps semantic tokens to Tailwind names. Apps and form-commons components read semantic tokens only.
