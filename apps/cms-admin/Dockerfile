@@ -44,6 +44,10 @@ COPY apps/cms-admin/nginx/security-headers.inc.template /etc/nginx/security/secu
 # URL the bundle was built with. Set CSP_CONNECT_SRC at run time (space
 # separated origins) to override.
 COPY --chmod=755 apps/cms-admin/nginx/15-security-headers.sh /docker-entrypoint.d/15-security-headers.sh
+# Health routes (ADM-12): 16-health-routes.sh needs the runtime env APP_API_ORIGIN
+# (cms-api origin as this container reaches it, required, no build arg or default).
+COPY apps/cms-admin/nginx/health-routes.inc.template /etc/nginx/security/health-routes.inc.template
+COPY --chmod=755 apps/cms-admin/nginx/16-health-routes.sh /docker-entrypoint.d/16-health-routes.sh
 ARG VITE_API_BASE_URL
 ENV CSP_API_URL=$VITE_API_BASE_URL
 COPY --from=build /repo/apps/cms-admin/dist /usr/share/nginx/html

@@ -26,7 +26,7 @@ NestJS; Prisma (through `PrismaService`).
 
 ## Entry points
 
-`GET /health` (same answer as `/health/live`), `GET /health/live`, `GET /health/ready` at the root, outside `/api/v1` (API-3); `HEAD` answers the `GET` status with no body; export `HealthModule`. The prefix exception is the `exclude` of `setGlobalPrefix` in `apps/cms-api/src/App.setup.ts`; the old `/api/v1/health/*` paths answer 404.
+`GET /health` (same answer as `/health/live`), `GET /health/live`, `GET /health/ready` at the root, outside `/api/v1` (API-3); `HEAD` answers the `GET` status with no body; every answer, 200 and 503, carries `Cache-Control: no-store` (rule 5, `NO_STORE_HEADER`), and `/health/other` answers the standard 404; export `HealthModule`. The prefix exception is the `exclude` of `setGlobalPrefix` in `apps/cms-api/src/App.setup.ts`; the old `/api/v1/health/*` paths answer 404.
 
 ## Where to change what
 
@@ -52,7 +52,7 @@ Tests: 1 file (not listed).
 | `index.ts` | Public export (exports `HealthModule`) |
 | `adapters/PrismaDatabaseHealth.adapter.ts` | Readiness ping through the app's Prisma client (exports `PrismaDatabaseHealth`) |
 | `application/CheckReadiness.service.ts` | The readiness check, its 2 s timeout and the `DatabaseHealth` port (exports `HEALTH_STATUS`, `HealthStatus`, `READINESS_DB_TIMEOUT_MS`, `DATABASE_HEALTH` +3) |
-| `http/Health.controller.ts` | The probe routes (`/health`, `/health/live`, `/health/ready`); 503 and a log line when readiness fails (exports `HEALTH_ROUTES`, `HealthResponse`, `HealthController`) |
+| `http/Health.controller.ts` | The probe routes (`/health`, `/health/live`, `/health/ready`); `no-store` on every answer; 503 and a log line when readiness fails (exports `HEALTH_ROUTES`, `HealthResponse`, `HealthController`) |
 
 <!-- prettier-ignore-end -->
 <!-- module-files:end -->

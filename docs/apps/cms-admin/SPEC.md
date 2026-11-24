@@ -66,6 +66,15 @@ Success criteria (the feature checklist rows come from these):
 7. apps/web looks the same as before (screenshots of `/` and `/cv` before and after, tier 2).
 8. The full e2e suite passes on the full stack (tier 3).
 
+### Health routes (ADM-12)
+
+- **ADM-12 Health routes of the cms-admin server** (user 2026-11-24, verbatim: "cms-admin: `/health` and `/health/live` => app live; `health/ready` => ping cms-api success"). Replaces Q-HR3's "no cms-admin health route" (cms-api API-3).
+  - **Routes.** The cms-admin image's nginx answers `GET /health`, `GET /health/live` and `GET /health/ready` itself, ahead of the SPA fallback, by global RULES "Health routes"; they are never the app shell. `/health` and `/health/live` are answered by nginx alone; `/health/ready` asks cms-api's `/health/live` (rule 3) and answers by its result. The routes live in the nginx server config of the image; the Vite dev server has none of its own (it forwards `/health` to cms-api, API-3).
+  - **Reached in the cluster only** (Q-HL1 and Q-HL7, user 2026-11-24: cms-api owns `admin.<domain>/health`; cms-admin's own `/health` is reachable only inside its pod). On `admin.<domain>` the public `/health` belongs to cms-api and the proxy answers `/health/live` and `/health/ready` itself (API-3, rule 4), so the proxy never routes these to cms-admin; they are reached on the pod, port 8080, by the probes (rule 6: liveness and readiness `GET /health/live`, replacing `GET /`) and by in-cluster monitoring. The service status card reads cms-api's public `/health` on the cms-api origin, in place of `/health/live`, which is no longer public (API-3); its states and texts are unchanged.
+  - **Config** (Q-HL5, user 2026-11-24). nginx reaches cms-api through one new runtime env key `APP_API_ORIGIN`, the cms-api origin as the cms-admin pod reaches it in the cluster (scheme, host, port; no path). The container does not start without it; it is named in `.env.example`, the deploy docs and a `patch-cms-admin-<repo version>.md` note with the probe change (rule 6). `VITE_API_BASE_URL` (build time, public) is not used for it.
+  - **Check.** Inside the stack network, cms-admin's `/health` and `/health/live` on port 8080 answer 200 `{"status":"ok"}` with the D17 headers, still 200 with cms-api stopped; `/health/ready` answers 200 with cms-api up and 503 `{"status":"error"}` within about 2 s with cms-api stopped; `/health/other` answers 404, never the app shell; through the proxy, `admin.<domain>/health` is cms-api's answer and `/health/live` and `/health/ready` the proxy's 403 (rule 4); the status card shows cms-api up through `/health` and down with cms-api stopped; the cms-admin container fails to start without `APP_API_ORIGIN`.
+  - **Not in scope:** a public cms-admin health path; the status card; any other nginx route.
+
 ## Decisions
 
 It follows D14 and D17 ([DECISIONS.md](../../global/DECISIONS.md)).

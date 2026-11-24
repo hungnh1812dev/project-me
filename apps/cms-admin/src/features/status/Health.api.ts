@@ -7,7 +7,7 @@ export interface HealthResponse {
 }
 
 /** Absolute, so the client's API base URL is not prefixed. */
-export const healthLiveUrl = `${appEnv.apiOrigin}${API_ROOT_ENDPOINTS.HEALTH.LIVE}`;
+export const healthUrl = `${appEnv.apiOrigin}${API_ROOT_ENDPOINTS.HEALTH}`;
 
 export const HEALTH_QUERY_KEYS = {
   live: ['health', 'live'],
@@ -16,7 +16,7 @@ export const HEALTH_QUERY_KEYS = {
 export function createHealthApi(client: AxiosInstance) {
   return {
     fetchLive: async (): Promise<HealthResponse> => {
-      const response = await client.get<HealthResponse>(healthLiveUrl);
+      const response = await client.get<HealthResponse>(healthUrl);
       return response.data;
     },
   };

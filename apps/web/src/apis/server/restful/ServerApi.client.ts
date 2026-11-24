@@ -40,6 +40,8 @@ export interface ServerApiOptions<T = unknown> {
   next?: ServerApiNextOptions;
   /** The path is a value of `API_ROOT_ENDPOINTS`, resolved against `appApiOrigin` instead of `appApiUrl` (API-3). */
   isRootPath?: boolean;
+  /** Abort after this long; defaults to `API_TIMEOUT_MS`. */
+  timeoutMs?: number;
 }
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS';
@@ -122,7 +124,7 @@ async function request<T>(
       method,
       ...(options.headers === undefined ? {} : { headers: options.headers }),
       ...(options.body === undefined ? {} : { data: options.body }),
-      timeout: API_TIMEOUT_MS,
+      timeout: options.timeoutMs ?? API_TIMEOUT_MS,
       fetchOptions: fetchOptionsOf(options.next ?? {}, revalidateOverrideSeconds),
     });
   } catch (error) {

@@ -14,7 +14,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEV_VARS_FILE="$ROOT_DIR/.dev-stack/e2e-vars.sh"
 SMOKE_VARS_FILE="$ROOT_DIR/.smoke/e2e-vars.sh"
-HEALTH_PATH="/health/ready"
+PUBLIC_HEALTH_PATH="/health"
 HEALTH_OK_BODY='"status":"ok"'
 
 stack="${E2E_STACK:-}"
@@ -44,7 +44,7 @@ api_host="$(echo "$E2E_API_BASE_URL" | sed -E 's#^https?://([^/:]+).*#\1#')"
 api_port="$(echo "$E2E_API_BASE_URL" | sed -nE 's#^https?://[^/:]+:([0-9]+).*#\1#p')"
 api_port="${api_port:-80}"
 api_origin="$(echo "$E2E_API_BASE_URL" | sed -E 's#^(https?://[^/]+).*#\1#')"
-api_health_url="$api_origin$HEALTH_PATH"
+api_health_url="$api_origin$PUBLIC_HEALTH_PATH"
 if ! curl -sS --max-time 5 --resolve "$api_host:$api_port:127.0.0.1,[::1]" \
   "$api_health_url" 2>/dev/null | grep -q "$HEALTH_OK_BODY"; then
   echo "The kept $stack stack is not answering ($api_health_url)." >&2

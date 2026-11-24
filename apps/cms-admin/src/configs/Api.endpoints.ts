@@ -91,10 +91,9 @@ export const API_ENDPOINTS = {
 
 /**
  * cms-api paths at the server root, outside `/api/v1` (API-3), relative to
- * `appEnv.apiOrigin`.
+ * `appEnv.apiOrigin`. `HEALTH` is cms-api's public health path; `/health/live`
+ * and `/health/ready` are reached in the cluster only.
  */
 export const API_ROOT_ENDPOINTS = {
-  HEALTH: {
-    LIVE: '/health/live',
-  },
+  HEALTH: '/health',
 } as const;

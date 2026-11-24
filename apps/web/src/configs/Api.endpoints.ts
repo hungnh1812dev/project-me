@@ -39,8 +39,12 @@ export const BFF_ENDPOINTS = {
   LOGOUT: '/auth/logout',
 } as const;
 
-/** Uptime check of the web server alone (PS-8), outside `BFF_ENDPOINTS`; `proxy.ts` names the path too. */
-export const UPTIME_CHECK_PATH = '/health';
+/** The web server's own health routes (global rule 1, PS-8), outside `BFF_ENDPOINTS`; `proxy.ts` names the paths too. */
+export const HEALTH_PATHS = {
+  UPTIME: '/health',
+  LIVE: '/health/live',
+  READY: '/health/ready',
+} as const;
 
 /** Crawler files the site serves (PS-4); `proxy.ts` and `next.config.ts` name these paths too. */
 export const CRAWLER_FILE_PATHS = {

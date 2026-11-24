@@ -391,4 +391,16 @@ describe('readLiveHealth', () => {
     fetchMock.mockRejectedValue(new TypeError('down'));
     expect(await cmsApiClient.readLiveHealth()).toBe(false);
   });
+
+  it('passes timeoutMs through to serverApi only when given', async () => {
+    const request = vi.spyOn(serverApi, 'request').mockResolvedValue({
+      status: 200,
+      headers: new Headers(),
+      body: { status: 'ok' },
+    });
+    await cmsApiClient.readLiveHealth({ timeoutMs: 2_000 });
+    expect(request.mock.calls[0]?.[2]).toMatchObject({ timeoutMs: 2_000 });
+    await cmsApiClient.readLiveHealth();
+    expect(request.mock.calls[1]?.[2]).not.toHaveProperty('timeoutMs');
+  });
 });
