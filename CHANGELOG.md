@@ -13,6 +13,12 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 ### Changes
 
 - web: spec: the web answers OneShield's uptime check `GET /health` on `<domain>` with 200 `{"status":"ok"}` from the web server alone (no cms-api call, no nonce CSP, not logged per check), in place of the not-found 404 it gets today; the web image and smoke-stack health checks move to `/health`, the Kubernetes probes stay TCP (flow public-site, PS-8; Q-HC1..Q-HC3 answered by the user 2026-11-23).
+- cms-api, cms-admin: spec: cms-api health moves to `/health`, `/health/live`, `/health/ready` outside `/api/v1`; probes and callers follow ([cms-api SPEC](docs/apps/cms-api/SPEC.md) API-3).
+- cms-api, cms-admin, web: health routes at `/health`, `/health/live`, `/health/ready`; `/api/v1/health/*` removed; probes move ([patch](docs/apps/cms-api/patch-cms-api-0.5.0.md)).
+
+### DevOps patches
+
+- [cms-api](docs/apps/cms-api/patch-cms-api-0.5.0.md) patch 0.5.0 (probe paths and admin-host route in one deploy commit with the new image).
 
 ## 0.4.0 (2026-11-23)
 

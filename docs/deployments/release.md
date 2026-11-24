@@ -54,7 +54,7 @@ Rules for every release:
 
 1. The cms-api pod goes `Init:0/1`, then `Running`; `kubectl -n <ns> logs <pod> -c migrate` ends with "No pending ..." or the applied list. `kubectl -n <ns> get pods` shows every pod `Running`, `READY 1/1`, restarts not climbing.
 2. `kubectl -n <ns> rollout status deploy/cms-api` (then `web`, `cms-admin`).
-3. `curl -fsS https://<domain>/api/v1/health/ready` returns `{"status":"ok"}`, answered by cms-api.
+3. `curl -fsS https://admin.<domain>/health/ready` returns `{"status":"ok"}`, answered by cms-api.
 4. `https://<domain>/` and `https://admin.<domain>/` load, and the browser console shows no CSP violations.
 5. Sign in as the owner. The Traefik access log shows real client IPs, not node IPs ([traefik.md](traefik.md) section 3).
 6. After an upload change: a media upload over a throttled link that takes more than 1 minute completes; `POST /api/v1/media` without a session returns 401 (not 502) with `Connection: close`, and a normal `GET /api/v1/...` answer carries no `Connection: close`.
