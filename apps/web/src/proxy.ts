@@ -26,13 +26,13 @@ export function proxy(request: NextRequest): NextResponse {
 
 /**
  * Everything except BFF calls (`/api/`) (route handlers set their own headers) the crawler files (`CRAWLER_FILE_PATHS`, exact paths), the health routes (`HEALTH_PATHS`, exact paths) and build assets; prefetches
- * carry no document, so they get no nonce. Must stay a static literal.
+ * carry no document, so they get no nonce. Must stay a static literal, with no capturing group (Next rejects it).
  */
 export const config = {
   matcher: [
     {
       source:
-        '/((?!api/|_next/static|_next/image|favicon.ico|robots\\.txt$|sitemap\\.xml$|health(/live|/ready)?$).*)',
+        '/((?!api/|_next/static|_next/image|favicon.ico|robots\\.txt$|sitemap\\.xml$|health$|health/live$|health/ready$).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

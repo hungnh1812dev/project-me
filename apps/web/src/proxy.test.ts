@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 
@@ -41,5 +43,14 @@ describe('proxy', () => {
     ]) {
       expect(matches.test(kept)).toBe(true);
     }
+  });
+
+  it('passes Next.js matcher validation (no capturing groups)', () => {
+    const { getMiddlewareMatchers } = createRequire(import.meta.url)(
+      'next/dist/build/analysis/get-page-static-info',
+    ) as {
+      getMiddlewareMatchers: (matcher: unknown, nextConfig: object) => { regexp: string }[];
+    };
+    expect(() => getMiddlewareMatchers(config.matcher, {})).not.toThrow();
   });
 });
