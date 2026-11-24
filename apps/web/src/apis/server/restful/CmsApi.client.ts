@@ -8,7 +8,7 @@ import {
   WebApiError,
   type ApiErrorCode,
 } from '@/apis/WebApi.errors';
-import { API_ENDPOINTS } from '@/configs/Api.endpoints';
+import { API_ENDPOINTS, API_ROOT_ENDPOINTS } from '@/configs/Api.endpoints';
 import {
   API_ERROR_CODES,
   BEARER_PREFIX,
@@ -71,6 +71,8 @@ interface CallOptions {
   accessToken?: string;
   refreshToken?: string;
   body?: unknown;
+  /** `path` is a value of `API_ROOT_ENDPOINTS`. */
+  isRootPath?: boolean;
 }
 
 function requestHeaders(options: CallOptions): Record<string, string> {
@@ -130,6 +132,7 @@ async function callCmsApi(options: CallOptions): Promise<ServerApiAnswer> {
       ...(options.body === undefined ? {} : { body: options.body }),
       resolveData: (answer) => answer,
       next: { revalidate: 0 },
+      ...(options.isRootPath === true && { isRootPath: true }),
     });
   } catch (error) {
     if (error instanceof WebApiError) throw error;
@@ -296,8 +299,9 @@ export const cmsApiClient = {
     try {
       const response = await callCmsApi({
         method: 'GET',
-        path: API_ENDPOINTS.HEALTH.LIVE,
+        path: API_ROOT_ENDPOINTS.HEALTH.LIVE,
         visitorIp: undefined,
+        isRootPath: true,
       });
       if (response.status !== HTTP_STATUS.OK) return false;
       return parseAnswer(response, healthAnswer).status === HEALTH_STATUS_OK;

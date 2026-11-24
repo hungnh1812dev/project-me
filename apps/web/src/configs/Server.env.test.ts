@@ -26,6 +26,7 @@ describe('parseServerEnv', () => {
   it('reads the values and strips the trailing slash', () => {
     expect(parseServerEnv({ ...VALID, WEB_REVALIDATE_SECONDS: '0' })).toEqual({
       appApiUrl: 'http://cms-api:3000/api/v1',
+      appApiOrigin: 'http://cms-api:3000',
       appApiToken: undefined,
       revalidateOverrideSeconds: 0,
       appEnv: 'staging',
@@ -36,6 +37,13 @@ describe('parseServerEnv', () => {
       clientIpHeader: undefined,
       bffRateLimitOverrides: {},
     });
+  });
+
+  it.each([
+    ['http://cms-api:3000/api/v1/', 'http://cms-api:3000'],
+    ['https://api.example.test/api/v1', 'https://api.example.test'],
+  ])('gives the origin of APP_API_URL %s as %s', (url, origin) => {
+    expect(parseServerEnv({ ...VALID, APP_API_URL: url }).appApiOrigin).toBe(origin);
   });
 
   it.each([undefined, '', ' '])('has no revalidate override when the key is %j', (value) => {
