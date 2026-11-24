@@ -38,30 +38,72 @@ check_routing() {
   expect_status "admin SPA route /api-tokens is not taken by the /api router" 200
 }
 
+# Global RULES "Health routes": the admin host's /health is cms-api's public answer; /health/live and
+# /health/ready are the proxy's 403 on both hosts (with and without a trailing slash), never an app's.
 check_health() {
   echo "Health through the proxy"
-  local path
-  for path in "$CMS_API_HEALTH_PATH" "$CMS_API_LIVE_PATH" "$CMS_API_READY_PATH"; do
-    request GET "$ADMIN_ORIGIN$path"
-    expect_status "GET $path on the admin host" 200
-    if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "$path body is {status: ok}"; else fail "$path body: $(cat "$BODY")"; fi
+  request GET "$ADMIN_ORIGIN$CMS_API_HEALTH_PATH"
+  expect_status "GET $CMS_API_HEALTH_PATH on the admin host" 200
+  if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "$CMS_API_HEALTH_PATH body is {status: ok}"; else fail "$CMS_API_HEALTH_PATH body: $(cat "$BODY")"; fi
+  expect_header "$CMS_API_HEALTH_PATH is cms-api's (its CSP)" Content-Security-Policy "$API_CSP_VALUE"
+  local origin path
+  for origin in "$ADMIN_ORIGIN" "$WEB_ORIGIN"; do
+    for path in "$HEALTH_LIVE_PATH" "$HEALTH_LIVE_PATH/" "$HEALTH_READY_PATH" "$HEALTH_READY_PATH/"; do
+      request GET "$origin$path"
+      expect_status "$origin$path is closed by the proxy" "$PROXY_DENIED_STATUS"
+      if grep -q "$HEALTH_OK_BODY\|errorCode" "$BODY"; then fail "$origin$path body is an app's: $(head -c 200 "$BODY")"; else pass "$origin$path carries no app body"; fi
+    done
   done
-  request GET "$ADMIN_ORIGIN$API_PREFIX$CMS_API_LIVE_PATH"
-  expect_status "removed $API_PREFIX$CMS_API_LIVE_PATH is cms-api's 404" 404
+  request GET "$ADMIN_ORIGIN$API_PREFIX$HEALTH_LIVE_PATH"
+  expect_status "removed $API_PREFIX$HEALTH_LIVE_PATH is cms-api's 404" 404
   if grep -q errorCode "$BODY"; then pass "removed health path answers a cms-api error body"; else fail "removed health path body: $(cat "$BODY")"; fi
   request GET "$ADMIN_ORIGIN$ADMIN_SPA_NEAR_HEALTH_PATH"
   expect_status "$ADMIN_SPA_NEAR_HEALTH_PATH is not taken by the health router" 200
   if grep -qi '<html' "$BODY"; then pass "$ADMIN_SPA_NEAR_HEALTH_PATH is the admin SPA"; else fail "$ADMIN_SPA_NEAR_HEALTH_PATH body: $(head -c 200 "$BODY")"; fi
 }
 
+# in_network_get <service> <path> [port-expression]: asks a service from inside its own container;
+# sets IN_NETWORK_STATUS and IN_NETWORK_BODY. Nothing is stopped; the down cases are qc's.
+in_network_get() {
+  local service="$1" path="$2" port="$3" output
+  output="$(compose exec -T "$service" sh -c "wget -S -O- \"http://127.0.0.1:$port$path\" 2>&1" || true)"
+  IN_NETWORK_STATUS="$(printf '%s\n' "$output" | grep -m1 -oE 'HTTP/[0-9.]+ [0-9]+' | awk '{print $2}')"
+  IN_NETWORK_BODY="$output"
+}
+
+# Rules 2-3 inside the network: each app answers all three routes itself, on its own port.
+check_health_in_network() {
+  echo "Health inside the network"
+  local service port path
+  for service in cms-api web cms-admin; do
+    case "$service" in
+      cms-api) port="$CMS_API_CONTAINER_PORT" ;;
+      web) port='$WEB_PORT' ;;
+      cms-admin) port="$CMS_ADMIN_CONTAINER_PORT" ;;
+    esac
+    for path in "$CMS_API_HEALTH_PATH" "$HEALTH_LIVE_PATH" "$HEALTH_READY_PATH"; do
+      in_network_get "$service" "$path" "$port"
+      if [[ "$IN_NETWORK_STATUS" == "200" ]]; then pass "$service $path (200)"; else fail "$service $path: expected 200, got '$IN_NETWORK_STATUS'"; fi
+      if [[ "$path" != "$HEALTH_READY_PATH" ]]; then
+        if grep -q "$HEALTH_OK_BODY" <<<"$IN_NETWORK_BODY"; then pass "$service $path body is {status: ok}"; else fail "$service $path body: $IN_NETWORK_BODY"; fi
+      fi
+    done
+  done
+  in_network_get cms-admin "$ADMIN_UNKNOWN_HEALTH_PATH" "$CMS_ADMIN_CONTAINER_PORT"
+  if [[ "$IN_NETWORK_STATUS" == "404" ]]; then pass "cms-admin $ADMIN_UNKNOWN_HEALTH_PATH is a 404"; else fail "cms-admin $ADMIN_UNKNOWN_HEALTH_PATH: expected 404, got '$IN_NETWORK_STATUS'"; fi
+  if grep -qi '<html' <<<"$IN_NETWORK_BODY"; then fail "cms-admin $ADMIN_UNKNOWN_HEALTH_PATH answers the app shell"; else pass "cms-admin $ADMIN_UNKNOWN_HEALTH_PATH is not the app shell"; fi
+}
+
 # D21: cms-api is reachable on the admin host only; on the web host /api/v1/* is
 # the web BFF and the removed /bff/v1 path answers web's own 404.
 check_api_absent_on_web_host() {
   local path
-  for path in "$CMS_API_LIVE_PATH" "$CMS_API_READY_PATH" "$API_PREFIX$CMS_API_LIVE_PATH"; do
+  for path in "$HEALTH_LIVE_PATH" "$HEALTH_READY_PATH"; do
     request GET "$WEB_ORIGIN$path"
-    expect_status "cms-api is not served on the web origin ($path; the web answers its own 404)" 404
+    expect_status "$path on the web origin is the proxy's, not an app's" "$PROXY_DENIED_STATUS"
   done
+  request GET "$WEB_ORIGIN$API_PREFIX$HEALTH_LIVE_PATH"
+  expect_status "cms-api is not served on the web origin ($API_PREFIX$HEALTH_LIVE_PATH; the web answers its own 404)" 404
   request GET "$WEB_ORIGIN$WEB_BFF_HEALTH_PATH"
   expect_status "web BFF answers $WEB_BFF_HEALTH_PATH" 200
   if grep -q "$HEALTH_OK_BODY" "$BODY"; then pass "web BFF health body is {status: ok}"; else fail "web BFF health body: $(cat "$BODY")"; fi
@@ -86,9 +128,9 @@ check_uptime_route() {
 
 check_trailing_slashes() {
   echo "Trailing slashes (SPEC §12-17: never 3xx)"
-  request GET "$ADMIN_ORIGIN$CMS_API_LIVE_PATH/"
-  expect_status "GET $CMS_API_LIVE_PATH/ with trailing slash" 200
-  request POST "$ADMIN_ORIGIN$CMS_API_LIVE_PATH/" -H 'Content-Type: application/json' --data '{}'
+  request GET "$ADMIN_ORIGIN$CMS_API_HEALTH_PATH/"
+  expect_status "GET $CMS_API_HEALTH_PATH/ with trailing slash" 200
+  request POST "$ADMIN_ORIGIN$CMS_API_HEALTH_PATH/" -H 'Content-Type: application/json' --data '{}'
   if [[ "$STATUS" =~ ^3 || "$STATUS" == "000" ]]; then
     fail "POST with trailing slash returned $STATUS"
   else

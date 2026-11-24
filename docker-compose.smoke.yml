@@ -1,6 +1,7 @@
 # Proxy smoke stack. Mirrors production routing (SPEC §1, §6):
 #   <SMOKE_DOMAIN>          -> web (its BFF is under /api/v1; no cms-api route)
-#   admin.<SMOKE_DOMAIN>    -> cms-admin, and /api/* and /health* -> cms-api (no StripPrefix)
+#   admin.<SMOKE_DOMAIN>    -> cms-admin, and /api/* and the public /health -> cms-api (no StripPrefix)
+#   /health/live, /health/ready on both hosts -> the proxy's own 403 (in-network only)
 #   mail.<SMOKE_DOMAIN>     -> Mailpit web UI + API (catches every email)
 # Run it through `pnpm smoke` (scripts/smoke.sh), which sets every SMOKE_* value
 # below, generates throwaway secrets, runs the assertions and tears down.
@@ -19,6 +20,17 @@ services:
       - '${SMOKE_HTTP_PORT:?set by scripts/smoke.sh}:80'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Global RULES "Health routes" rule 4: /health/live and /health/ready are for probes inside the network only.
+    # Traefik answers 403 itself (noop@internal, never forwarded); the router sits on the proxy, so it exists while any app is down.
+    # ipallowlist takes the client address only (no ipstrategy), so a forged X-Forwarded-For never gets through.
+    labels:
+      traefik.enable: 'true'
+      traefik.http.routers.health-internal.entrypoints: web
+      traefik.http.routers.health-internal.rule: (Host(`${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) || Host(`admin.${SMOKE_DOMAIN}`)) && PathRegexp(`^/health/(live|ready)/?$$`)
+      traefik.http.routers.health-internal.priority: '300'
+      traefik.http.routers.health-internal.middlewares: health-internal-only
+      traefik.http.routers.health-internal.service: noop@internal
+      traefik.http.middlewares.health-internal-only.ipallowlist.sourcerange: 127.0.0.1/32
     healthcheck:
       test: ['CMD', 'traefik', 'healthcheck', '--ping']
       interval: 2s
@@ -100,9 +112,9 @@ services:
       retries: 30
     labels:
       traefik.enable: 'true'
-      # Whole segments, not PathPrefix: /api-tokens and /healthz are admin SPA routes and must reach cms-admin; /health, /health/live and /health/ready are cms-api's (outside /api/v1).
+      # Whole segments, not PathPrefix: /api-tokens and /healthz are admin SPA routes and must reach cms-admin; only the public /health goes to cms-api (outside /api/v1); /health/live and /health/ready belong to the health-internal router on the proxy.
       traefik.http.routers.api.entrypoints: web
-      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathRegexp(`^/(api|health)(/|$$)`)
+      traefik.http.routers.api.rule: Host(`admin.${SMOKE_DOMAIN:?set by scripts/smoke.sh}`) && PathRegexp(`^/(api(/|$$)|health/?$$)`)
       traefik.http.routers.api.priority: '100'
       traefik.http.routers.api.middlewares: api-inflight
       # Upload and replace answer with Connection: close, so a rejected request
@@ -193,6 +205,14 @@ services:
         VITE_API_BASE_URL: ${SMOKE_API_BASE_URL:?set by scripts/smoke.sh}
         # Cloudflare's public always-pass Turnstile test site key (smoke build only).
         VITE_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+    environment:
+      # Required: the container refuses to start without it; /health/ready asks cms-api's /health/live here.
+      APP_API_ORIGIN: http://cms-api:3000
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8080/health/live']
+      interval: 2s
+      timeout: 3s
+      retries: 30
     labels:
       traefik.enable: 'true'
       traefik.http.routers.admin.entrypoints: web
