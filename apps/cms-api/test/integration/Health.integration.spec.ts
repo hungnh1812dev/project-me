@@ -44,6 +44,22 @@ describe('health (Postgres 17 via Testcontainers)', () => {
     },
   );
 
+  it.each(['/health', '/health/live', '/health/ready'])(
+    'GET and HEAD %s carry Cache-Control: no-store',
+    async (path) => {
+      const get = await request(app.getHttpServer()).get(path);
+      const head = await request(app.getHttpServer()).head(path);
+      expect(get.headers['cache-control']).toBe('no-store');
+      expect(head.headers['cache-control']).toBe('no-store');
+    },
+  );
+
+  it('/health/other answers the standard 404', async () => {
+    const res = await request(app.getHttpServer()).get('/health/other');
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('errorCode');
+  });
+
   it.each(['/health/', '/health/live/', '/health/ready/'])(
     'tolerates a trailing slash on %s (no redirect)',
     async (path) => {
@@ -83,5 +99,6 @@ describe('health with the database down', () => {
     const res = await request(app.getHttpServer()).get('/health/ready');
     expect(res.status).toBe(503);
     expect(res.body).toEqual({ status: 'error' });
+    expect(res.headers['cache-control']).toBe('no-store');
   });
 });
