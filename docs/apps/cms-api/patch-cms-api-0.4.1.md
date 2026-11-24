@@ -1,6 +1,6 @@
-# DevOps patch: cms-api, repo version 0.5.0
+# DevOps patch: cms-api, repo version 0.4.1
 
-What the deploy repo must change for cms-api 0.5.0, compared with the 0.4.0 setup. cms-api serves its health routes at the server root (`/health`, `/health/live`, `/health/ready`) and no longer at `/api/v1/health/*` (API-3, [cms-api SPEC](SPEC.md)), so the Kubernetes probes and the Traefik routes change; `/health/live` and `/health/ready` are no longer public (global RULES "Health routes" rule 4). Apply staging first, then production.
+What the deploy repo must change for cms-api 0.4.1, compared with the 0.4.0 setup. cms-api serves its health routes at the server root (`/health`, `/health/live`, `/health/ready`) and no longer at `/api/v1/health/*` (API-3, [cms-api SPEC](SPEC.md)), so the Kubernetes probes and the Traefik routes change; `/health/live` and `/health/ready` are no longer public (global RULES "Health routes" rule 4). Apply staging first, then production.
 
 | Item                                 | Deploy repo object                                | Change                                                                                                                                                                                                | Target state                                               |
 | ------------------------------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -11,8 +11,8 @@ What the deploy repo must change for cms-api 0.5.0, compared with the 0.4.0 setu
 
 ## Order
 
-1. Put items 1 to 4, the new cms-api image tag (`APP_IMAGE_TAG`), and the web and cms-admin items of the same release ([web patch 0.5.0](../web/patch-web-0.5.0.md), [cms-admin patch 0.5.0](../cms-admin/patch-cms-admin-0.5.0.md): their images, probes, `APP_API_ORIGIN` and the NetworkPolicy rule) in one deploy commit. A new pod with the old probes never becomes ready (the old paths answer 404); an old pod with the new probes is killed.
-2. All three app images ship together; the cms-admin and web status cards and `/health/ready` read cms-api and show it down until cms-api 0.5.0 runs.
+1. Put items 1 to 4, the new cms-api image tag (`APP_IMAGE_TAG`), and the web and cms-admin items of the same release ([web patch 0.4.1](../web/patch-web-0.4.1.md), [cms-admin patch 0.4.1](../cms-admin/patch-cms-admin-0.4.1.md): their images, probes, `APP_API_ORIGIN` and the NetworkPolicy rule) in one deploy commit. A new pod with the old probes never becomes ready (the old paths answer 404); an old pod with the new probes is killed.
+2. All three app images ship together; the cms-admin and web status cards and `/health/ready` read cms-api and show it down until cms-api 0.4.1 runs.
 3. Checks ([cms-api SPEC](SPEC.md) API-3 "Check"): `GET https://admin.<domain>/health` answers 200 `{"status":"ok"}` from cms-api; `https://admin.<domain>/health/live` and `/health/ready` answer 403 from Traefik (the same on `<domain>`); `/api/v1/health/live` answers cms-api's 404; on `<domain>`, `/health` is still the web's check; readiness in the cluster: `kubectl -n <ns> exec deploy/cms-api -- wget -qO- http://127.0.0.1:3000/health/ready` answers 200 `{"status":"ok"}`, and 503 with the database stopped while `/health/live` stays 200; both status cards show cms-api up.
 
 ## Rollback
