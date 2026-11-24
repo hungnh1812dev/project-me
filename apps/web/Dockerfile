@@ -52,6 +52,6 @@ COPY --from=build --chown=1000:1000 /repo/apps/web/public ./apps/web/public
 USER 1000:1000
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget -q -O /dev/null "http://127.0.0.1:${WEB_PORT}/" || exit 1
+  CMD wget -q -O /dev/null "http://127.0.0.1:${WEB_PORT}/health" || exit 1
 # server.js reads PORT; WEB_PORT is the name this project documents.
 CMD ["sh", "-c", "PORT=$WEB_PORT exec node apps/web/server.js"]

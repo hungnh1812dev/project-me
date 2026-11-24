@@ -53,6 +53,13 @@ WEB_SLASH_PATH="$WEB_UNKNOWN_PATH/"
 HEALTH_OK_BODY='"status":"ok"'
 # The web BFF owns /api/v1/* on the web host; its old path /bff/v1 is removed (404, no alias).
 WEB_BFF_HEALTH_PATH="/api/v1/health"
+# OneShield's uptime check: answered by the web server alone, never by cms-api.
+WEB_UPTIME_PATH="/health"
+# cms-api health routes sit at the root, outside /api/v1; the admin host routes them to cms-api.
+CMS_API_HEALTH_PATH="/health"
+CMS_API_LIVE_PATH="/health/live"
+CMS_API_READY_PATH="/health/ready"
+ADMIN_SPA_NEAR_HEALTH_PATH="/healthz"
 WEB_REMOVED_BFF_HEALTH_PATH="/bff/v1/health"
 BFF_CACHE_CONTROL="no-store"
 JWT_ACCESS_KID="smoke"
@@ -240,9 +247,9 @@ compose up ${BUILD_FLAG[@]+"${BUILD_FLAG[@]}"} --detach --wait --wait-timeout "$
 echo "Waiting for the API behind the proxy..."
 deadline=$((SECONDS + TIMEOUT_SECONDS))
 # Traefik only routes a container once it reports healthy; until then /api
-# falls through to the admin SPA (200 + HTML), so wait for the JSON body.
+# and /health* fall through to the admin SPA (200 + HTML), so wait for the JSON body.
 api_ready() {
-  request GET "$ADMIN_ORIGIN$API_PREFIX/health/ready"
+  request GET "$ADMIN_ORIGIN$CMS_API_READY_PATH"
   [[ "$STATUS" == "200" ]] && grep -q "$HEALTH_OK_BODY" "$BODY"
 }
 web_home_ready() {
@@ -259,7 +266,7 @@ wait_until_ready() {
     sleep "$POLL_INTERVAL_SECONDS"
   done
 }
-wait_until_ready api_ready "$ADMIN_ORIGIN$API_PREFIX/health/ready"
+wait_until_ready api_ready "$ADMIN_ORIGIN$CMS_API_READY_PATH"
 # The web route can lag the API: Traefik may not route it yet, and the first
 # render of / is GraphQL-backed. Assert routing only once / answers 200.
 echo "Waiting for the web home page behind the proxy..."
@@ -269,6 +276,7 @@ check_routing
 check_security_headers
 check_health
 check_api_absent_on_web_host
+check_uptime_route
 check_trailing_slashes
 check_cors
 

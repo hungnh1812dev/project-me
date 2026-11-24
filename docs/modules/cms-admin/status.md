@@ -14,7 +14,7 @@ Flows: none yet.
 
 ## Purpose
 
-Reads `GET /api/v1/health/live` for the status card of the admin home page.
+Reads `GET /health/live` on the cms-api origin (outside `/api/v1`, API-3) for the status card of the admin home page.
 
 ## Techniques
 

@@ -22,12 +22,12 @@ Scope in v1: one cluster per environment, Traefik as the ingress controller, **o
 
 ## 2. Workloads
 
-| Workload          | Kind       | Replicas | Containers                                                                         | Probes                                                           | Strategy                                               |
-| ----------------- | ---------- | -------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------ |
-| `cms-api`         | Deployment | 1        | init `migrate` (`npm run --silent deploy:migrate`), main `cms-api` (image default) | live `/api/v1/health/live`, ready `/api/v1/health/ready` on 3000 | `RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0`    |
-| `web`             | Deployment | 1        | `web`                                                                              | TCP on 8080 (section 4)                                          | same                                                   |
-| `cms-admin`       | Deployment | 1        | `cms-admin`                                                                        | `/` on 8080                                                      | same                                                   |
-| `postgres-backup` | CronJob    | -        | `dump`                                                                             | -                                                                | `concurrencyPolicy: Forbid` ([backups.md](backups.md)) |
+| Workload          | Kind       | Replicas | Containers                                                                         | Probes                                             | Strategy                                               |
+| ----------------- | ---------- | -------- | ---------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| `cms-api`         | Deployment | 1        | init `migrate` (`npm run --silent deploy:migrate`), main `cms-api` (image default) | live `/health/live`, ready `/health/ready` on 3000 | `RollingUpdate`, `maxSurge: 1`, `maxUnavailable: 0`    |
+| `web`             | Deployment | 1        | `web`                                                                              | TCP on 8080 (section 4)                            | same                                                   |
+| `cms-admin`       | Deployment | 1        | `cms-admin`                                                                        | `/` on 8080                                        | same                                                   |
+| `postgres-backup` | CronJob    | -        | `dump`                                                                             | -                                                  | `concurrencyPolicy: Forbid` ([backups.md](backups.md)) |
 
 | Image                                        | Runs as                      | Port | Role                                                 |
 | -------------------------------------------- | ---------------------------- | ---- | ---------------------------------------------------- |
@@ -108,10 +108,10 @@ spec:
           volumeMounts: # only with DB_SSL_MODE=verify-full
             - { name: database-ca, mountPath: /etc/abyss/database-ca, readOnly: true }
           livenessProbe:
-            httpGet: { path: /api/v1/health/live, port: 3000 }
+            httpGet: { path: /health/live, port: 3000 }
             periodSeconds: 10
           readinessProbe:
-            httpGet: { path: /api/v1/health/ready, port: 3000 }
+            httpGet: { path: /health/ready, port: 3000 }
             periodSeconds: 5
           resources:
             requests: { cpu: 100m, memory: 256Mi }
@@ -134,7 +134,7 @@ spec:
     - port: 3000
 ```
 
-- Probes: `GET /api/v1/health/live` and `/ready` answer `{"status":"ok"}` only; `ready` checks the database.
+- Probes: `GET /health/live` and `/health/ready` (outside `/api/v1`) answer `{"status":"ok"}` only; `/health/ready` checks the database. `GET /health` answers like `/health/live` (no database call). The cms-admin probe stays `GET /` on 8080.
 - Memory: image uploads are re-encoded with sharp, which at the 50-megapixel guard uses about 200 MB on top of the Node baseline (about 120 MB idle), so keep the limit at 768Mi or more. The numbers are starting points; adjust after watching `kubectl top pod`.
 - The image bundles the sharp binary for its own platform. After building for another architecture, check `node -e "require('sharp')"` inside the image.
 

@@ -8,7 +8,7 @@ import { SITE_HEADER_MOCK } from '../../web/src/apis/server/graphql/mocks/SiteHe
  * only. Enforced by the `no-restricted-imports` rule in `eslint.config.mjs`.
  */
 export { EN_TEXT as ADMIN_COPY } from '../../cms-admin/src/configs/locales/en';
-export { API_ENDPOINTS } from '../../cms-admin/src/configs/Api.endpoints';
+export { API_ENDPOINTS, API_ROOT_ENDPOINTS } from '../../cms-admin/src/configs/Api.endpoints';
 export { API_ERROR_CODES } from '../../cms-admin/src/configs/Http.constants';
 export {
   APP_ROUTES,

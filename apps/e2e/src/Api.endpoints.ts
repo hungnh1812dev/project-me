@@ -43,6 +43,25 @@ export const API_PATHS = {
 /** Absolute URL of a cms-api path. */
 export const apiUrl = (path: string): string => `${e2eEnv.apiBaseUrl}${path}`;
 
+/**
+ * cms-api health probes at the root of its origin (outside `/api/v1`), and the removed
+ * `/api/v1` ones. Read with `apiOriginUrl`.
+ */
+export const API_ROOT_PATHS = {
+  HEALTH: '/health',
+  HEALTH_LIVE: '/health/live',
+  HEALTH_READY: '/health/ready',
+} as const;
+
+/** Removed health paths, relative to `e2eEnv.apiBaseUrl` (read with `apiUrl`): every one answers 404. */
+export const REMOVED_API_HEALTH_PATHS = {
+  LIVE: '/health/live',
+  READY: '/health/ready',
+} as const;
+
+/** Absolute URL of a path at the root of the cms-api origin (not under `/api/v1`). */
+export const apiOriginUrl = (path: string): string => `${new URL(e2eEnv.apiBaseUrl).origin}${path}`;
+
 /** web BFF paths, relative to `e2eEnv.webUrl`. The browser calls only these on the web origin. */
 export const BFF_PATHS = {
   PREFIX: '/api/v1/',
