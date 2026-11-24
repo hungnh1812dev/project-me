@@ -9,6 +9,7 @@ import {
 
 export const HEALTH_ROUTES = {
   ROOT: 'health',
+  BARE: '',
   LIVE: 'live',
   READY: 'ready',
 } as const;
@@ -17,14 +18,17 @@ export interface HealthResponse {
   status: HealthStatus;
 }
 
-/** Probes return `{ status }` only, never internals (SPEC §6). */
+/**
+ * Probes return `{ status }` only, never internals (SPEC §6). Served at the root, outside `/api/v1` (API-3);
+ * the bare `/health` answers exactly like `/health/live`.
+ */
 @Controller(HEALTH_ROUTES.ROOT)
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);
 
   constructor(private readonly checkReadiness: CheckReadinessService) {}
 
-  @Get(HEALTH_ROUTES.LIVE)
+  @Get([HEALTH_ROUTES.BARE, HEALTH_ROUTES.LIVE])
   live(): HealthResponse {
     return { status: HEALTH_STATUS.OK };
   }

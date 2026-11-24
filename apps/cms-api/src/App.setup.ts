@@ -1,3 +1,4 @@
+import { RequestMethod } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
@@ -34,7 +35,7 @@ export function configureApp(app: NestExpressApplication, config: IAppConfig): v
   app.use(
     createRequestTimingMiddleware({
       logger: app.get<AppLogger>(APP_LOGGER),
-      skippedPathPrefixes: [`/${API_PREFIX}/${HEALTH_ROUTES.ROOT}`],
+      skippedPathPrefixes: [`/${HEALTH_ROUTES.ROOT}`],
     }),
   );
   // D17: first header-setting middleware, so parser errors (413/415) and CORS preflights carry it too.
@@ -57,7 +58,10 @@ export function configureApp(app: NestExpressApplication, config: IAppConfig): v
       maxAge: CORS_PREFLIGHT_MAX_AGE_SECONDS,
     });
   }
-  app.setGlobalPrefix(API_PREFIX);
+  // API-3: the health routes are the one exception to the /api/v1 prefix: /health and every path below it.
+  app.setGlobalPrefix(API_PREFIX, {
+    exclude: [{ path: `${HEALTH_ROUTES.ROOT}{/*path}`, method: RequestMethod.ALL }],
+  });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();
 }

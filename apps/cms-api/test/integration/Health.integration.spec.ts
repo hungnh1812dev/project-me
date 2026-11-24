@@ -23,19 +23,28 @@ describe('health (Postgres 17 via Testcontainers)', () => {
     await postgres?.stop();
   });
 
-  it('GET /api/v1/health/live → 200 { status: "ok" } only', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/health/live');
+  it.each(['/health', '/health/live'])('GET %s → 200 { status: "ok" } only', async (path) => {
+    const res = await request(app.getHttpServer()).get(path);
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: 'ok' });
   });
 
-  it('GET /api/v1/health/ready → 200 when the DB answers', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/health/ready');
+  it('GET /health/ready → 200 when the DB answers', async () => {
+    const res = await request(app.getHttpServer()).get('/health/ready');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: 'ok' });
   });
 
-  it.each(['/api/v1/health/live/', '/api/v1/health/ready/'])(
+  it.each(['/health', '/health/live', '/health/ready'])(
+    'HEAD %s answers 200 with no body',
+    async (path) => {
+      const res = await request(app.getHttpServer()).head(path);
+      expect(res.status).toBe(200);
+      expect(res.text ?? '').toBe('');
+    },
+  );
+
+  it.each(['/health/', '/health/live/', '/health/ready/'])(
     'tolerates a trailing slash on %s (no redirect)',
     async (path) => {
       const res = await request(app.getHttpServer()).get(path).redirects(0);
@@ -44,10 +53,14 @@ describe('health (Postgres 17 via Testcontainers)', () => {
     },
   );
 
-  it('routes are only served under the /api/v1 prefix', async () => {
-    const res = await request(app.getHttpServer()).get('/health/live');
-    expect(res.status).toBe(404);
-  });
+  it.each(['/api/v1/health', '/api/v1/health/live', '/api/v1/health/ready'])(
+    'the old path %s answers the standard 404',
+    async (path) => {
+      const res = await request(app.getHttpServer()).get(path).redirects(0);
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty('errorCode');
+    },
+  );
 });
 
 describe('health with the database down', () => {
@@ -61,13 +74,13 @@ describe('health with the database down', () => {
     await app?.close();
   });
 
-  it('live stays 200 (process is up)', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/health/live');
+  it.each(['/health', '/health/live'])('%s stays 200 (process is up)', async (path) => {
+    const res = await request(app.getHttpServer()).get(path);
     expect(res.status).toBe(200);
   });
 
   it('ready → 503 { status: "error" } with no internals', async () => {
-    const res = await request(app.getHttpServer()).get('/api/v1/health/ready');
+    const res = await request(app.getHttpServer()).get('/health/ready');
     expect(res.status).toBe(503);
     expect(res.body).toEqual({ status: 'error' });
   });

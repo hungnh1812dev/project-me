@@ -5,7 +5,7 @@ import { dbEnvOf, devEnv, TEST_ADMIN_ORIGIN } from '../fixtures/Env.fixture';
 import { unreachableDatabaseUrl } from '../fixtures/Postgres.fixture';
 import { createTestApp } from '../fixtures/TestApp.fixture';
 
-const LIVE_PATH = '/api/v1/health/live';
+const LIVE_PATH = '/health/live';
 const OTHER_ORIGIN = 'https://evil.example.test';
 
 /** SPEC §6 / D14: the admin origin is the only CORS origin, credentials on. */
