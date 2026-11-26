@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Button, FormAlert, useToast } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { contentEditPath } from '@configs/App.routes';
@@ -7,7 +8,12 @@ import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
 import { ItemOpenStateProvider, useItemOpenControls } from '@features/content';
 import type { DocumentRecord, DocumentTree } from '@features/content/Content.api';
-import { isMissing, toSaveError, type SaveError } from '@features/content/Content.errors';
+import {
+  invalidItemChainsOf,
+  isMissing,
+  toSaveError,
+  type SaveError,
+} from '@features/content/Content.errors';
 import { CONTENT_QUERY_KEYS, invalidateDocumentQueries } from '@features/content/Content.queries';
 import { useContentApi } from '@features/content/ContentApi.context';
 import { toDocumentTree, toFormValues, type FormValues } from '@features/content/Document.form';
@@ -15,7 +21,7 @@ import { DynamicFormRenderer } from '@features/content/DynamicFormRenderer';
 import { buildFieldTree, type FieldNode } from '@features/content/FieldTree.rules';
 import { PublishStateBadge } from '@features/content/PublishStateBadge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, type FieldErrors } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
 import { conflictDetailsOf, type ConflictDetails } from './Conflict.rules';
@@ -191,12 +197,21 @@ function DocumentForm({
   const queryClient = useQueryClient();
   const masked = useMemo<ReadonlySet<string>>(() => new Set(record?.maskedFields ?? []), [record]);
   const initial = useMemo(() => toFormValues(fields, record), [fields, record]);
-  const form = useForm<FormValues>({ defaultValues: initial });
+  const form = useForm<FormValues>({ defaultValues: initial, shouldFocusError: false });
   const { openChain } = useItemOpenControls();
+  const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<SaveError | null>(null);
   const [conflict, setConflict] = useState<ConflictDetails | null>(null);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeError, setMergeError] = useState<string | null>(null);
+
+  /** The form's own refusal: open the items holding refused fields, then focus the first one in page order. */
+  const showRefusedFields = (errors: FieldErrors<FormValues>) => {
+    flushSync(() => {
+      for (const chain of invalidItemChainsOf(errors)) openChain(chain, form.getValues());
+    });
+    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  };
 
   const showSavedToast = () =>
     showToast({ tone: 'success', title: copy.saved, key: DOCUMENT_TOAST_KEY.saved });
@@ -272,10 +287,11 @@ function DocumentForm({
   return (
     <FormProvider {...form}>
       <form
+        ref={formRef}
         noValidate
         className="grid gap-6"
         onSubmit={(event) => {
-          void form.handleSubmit((values) => save.mutate(values))(event);
+          void form.handleSubmit((values) => save.mutate(values), showRefusedFields)(event);
         }}
       >
         {error === null ? null : (

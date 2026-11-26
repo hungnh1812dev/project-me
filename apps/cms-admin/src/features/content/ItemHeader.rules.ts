@@ -1,8 +1,16 @@
 import type { ScreenText } from '@configs/locales';
 
-import { ITEM_SUBTITLE_SEPARATOR, MASKED_VALUE } from './Content.constants';
+import { FIELD_TYPE, ITEM_SUBTITLE_SEPARATOR, MASKED_VALUE } from './Content.constants';
 import { adapterFor } from './Field.registry';
 import type { FieldNode } from './FieldTree.rules';
+
+const NUMBER_TYPES: ReadonlySet<string> = new Set([
+  FIELD_TYPE.INTEGER,
+  FIELD_TYPE.DECIMAL,
+  FIELD_TYPE.BIGINTEGER,
+  FIELD_TYPE.FLOAT,
+  FIELD_TYPE.DOUBLE,
+]);
 
 type ItemCopy = Pick<ScreenText<'content'>['content']['list'], 'itemHeader' | 'itemTitle'>;
 
@@ -24,7 +32,11 @@ function childTextOf(
   if (childName === undefined) return '';
   const child = node.children.find((candidate) => candidate.name === childName);
   if (child === undefined || masked.has(child.path)) return '';
-  const text = oneLineTextOf(adapterFor(child.type).toApi(itemValues[childName]));
+  const apiValue = adapterFor(child.type).toApi(itemValues[childName]);
+  const isUnreadableNumber =
+    NUMBER_TYPES.has(child.type) && apiValue !== null && !Number.isFinite(Number(apiValue));
+  if (isUnreadableNumber) return '';
+  const text = oneLineTextOf(apiValue);
   return text === MASKED_VALUE ? '' : text;
 }
 

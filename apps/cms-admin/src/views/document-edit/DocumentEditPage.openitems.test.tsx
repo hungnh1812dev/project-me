@@ -18,6 +18,7 @@ const DOC_ID = 'doc_1';
 const OTHER_ID = 'doc_2';
 const UID_SKILL = '00000000-0000-4000-8000-00000000000a';
 const SKILL_TOGGLE = /^(Skills 1|1: )/;
+const TEAM_SIZE = /team ?size/i;
 
 const draftOf = (documentId: string, version: number, skills: unknown[]) => ({
   documentId,
@@ -127,5 +128,56 @@ describe('DocumentEditPage: open items (CE-6)', () => {
         'false',
       ),
     );
+  });
+
+  describe('a value the form refuses (CE-6)', () => {
+    const UID_EXPERIENCE = '00000000-0000-4000-8000-0000000000e1';
+    const UID_ROLE = '00000000-0000-4000-8000-0000000000e2';
+    const experience = {
+      componentUid: UID_EXPERIENCE,
+      values: { company: 'Acme' },
+      components: {
+        roles: [{ componentUid: UID_ROLE, values: { position: 'Dev' }, components: {} }],
+      },
+    };
+    const cvDraft = (extraSkills: unknown[] = []) => ({
+      ...draftOf(DOC_ID, 3, extraSkills),
+      components: { skills: extraSkills, experiences: [experience] },
+    });
+
+    it('opens the nested collapsed items and focuses the field, sending nothing', async () => {
+      const api = await openPage(contentEditPath(SLUG, DOC_ID), {
+        [`GET ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+          status: 200,
+          data: cvDraft([storedSkill]),
+        }),
+        [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({ status: 200, data: {} }),
+      });
+      await userEvent.click(await screen.findByRole('button', { name: /^Experiences 1/ }));
+      await userEvent.click(await screen.findByRole('button', { name: /^Roles 1/ }));
+      const teamSize = screen.getByLabelText(TEAM_SIZE);
+      await userEvent.type(teamSize, 'abc');
+      await userEvent.click(screen.getByRole('button', { name: /^Roles 1/ }));
+      await userEvent.click(screen.getByRole('button', { name: /^Experiences 1/ }));
+      expect(screen.getByLabelText(TEAM_SIZE, { selector: 'input' })).not.toBeVisible();
+
+      await userEvent.click(screen.getByRole('button', { name: copy.save }));
+
+      await waitFor(() => expect(screen.getByLabelText(TEAM_SIZE)).toHaveFocus());
+      expect(screen.getByLabelText(TEAM_SIZE)).toHaveAttribute('aria-invalid', 'true');
+      expect(screen.getByRole('button', { name: /^Experiences 1/ })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
+      expect(screen.getByRole('button', { name: /^Roles 1/ })).toHaveAttribute(
+        'aria-expanded',
+        'true',
+      );
+      expect(screen.getByRole('button', { name: SKILL_TOGGLE })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      );
+      expect(api.callsTo(`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`)).toHaveLength(0);
+    });
   });
 });

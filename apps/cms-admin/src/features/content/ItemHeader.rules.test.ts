@@ -23,7 +23,12 @@ const jobs = (keys: Partial<Pick<FieldNode, 'titleField' | 'subtitleField'>>): F
   label: 'Jobs',
   width: 'full',
   repeatable: true,
-  children: [child('role', 'string'), child('company', 'text'), child('years', 'integer')],
+  children: [
+    child('role', 'string'),
+    child('company', 'text'),
+    child('years', 'integer'),
+    child('rate', 'decimal'),
+  ],
   ...keys,
 });
 
@@ -101,5 +106,21 @@ describe('itemHeaderTextOf', () => {
 
   it('counts the masked placeholder as empty', () => {
     expect(header(jobs({ titleField: 'role' }), { role: MASKED_VALUE })).toBe('Jobs 2');
+  });
+
+  it.each([
+    ['years', 'abc'],
+    ['rate', 'abc'],
+  ])('counts letters in the number title %s as empty', (name, letters) => {
+    expect(header(jobs({ titleField: name }), { [name]: letters })).toBe('Jobs 2');
+  });
+
+  it('shows the subtitle alone when the number title is unreadable', () => {
+    const node = jobs({ titleField: 'years', subtitleField: 'company' });
+    expect(header(node, { years: 'abc', company: 'Acme' })).toBe('2: Acme');
+  });
+
+  it('keeps a readable decimal', () => {
+    expect(header(jobs({ titleField: 'rate' }), { rate: '1.5' })).toBe('2: 1.5');
   });
 });

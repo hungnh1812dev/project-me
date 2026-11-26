@@ -3,6 +3,7 @@ import { apiFailureOf, rateLimitedMessage } from '@apis/client/ApiFailure.errors
 import { API_ERROR_CODES, HTTP_STATUS } from '@configs/Http.constants';
 import type { ScreenText } from '@configs/locales';
 import { isAxiosError } from 'axios';
+import type { FieldErrors } from 'react-hook-form';
 
 export interface SaveError {
   message: string;
@@ -36,6 +37,48 @@ export function refusedItemPathOf(error: unknown): RefusedItem[] {
     componentName: match[1] ?? '',
     index: Number(match[2]),
   }));
+}
+
+const ARRAY_INDEX_PATTERN = /^\d+$/;
+
+function isFieldError(node: object): boolean {
+  return typeof (node as { type?: unknown }).type === 'string';
+}
+
+function itemChainOf(keys: readonly string[]): RefusedItem[] {
+  const chain: RefusedItem[] = [];
+  keys.forEach((key, position) => {
+    const next = keys[position + 1];
+    if (next !== undefined && ARRAY_INDEX_PATTERN.test(next) && !ARRAY_INDEX_PATTERN.test(key)) {
+      chain.push({ componentName: key, index: Number(next) });
+    }
+  });
+  return chain;
+}
+
+function collectRefusedKeyPaths(node: unknown, keys: string[], found: string[][]): void {
+  if (node === null || typeof node !== 'object') return;
+  if (isFieldError(node)) {
+    found.push(keys);
+    return;
+  }
+  for (const [key, child] of Object.entries(node))
+    collectRefusedKeyPaths(child, [...keys, key], found);
+}
+
+/**
+ * The items holding each field the form itself refused (CE-6), one chain per field,
+ * outermost first, from react-hook-form's error tree (`experiences.1.roles.0.teamSize`
+ * gives `experiences` 1, `roles` 0). A refused root field gives none; no chain is repeated.
+ */
+export function invalidItemChainsOf(errors: FieldErrors): RefusedItem[][] {
+  const keyPaths: string[][] = [];
+  collectRefusedKeyPaths(errors, [], keyPaths);
+  const chains = new Map<string, RefusedItem[]>();
+  for (const chain of keyPaths.map(itemChainOf)) {
+    if (chain.length > 0) chains.set(JSON.stringify(chain), chain);
+  }
+  return [...chains.values()];
 }
 
 export function serverMessage(error: unknown): string | undefined {
