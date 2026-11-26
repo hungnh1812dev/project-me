@@ -1334,3 +1334,132 @@ test.describe(
     });
   },
 );
+
+const ITEM_TITLE_TYPE = {
+  slug: 'item-titles',
+  displayName: 'Item titles',
+  kind: 'collection',
+  draftAndPublish: false,
+  fields: [
+    {
+      name: 'cards',
+      type: 'component',
+      component: 'card',
+      repeatable: true,
+      titleField: 'heading',
+      subtitleField: 'summary',
+      fields: [
+        { name: 'heading', type: 'string' },
+        { name: 'summary', type: 'text' },
+        { name: 'flag', type: 'boolean' },
+        { name: 'body', type: 'richtext' },
+        {
+          name: 'nestedBox',
+          type: 'component',
+          component: 'nestedBox',
+          fields: [{ name: 'deep', type: 'string' }],
+        },
+      ],
+    },
+  ],
+};
+
+test.describe(
+  'schema builder item title and subtitle selects (owner only)',
+  { tag: ['@cms-admin', '@cms-api', '@schema-builder'] },
+  () => {
+    test('selects offer only text-like children, follow the title, and repeatable off drops both keys from the export', async ({
+      page,
+    }) => {
+      await signInAsOwner(page);
+      await openBuilder(page);
+      const consoleErrors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') consoleErrors.push(message.text());
+      });
+      await importText(page, JSON.stringify(ITEM_TITLE_TYPE));
+      await expect(validCheck(page)).toBeVisible();
+
+      await editButton(page, 'cards').click();
+      const dialog = propertiesDialog(page);
+      const title = dialog.getByLabel(copy.property.itemTitleField);
+      const subtitle = dialog.getByLabel(copy.property.itemSubtitleField);
+      const optionTexts = (select: Locator) => select.locator('option').allTextContents();
+
+      expect(await optionTexts(title)).toEqual([copy.property.noItemTitle, 'heading', 'summary']);
+      // The subtitle never offers the chosen title.
+      expect(await optionTexts(subtitle)).toEqual([copy.property.noItemTitle, 'summary']);
+
+      await title.selectOption({ label: copy.property.noItemTitle });
+      await expect(subtitle).toBeDisabled();
+      await title.selectOption({ label: 'summary' });
+      await expect(subtitle).toBeEnabled();
+      expect(await optionTexts(subtitle)).toEqual([copy.property.noItemTitle, 'heading']);
+      await title.selectOption({ label: 'heading' });
+      await subtitle.selectOption({ label: 'summary' });
+      await closeProperties(page);
+
+      await expect(validCheck(page)).toBeVisible();
+      const download = page.getByRole('button', { name: copy.export.download });
+      const [kept] = await Promise.all([page.waitForEvent('download'), download.click()]);
+      const keptField = (
+        JSON.parse(readFileSync(await kept.path(), 'utf8')) as {
+          fields: Record<string, unknown>[];
+        }
+      ).fields[0];
+      expect(Object.keys(keptField ?? {})).toEqual([
+        'name',
+        'type',
+        'component',
+        'repeatable',
+        'titleField',
+        'subtitleField',
+        'fields',
+      ]);
+
+      await editButton(page, 'cards').click();
+      await propertiesDialog(page).getByLabel(copy.property.repeatable).uncheck();
+      await expect(propertiesDialog(page).getByLabel(copy.property.itemTitleField)).toHaveCount(0);
+      await expect(propertiesDialog(page).getByLabel(copy.property.itemSubtitleField)).toHaveCount(
+        0,
+      );
+      await closeProperties(page);
+      await expect(validCheck(page)).toBeVisible();
+      const [dropped] = await Promise.all([page.waitForEvent('download'), download.click()]);
+      const droppedField = (
+        JSON.parse(readFileSync(await dropped.path(), 'utf8')) as {
+          fields: Record<string, unknown>[];
+        }
+      ).fields[0];
+      expect(droppedField).not.toHaveProperty('titleField');
+      expect(droppedField).not.toHaveProperty('subtitleField');
+      expect(droppedField).not.toHaveProperty('repeatable');
+      expect(consoleErrors).toEqual([]);
+    });
+
+    test('a stale reference stays selected with the validator error beside the select', async ({
+      page,
+    }) => {
+      await signInAsOwner(page);
+      await openBuilder(page);
+      const consoleErrors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') consoleErrors.push(message.text());
+      });
+      const [card] = ITEM_TITLE_TYPE.fields;
+      await importText(
+        page,
+        JSON.stringify({
+          ...ITEM_TITLE_TYPE,
+          fields: [{ ...card, titleField: 'gone', subtitleField: undefined }],
+        }),
+      );
+      await editButton(page, 'cards').click();
+      const title = propertiesDialog(page).getByLabel(copy.property.itemTitleField);
+      await expect(title).toHaveValue('gone');
+      await expect(title).toHaveAttribute('aria-invalid', 'true');
+      await expect(propertiesDialog(page).getByText(/"titleField" must name/)).toBeVisible();
+      expect(consoleErrors).toEqual([]);
+    });
+  },
+);

@@ -118,6 +118,7 @@ test(
 // Real single type of the dev data (no document seeded): Not Found Page, a "Title" text field.
 const REAL_SINGLE_SLUG = 'module-not-found';
 const REAL_SINGLE_NAME = 'Not Found Page';
+const SECOND_SINGLE_SLUG = 'module-status';
 const SECOND_SINGLE_NAME = 'Module Status';
 const MENU_LABEL = ADMIN_COPY.access.nav.label;
 
@@ -132,8 +133,11 @@ test.describe(
     const menuLink = (page: Page, name: string) =>
       page.getByRole('navigation', { name: MENU_LABEL }).getByRole('link', { name });
 
-    const documentIdsOf = async (request: import('@playwright/test').APIRequestContext) => {
-      const response = await request.get(apiUrl(API_PATHS.documents(REAL_SINGLE_SLUG)), {
+    const documentIdsOf = async (
+      request: import('@playwright/test').APIRequestContext,
+      slug = REAL_SINGLE_SLUG,
+    ) => {
+      const response = await request.get(apiUrl(API_PATHS.documents(slug)), {
         headers: bearer(token),
         params: { status: 'draft' },
       });
@@ -144,10 +148,12 @@ test.describe(
     };
 
     const removeSingleDocuments = async (request: import('@playwright/test').APIRequestContext) => {
-      for (const id of await documentIdsOf(request)) {
-        await request.delete(apiUrl(API_PATHS.document(REAL_SINGLE_SLUG, id)), {
-          headers: bearer(token),
-        });
+      for (const slug of [REAL_SINGLE_SLUG, SECOND_SINGLE_SLUG]) {
+        for (const id of await documentIdsOf(request, slug)) {
+          await request.delete(apiUrl(API_PATHS.document(slug, id)), {
+            headers: bearer(token),
+          });
+        }
       }
     };
 

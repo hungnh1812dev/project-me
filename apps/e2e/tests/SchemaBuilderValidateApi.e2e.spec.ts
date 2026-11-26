@@ -256,3 +256,75 @@ test.describe(
     });
   },
 );
+
+const itemComponent = (extra: Record<string, unknown>, children?: unknown[]) => ({
+  name: 'cards',
+  type: 'component',
+  component: 'card',
+  repeatable: true,
+  fields: children ?? [
+    { name: 'heading', type: 'string' },
+    { name: 'summary', type: 'text' },
+    { name: 'flag', type: 'boolean' },
+    {
+      name: 'nestedBox',
+      type: 'component',
+      component: 'nestedBox',
+      fields: [{ name: 'deep', type: 'text' }],
+    },
+  ],
+  ...extra,
+});
+
+test.describe(
+  'content-types validate route for item title and subtitle keys (owner only)',
+  { tag: ['@cms-api', '@schema-builder'] },
+  () => {
+    test('each refusal answers on the key path and a candidate with both keys is valid', async ({
+      request,
+    }) => {
+      const owner = bearer(await ownerApiToken(request));
+      const check = async (fields: unknown[]) => {
+        const answer = await request.post(apiUrl(API_PATHS.CONTENT_TYPES_VALIDATE), {
+          data: { definition: { ...validDefinition, fields }, mode: 'create' },
+          headers: owner,
+        });
+        expect(answer.status()).toBe(HTTP.OK);
+        return (await answer.json()) as ValidateAnswer;
+      };
+      const refused = async (fields: unknown[], path: string) => {
+        const answer = await check(fields);
+        expect(answer.valid, path).toBe(false);
+        expect(
+          answer.errors.some(
+            (error) => error.path.join('.') === path && error.rule === 'schema.invalid',
+          ),
+          `${path}: ${JSON.stringify(answer.errors)}`,
+        ).toBe(true);
+      };
+
+      expect(
+        await check([itemComponent({ titleField: 'heading', subtitleField: 'summary' })]),
+      ).toEqual({ valid: true, errors: [] });
+      expect(await check([itemComponent({ titleField: 'heading' })])).toEqual({
+        valid: true,
+        errors: [],
+      });
+
+      await refused(
+        [itemComponent({ repeatable: undefined, titleField: 'heading' })],
+        'fields.0.titleField',
+      );
+      await refused([itemComponent({ titleField: 'nope' })], 'fields.0.titleField');
+      await refused([itemComponent({ titleField: 'flag' })], 'fields.0.titleField');
+      await refused([itemComponent({ titleField: 'nestedBox' })], 'fields.0.titleField');
+      await refused([itemComponent({ titleField: 'deep' })], 'fields.0.titleField');
+      await refused([itemComponent({ subtitleField: 'summary' })], 'fields.0.subtitleField');
+      await refused(
+        [itemComponent({ titleField: 'heading', subtitleField: 'heading' })],
+        'fields.0.subtitleField',
+      );
+      await refused([{ name: 'title', type: 'text', titleField: 'x' }], 'fields.0');
+    });
+  },
+);
