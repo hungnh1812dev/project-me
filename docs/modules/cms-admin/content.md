@@ -51,14 +51,14 @@ A new field type: one adapter in `Field.registry.tsx` (plus value converters in 
 content/ (19 files)
 ```
 
-Tests: 11 files (not listed).
+Tests: 12 files (not listed).
 
 | File | Description |
 |---|---|
 | `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove, up/down reorder and a collapse toggle |
 | `Content.api.ts` | `createContentApi` and the document, list, presence, bulk, publish, unpublish and discard calls and types |
 | `Content.constants.ts` | Field types, field column spans, document status, publish states, component limits, mask keys, presence timing, page size |
-| `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
+| `Content.errors.ts` | `toSaveError`, `SaveError` (with the items of a refused save), `refusedItemPathOf` (the items on `details.path`), `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
 | `Content.feature.ts` | `contentFeature`: feature registration (API service) |
 | `Content.queries.ts` | `CONTENT_QUERY_KEYS`, `useDocumentListQuery`, `useContentTypesQuery` |
 | `ContentApi.context.tsx` | React context that provides the content API |
@@ -69,7 +69,7 @@ Tests: 11 files (not listed).
 | `FieldValueInput.tsx` | `FieldValueInput`: the editor input of one field node, controlled in API value form (an empty input gives `undefined`), for reuse by other screens |
 | `FieldValues.rules.ts` | Value converters per field type (text, number text, number, boolean, datetime, json) |
 | `ItemHeader.rules.ts` | Item header text from the title and subtitle keys, with fallback and masked rules (exports `oneLineTextOf`, `itemHeaderTextOf`) |
-| `ItemOpenState.context.tsx` | Page-level open state of collapsible items, tracking of new items and the re-key after a write (exports `rekeyOpenItems`, `ItemOpenStateProvider`, `useItemOpenControls`, `useItemOpenState`) |
+| `ItemOpenState.context.tsx` | Page-level open state of collapsible items, tracking of new items, `openChain` (opens the items of a refused save) and the re-key after a write (exports `rekeyOpenItems`, `ItemOpenStateProvider`, `useItemOpenControls`, `useItemOpenState`) |
 | `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the collection list Status column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
 | `index.ts` | public exports of the feature: `FieldValueInput` |

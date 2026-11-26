@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import { ITEM_UID_KEY } from './Content.constants';
+import type { RefusedItem } from './Content.errors';
 import type { FormValues } from './Document.form';
 
 type OpenKeys = ReadonlySet<string>;
@@ -45,11 +46,25 @@ export function rekeyOpenItems(
   return next;
 }
 
+/** Form path of each item along a refused chain (`experience.1`, `experience.1.roles.0`). */
+function chainPaths(chain: readonly RefusedItem[]): string[] {
+  const paths: string[] = [];
+  let prefix = '';
+  for (const { componentName, index } of chain) {
+    prefix = `${prefix}${componentName}.${index}`;
+    paths.push(prefix);
+    prefix += '.';
+  }
+  return paths;
+}
+
 interface ItemOpenStateValue {
   openKeys: OpenKeys;
   toggle: (itemKey: string) => void;
   open: (itemKey: string) => void;
   close: (itemKey: string) => void;
+  /** Opens every item of a refused chain; an item without a uid is found by the path its list tracked. */
+  openChain: (chain: readonly RefusedItem[], values: FormValues) => void;
   /** Lists record where each item without a uid stands, for the re-key after a write. */
   trackNewItem: (itemKey: string, path: string) => void;
   untrackNewItem: (itemKey: string) => void;
@@ -90,6 +105,21 @@ export function ItemOpenStateProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
+  const openChain = useCallback(
+    (chain: readonly RefusedItem[], values: FormValues) => {
+      for (const path of chainPaths(chain)) {
+        const uid = uidAtPath(values, path);
+        if (uid !== '') {
+          open(uid);
+          continue;
+        }
+        for (const [clientKey, trackedPath] of tracked.current) {
+          if (trackedPath === path) open(clientKey);
+        }
+      }
+    },
+    [open],
+  );
   const trackNewItem = useCallback((itemKey: string, path: string) => {
     tracked.current.set(itemKey, path);
   }, []);
@@ -117,6 +147,7 @@ export function ItemOpenStateProvider({ children }: { children: ReactNode }) {
       toggle,
       open,
       close,
+      openChain,
       trackNewItem,
       untrackNewItem,
       rememberNewOpenItems,
@@ -128,6 +159,7 @@ export function ItemOpenStateProvider({ children }: { children: ReactNode }) {
       toggle,
       open,
       close,
+      openChain,
       trackNewItem,
       untrackNewItem,
       rememberNewOpenItems,

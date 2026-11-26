@@ -192,6 +192,7 @@ function DocumentForm({
   const masked = useMemo<ReadonlySet<string>>(() => new Set(record?.maskedFields ?? []), [record]);
   const initial = useMemo(() => toFormValues(fields, record), [fields, record]);
   const form = useForm<FormValues>({ defaultValues: initial });
+  const { openChain } = useItemOpenControls();
   const [error, setError] = useState<SaveError | null>(null);
   const [conflict, setConflict] = useState<ConflictDetails | null>(null);
   const [mergeOpen, setMergeOpen] = useState(false);
@@ -226,7 +227,9 @@ function DocumentForm({
       await invalidateDocumentQueries(queryClient, slug, record.documentId);
     },
     onError: (failure) => {
-      setError(toSaveError(failure, content));
+      const saveError = toSaveError(failure, content);
+      setError(saveError);
+      if (saveError.refusedItems !== undefined) openChain(saveError.refusedItems, form.getValues());
       const details = conflictDetailsOf(failure);
       // Only worth a merge when there is a difference the role may see.
       const decidable =

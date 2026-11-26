@@ -234,6 +234,46 @@ describe('DocumentEditPage: edit draft', () => {
     expect(body.components.skills.map((item) => item.componentUid)).toEqual([second, UID_SKILL]);
   });
 
+  it('opens the nested collapsed items that hold the refused field', async () => {
+    const experienceUid = '00000000-0000-4000-8000-0000000000e1';
+    const roleUid = '00000000-0000-4000-8000-0000000000e2';
+    await open(contentEditPath(SLUG, DOC_ID), {
+      ...getDraft(
+        draft({
+          components: {
+            skills: [
+              {
+                componentUid: UID_SKILL,
+                values: { level: 'Senior', skill: 'React' },
+                components: {},
+              },
+            ],
+            experiences: [
+              {
+                componentUid: experienceUid,
+                values: { company: 'Acme' },
+                components: { roles: [{ componentUid: roleUid, values: {}, components: {} }] },
+              },
+            ],
+          },
+        }),
+      ),
+      [`PUT ${DOCUMENTS.BY_ID(SLUG, DOC_ID)}`]: () => ({
+        status: 400,
+        data: {
+          errorCode: 'DOCUMENT_INVALID',
+          message: 'refused',
+          details: { path: 'components.experiences[0].components.roles[0].values.position' },
+        },
+      }),
+    });
+    await userEvent.type(await screen.findByLabelText('Name'), '!');
+    expect(screen.queryAllByRole('button', { expanded: true })).toHaveLength(0);
+    await userEvent.click(screen.getByRole('button', { name: copy.save }));
+    await screen.findByRole('alert');
+    await waitFor(() => expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(2));
+  });
+
   it('renders masked fields read-only and never sends them', async () => {
     const { api } = await open(contentEditPath(SLUG, DOC_ID), {
       ...getDraft(

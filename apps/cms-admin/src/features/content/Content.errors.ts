@@ -9,6 +9,33 @@ export interface SaveError {
   tone: FormAlertTone;
   /** A stale version: the page offers "Reload latest version". */
   conflict: boolean;
+  /** The items holding the refused field, outermost first; set only for a refused value (CE-6). */
+  refusedItems?: RefusedItem[];
+}
+
+/** One item on the path of a refused field: its component name and its position in that list. */
+export interface RefusedItem {
+  componentName: string;
+  index: number;
+}
+
+const REFUSED_ITEM_PATTERN = /components\.([^.[\]]+)\[(\d+)\]/g;
+
+/**
+ * The items named by `details.path` of a `DOCUMENT_INVALID` answer, e.g.
+ * `components.experience[1].components.roles[0].values.name`. A path naming no item
+ * (a root value, a required list) or no readable path gives none; never the message text.
+ */
+export function refusedItemPathOf(error: unknown): RefusedItem[] {
+  const failure = apiFailureOf(error);
+  if (failure.kind !== 'http' || failure.errorCode !== API_ERROR_CODES.DOCUMENT_INVALID) return [];
+  const details = (error as { response?: { data?: { details?: { path?: unknown } } } }).response
+    ?.data?.details;
+  if (typeof details?.path !== 'string') return [];
+  return [...details.path.matchAll(REFUSED_ITEM_PATTERN)].map((match) => ({
+    componentName: match[1] ?? '',
+    index: Number(match[2]),
+  }));
 }
 
 export function serverMessage(error: unknown): string | undefined {
@@ -48,6 +75,7 @@ export function toSaveError(error: unknown, text: ScreenText<'content'>): SaveEr
           tone: 'error',
           conflict: false,
           message: detail === undefined ? copy.invalidFallback : copy.invalid(detail),
+          refusedItems: refusedItemPathOf(error),
         };
       }
       return { tone: 'error', conflict: false, message: copy.unexpected };
