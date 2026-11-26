@@ -33,6 +33,7 @@ const TEXT_LIKE = {
   maskedValue: 'sentinel',
   referencesMedia: false,
   acceptsDefault: true,
+  canTitleItem: true,
   graphqlOutput: 'String',
   coerceValue: coerceText,
 } as const satisfies FieldTypeSpec;
@@ -47,6 +48,7 @@ const NUMBER_LIKE = {
   maskedValue: 'null',
   referencesMedia: false,
   acceptsDefault: true,
+  canTitleItem: true,
 } as const;
 
 export const FIELD_TYPE_SPECS = {
@@ -55,6 +57,7 @@ export const FIELD_TYPE_SPECS = {
   // The only richtext rule: no path stores the string as it came.
   richtext: {
     ...TEXT_LIKE,
+    canTitleItem: false,
     coerceValue: (value, context) =>
       typeof value === 'string'
         ? sanitizeRichtext(value, { imageOrigins: context?.richtextImageOrigins })
@@ -67,6 +70,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: true,
     graphqlOutput: 'Int',
     coerceValue: (value, context) =>
       Number.isInteger(value) &&
@@ -101,6 +105,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: true,
     graphqlOutput: 'Decimal',
     coerceValue: (value) => {
       if (typeof value === 'number') {
@@ -116,6 +121,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: false,
     graphqlOutput: 'Boolean',
     coerceValue: (value) => (typeof value === 'boolean' ? value : undefined),
   },
@@ -126,6 +132,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: true,
     graphqlOutput: 'Date',
     coerceValue: (value) => (typeof value === 'string' ? parseDate(value) : undefined),
   },
@@ -136,6 +143,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: true,
     graphqlOutput: 'DateTime',
     coerceValue: (value) => (typeof value === 'string' ? parseDatetime(value) : undefined),
   },
@@ -146,6 +154,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: true,
     graphqlOutput: 'Time',
     coerceValue: (value) => (typeof value === 'string' ? parseTime(value) : undefined),
   },
@@ -164,6 +173,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: false,
     acceptsDefault: true,
+    canTitleItem: false,
     graphqlOutput: 'Json',
     // Any JSON value is valid; the column encode below only serializes it.
     coerceValue: (value) => value,
@@ -177,6 +187,7 @@ export const FIELD_TYPE_SPECS = {
     maskedValue: 'null',
     referencesMedia: true,
     acceptsDefault: false,
+    canTitleItem: false,
     graphqlOutput: 'Media',
     // The file's public `document_id`; the internal id never crosses the API.
     coerceValue: (value) => (typeof value === 'string' ? parseUuid(value) : undefined),
