@@ -36,6 +36,8 @@ React 19, react-hook-form, TanStack Query, axios (API client), `@abyss/form-comm
 
 A field label is the definition's `displayName`, else `labelOf(name)` (`techStack` -> `Tech Stack`); `FieldTree.rules.ts` is the only place labels are made (component group headings and item titles reuse the node label). `text` is a one-line input, `string` a multi-line text area. `biginteger` keeps its digit string end to end (never `Number`), `float` and `double` are sent as numbers, `time` uses `TimePicker`, and `enumeration` is a select of the field's `options` (a stored value no longer listed stays as an extra "not allowed" choice until another is picked). Each field level is a 6-column grid: `FIELD_COLUMN_SPAN` (`Content.constants.ts`) maps the field `width` (`1/3` -> 2, `1/2` -> 3, `full` -> 6; absent = `full`) to a column span from `sm` up; below `sm` every field takes the row, and a component group always spans the row. A field's `default` (API value form, `FieldNode.defaultValue`) fills a new document and a new component entry through the same adapter `toForm` as a stored value; a stored document is never filled. `FieldValueInput` (exported from `index.ts`) is the one input of a field in API value form for other screens.
 
+The header text of an item of a repeatable component (CE-7) is made by `itemHeaderTextOf` in `ItemHeader.rules.ts` from the component's `titleField` and `subtitleField` (carried on `FieldNode`): `{position}: {title} - {subtitle}`, the subtitle alone when the title is empty, today's `{label} {position}` when both are empty or no `titleField` is set. Values go through the field adapter's `toApi` and `oneLineTextOf`; an absent child, a masked path or `MASKED_VALUE` counts as empty. All header text is copy (`content.list`).
+
 ## Where to change what
 
 A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`. A new document write (create, update, merge, lifecycle) calls `invalidateDocumentQueries(queryClient, slug, documentId?)` from `Content.queries.ts`, the one place that says which cached answers a write makes stale (the type's lists and, with an id, that draft).
@@ -46,10 +48,10 @@ A new field type: one adapter in `Field.registry.tsx` (plus value converters in 
 <!-- prettier-ignore-start -->
 
 ```
-content/ (17 files)
+content/ (18 files)
 ```
 
-Tests: 9 files (not listed).
+Tests: 10 files (not listed).
 
 | File | Description |
 |---|---|
@@ -66,6 +68,7 @@ Tests: 9 files (not listed).
 | `FieldTree.rules.ts` | `buildFieldTree`, `labelOf`: field tree of a content type; label is `displayName` or the generated name, with the field width |
 | `FieldValueInput.tsx` | `FieldValueInput`: the editor input of one field node, controlled in API value form (an empty input gives `undefined`), for reuse by other screens |
 | `FieldValues.rules.ts` | Value converters per field type (text, number text, number, boolean, datetime, json) |
+| `ItemHeader.rules.ts` | Item header text from the title and subtitle keys, with fallback and masked rules (exports `oneLineTextOf`, `itemHeaderTextOf`) |
 | `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the collection list Status column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
 | `index.ts` | public exports of the feature: `FieldValueInput` |

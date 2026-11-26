@@ -968,6 +968,8 @@
     "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
     "list": {
       "itemTitle": "SAMPLE NaN",
+      "itemHeader": "SAMPLE: undefined",
+      "toggleItem": "SAMPLE",
       "addSlot": "Click to add sample",
       "remove": "Remove sample NaN",
       "moveUp": "Move sample NaN up",

@@ -211,6 +211,8 @@ export const CONTENT_COPY = {
   protectedGroup: (label: string) => `${label} is protected for your role and is left unchanged.`,
   list: {
     itemTitle: (label: string, index: number) => `${label} ${index + 1}`,
+    itemHeader: (position: number, title: string) => `${position}: ${title}`,
+    toggleItem: (header: string) => header,
     addSlot: (label: string) => `Click to add ${label.toLowerCase()}`,
     remove: (label: string, index: number) => `Remove ${label.toLowerCase()} ${index + 1}`,
     moveUp: (label: string, index: number) => `Move ${label.toLowerCase()} ${index + 1} up`,
