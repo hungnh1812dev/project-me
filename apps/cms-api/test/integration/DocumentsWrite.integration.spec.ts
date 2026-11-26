@@ -282,6 +282,7 @@ describe('document write API (T21; Postgres 17 via Testcontainers)', () => {
       });
       expect(typed.status).toBe(400);
       expect((typed.body as Conflict).errorCode).toBe('DOCUMENT_INVALID');
+      expect((typed.body as { details?: unknown }).details).toEqual({ path: 'values.priority' });
       expect((await post('article', editor, [])).status).toBe(400);
       expect((await post('article', editor, { version: 9, values: {} })).status).toBe(400);
     });
