@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, FormAlert, useToast } from '@abyss/form-commons';
 import { LoadError, PageHeader, TableSkeleton, TitleSkeleton } from '@components/PageStates';
 import { contentEditPath } from '@configs/App.routes';
 import { REVIEWER_ROLE_SLUG } from '@configs/Auth.constants';
 import { useScreenText } from '@configs/locales';
 import { useCurrentUser } from '@features/auth';
+import { ItemOpenStateProvider, useItemOpenControls } from '@features/content';
 import type { DocumentRecord, DocumentTree } from '@features/content/Content.api';
 import { isMissing, toSaveError, type SaveError } from '@features/content/Content.errors';
 import { CONTENT_QUERY_KEYS, invalidateDocumentQueries } from '@features/content/Content.queries';
@@ -31,6 +32,14 @@ const DOCUMENT_TOAST_KEY = { saved: 'document-saved' } as const;
  * existing draft sends its version (a stale one is a 409 that opens the merge modal).
  */
 export function DocumentEditPage() {
+  return (
+    <ItemOpenStateProvider>
+      <DocumentEditView />
+    </ItemOpenStateProvider>
+  );
+}
+
+function DocumentEditView() {
   const copy = useScreenText('content').content;
   const { slug = '', documentId } = useParams();
   const api = useContentApi();
@@ -55,6 +64,33 @@ export function DocumentEditPage() {
         .map((f) => f.path),
     [type.data],
   );
+  const { reset, rememberNewOpenItems, rekeyRememberedItems } = useItemOpenControls();
+  const createdScope = useRef<string | null>(null);
+  const isRekeyPending = useRef(false);
+  const scope = `${slug}:${documentId ?? 'new'}`;
+
+  // Another document starts with every item closed; the document just created keeps its open items.
+  useEffect(() => {
+    if (createdScope.current === scope) {
+      createdScope.current = null;
+      return;
+    }
+    reset();
+  }, [scope, reset]);
+
+  // After a write, the open new items take the uids of the draft that loads next.
+  useEffect(() => {
+    if (!isRekeyPending.current || draft.data === undefined) return;
+    isRekeyPending.current = false;
+    rekeyRememberedItems(toFormValues(fields, draft.data));
+  }, [draft.data, fields, rekeyRememberedItems]);
+
+  const handleWritten = (createdDocumentId: string | null) => {
+    if (createdDocumentId !== null) createdScope.current = `${slug}:${createdDocumentId}`;
+    rememberNewOpenItems();
+    isRekeyPending.current = true;
+  };
+
   const displayName = type.data?.displayName;
   const title =
     displayName === undefined ? (
@@ -121,6 +157,7 @@ export function DocumentEditPage() {
           rootFieldNames={rootFieldNames}
           record={draft.data ?? null}
           onReload={() => void draft.refetch()}
+          onWritten={handleWritten}
         />
       )}
     </div>
@@ -134,6 +171,7 @@ function DocumentForm({
   rootFieldNames,
   record,
   onReload,
+  onWritten,
 }: {
   slug: string;
   fields: FieldNode[];
@@ -141,6 +179,8 @@ function DocumentForm({
   rootFieldNames: readonly string[];
   record: DocumentRecord | null;
   onReload: () => void;
+  /** A save or merge write succeeded; `createdDocumentId` is set when it created the document. */
+  onWritten: (createdDocumentId: string | null) => void;
 }) {
   const content = useScreenText('content');
   const copy = content.content;
@@ -175,6 +215,7 @@ function DocumentForm({
     onSuccess: async (written) => {
       setError(null);
       showSavedToast();
+      onWritten(record === null ? written.documentId : null);
       if (record === null) {
         await invalidateDocumentQueries(queryClient, slug);
         void navigate(contentEditPath(slug, written.documentId), {
@@ -203,6 +244,7 @@ function DocumentForm({
       setError(null);
       setConflict(null);
       setMergeOpen(false);
+      onWritten(null);
       await invalidateDocumentQueries(queryClient, slug, record?.documentId);
       showSavedToast();
     },

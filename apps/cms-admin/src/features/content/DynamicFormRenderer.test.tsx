@@ -4,6 +4,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { FIELD_COLUMN_SPAN } from './Content.constants';
 import { DynamicFormRenderer } from './DynamicFormRenderer';
 import type { FieldNode } from './FieldTree.rules';
+import { ItemOpenStateProvider } from './ItemOpenState.context';
 
 const field = (name: string, width: FieldNode['width'], children: FieldNode[] = []): FieldNode => ({
   name,
@@ -19,7 +20,9 @@ function Harness({ fields }: { fields: FieldNode[] }) {
   const form = useForm();
   return (
     <FormProvider {...form}>
-      <DynamicFormRenderer fields={fields} masked={new Set()} />
+      <ItemOpenStateProvider>
+        <DynamicFormRenderer fields={fields} masked={new Set()} />
+      </ItemOpenStateProvider>
     </FormProvider>
   );
 }

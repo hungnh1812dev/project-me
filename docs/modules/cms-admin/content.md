@@ -18,7 +18,7 @@ Everything cms-admin needs to list and edit content documents: the content API c
 
 ## Techniques
 
-`FIELD_REGISTRY` maps each field type to an adapter (render, to-form, to-api), so a new type is one entry. `Document.form` converts between the API tree and form values. Components use `useFieldArray` with up/down reorder that keeps focus. Richtext (Tiptap) loads lazily. Masked fields stay masked (`MASKED_VALUE`).
+`FIELD_REGISTRY` maps each field type to an adapter (render, to-form, to-api), so a new type is one entry. `Document.form` converts between the API tree and form values. Components use `useFieldArray` with up/down reorder that keeps focus. Items of a repeatable component collapse (CE-6): the open keys live in `ItemOpenState.context` (the page owns the provider, above the keyed form), keyed by `componentUid` or by the row id while an item has no uid; after a write the page re-keys the open new items to the uids of the refetched draft. Richtext (Tiptap) loads lazily. Masked fields stay masked (`MASKED_VALUE`).
 
 ## Technologies
 
@@ -40,7 +40,7 @@ The header text of an item of a repeatable component (CE-7) is made by `itemHead
 
 ## Where to change what
 
-A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`. A new document write (create, update, merge, lifecycle) calls `invalidateDocumentQueries(queryClient, slug, documentId?)` from `Content.queries.ts`, the one place that says which cached answers a write makes stale (the type's lists and, with an id, that draft).
+A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`. The open or closed state of items: `ItemOpenState.context.tsx` (hooks and re-key); the toggle and header are in `ComponentList.tsx`; the page wires reset and re-key in `DocumentEditPage.tsx`. A new document write (create, update, merge, lifecycle) calls `invalidateDocumentQueries(queryClient, slug, documentId?)` from `Content.queries.ts`, the one place that says which cached answers a write makes stale (the type's lists and, with an id, that draft).
 
 ## Files
 
@@ -48,14 +48,14 @@ A new field type: one adapter in `Field.registry.tsx` (plus value converters in 
 <!-- prettier-ignore-start -->
 
 ```
-content/ (18 files)
+content/ (19 files)
 ```
 
-Tests: 10 files (not listed).
+Tests: 11 files (not listed).
 
 | File | Description |
 |---|---|
-| `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove and up/down reorder |
+| `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove, up/down reorder and a collapse toggle |
 | `Content.api.ts` | `createContentApi` and the document, list, presence, bulk, publish, unpublish and discard calls and types |
 | `Content.constants.ts` | Field types, field column spans, document status, publish states, component limits, mask keys, presence timing, page size |
 | `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
@@ -69,6 +69,7 @@ Tests: 10 files (not listed).
 | `FieldValueInput.tsx` | `FieldValueInput`: the editor input of one field node, controlled in API value form (an empty input gives `undefined`), for reuse by other screens |
 | `FieldValues.rules.ts` | Value converters per field type (text, number text, number, boolean, datetime, json) |
 | `ItemHeader.rules.ts` | Item header text from the title and subtitle keys, with fallback and masked rules (exports `oneLineTextOf`, `itemHeaderTextOf`) |
+| `ItemOpenState.context.tsx` | Page-level open state of collapsible items, tracking of new items and the re-key after a write (exports `rekeyOpenItems`, `ItemOpenStateProvider`, `useItemOpenControls`, `useItemOpenState`) |
 | `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the collection list Status column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
 | `index.ts` | public exports of the feature: `FieldValueInput` |
