@@ -53,6 +53,35 @@ const ALL_ARTICLE_PATHS = [
   ...SYSTEM_PATHS,
 ];
 
+/** Test-only type: a repeatable component with item title keys, and one without (CM-14). */
+const TIMELINE_DEFINITION = {
+  slug: 'timeline',
+  displayName: 'Timeline',
+  kind: 'collection',
+  draftAndPublish: false,
+  fields: [
+    {
+      name: 'steps',
+      type: 'component',
+      component: 'step',
+      repeatable: true,
+      titleField: 'label',
+      subtitleField: 'owner',
+      fields: [
+        { name: 'label', type: 'string' },
+        { name: 'owner', type: 'string' },
+      ],
+    },
+    {
+      name: 'notes',
+      type: 'component',
+      component: 'timelineNote',
+      repeatable: true,
+      fields: [{ name: 'text', type: 'text' }],
+    },
+  ],
+} as const;
+
 let ipCounter = 0;
 function nextIp(): string {
   ipCounter += 1;
@@ -83,7 +112,11 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
     db = openPrisma(databaseUrl);
     await seedSystemRoles(db.prisma);
     await seedRolePermissions(db.prisma);
-    const registry = ContentTypeRegistry.fromDefinitions([ARTICLE_DEFINITION, NOTE_DEFINITION]);
+    const registry = ContentTypeRegistry.fromDefinitions([
+      ARTICLE_DEFINITION,
+      NOTE_DEFINITION,
+      TIMELINE_DEFINITION,
+    ]);
     app = await createTestApp(
       devEnv({
         ...dbEnvOf(databaseUrl),
@@ -185,7 +218,7 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
 
   it('gives the owner every type with every field, sorted by slug', async () => {
     const types = await list(owner);
-    expect(types.map((t) => t.slug)).toEqual(['article', 'note']);
+    expect(types.map((t) => t.slug)).toEqual(['article', 'note', 'timeline']);
     const [article, note] = types as [ContentTypeView, ContentTypeView];
     expect(article).toMatchObject({
       slug: 'article',
@@ -249,15 +282,28 @@ describe('content types API (T17b; Postgres 17 via Testcontainers)', () => {
     expect(field(article, 'documentId')?.conditionKind).toBe('uuid');
   });
 
+  it('carries titleField and subtitleField on a component view only when the schema sets them', async () => {
+    const res = await getOne(owner, 'timeline');
+    expect(res.status).toBe(200);
+    const timeline = res.body as ContentTypeView;
+    expect(field(timeline, 'steps')).toMatchObject({ titleField: 'label', subtitleField: 'owner' });
+    expect(field(timeline, 'notes')).not.toHaveProperty('titleField');
+    expect(field(timeline, 'notes')).not.toHaveProperty('subtitleField');
+    expect(field(timeline, 'steps.label')).not.toHaveProperty('titleField');
+    expect(field(timeline, 'createdBy')).not.toHaveProperty('titleField');
+    const article = (await getOne(owner, 'article')).body as ContentTypeView;
+    expect(field(article, 'reference')).not.toHaveProperty('titleField');
+  });
+
   it('gives the editor (content `*` read, all fields) every type', async () => {
     const types = await list(editor);
-    expect(types.map((t) => t.slug)).toEqual(['article', 'note']);
+    expect(types.map((t) => t.slug)).toEqual(['article', 'note', 'timeline']);
     expect(pathsOf(types[0] as ContentTypeView)).toEqual(ALL_ARTICLE_PATHS);
   });
 
   it('gives a role manager the full catalog even without any content read', async () => {
     const types = await list(roleManager);
-    expect(types.map((t) => t.slug)).toEqual(['article', 'note']);
+    expect(types.map((t) => t.slug)).toEqual(['article', 'note', 'timeline']);
     expect(pathsOf(types[0] as ContentTypeView)).toEqual(ALL_ARTICLE_PATHS);
     const one = await getOne(roleManager, 'note');
     expect(one.status).toBe(200);

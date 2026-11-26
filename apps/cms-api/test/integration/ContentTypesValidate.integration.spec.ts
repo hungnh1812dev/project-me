@@ -205,6 +205,45 @@ describe('POST /content-types/validate (SCB-2, SB-10; Postgres 17 via Testcontai
     ]);
   });
 
+  it('accepts valid item title keys and reports each CM-14 refusal on its key path', async () => {
+    const component = (extra: Record<string, unknown>, children?: unknown[]) => ({
+      ...NEW_DEFINITION,
+      fields: [
+        {
+          name: 'steps',
+          type: 'component',
+          component: 'step',
+          repeatable: true,
+          fields: children ?? [
+            { name: 'label', type: 'string' },
+            { name: 'owner', type: 'string' },
+            { name: 'body', type: 'richtext' },
+          ],
+          ...extra,
+        },
+      ],
+    });
+    const check = async (definition: unknown) =>
+      (await validate(owner, { definition, mode: 'create' })).body as ValidateBody;
+    expect(await check(component({ titleField: 'label', subtitleField: 'owner' }))).toEqual({
+      valid: true,
+      errors: [],
+    });
+    const refusals: [Record<string, unknown>, unknown[]?][] = [
+      [{ titleField: 'missing' }],
+      [{ titleField: 'body' }],
+      [{ subtitleField: 'owner' }],
+      [{ titleField: 'label', subtitleField: 'label' }],
+      [{ titleField: 'label', repeatable: false }],
+    ];
+    for (const [extra, children] of refusals) {
+      const body = await check(component(extra, children));
+      expect(body.valid).toBe(false);
+      const key = 'subtitleField' in extra ? 'subtitleField' : 'titleField';
+      expect(body.errors.map((error) => error.path)).toContainEqual(['fields', 0, key]);
+    }
+  });
+
   it('reports a collision for a registered slug in create mode', async () => {
     const res = await validate(owner, { definition: ARTICLE_DEFINITION, mode: 'create' });
     expect(res.status).toBe(200);
