@@ -6,9 +6,45 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+## 0.5.0 (2026-11-27)
+
+Repo 0.5.0; cms-api 0.5.0, cms-admin 0.4.0, e2e 0.1.3; web 0.4.1: repeatable component items collapse on page open and show a title and subtitle from the item's fields, and a refused save opens the items that hold the refused value.
+
+### Versions
+
+| Part                  | Version | Changed in this release |
+| --------------------- | ------- | ----------------------- |
+| repo                  | 0.5.0   | yes                     |
+| `@abyss/cms-api`      | 0.5.0   | yes                     |
+| `@abyss/cms-admin`    | 0.4.0   | yes                     |
+| `@abyss/web`          | 0.4.1   | no                      |
+| `@abyss/base-config`  | 0.1.0   | no                      |
+| `@abyss/form-commons` | 0.1.0   | no                      |
+| e2e                   | 0.1.3   | yes                     |
+
+### New features
+
+- cms-api: a repeatable component accepts and checks `titleField` and an optional `subtitleField`.
+- cms-api: component views carry `titleField` and `subtitleField`.
+- cms-api: `DOCUMENT_INVALID` details name the refused input path.
+- cms-admin: repeatable component items collapse when the page opens, with page-level open state.
+- cms-admin: item headers read `{position}: {title}{ - subtitle}` from `titleField` and `subtitleField`.
+- cms-admin: the field properties popup has item title and subtitle selects.
+- cms-admin: the schema builder tree keeps `titleField` and `subtitleField`.
+- cms-admin: collapsed items holding a refused value open, and a refused save opens the items holding the refused field.
+
 ### Changes
 
 - cms-api, cms-admin: spec: a repeatable component may name a `titleField` and an optional `subtitleField` (direct child fields of a one-line text form, metadata only); the document form collapses every repeatable component item when the page opens and shows each item as `{position}: {title}{ - subtitle}`, falling back to today's item title; the schema builder sets both keys and exports them; a refused document write (`DOCUMENT_INVALID`) names the refused input path in `details.path` so cms-admin opens the item that holds it (flows content-modeling CM-14, content-editing CE-6, CE-7, schema-builder SB-8, SB-12; user 2026-11-26).
+- e2e: cover the item title fields in the document form, collapsed items and the title header on a document edit, and the item title and subtitle keys in the schema builder.
+
+### Bug fixes
+
+- None.
+
+### DevOps patches
+
+- None.
 
 ## 0.4.1 (2026-11-24)
 
