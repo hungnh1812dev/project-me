@@ -34,6 +34,10 @@ export interface ContentFieldView {
   readonly default?: unknown;
   /** Only components can be repeatable. */
   readonly repeatable: boolean;
+  /** Child name whose value titles an item of a repeatable component; absent when the schema sets none (CM-14). */
+  readonly titleField?: string;
+  /** Child name shown beside the item title; absent when the schema sets none (CM-14). */
+  readonly subtitleField?: string;
   /** A scalar field at the root (not inside a component). */
   readonly rootScalar: boolean;
   /**
@@ -124,6 +128,10 @@ export function contentTypeView(
           : { options: field.options }),
         ...(defaultValue === undefined ? {} : { default: defaultValue }),
         repeatable: component && field.repeatable === true,
+        ...(component && field.titleField !== undefined ? { titleField: field.titleField } : {}),
+        ...(component && field.subtitleField !== undefined
+          ? { subtitleField: field.subtitleField }
+          : {}),
         rootScalar,
         conditionKind: rootScalar ? (conditionField(field.name)?.kind ?? null) : null,
         sensitive: field.sensitive === true,

@@ -49,6 +49,10 @@ export interface ComponentFieldDefinition extends BaseFieldDefinition {
   /** Names the component table (snake_case of this value); `name` stays the API key. */
   component: string;
   repeatable?: boolean | undefined;
+  /** `repeatable` only: `name` of the direct child whose value heads a collapsed item (CM-14). */
+  titleField?: string | undefined;
+  /** Needs `titleField`; a different child, shown beside the title (CM-14). */
+  subtitleField?: string | undefined;
   fields: FieldDefinition[];
 }
 
@@ -155,12 +159,42 @@ const scalarFieldSchema = z
     }
   });
 
+const ITEM_TITLE_KEYS = ['titleField', 'subtitleField'] as const;
+type ItemTitleKey = (typeof ITEM_TITLE_KEYS)[number];
+
+/** Why a `titleField` / `subtitleField` of a component is refused (CM-14); names the key and the child, never a value. */
+function itemTitleIssueOf(
+  field: Pick<ComponentFieldDefinition, ItemTitleKey | 'repeatable' | 'fields'>,
+  key: ItemTitleKey,
+): string | undefined {
+  const childName = field[key];
+  if (childName === undefined) return undefined;
+  if (field.repeatable !== true) return `"${key}" is allowed only on a repeatable component.`;
+  const child = field.fields.find((candidate) => candidate.name === childName);
+  if (child === undefined) return `"${key}" must name a direct child field of the component.`;
+  if (!isTitleType(child)) {
+    return `"${key}" names the child "${child.name}", whose ${child.type} type has no one-line text form.`;
+  }
+  if (key === 'subtitleField') {
+    if (field.titleField === undefined) return `"${key}" needs a "titleField".`;
+    if (field.titleField === childName)
+      return `"${key}" must name a different child than "titleField".`;
+  }
+  return undefined;
+}
+
+function isTitleType(field: FieldDefinition): boolean {
+  return fieldTypeOf(field.type)?.canTitleItem === true;
+}
+
 const componentFieldSchema = z
   .strictObject({
     ...baseFieldShape,
     type: z.literal(COMPONENT_FIELD_TYPE),
     component: z.string(),
     repeatable: z.boolean().optional(),
+    titleField: z.string().optional(),
+    subtitleField: z.string().optional(),
     // Declared only to refuse it with a message of its own (CM-11).
     default: z.unknown().optional(),
     get fields(): z.ZodType<FieldDefinition[]> {
@@ -174,6 +208,10 @@ const componentFieldSchema = z
         path: ['default'],
         message: `A ${COMPONENT_FIELD_TYPE} field cannot have a "default".`,
       });
+    }
+    for (const key of ITEM_TITLE_KEYS) {
+      const message = itemTitleIssueOf(field, key);
+      if (message !== undefined) context.addIssue({ code: 'custom', path: [key], message });
     }
   });
 

@@ -45,7 +45,7 @@ Tests: 2 files (not listed).
 
 | File | Description |
 |---|---|
-| `ContentTypes.api.ts` | Content type and field types (a field carries `options` for `enumeration`), the catalog call and the validate call (exports `ContentTypeField`, `ContentType`, `getContentTypes`, `createContentTypesApi`, `DefinitionError`) |
+| `ContentTypes.api.ts` | Content type and field types (a field carries `options` for `enumeration`, and `titleField` / `subtitleField` on a repeatable component), the catalog call and the validate call (exports `ContentTypeField`, `ContentType`, `getContentTypes`, `createContentTypesApi`, `DefinitionError`) |
 | `ContentTypes.constants.ts` | Debounce time of the definition check (exports `SCHEMA_VALIDATE_DEBOUNCE_MS`) |
 | `ContentTypes.feature.ts` | Feature registration (exports `contentTypesFeature`) |
 | `ContentTypesApi.context.tsx` | React context and hook of the content-types API service |

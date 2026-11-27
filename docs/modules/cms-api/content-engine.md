@@ -18,7 +18,7 @@ Turns the content type definitions (JSON) into database tables in the `content` 
 
 ## Techniques
 
-Definitions (the required type `displayName`, optional field `displayName` and `width`, the optional collection-only `linkOnly` option (metadata, no SQL), and the `component` value that names each component table) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused unless a data step (`DataStep.rules`, `--data-step`) declares each one or `--allow-destructive` is passed; statements run additive first, then the data step, then the destructive ones. A component table whose `component` value changed (same content type and `apiPath`) is renamed with its data, constraints and indexes (`pairRenamedTables`), not dropped; renames are listed as `-- Renamed <old> -> <new>` lines and are not destructive. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. Richtext is always sanitized (`sanitize-html`) before it is stored.
+Definitions (the required type `displayName`, optional field `displayName` and `width`, the optional collection-only `linkOnly` option (metadata, no SQL), and the `component` value that names each component table) validated by zod + `DefinitionValidator.rules`; SQL planned from a definition snapshot (`SqlGenerator.rules`, `Naming.rules`) and written as checked migration files; destructive changes refused unless a data step (`DataStep.rules`, `--data-step`) declares each one or `--allow-destructive` is passed; statements run additive first, then the data step, then the destructive ones. A component table whose `component` value changed (same content type and `apiPath`) is renamed with its data, constraints and indexes (`pairRenamedTables`), not dropped; renames are listed as `-- Renamed <old> -> <new>` lines and are not destructive. Kysely for content rows with its own transaction runner and after-commit callbacks. Each field type is one `FieldTypeSpec` in `FIELD_TYPE_SPECS`. A repeatable component may name a direct child as `titleField` / `subtitleField` (CM-14): metadata only, checked in `DefinitionSchema.rules.ts` against the type's `canTitleItem`, no SQL. Richtext is always sanitized (`sanitize-html`) before it is stored.
 
 ## Technologies
 
@@ -30,7 +30,7 @@ NestJS 11, Kysely 0.28, PostgreSQL 17, zod, sanitize-html, Node.js `crypto`.
 
 ## Where to change what
 
-A new field type: one spec in `domain/field-types/FieldTypeRegistry.rules.ts` (and its constant in `ContentEngine.constants.ts`); a type an editor gives a value sets `acceptsDefault: true`, and a field's `default` is then checked with the type's `coerceValue` (`DefinitionSchema.rules.ts`); the documents and graphql modules pick it up. A new content type: a definition file plus `content:generate`. The migration CLIs are a tier 3 area.
+A new field type: one spec in `domain/field-types/FieldTypeRegistry.rules.ts` (and its constant in `ContentEngine.constants.ts`); a type an editor gives a value sets `acceptsDefault: true`, and a field's `default` is then checked with the type's `coerceValue` (`DefinitionSchema.rules.ts`); a type with a one-line text form sets `canTitleItem: true` so a repeatable component may use a field of it as its item title; the documents and graphql modules pick it up. A new content type: a definition file plus `content:generate`. The migration CLIs are a tier 3 area.
 
 ## Files
 

@@ -33,6 +33,7 @@ const PROFILE = {
       type: 'component',
       component: 'experience',
       repeatable: true,
+      titleField: 'company',
       fields: [
         { name: 'company', type: 'string' },
         {
@@ -92,6 +93,20 @@ describe('contentTypeView (T17b)', () => {
     });
     expect(byPath('experience')).not.toHaveProperty('width');
     expect(byPath('documentId')).not.toHaveProperty('width');
+  });
+
+  it('carries an item title key only when the schema sets it (CM-14)', () => {
+    const view = contentTypeView(
+      type,
+      catalog,
+      recordReadAccess(reviewerActor(1, 1, systemRole('reviewer')), FieldSelection.ALL),
+      VOCABULARY,
+    );
+    const byPath = (path: string) => view.fields.find((f) => f.path === path)!;
+    expect(byPath('experience')).toMatchObject({ titleField: 'company' });
+    expect(byPath('experience')).not.toHaveProperty('subtitleField');
+    expect(byPath('experience.role')).not.toHaveProperty('titleField');
+    expect(byPath('email')).not.toHaveProperty('titleField');
   });
 
   it('keeps a component that is only partly visible, without its other fields', () => {

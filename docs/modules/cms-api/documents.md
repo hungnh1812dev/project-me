@@ -69,7 +69,7 @@ Tests: 16 files (not listed).
 | `domain/ListQuery.rules.ts` | `normalizeListQuery`: list query model (filters, sort, paging) |
 | `domain/PublishState.rules.ts` | `publishStateOf`, `writesEveryField`: draft, modified or published from the two row versions; whether a field selection covers every root field |
 | `domain/TreeCloner.rules.ts` | `cloneTree`: copies a document tree for publish |
-| `domain/ValueValidator.rules.ts` | `validateTreeValues`, `countComponentRows`: values against field types and limits |
+| `domain/ValueValidator.rules.ts` | `validateTreeValues`, `countComponentRows`: values against field types and limits; each `DOCUMENT_INVALID` carries `details.path`, the refused input path (never a value) |
 | `http/Bulk.controller.ts` | `BulkController`: the bulk routes |
 | `http/Bulk.requests.ts` | Bulk request body parsers |
 | `http/BulkBodyLimit.middleware.ts` | `bulkBodyLimit`: byte limit for bulk bodies before the JSON parser |

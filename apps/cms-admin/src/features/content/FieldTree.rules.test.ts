@@ -85,4 +85,25 @@ describe('buildFieldTree defaults', () => {
     expect(tree[1]?.defaultValue).toBe(false);
     expect(tree[2]).not.toHaveProperty('defaultValue');
   });
+
+  it('carries titleField and subtitleField of a component, and omits them when unset', () => {
+    const tree = buildFieldTree([
+      {
+        ...base,
+        path: 'jobs',
+        type: 'component',
+        component: true,
+        repeatable: true,
+        rootScalar: false,
+        conditionKind: null,
+        sensitive: false,
+        titleField: 'role',
+        subtitleField: 'company',
+      },
+      field('plain', { type: 'text' }),
+    ]);
+    expect(tree[0]).toMatchObject({ titleField: 'role', subtitleField: 'company' });
+    expect(tree[1]).not.toHaveProperty('titleField');
+    expect(tree[1]).not.toHaveProperty('subtitleField');
+  });
 });

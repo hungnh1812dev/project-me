@@ -27,6 +27,24 @@ describe('field type registry', () => {
     expect(typesWhere((spec) => !spec.acceptsDefault)).toEqual(['media']);
   });
 
+  it('lets only types with a one-line text form title a component item', () => {
+    expect(typesWhere((spec) => spec.canTitleItem).sort()).toEqual(
+      [
+        'text',
+        'string',
+        'enumeration',
+        'integer',
+        'biginteger',
+        'decimal',
+        'float',
+        'double',
+        'date',
+        'datetime',
+        'time',
+      ].sort(),
+    );
+  });
+
   it('masks only text-like types with the sentinel', () => {
     expect(typesWhere((spec) => spec.maskedValue === 'sentinel')).toEqual([
       'string',

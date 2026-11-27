@@ -18,7 +18,7 @@ Everything cms-admin needs to list and edit content documents: the content API c
 
 ## Techniques
 
-`FIELD_REGISTRY` maps each field type to an adapter (render, to-form, to-api), so a new type is one entry. `Document.form` converts between the API tree and form values. Components use `useFieldArray` with up/down reorder that keeps focus. Richtext (Tiptap) loads lazily. Masked fields stay masked (`MASKED_VALUE`).
+`FIELD_REGISTRY` maps each field type to an adapter (render, to-form, to-api), so a new type is one entry. `Document.form` converts between the API tree and form values. Components use `useFieldArray` with up/down reorder that keeps focus. Items of a repeatable component collapse (CE-6): the open keys live in `ItemOpenState.context` (the page owns the provider, above the keyed form), keyed by `componentUid` or by the row id while an item has no uid; after a write the page re-keys the open new items to the uids of the refetched draft. Richtext (Tiptap) loads lazily. Masked fields stay masked (`MASKED_VALUE`).
 
 ## Technologies
 
@@ -36,9 +36,11 @@ React 19, react-hook-form, TanStack Query, axios (API client), `@abyss/form-comm
 
 A field label is the definition's `displayName`, else `labelOf(name)` (`techStack` -> `Tech Stack`); `FieldTree.rules.ts` is the only place labels are made (component group headings and item titles reuse the node label). `text` is a one-line input, `string` a multi-line text area. `biginteger` keeps its digit string end to end (never `Number`), `float` and `double` are sent as numbers, `time` uses `TimePicker`, and `enumeration` is a select of the field's `options` (a stored value no longer listed stays as an extra "not allowed" choice until another is picked). Each field level is a 6-column grid: `FIELD_COLUMN_SPAN` (`Content.constants.ts`) maps the field `width` (`1/3` -> 2, `1/2` -> 3, `full` -> 6; absent = `full`) to a column span from `sm` up; below `sm` every field takes the row, and a component group always spans the row. A field's `default` (API value form, `FieldNode.defaultValue`) fills a new document and a new component entry through the same adapter `toForm` as a stored value; a stored document is never filled. `FieldValueInput` (exported from `index.ts`) is the one input of a field in API value form for other screens.
 
+The header text of an item of a repeatable component (CE-7) is made by `itemHeaderTextOf` in `ItemHeader.rules.ts` from the component's `titleField` and `subtitleField` (carried on `FieldNode`): `{position}: {title} - {subtitle}`, the subtitle alone when the title is empty, today's `{label} {position}` when both are empty or no `titleField` is set. Values go through the field adapter's `toApi` and `oneLineTextOf`; an absent child, a masked path, `MASKED_VALUE` or an unreadable number (letters in a number type) counts as empty. All header text is copy (`content.list`).
+
 ## Where to change what
 
-A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`. A new document write (create, update, merge, lifecycle) calls `invalidateDocumentQueries(queryClient, slug, documentId?)` from `Content.queries.ts`, the one place that says which cached answers a write makes stale (the type's lists and, with an id, that draft).
+A new field type: one adapter in `Field.registry.tsx` (plus value converters in `FieldValues.rules.ts`). A new content API call: `Content.api.ts` + a key in `Content.queries.ts`. The open or closed state of items: `ItemOpenState.context.tsx` (hooks and re-key); the toggle and header are in `ComponentList.tsx`; the page wires reset and re-key in `DocumentEditPage.tsx`. The form's own refusals (a value an input rejects before sending): `invalidItemChainsOf` in `Content.errors.ts` gives the chains; the page's invalid handler opens them and focuses the first refused field (`shouldFocusError` is off, the page owns focus). A new document write (create, update, merge, lifecycle) calls `invalidateDocumentQueries(queryClient, slug, documentId?)` from `Content.queries.ts`, the one place that says which cached answers a write makes stale (the type's lists and, with an id, that draft).
 
 ## Files
 
@@ -46,17 +48,17 @@ A new field type: one adapter in `Field.registry.tsx` (plus value converters in 
 <!-- prettier-ignore-start -->
 
 ```
-content/ (17 files)
+content/ (19 files)
 ```
 
-Tests: 9 files (not listed).
+Tests: 12 files (not listed).
 
 | File | Description |
 |---|---|
-| `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove and up/down reorder |
+| `ComponentList.tsx` | `ComponentList`: repeatable component items with add, remove, up/down reorder and a collapse toggle |
 | `Content.api.ts` | `createContentApi` and the document, list, presence, bulk, publish, unpublish and discard calls and types |
 | `Content.constants.ts` | Field types, field column spans, document status, publish states, component limits, mask keys, presence timing, page size |
-| `Content.errors.ts` | `toSaveError`, `SaveError`, `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
+| `Content.errors.ts` | `toSaveError`, `SaveError` (with the items of a refused save), `refusedItemPathOf` (the items on `details.path`), `invalidItemChainsOf` (the items holding each field the form itself refused, from the react-hook-form error tree), `serverMessage`, `isMissing`: API errors to form errors (incl. `DOCUMENT_NOT_MODIFIED`) |
 | `Content.feature.ts` | `contentFeature`: feature registration (API service) |
 | `Content.queries.ts` | `CONTENT_QUERY_KEYS`, `useDocumentListQuery`, `useContentTypesQuery` |
 | `ContentApi.context.tsx` | React context that provides the content API |
@@ -66,6 +68,8 @@ Tests: 9 files (not listed).
 | `FieldTree.rules.ts` | `buildFieldTree`, `labelOf`: field tree of a content type; label is `displayName` or the generated name, with the field width |
 | `FieldValueInput.tsx` | `FieldValueInput`: the editor input of one field node, controlled in API value form (an empty input gives `undefined`), for reuse by other screens |
 | `FieldValues.rules.ts` | Value converters per field type (text, number text, number, boolean, datetime, json) |
+| `ItemHeader.rules.ts` | Item header text from the title and subtitle keys, with fallback and masked rules (exports `oneLineTextOf`, `itemHeaderTextOf`) |
+| `ItemOpenState.context.tsx` | Page-level open state of collapsible items, tracking of new items, `openChain` (opens the items of a refused save) and the re-key after a write (exports `rekeyOpenItems`, `ItemOpenStateProvider`, `useItemOpenControls`, `useItemOpenState`) |
 | `PublishStateBadge.tsx` | `PublishStateBadge`: Draft / Modified / Published chip, shared by the edit header and the collection list Status column |
 | `RichtextField.tsx` | `RichtextField`: lazily loaded Tiptap editor with media image picking |
 | `index.ts` | public exports of the feature: `FieldValueInput` |

@@ -19,6 +19,7 @@ import {
   variantOf,
   type FieldGroupKey,
 } from './FieldTypes.registry';
+import { ItemTitleSelects } from './ItemTitleSelects';
 import type { LocatedError } from './SchemaJson.rules';
 import {
   typeChangeRefusal,
@@ -387,6 +388,9 @@ export function FieldPropertiesDialog({
               )}
             </Field>
             {flag('repeatable', text.repeatable)}
+            {field.repeatable === true ? (
+              <ItemTitleSelects field={field} errorsOf={errorsOf} onSetKey={onSetKey} />
+            ) : null}
           </>
         ) : (
           <Field label={text.width} error={errorsOf('width')}>

@@ -28,7 +28,7 @@ const withFields = [
   createNewSchemaTree(),
 );
 
-function show(fieldId: string, errors: LocatedError[] = []) {
+function show(fieldId: string, errors: LocatedError[] = [], shownTree = withFields) {
   const onSetKey = vi.fn<Parameters<typeof FieldPropertiesDialog>[0]['onSetKey']>();
   const onChangeType = vi.fn<(fieldId: string, fieldType: string) => void>();
   const onChangeVariant = vi.fn<(fieldId: string, variant: string) => void>();
@@ -36,8 +36,8 @@ function show(fieldId: string, errors: LocatedError[] = []) {
   renderInApp(
     createTestServices().services,
     <FieldPropertiesDialog
-      tree={withFields}
-      field={findField(withFields.fields, fieldId)!}
+      tree={shownTree}
+      field={findField(shownTree.fields, fieldId)!}
       errors={errors}
       onSetKey={onSetKey}
       onChangeType={onChangeType}
@@ -80,6 +80,19 @@ describe('FieldPropertiesDialog', () => {
     expect(screen.getByLabelText(text.component)).toHaveValue('field2');
     await userEvent.click(screen.getByRole('checkbox', { name: text.repeatable }));
     expect(onSetKey).toHaveBeenLastCalledWith('f2', 'repeatable', true);
+    expect(screen.queryByLabelText(text.itemTitleField)).toBeNull();
+  });
+
+  it('shows the item title selects on a repeatable component only', () => {
+    const repeatableTree = schemaTreeReducer(withFields, {
+      type: 'setFieldKey',
+      fieldId: 'f2',
+      key: 'repeatable',
+      value: true,
+    });
+    show('f2', [], repeatableTree);
+    expect(screen.getByLabelText(text.itemTitleField)).toBeVisible();
+    expect(screen.getByLabelText(text.itemSubtitleField)).toBeDisabled();
   });
 
   it('refuses a type change that would lose children and says why', async () => {
