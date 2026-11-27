@@ -13,7 +13,13 @@ import { API_PATHS } from '../src/Api.endpoints';
 import { ADMIN_COPY, contentNewPath } from '../src/Apps.contract';
 import { HTTP, PAGE_CV_A_SLUG, RUN_ID } from '../src/E2e.constants';
 import { e2eEnv } from '../src/E2e.env';
-import { contentSaveButton, fieldByLabel, listItem, toast } from '../src/Locators.fixture';
+import {
+  contentSaveButton,
+  fieldByLabel,
+  listItem,
+  openAllItems,
+  toast,
+} from '../src/Locators.fixture';
 import { signInAs } from '../src/Session.fixture';
 
 const copy = ADMIN_COPY.content;
@@ -61,6 +67,7 @@ async function save(page: Page) {
 async function open(page: Page, url: string) {
   await page.goto(url);
   await expect(fieldByLabel(page, 'Position')).toBeVisible();
+  await openAllItems(page, 'Skills');
 }
 
 test.describe.serial(

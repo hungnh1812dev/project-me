@@ -6,6 +6,10 @@ Versions follow [Semantic Versioning](https://semver.org/). The repo version nam
 
 ## Unreleased
 
+### Changes
+
+- cms-api, cms-admin: spec: a repeatable component may name a `titleField` and an optional `subtitleField` (direct child fields of a one-line text form, metadata only); the document form collapses every repeatable component item when the page opens and shows each item as `{position}: {title}{ - subtitle}`, falling back to today's item title; the schema builder sets both keys and exports them; a refused document write (`DOCUMENT_INVALID`) names the refused input path in `details.path` so cms-admin opens the item that holds it (flows content-modeling CM-14, content-editing CE-6, CE-7, schema-builder SB-8, SB-12; user 2026-11-26).
+
 ## 0.4.1 (2026-11-24)
 
 Repo 0.4.1; cms-api and web 0.4.1, e2e 0.1.2; cms-admin 0.3.3: the health routes `/health`, `/health/live` and `/health/ready` on every app, in-cluster probes, and the status card reading cms-api's public `/health`.
