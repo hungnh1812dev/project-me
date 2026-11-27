@@ -20,6 +20,8 @@ export type OptionalFieldKey =
   | 'width'
   | 'component'
   | 'repeatable'
+  | 'titleField'
+  | 'subtitleField'
   | 'unsigned'
   | 'options'
   | 'default';
@@ -36,6 +38,8 @@ const TEXT_TYPES: readonly string[] = ['text', 'string'];
 const KEY_TYPE_RULES: Partial<Record<OptionalFieldKey, (type: string) => boolean>> = {
   component: (type) => type === COMPONENT_FIELD_TYPE,
   repeatable: (type) => type === COMPONENT_FIELD_TYPE,
+  titleField: (type) => type === COMPONENT_FIELD_TYPE,
+  subtitleField: (type) => type === COMPONENT_FIELD_TYPE,
   width: (type) => type !== COMPONENT_FIELD_TYPE,
   unsigned: (type) => type === 'integer',
   options: (type) => type === ENUMERATION_FIELD_TYPE,
@@ -55,6 +59,9 @@ export interface SchemaField {
   width?: string;
   component?: string;
   repeatable?: boolean;
+  /** `name` of the direct child that titles each item of a repeatable component (CM-14). */
+  titleField?: string;
+  subtitleField?: string;
   unsigned?: boolean;
   options?: readonly string[];
   /** Fixed starting value in API value form; kept as typed so the validator can report a wrong one (SB-9). */
@@ -367,6 +374,25 @@ function duplicateField(tree: SchemaTree, fieldId: string): SchemaTree {
   });
 }
 
+/** The keys that go with a key being cleared: no title means no subtitle; a component no longer repeatable has neither (SB-8). */
+function keysDroppedWith(key: OptionalFieldKey, value: FieldKeyValue): OptionalFieldKey[] {
+  if (key === 'repeatable' && value !== true) return ['titleField', 'subtitleField'];
+  if (key === 'titleField' && value === undefined) return ['subtitleField'];
+  return [];
+}
+
+/** The component with a renamed child: its title references follow the new name. */
+function withRenamedChildReferences(
+  component: SchemaField,
+  oldName: string,
+  newName: string,
+): SchemaField {
+  const next = { ...component };
+  if (next.titleField === oldName) next.titleField = newName;
+  if (next.subtitleField === oldName) next.subtitleField = newName;
+  return next;
+}
+
 function setFieldKey(
   tree: SchemaTree,
   fieldId: string,
@@ -377,16 +403,23 @@ function setFieldKey(
   if (!field) return tree;
   if (key !== 'name' && !isKeyAllowed(key, field.type)) return tree;
   if (key === 'name' && typeof value !== 'string') return tree;
+  const parentId = findParentId(tree.fields, fieldId) ?? null;
+  const renamedFrom = key === 'name' ? field.name : undefined;
+  const fields = updateField(tree.fields, fieldId, (current) => {
+    if (key === 'name') return { ...current, name: value as string };
+    const cleared = withoutKeys(current, keysDroppedWith(key, value));
+    if (value === undefined) return withoutKeys(cleared, [key]);
+    return {
+      ...cleared,
+      [key]: value,
+      heldKeys: cleared.heldKeys.includes(key) ? cleared.heldKeys : [...cleared.heldKeys, key],
+    };
+  });
+  if (renamedFrom === undefined || parentId === null) return edited(tree, { fields });
   return edited(tree, {
-    fields: updateField(tree.fields, fieldId, (current) => {
-      if (key === 'name') return { ...current, name: value as string };
-      if (value === undefined) return withoutKeys(current, [key]);
-      return {
-        ...current,
-        [key]: value,
-        heldKeys: current.heldKeys.includes(key) ? current.heldKeys : [...current.heldKeys, key],
-      };
-    }),
+    fields: updateField(fields, parentId, (parent) =>
+      withRenamedChildReferences(parent, renamedFrom, value as string),
+    ),
   });
 }
 

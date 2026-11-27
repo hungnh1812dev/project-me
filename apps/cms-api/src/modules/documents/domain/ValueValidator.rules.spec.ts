@@ -140,6 +140,34 @@ describe('write value rules (T21)', () => {
     expect(out).toEqual({ values: {} });
   });
 
+  it('details.path names the refused input path: root, nested and required list', () => {
+    const detailsOf = (fn: () => unknown) => {
+      try {
+        fn();
+      } catch (error) {
+        return (error as DomainError).details;
+      }
+      return undefined;
+    };
+    expect(detailsOf(() => run({ values: { age: 'SECRET-VALUE' } }, 'update'))).toEqual({
+      path: 'values.age',
+    });
+    expect(
+      detailsOf(() =>
+        run(
+          { values: { title: 't' }, components: { items: [{ values: {} }] } },
+          'create',
+          required,
+        ),
+      ),
+    ).toEqual({ path: 'components.items[0].values.label' });
+    expect(
+      detailsOf(() =>
+        run({ values: { title: 't' }, components: { items: [] } }, 'create', required),
+      ),
+    ).toEqual({ path: 'components.items' });
+  });
+
   it('error messages carry the path, never the value', () => {
     expect(() => run({ values: { age: 'SECRET-VALUE' } }, 'update')).toThrow(
       /^values\.age does not match/,

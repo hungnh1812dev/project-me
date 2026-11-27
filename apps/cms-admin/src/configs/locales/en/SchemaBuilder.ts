@@ -113,6 +113,9 @@ export const SCHEMA_BUILDER_COPY = {
     component: 'Component',
     componentHint: 'The name of the component this field holds.',
     repeatable: 'Repeatable',
+    itemTitleField: 'Item title field',
+    itemSubtitleField: 'Item subtitle field',
+    noItemTitle: 'None',
     typeRefusal: {
       holdsFields: 'Delete the fields inside this component before changing its type.',
       tooDeep: 'A component here would nest deeper than 3 levels.',

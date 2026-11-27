@@ -30,7 +30,7 @@ NestJS; the content-engine registry and the access module.
 
 ## Where to change what
 
-A new view key: `ContentTypeView.rules.ts` and the key list in `ContentTypeView.contract.spec.ts`; changes stay additive (frontends read these keys). Content field views carry `width` (the schema value or the default; absent on components and system fields) and `displayName` only when the definition sets it (ADR 0019); `options` only on an `enumeration` field (`unsigned` is not exposed, the API enforces it); `default` only on a field whose schema sets one, in the API's value form from `normalizedDefaultOf` (passed in `ViewVocabulary`, as a layer rule forbids the value import; CM-11). The validate route: `DefinitionValidation.service.ts` (modes in `DEFINITION_VALIDATION_MODES`; calls `validateCandidateDefinition`; a registry load failure is rethrown and answered by the standard 5xx handling, never as valid) and the route's strict body schema and throttle policy in `ContentTypes.controller.ts`; the rules themselves stay in content-engine `DefinitionValidator.rules.ts`.
+A new view key: `ContentTypeView.rules.ts` and the key list in `ContentTypeView.contract.spec.ts`; changes stay additive (frontends read these keys). Content field views carry `width` (the schema value or the default; absent on components and system fields) and `displayName` only when the definition sets it (ADR 0019); `options` only on an `enumeration` field (`unsigned` is not exposed, the API enforces it); `default` only on a field whose schema sets one, in the API's value form from `normalizedDefaultOf` (passed in `ViewVocabulary`, as a layer rule forbids the value import; CM-11); `titleField` and `subtitleField` only on a component view whose definition sets them, never on a scalar or system field (CM-14). The validate route: `DefinitionValidation.service.ts` (modes in `DEFINITION_VALIDATION_MODES`; calls `validateCandidateDefinition`; a registry load failure is rethrown and answered by the standard 5xx handling, never as valid) and the route's strict body schema and throttle policy in `ContentTypes.controller.ts`; the rules themselves stay in content-engine `DefinitionValidator.rules.ts`.
 
 ## Files
 
@@ -52,7 +52,7 @@ Tests: 3 files (not listed).
 | `index.ts` | Public export (exports `ContentTypesModule`) |
 | `application/ContentTypes.service.ts` | Lists and resolves types the caller may read (exports `ContentTypesService`) |
 | `application/DefinitionValidation.service.ts` | Runs the content-engine validator on a candidate next to the registered definitions (exports `DEFINITION_VALIDATION_MODES`, `DefinitionValidationMode`, `DefinitionValidationResult`, `DefinitionValidationService`) |
-| `domain/ContentTypeView.rules.ts` | Builds the type view (incl. `displayName`, `options`, `default`) and the not-found error (exports `ContentFieldView`, `SystemFieldView`, `FieldView`, `ContentTypeView` +6) |
+| `domain/ContentTypeView.rules.ts` | Builds the type view (incl. `displayName`, `options`, `default`, `titleField`, `subtitleField`) and the not-found error (exports `ContentFieldView`, `SystemFieldView`, `FieldView`, `ContentTypeView` +6) |
 | `http/ContentTypes.controller.ts` | The two read routes and the owner-only validate route with its body schema and throttle policy (exports `CONTENT_TYPES_ROUTES`, `ContentTypesController`) |
 
 <!-- prettier-ignore-end -->

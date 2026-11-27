@@ -21,32 +21,41 @@ interface FieldTypeEntry {
   icon: LucideIcon;
   /** Key of this type's label in the schema-builder screen copy (`fieldTypes.<copyKey>`). */
   copyKey: string;
+  /** Whether a repeatable component may name a field of this type as its `titleField` or `subtitleField` (CM-14). */
+  canTitleItem: boolean;
 }
 
 /** Every field type of the format. A new field type is one entry here plus one copy label. */
 export const FIELD_TYPES = [
-  { type: 'text', icon: TextCursorInput, copyKey: 'text' },
-  { type: 'string', icon: AlignLeft, copyKey: 'string' },
-  { type: 'richtext', icon: Pilcrow, copyKey: 'richtext' },
-  { type: 'integer', icon: Hash, copyKey: 'integer' },
-  { type: 'biginteger', icon: Hash, copyKey: 'biginteger' },
-  { type: 'float', icon: Percent, copyKey: 'float' },
-  { type: 'double', icon: Percent, copyKey: 'double' },
-  { type: 'decimal', icon: Percent, copyKey: 'decimal' },
-  { type: 'boolean', icon: ToggleLeft, copyKey: 'boolean' },
-  { type: 'date', icon: Calendar, copyKey: 'date' },
-  { type: 'datetime', icon: CalendarClock, copyKey: 'datetime' },
-  { type: 'time', icon: Clock, copyKey: 'time' },
-  { type: 'enumeration', icon: ListChecks, copyKey: 'enumeration' },
-  { type: 'json', icon: Braces, copyKey: 'json' },
-  { type: 'media', icon: Image, copyKey: 'media' },
-  { type: 'component', icon: LayoutList, copyKey: 'component' },
+  { type: 'text', icon: TextCursorInput, copyKey: 'text', canTitleItem: true },
+  { type: 'string', icon: AlignLeft, copyKey: 'string', canTitleItem: true },
+  { type: 'richtext', icon: Pilcrow, copyKey: 'richtext', canTitleItem: false },
+  { type: 'integer', icon: Hash, copyKey: 'integer', canTitleItem: true },
+  { type: 'biginteger', icon: Hash, copyKey: 'biginteger', canTitleItem: true },
+  { type: 'float', icon: Percent, copyKey: 'float', canTitleItem: true },
+  { type: 'double', icon: Percent, copyKey: 'double', canTitleItem: true },
+  { type: 'decimal', icon: Percent, copyKey: 'decimal', canTitleItem: true },
+  { type: 'boolean', icon: ToggleLeft, copyKey: 'boolean', canTitleItem: false },
+  { type: 'date', icon: Calendar, copyKey: 'date', canTitleItem: true },
+  { type: 'datetime', icon: CalendarClock, copyKey: 'datetime', canTitleItem: true },
+  { type: 'time', icon: Clock, copyKey: 'time', canTitleItem: true },
+  { type: 'enumeration', icon: ListChecks, copyKey: 'enumeration', canTitleItem: true },
+  { type: 'json', icon: Braces, copyKey: 'json', canTitleItem: false },
+  { type: 'media', icon: Image, copyKey: 'media', canTitleItem: false },
+  { type: 'component', icon: LayoutList, copyKey: 'component', canTitleItem: false },
 ] as const satisfies readonly FieldTypeEntry[];
 
 export type FieldTypeName = (typeof FIELD_TYPES)[number]['type'];
 
 /** The one type whose fields hold children. */
 export const COMPONENT_FIELD_TYPE = 'component' satisfies FieldTypeName;
+
+/** The direct children of a component that may be its item title or subtitle field (CM-14), in field order. */
+export function titleFieldCandidates<T extends { type: string }>(component: {
+  fields: readonly T[];
+}): T[] {
+  return component.fields.filter((child) => findFieldType(child.type)?.canTitleItem === true);
+}
 
 export function findFieldType(type: string): (typeof FIELD_TYPES)[number] | undefined {
   return FIELD_TYPES.find((entry) => entry.type === type);

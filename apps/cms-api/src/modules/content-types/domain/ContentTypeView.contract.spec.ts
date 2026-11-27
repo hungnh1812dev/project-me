@@ -53,7 +53,12 @@ const PROFILE = {
       type: 'component',
       component: 'experience',
       repeatable: true,
-      fields: [{ name: 'company', type: 'string' }],
+      titleField: 'company',
+      subtitleField: 'role',
+      fields: [
+        { name: 'company', type: 'string' },
+        { name: 'role', type: 'string' },
+      ],
     },
   ],
 } as const;
@@ -84,6 +89,17 @@ describe('GET /content-types contract', () => {
   it('adds displayName and width on content fields and nothing else', () => {
     const phone = view.fields.find((f) => f.path === 'phone')!;
     expect(Object.keys(phone).sort()).toEqual([...FIELD_KEYS, 'displayName', 'width'].sort());
+  });
+
+  it('adds titleField and subtitleField on a component that sets them and on nothing else (CM-14)', () => {
+    const experience = view.fields.find((f) => f.path === 'experience')!;
+    expect(Object.keys(experience).sort()).toEqual(
+      [...FIELD_KEYS, 'subtitleField', 'titleField'].sort(),
+    );
+    expect(experience).toMatchObject({ titleField: 'company', subtitleField: 'role' });
+    const company = view.fields.find((f) => f.path === 'experience.company')!;
+    expect(company).not.toHaveProperty('titleField');
+    expect(company).not.toHaveProperty('subtitleField');
   });
 
   it('keeps the keys of a content type', () => {

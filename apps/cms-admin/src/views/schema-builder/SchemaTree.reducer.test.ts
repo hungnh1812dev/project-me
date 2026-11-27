@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { FIELD_TYPES, paletteItemOfType, paletteItems, variantOf } from './FieldTypes.registry';
+import {
+  FIELD_TYPES,
+  paletteItemOfType,
+  paletteItems,
+  titleFieldCandidates,
+  variantOf,
+} from './FieldTypes.registry';
 import {
   canPlaceComponentIn,
   createNewSchemaTree,
@@ -553,5 +559,179 @@ describe('number, datetime and enumeration fields', () => {
       expect(kept.fields[1]).toMatchObject({ default: 'b' });
       expect(kept.fields[1]!.heldKeys).toContain('default');
     });
+  });
+});
+
+describe('item title and subtitle fields', () => {
+  const TITLE_TYPES = [
+    'text',
+    'string',
+    'enumeration',
+    'integer',
+    'biginteger',
+    'float',
+    'double',
+    'decimal',
+    'date',
+    'datetime',
+    'time',
+  ];
+
+  /** A repeatable component `card` holding `heading` and `kicker`, with both references set. */
+  function titled() {
+    let tree = add(createNewSchemaTree(), 'component');
+    const cardId = tree.lastAddedId as string;
+    tree = add(tree, 'text', cardId);
+    const headingId = tree.lastAddedId as string;
+    tree = add(tree, 'text', cardId);
+    const kickerId = tree.lastAddedId as string;
+    tree = run(
+      tree,
+      { type: 'setFieldKey', fieldId: headingId, key: 'name', value: 'heading' },
+      { type: 'setFieldKey', fieldId: kickerId, key: 'name', value: 'kicker' },
+      { type: 'setFieldKey', fieldId: cardId, key: 'repeatable', value: true },
+      { type: 'setFieldKey', fieldId: cardId, key: 'titleField', value: 'heading' },
+      { type: 'setFieldKey', fieldId: cardId, key: 'subtitleField', value: 'kicker' },
+    );
+    return { tree, cardId, headingId, kickerId };
+  }
+  const card = (tree: SchemaTree) => tree.fields[0]!;
+
+  it('marks exactly the eleven text-like types as able to title an item', () => {
+    const marked = FIELD_TYPES.filter((entry) => entry.canTitleItem).map((entry) => entry.type);
+    expect([...marked].sort()).toEqual([...TITLE_TYPES].sort());
+  });
+
+  it('lists the direct children of a component a title may name, in field order', () => {
+    const { tree, cardId } = titled();
+    const withMedia = add(tree, 'media', cardId);
+    expect(titleFieldCandidates(card(withMedia)).map((child) => child.name)).toEqual([
+      'heading',
+      'kicker',
+    ]);
+  });
+
+  it('holds both keys on a component and refuses them on another type', () => {
+    const { tree, cardId } = titled();
+    expect(card(tree).titleField).toBe('heading');
+    expect(card(tree).subtitleField).toBe('kicker');
+    expect(card(tree).heldKeys).toEqual(expect.arrayContaining(['titleField', 'subtitleField']));
+    const plain = add(createNewSchemaTree(), 'text');
+    const refused = schemaTreeReducer(plain, {
+      type: 'setFieldKey',
+      fieldId: plain.lastAddedId as string,
+      key: 'titleField',
+      value: 'x',
+    });
+    expect(refused).toBe(plain);
+    expect(cardId).toBeDefined();
+  });
+
+  it('drops both keys when the component is retyped', () => {
+    const { tree, cardId } = titled();
+    const emptied = run(
+      tree,
+      ...card(tree).fields.map((child): SchemaTreeAction => ({
+        type: 'deleteField',
+        fieldId: child.id,
+      })),
+      { type: 'changeFieldType', fieldId: cardId, fieldType: 'text' },
+    );
+    expect(card(emptied).type).toBe('text');
+    expect(card(emptied).titleField).toBeUndefined();
+    expect(card(emptied).subtitleField).toBeUndefined();
+    expect(card(emptied).heldKeys).not.toContain('titleField');
+    expect(card(emptied).heldKeys).not.toContain('subtitleField');
+  });
+
+  it('drops both keys when repeatable is turned off', () => {
+    const { tree, cardId } = titled();
+    for (const value of [false, undefined]) {
+      const off = schemaTreeReducer(tree, {
+        type: 'setFieldKey',
+        fieldId: cardId,
+        key: 'repeatable',
+        value,
+      });
+      expect(card(off).titleField).toBeUndefined();
+      expect(card(off).subtitleField).toBeUndefined();
+      expect(card(off).heldKeys).not.toContain('titleField');
+    }
+  });
+
+  it('drops the subtitle only when the title is set to none', () => {
+    const { tree, cardId } = titled();
+    const none = schemaTreeReducer(tree, {
+      type: 'setFieldKey',
+      fieldId: cardId,
+      key: 'titleField',
+      value: undefined,
+    });
+    expect(card(none).titleField).toBeUndefined();
+    expect(card(none).subtitleField).toBeUndefined();
+    expect(card(none).repeatable).toBe(true);
+  });
+
+  it('renames the parent references with a renamed direct child, and only that parent', () => {
+    const { tree, headingId, kickerId } = titled();
+    const renamed = run(
+      tree,
+      { type: 'setFieldKey', fieldId: headingId, key: 'name', value: 'title' },
+      { type: 'setFieldKey', fieldId: kickerId, key: 'name', value: 'tagline' },
+    );
+    expect(card(renamed).titleField).toBe('title');
+    expect(card(renamed).subtitleField).toBe('tagline');
+
+    const withOther = add(tree, 'component');
+    const otherId = withOther.lastAddedId as string;
+    const withChild = add(withOther, 'text', otherId);
+    const unrelated = run(
+      withChild,
+      {
+        type: 'setFieldKey',
+        fieldId: withChild.lastAddedId as string,
+        key: 'name',
+        value: 'heading',
+      },
+      {
+        type: 'setFieldKey',
+        fieldId: withChild.lastAddedId as string,
+        key: 'name',
+        value: 'renamed',
+      },
+    );
+    expect(card(unrelated).titleField).toBe('heading');
+    expect(card(unrelated).subtitleField).toBe('kicker');
+  });
+
+  it('keeps the references when the child is deleted, moved out or retyped', () => {
+    const { tree, headingId } = titled();
+    const deleted = schemaTreeReducer(tree, { type: 'deleteField', fieldId: headingId });
+    expect(card(deleted).titleField).toBe('heading');
+    const moved = schemaTreeReducer(tree, {
+      type: 'moveField',
+      fieldId: headingId,
+      parentId: null,
+      index: 0,
+    });
+    expect(moved.fields.map((field) => field.name)).toContain('heading');
+    expect(moved.fields.find((field) => field.type === 'component')!.titleField).toBe('heading');
+    const retyped = schemaTreeReducer(tree, {
+      type: 'changeFieldType',
+      fieldId: headingId,
+      fieldType: 'media',
+    });
+    expect(card(retyped).titleField).toBe('heading');
+  });
+
+  it('returns the same state object for a refused action', () => {
+    const { tree } = titled();
+    const refused = schemaTreeReducer(tree, {
+      type: 'setFieldKey',
+      fieldId: 'missing',
+      key: 'titleField',
+      value: 'x',
+    });
+    expect(refused).toBe(tree);
   });
 });

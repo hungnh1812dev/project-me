@@ -41,7 +41,7 @@ Field types and their inputs live in `features/content` (`Field.registry.tsx`); 
 document-edit/ (9 files)
 ```
 
-Tests: 7 files (not listed).
+Tests: 8 files (not listed).
 
 | File | Description |
 |---|---|

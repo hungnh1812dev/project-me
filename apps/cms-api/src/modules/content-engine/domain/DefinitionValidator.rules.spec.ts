@@ -355,6 +355,91 @@ describe('validateDefinition', () => {
     );
   });
 
+  describe('item title keys (CM-14)', () => {
+    const children: Field[] = [
+      { name: 'label', type: 'text' },
+      { name: 'note', type: 'string' },
+      { name: 'flag', type: 'boolean' },
+      { name: 'body', type: 'richtext' },
+      { name: 'sub', ...component('sub', [{ name: 'x', type: 'text' }]), type: 'component' },
+    ];
+    const withKeys = (keys: Field, fields: Field[] = children): Record<string, unknown> =>
+      definition([{ ...component('items', fields), ...keys }]);
+
+    it('accepts a titleField, and a titleField with a subtitleField', () => {
+      expect(isValid(withKeys({ titleField: 'label' }))).toBe(true);
+      expect(isValid(withKeys({ titleField: 'label', subtitleField: 'note' }))).toBe(true);
+    });
+
+    it('accepts the keys on a component at level 2 and 3', () => {
+      const level3 = {
+        ...component('c3', children.slice(0, 4)),
+        titleField: 'label',
+        subtitleField: 'note',
+      };
+      const level2 = { ...component('c2', [{ name: 'a', type: 'text' }, level3]), titleField: 'a' };
+      const level1 = {
+        ...component('c1', [{ name: 'a', type: 'text' }, level2]),
+        titleField: 'a',
+      };
+      expect(isValid(definition([level1]))).toBe(true);
+    });
+
+    it('refuses the keys of a nested component with the nested path', () => {
+      const bad = { ...component('c2', children), titleField: 'missing' };
+      expect(errorsOf(definition([component('c1', [bad])]))).toEqual([
+        expect.objectContaining({
+          rule: DEFINITION_RULES.SCHEMA_INVALID,
+          path: ['fields', 0, 'fields', 0, 'titleField'],
+        }),
+      ]);
+    });
+
+    it.each(['titleField', 'subtitleField'])('refuses %s on a non-repeatable component', (key) => {
+      const field = { ...component('items', children), repeatable: false, titleField: 'label' };
+      const keys = key === 'titleField' ? field : { ...field, subtitleField: 'note' };
+      expect(errorsOf(definition([keys])).map((error) => error.path)).toContainEqual([
+        'fields',
+        0,
+        key,
+      ]);
+    });
+
+    it.each([
+      ['a name that is no child', { titleField: 'nope' }, 'titleField'],
+      ['a boolean child', { titleField: 'flag' }, 'titleField'],
+      ['a richtext child', { titleField: 'body' }, 'titleField'],
+      ['a component child', { titleField: 'sub' }, 'titleField'],
+      [
+        'a subtitle that is no child',
+        { titleField: 'label', subtitleField: 'nope' },
+        'subtitleField',
+      ],
+      ['a boolean subtitle', { titleField: 'label', subtitleField: 'flag' }, 'subtitleField'],
+      ['a subtitle without a title', { subtitleField: 'note' }, 'subtitleField'],
+      [
+        'a subtitle equal to the title',
+        { titleField: 'label', subtitleField: 'label' },
+        'subtitleField',
+      ],
+    ])('refuses %s with the path of the key', (_label, keys, key) => {
+      const errors = errorsOf(withKeys(keys));
+      expect(errors).toEqual([
+        expect.objectContaining({
+          rule: DEFINITION_RULES.SCHEMA_INVALID,
+          path: ['fields', 0, key],
+        }),
+      ]);
+      expect(errors[0]?.message).toContain(`"${key}"`);
+    });
+
+    it('refuses a title key on a scalar field as an unknown key', () => {
+      expect(rulesOf(definition([{ name: 'a', type: 'text', titleField: 'a' }]))).toEqual([
+        DEFINITION_RULES.SCHEMA_INVALID,
+      ]);
+    });
+  });
+
   describe('component value', () => {
     function withComponent(value: string): Record<string, unknown> {
       return definition([{ ...component('a', [{ name: 'b', type: 'text' }]), component: value }]);

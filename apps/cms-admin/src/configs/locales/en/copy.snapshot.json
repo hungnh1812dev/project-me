@@ -968,6 +968,8 @@
     "protectedGroup": "SAMPLE is protected for your role and is left unchanged.",
     "list": {
       "itemTitle": "SAMPLE NaN",
+      "itemHeader": "SAMPLE: undefined",
+      "toggleItem": "SAMPLE",
       "addSlot": "Click to add sample",
       "remove": "Remove sample NaN",
       "moveUp": "Move sample NaN up",
@@ -1178,6 +1180,9 @@
       "component": "Component",
       "componentHint": "The name of the component this field holds.",
       "repeatable": "Repeatable",
+      "itemTitleField": "Item title field",
+      "itemSubtitleField": "Item subtitle field",
+      "noItemTitle": "None",
       "typeRefusal": {
         "holdsFields": "Delete the fields inside this component before changing its type.",
         "tooDeep": "A component here would nest deeper than 3 levels."

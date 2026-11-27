@@ -111,8 +111,12 @@ test.describe.serial(
       await expect(page.getByRole('button', { name: list.moveUp('Skills', 2) })).toBeFocused();
     });
 
-    test('tab order per item is remove, up, down, then the next item and the slot', async () => {
+    test('tab order per item is remove, toggle, up, down, then the next item and the slot', async () => {
       await page.getByRole('button', { name: list.remove('Skills', 1) }).focus();
+      await page.keyboard.press('Tab');
+      await expect(
+        page.getByRole('button', { name: list.itemTitle('Skills', 1), exact: true }),
+      ).toBeFocused();
       await page.keyboard.press('Tab');
       await expect(page.getByRole('button', { name: list.moveUp('Skills', 1) })).toBeFocused();
       await page.keyboard.press('Tab');

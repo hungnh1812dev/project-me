@@ -27,6 +27,8 @@ const FIELD_KEY_ORDER = [
   'default',
   'component',
   'repeatable',
+  'titleField',
+  'subtitleField',
   'required',
   'sensitive',
   'width',
@@ -41,6 +43,8 @@ const FIELD_OPTIONAL_KEYS: readonly OptionalFieldKey[] = [
   'default',
   'component',
   'repeatable',
+  'titleField',
+  'subtitleField',
   'required',
   'sensitive',
   'width',
@@ -58,7 +62,15 @@ const FIELD_DEFAULTS: Partial<Record<OptionalFieldKey, unknown>> = {
   unsigned: false,
 };
 
-const FIELD_STRING_KEYS = ['name', 'type', 'displayName', 'component', 'width'];
+const FIELD_STRING_KEYS = [
+  'name',
+  'type',
+  'displayName',
+  'component',
+  'titleField',
+  'subtitleField',
+  'width',
+];
 const FIELD_BOOLEAN_KEYS = ['repeatable', 'required', 'sensitive', 'unsigned'];
 const FIELD_STRING_LIST_KEYS = ['options'];
 /** Keys that take any JSON value; a wrong one is the validator's to report. */

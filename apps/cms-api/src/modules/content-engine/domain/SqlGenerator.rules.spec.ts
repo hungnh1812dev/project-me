@@ -2,7 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { DataStep } from './DataStep.rules';
-import type { ContentTypeDefinition, FieldDefinition } from './DefinitionSchema.rules';
+import type {
+  ComponentFieldDefinition,
+  ContentTypeDefinition,
+  FieldDefinition,
+} from './DefinitionSchema.rules';
 import { planTables } from './Naming.rules';
 import {
   buildSnapshot,
@@ -294,6 +298,18 @@ describe('sql-generator', () => {
       const plan = diff([withDefault(before)], [withDefault(after)]);
       expect(plan.statements).toEqual([]);
       expect(plan.changedSlugs).toEqual(['post']);
+    });
+  });
+
+  describe('item title keys', () => {
+    const withKeys = (keys: Partial<ComponentFieldDefinition>) =>
+      post([TITLE, { ...TAGS, ...keys }]);
+
+    it('plans no SQL when only titleField and subtitleField change', () => {
+      const plan = diff([withKeys({})], [withKeys({ titleField: 'label' })]);
+      expect(plan.statements).toEqual([]);
+      expect(plan.changedSlugs).toEqual(['post']);
+      expect(diff([withKeys({ titleField: 'label' })], [withKeys({})]).statements).toEqual([]);
     });
   });
 

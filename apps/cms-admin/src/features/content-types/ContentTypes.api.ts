@@ -19,6 +19,10 @@ export interface ContentTypeField {
   /** Starting value of a new field input, in API value form; absent when none. */
   default?: unknown;
   repeatable: boolean;
+  /** Child field whose value titles an item of a repeatable component; absent when unset. */
+  titleField?: string;
+  /** Child field whose value follows the title in the item header; absent when unset. */
+  subtitleField?: string;
   rootScalar: boolean;
   conditionKind: string | null;
   sensitive: boolean;

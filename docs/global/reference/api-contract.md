@@ -7,7 +7,7 @@ replaces: §9
 
 Part of the [project spec](../../../SPEC.md). Reference: definitions and values only; the rules that use them are in the `RULES.md` files.
 
-All routes sit under `/api/v1`, except the health routes at the server root (cms-api API-3). One error shape: `{ statusCode, errorCode, message, details?, requestId }`.
+All routes sit under `/api/v1`, except the health routes at the server root (cms-api API-3). One error shape: `{ statusCode, errorCode, message, details?, requestId }`. A document write refused as `400 DOCUMENT_INVALID` carries `details: { path }`, the input path of the refused value in the sent tree (`values.title`, `components.experience[1].values.role`; a bulk item has it under its own `details`); the path only, never a value (CE-6).
 
 Human check (D25): the bodies of `POST /auth/login`, `/auth/2fa/verify`, `/auth/2fa/email-challenge`, `/setup/owner`, `/auth/password/request-otp` and `/auth/password/reset` also carry `turnstileToken` (string, 1 to 2048 characters, required). A refusal answers `400 HUMAN_CHECK_FAILED` (token missing, too long, failed, used, or for another form) or `503 HUMAN_CHECK_UNAVAILABLE` (verifier not configured or unreachable); form ids, field and codes are in `content/public-constants.json`.
 

@@ -352,3 +352,66 @@ describe('new field types and keys', () => {
     ]);
   });
 });
+
+describe('item title and subtitle keys', () => {
+  const definition = {
+    slug: 'sample',
+    fields: [
+      {
+        name: 'card',
+        type: 'component',
+        component: 'card',
+        repeatable: true,
+        titleField: 'heading',
+        subtitleField: 'kicker',
+        fields: [
+          { name: 'heading', type: 'text' },
+          { name: 'kicker', type: 'text' },
+        ],
+      },
+    ],
+  };
+
+  it('exports a file that holds them as the same JSON value', () => {
+    expect(JSON.parse(serializeSchemaTree(load(JSON.stringify(definition))).json)).toEqual(
+      definition,
+    );
+  });
+
+  it('writes them after repeatable and before required', () => {
+    const shuffled = {
+      slug: 's',
+      fields: [
+        {
+          required: true,
+          subtitleField: 'b',
+          titleField: 'a',
+          repeatable: true,
+          type: 'component',
+          name: 'n',
+          fields: [],
+        },
+      ],
+    };
+    expect(Object.keys(exportedOf(load(JSON.stringify(shuffled))).fields[0]!)).toEqual([
+      'name',
+      'type',
+      'repeatable',
+      'titleField',
+      'subtitleField',
+      'required',
+      'fields',
+    ]);
+  });
+
+  it('keeps a title that is not text as an unknown key', () => {
+    const tree = load(
+      JSON.stringify({
+        slug: 's',
+        fields: [{ name: 'n', type: 'component', titleField: 3, fields: [] }],
+      }),
+    );
+    expect(tree.fields[0]!.titleField).toBeUndefined();
+    expect(tree.fields[0]!.unknownKeys).toEqual({ titleField: 3 });
+  });
+});

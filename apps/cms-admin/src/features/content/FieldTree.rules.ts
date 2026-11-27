@@ -14,6 +14,10 @@ export interface FieldNode {
   /** Starting value of a new document or entry, in API value form. */
   defaultValue?: unknown;
   repeatable: boolean;
+  /** Name of the child whose value titles an item (CM-14); only on a repeatable component. */
+  titleField?: string;
+  /** Name of the child whose value follows the title in the item header. */
+  subtitleField?: string;
   children: FieldNode[];
 }
 
@@ -50,6 +54,8 @@ export function buildFieldTree(fields: readonly ContentTypeField[]): FieldNode[]
       ...(field.options === undefined ? {} : { options: field.options }),
       ...(field.default === undefined ? {} : { defaultValue: field.default }),
       repeatable: field.repeatable,
+      ...(field.titleField === undefined ? {} : { titleField: field.titleField }),
+      ...(field.subtitleField === undefined ? {} : { subtitleField: field.subtitleField }),
       children: [],
     };
     if (cut < 0) {

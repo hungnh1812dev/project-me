@@ -62,6 +62,9 @@ export const FIELD_COLUMN_SPAN: Readonly<Record<FieldWidth, string>> = {
 /** Placeholder cms-api sends for a value the caller's role cannot read. */
 export const MASKED_VALUE = '***';
 
+/** Joins an item's title and subtitle values in its header (CE-7). */
+export const ITEM_SUBTITLE_SEPARATOR = ' - ';
+
 /** Response key listing the paths the caller's role cannot read. */
 export const MASKED_FIELDS_KEY = '_maskedFields';
 

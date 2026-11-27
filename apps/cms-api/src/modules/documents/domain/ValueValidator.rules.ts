@@ -27,6 +27,7 @@ function invalid(path: string, message: string): DomainError {
     kind: 'invalid_input',
     errorCode: DOCUMENT_ERROR_CODES.INVALID,
     message: `${path} ${message}`,
+    details: { path },
   });
 }
 
